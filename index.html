@@ -2,7 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#001224">
     <title>Planificador de Alto Rendimiento JCH</title>
     <!-- NUEVO: Fuente premium ovalada, gordita y muy amigable -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@900&display=swap" rel="stylesheet">
@@ -1234,20 +1238,190 @@
         .store-item.locked .store-btn-buy { background: #1e293b; color: #64748b; box-shadow: 0 4px 0 #0f172a; cursor: not-allowed; text-shadow: none; transition: all 0.3s; border: 1px solid transparent; }
         .store-item.locked:hover .store-btn-buy { background: #475569; color: #ffffff; box-shadow: 0 6px 0 #1e293b, 0 0 10px rgba(239,68,68,0.3); border: 1px solid rgba(239, 68, 68, 0.5); }
 
+        /* ═══════════════════════════════════════════════════
+           RESPONSIVE MÓVIL — ADAPTACIÓN COMPLETA
+           ═══════════════════════════════════════════════════ */
+
         @media (max-width: 1024px) {
+            body { padding: 1.2rem; }
             .dashboard { grid-template-columns: 1fr; }
+            #routinasCard { grid-row: auto; grid-column: auto; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .header-stats-flex { flex-wrap: wrap; justify-content: center; }
-            .level-section { flex-direction: column; text-align: center; }
+            .level-section { flex-direction: column; text-align: center; padding: 1.5rem; }
+            .level-progress-container { padding: 0; width: 100%; }
             .global-vaults { flex-direction: row; flex-wrap: wrap; justify-content: center; }
-            .chart-bars-container { min-width: 600px; } 
+            .chart-bars-container { min-width: 500px; }
+            /* Calendario: apilar reloj sobre lista */
+            .cal-body { flex-direction: column; overflow-y: auto; }
+            .cal-clock-col { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,210,255,0.12); }
+            #calSvgClock { width: 320px; height: 320px; }
+            #calendarModal { width: min(98vw, 700px); max-height: 95vh; }
         }
-        @media (max-width: 600px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            header h1 { font-size: 2rem; padding: 1rem; }
-            .timer-display { font-size: 4rem; }
-            .kanban-board { flex-direction: column; }
-            .global-vaults { flex-direction: column; }
+
+        @media (max-width: 768px) {
+            body { padding: 0.8rem; }
+
+            /* Header */
+            header { margin-bottom: 1.2rem; }
+            header h1 { font-size: 1.6rem; padding: 0.7rem 1.2rem; letter-spacing: 1px; transform: skewX(-2deg); }
+            header p { font-size: 0.8rem; letter-spacing: 1px; }
+
+            /* Cards */
+            .card { padding: 1.2rem; border-radius: 16px; }
+            .card h2 { font-size: 1.1rem; letter-spacing: 1px; }
+            .container-wrapper { gap: 1rem; }
+
+            /* Level section */
+            .level-section { flex-direction: column; padding: 1.2rem; gap: 1rem; }
+            .gem-wrapper { width: 120px; }
+            .gem-icon-svg-container { width: 80px; height: 80px; }
+            .level-progress-container { width: 100%; padding: 0; }
+            .level-bar-bg { height: 28px; }
+            .level-percentage-text { font-size: 1rem; }
+            .mastery-title { font-size: 0.9rem; letter-spacing: 2px; }
+            .rank-title { font-size: 1.1rem; }
+
+            /* Vault cards */
+            .global-vaults { flex-direction: row; flex-wrap: wrap; gap: 0.6rem; }
+            .vault-card { padding: 0.7rem 1rem; border-radius: 12px; flex: 1; min-width: calc(50% - 0.3rem); }
+            .vault-label { font-size: 0.65rem; }
+            .vault-value { font-size: 1.1rem; }
+            .vault-icon { font-size: 1.5rem; }
+
+            /* Timer */
+            .timer-display { font-size: 3.5rem; margin: 0.3rem 0 1rem 0; }
+            .timer-controls { gap: 0.6rem; flex-wrap: wrap; }
+            .timer-controls button { padding: 0.7rem 1rem; font-size: 0.8rem; }
+            .timer-modes { gap: 0.4rem; }
+            .mode-btn { padding: 0.5rem 0.7rem; font-size: 0.72rem; }
+
+            /* Kanban */
+            .kanban-board { flex-direction: column; gap: 1rem; }
+            .kanban-col { min-height: 200px; padding: 1rem 0.8rem 0.5rem; }
+            .kanban-cards-wrapper { max-height: 300px; }
+
+            /* Botones de creación */
+            .creation-buttons-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+            button { padding: 0.8rem 1rem; font-size: 0.8rem; }
+
+            /* Selectores */
+            .custom-select { padding: 0.7rem 1rem; font-size: 0.85rem; }
+            .header-stats-flex { gap: 0.5rem; }
+            .coin-counter-container, .xp-counter-container { padding: 0.4rem 0.8rem; }
+
+            /* Chart */
+            .chart-bars-container { min-width: 400px; }
+
+            /* Perfil btn */
+            #profileBtn { width: 38px; height: 38px; top: 0.8rem; left: 0.8rem; font-size: 1.1rem; }
+            #profilePanel { left: 0.8rem; top: 3.8rem; width: 230px; }
+
+            /* Modales principales */
+            .custom-time-modal { width: min(95vw, 420px) !important; padding: 1.5rem !important; max-height: 92vh; overflow-y: auto; }
+            #newProjectModal, #newTaskModal, #newMethodModal { width: min(95vw, 420px) !important; }
+
+            /* Calendario reloj */
+            #calendarModal { width: 99vw !important; max-height: 96vh; border-radius: 16px; }
+            .cal-body { flex-direction: column; overflow-y: auto; }
+            .cal-clock-col { width: 100% !important; border-right: none; border-bottom: 1px solid rgba(0,210,255,0.12); padding: 0.8rem; }
+            #calSvgClock { width: 280px !important; height: 280px !important; }
+            .cal-events-col { min-height: 300px; }
+            .cal-modal-header { padding: 0.8rem 1rem; }
+
+            /* Modal editar evento */
+            #calEventModal { width: min(96vw, 500px) !important; }
+            #calDayModal { width: min(98vw, 600px) !important; }
+            #calMonthModal { width: 99vw !important; }
+
+            /* Auth overlay */
+            .auth-box { padding: 1.8rem 1.4rem; }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 0.5rem; }
+
+            /* Header compacto */
+            header h1 { font-size: 1.2rem; padding: 0.6rem 0.9rem; transform: none; letter-spacing: 0; }
+            header p { font-size: 0.7rem; letter-spacing: 0.5px; }
+            header { margin-bottom: 0.8rem; }
+
+            /* Cards más compactas */
+            .card { padding: 1rem 0.9rem; border-radius: 14px; }
+            .card h2 { font-size: 0.95rem; gap: 6px; margin-bottom: 1rem; }
+            .container-wrapper { gap: 0.8rem; }
+
+            /* Level */
+            .level-section { padding: 1rem; gap: 0.8rem; }
+            .gem-wrapper { width: 90px; }
+            .gem-icon-svg-container { width: 65px; height: 65px; }
+            .level-bar-bg { height: 24px; }
+            .level-percentage-text { font-size: 0.85rem; }
+            .level-subtext { font-size: 0.85rem; }
+
+            /* Vault cards: 2 por fila */
+            .vault-card { min-width: calc(50% - 0.3rem); padding: 0.6rem 0.8rem; }
+            .vault-icon { font-size: 1.3rem; }
+            .vault-value { font-size: 1rem; }
+            .vault-label { font-size: 0.6rem; }
+
+            /* Timer */
+            .timer-display { font-size: 2.8rem; }
+            .timer-controls button { padding: 0.6rem 0.8rem; font-size: 0.75rem; }
+            .mode-btn { padding: 0.4rem 0.6rem; font-size: 0.68rem; }
+
+            /* Kanban */
+            .kanban-col-title { font-size: 0.75rem; padding: 0.4rem 0.8rem; }
+            .kanban-cards-wrapper { max-height: 250px; }
+
+            /* Botones creación */
+            .creation-buttons-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+            .btn-create-base { padding: 0.8rem; font-size: 0.8rem; }
+
+            /* Chart scroll */
+            .chart-bars-container { min-width: 320px; }
+
+            /* Reloj */
+            #calSvgClock { width: 240px !important; height: 240px !important; }
+            .cal-clock-col { padding: 0.5rem; }
+
+            /* Modales full width */
+            .custom-time-modal { width: 98vw !important; padding: 1.2rem !important; border-radius: 14px !important; }
+            #newProjectModal, #newTaskModal, #newMethodModal { width: 98vw !important; border-radius: 14px !important; }
+            #calEventModal { width: 98vw !important; border-radius: 14px !important; }
+
+            /* Perfil */
+            #profileBtn { width: 34px; height: 34px; top: 0.5rem; left: 0.5rem; }
+            #profilePanel { left: 0.5rem; top: 3.2rem; width: 210px; padding: 1rem; }
+
+            /* Check items en rutinas */
+            .check-item { padding: 0.5rem 0.3rem; }
+            .time-badge, .coin-badge, .xp-badge { font-size: 0.65rem; padding: 1px 5px; }
+
+            /* Auth */
+            .auth-box { padding: 1.4rem 1.1rem; border-radius: 18px; }
+            .auth-logo h2 { font-size: 1.3rem; }
+            .auth-tab { font-size: 0.75rem; padding: 0.5rem; }
+            .auth-input { padding: 10px 12px; font-size: 0.88rem; }
+            .auth-btn { padding: 0.85rem; font-size: 0.88rem; }
+
+            /* Store items */
+            .store-item { padding: 0.8rem; }
+            .store-item-icon { font-size: 1.8rem; }
+        }
+
+        /* Touch: botones más grandes para dedos */
+        @media (hover: none) and (pointer: coarse) {
+            button, .cal-reminder-chip, .task-reminder-chip, .cal-reminder-chip,
+            .cal-color-dot, .cal-nav-btn, .cal-close-btn, .mode-btn {
+                min-height: 40px;
+            }
+            .cal-color-dot { width: 26px !important; height: 26px !important; }
+            input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
+                font-size: 16px !important; /* evita zoom automático en iOS */
+            }
+            .check-item { padding: 0.8rem 0.4rem; }
+            .kanban-card { padding: 1rem; }
         }
 
         /* --- OVERLAY DE CELEBRACIÓN ÉPICA (RUTINAS) --- */
@@ -10675,6 +10849,14 @@
     /* ── Cargar datos desde Firestore ──────────────────────── */
     async function loadFromCloud() {
         if (!currentUser) return;
+
+        // Si ya se hizo la carga en esta sesión, no volver a recargar
+        const alreadyLoaded = sessionStorage.getItem('jch_cloud_loaded');
+        if (alreadyLoaded === currentUser.uid) {
+            setSyncStatus('✅ Sesión activa', 'synced');
+            return;
+        }
+
         try {
             setSyncStatus('⏳ Cargando datos...', 'syncing');
             const doc = await db.collection('users').doc(currentUser.uid).get();
@@ -10685,14 +10867,18 @@
                     Object.entries(data.localStorage).forEach(([k, v]) => {
                         try { localStorage.setItem(k, v); } catch(e) {}
                     });
-                    // Recargar la página para aplicar todos los datos restaurados
+                    // Marcar que ya se cargo para no repetir en esta sesion
+                    sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                     setSyncStatus('✅ Datos cargados', 'synced');
-                    setTimeout(() => { location.reload(); }, 800);
+                    // Recargar UNA SOLA VEZ para aplicar los datos restaurados
+                    setTimeout(() => { location.reload(); }, 600);
                 } else {
+                    sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                     setSyncStatus('✅ Cuenta nueva lista', 'synced');
                 }
             } else {
-                // Primera vez: guardar datos iniciales
+                // Primera vez: guardar datos iniciales vacios
+                sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                 await syncToCloud(false);
                 setSyncStatus('✅ Cuenta sincronizada', 'synced');
             }
@@ -10739,8 +10925,9 @@
         // Sync antes de salir
         await syncToCloud(false);
         await auth.signOut();
-        // Limpiar datos locales
+        // Limpiar datos locales y bandera de sesion
         Object.keys(localStorage).filter(k => k.startsWith('jch_')).forEach(k => localStorage.removeItem(k));
+        sessionStorage.removeItem('jch_cloud_loaded');
         location.reload();
     };
 
