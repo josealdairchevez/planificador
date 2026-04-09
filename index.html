@@ -3024,18 +3024,93 @@
 
         /* ═══ CALENDAR_P6: Month View ═══ */
         /* ═══ EFECTOS PREMIUM — Vista Mes y Día (igual que Bóveda) ═══ */
+        /* ── Animaciones exclusivas del fondo azul premium ── */
+        @keyframes waveFloat1 {
+            0%   { transform: translateX(-8%) translateY(0%)   scaleY(1);   }
+            25%  { transform: translateX( 3%) translateY(-4%)  scaleY(1.04);}
+            50%  { transform: translateX( 8%) translateY(0%)   scaleY(1);   }
+            75%  { transform: translateX( 2%) translateY( 4%)  scaleY(0.97);}
+            100% { transform: translateX(-8%) translateY(0%)   scaleY(1);   }
+        }
+        @keyframes waveFloat2 {
+            0%   { transform: translateX( 6%) translateY( 3%)  scaleY(1);   }
+            33%  { transform: translateX(-4%) translateY(-5%)  scaleY(1.05);}
+            66%  { transform: translateX(-7%) translateY( 2%)  scaleY(0.96);}
+            100% { transform: translateX( 6%) translateY( 3%)  scaleY(1);   }
+        }
+        @keyframes waveFloat3 {
+            0%   { transform: translateX( 0%) translateY( 6%)  scaleY(1);   }
+            40%  { transform: translateX( 5%) translateY(-3%)  scaleY(1.03);}
+            80%  { transform: translateX(-5%) translateY( 1%)  scaleY(0.98);}
+            100% { transform: translateX( 0%) translateY( 6%)  scaleY(1);   }
+        }
+        @keyframes bgShift {
+            0%   { background-position: 0%   50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0%   50%; }
+        }
+        @keyframes lightRay {
+            0%   { transform: translateX(-120%) rotate(-35deg); opacity: 0;   }
+            10%  { opacity: 0.55; }
+            60%  { opacity: 0.2;  }
+            100% { transform: translateX(220%)  rotate(-35deg); opacity: 0;   }
+        }
+        @keyframes lightRay2 {
+            0%   { transform: translateX(-120%) rotate(-30deg); opacity: 0;   }
+            15%  { opacity: 0.35; }
+            70%  { opacity: 0.1;  }
+            100% { transform: translateX(220%)  rotate(-30deg); opacity: 0;   }
+        }
+
+        /* Fondo base — gradiente azul vivo animado (igual que cuadrícula) */
         .cal-modal-landing-bg {
             position: absolute; inset: 0; border-radius: 20px;
-            background:
-                radial-gradient(ellipse 90% 70% at 10% 20%,  rgba(0,100,255,0.45)  0%, transparent 55%),
-                radial-gradient(ellipse 70% 60% at 88% 10%,  rgba(0,210,255,0.35)  0%, transparent 50%),
-                radial-gradient(ellipse 80% 80% at 50% 90%,  rgba(99,102,241,0.35) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 50% at 72% 55%,  rgba(177,0,255,0.22)  0%, transparent 45%),
-                radial-gradient(ellipse 50% 40% at 28% 68%,  rgba(0,210,255,0.18)  0%, transparent 40%),
-                linear-gradient(145deg, #0a0e1e 0%, #06050f 40%, #080b1a 70%, #060818 100%);
-            animation: vaultBgFloat 9s ease-in-out infinite alternate;
+            background: linear-gradient(135deg,
+                #0033a8 0%,
+                #0044cc 18%,
+                #0055e6 32%,
+                #0033a8 50%,
+                #001e80 68%,
+                #0033a8 82%,
+                #0044cc 100%);
+            background-size: 300% 300%;
+            animation: bgShift 7s ease-in-out infinite;
             pointer-events: none; z-index: 0;
         }
+
+        /* Onda 1 — grande, baja, clara */
+        .cal-modal-landing-bg::before {
+            content: '';
+            position: absolute;
+            bottom: -30%; left: -15%;
+            width: 130%; height: 65%;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(0, 80, 220, 0.55) 35%,
+                rgba(0, 60, 180, 0.80) 60%,
+                rgba(0, 40, 140, 0.90) 100%);
+            border-radius: 60% 70% 30% 40% / 50% 40% 60% 55%;
+            animation: waveFloat1 9s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* Onda 2 — mediana, media altura, más clara */
+        .cal-modal-landing-bg::after {
+            content: '';
+            position: absolute;
+            top: 5%; left: -20%;
+            width: 140%; height: 55%;
+            background: linear-gradient(160deg,
+                rgba(30, 120, 255, 0.40) 0%,
+                rgba(0,  100, 220, 0.55) 40%,
+                rgba(0,   70, 180, 0.30) 70%,
+                transparent 100%);
+            border-radius: 45% 55% 60% 40% / 55% 45% 55% 50%;
+            animation: waveFloat2 11s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* Capa de brillo superior (luz difusa tipo spotlight) */
         .cal-modal-sheen {
             position: absolute; inset: 0; border-radius: 20px; overflow: hidden;
             pointer-events: none; z-index: 1;
@@ -3043,38 +3118,47 @@
         .cal-modal-sheen::before {
             content: '';
             position: absolute;
-            top: -50%; left: -100%;
-            width: 55%; height: 200%;
-            background: linear-gradient(
-                115deg,
-                transparent   0%,
-                rgba(255,255,255,0.00) 30%,
-                rgba(255,255,255,0.06) 42%,
-                rgba(255,255,255,0.14) 50%,
-                rgba(255,255,255,0.06) 58%,
-                rgba(255,255,255,0.00) 70%,
-                transparent   100%
-            );
-            transform: skewX(-20deg);
-            animation: vaultSheenSlide 5s ease-in-out infinite;
+            top: -20%; left: 10%;
+            width: 60%; height: 55%;
+            background: radial-gradient(ellipse,
+                rgba(100, 180, 255, 0.22) 0%,
+                rgba(50,  130, 255, 0.10) 45%,
+                transparent 70%);
+            animation: waveFloat3 13s ease-in-out infinite;
+            border-radius: 50%;
         }
+
+        /* Rayo de luz diagonal 1 */
         .cal-modal-sweep {
             position: absolute; inset: 0; border-radius: 20px;
-            pointer-events: none; z-index: 1; overflow: hidden;
+            pointer-events: none; z-index: 2; overflow: hidden;
         }
         .cal-modal-sweep::before {
             content: '';
             position: absolute;
-            top: 0; left: -80%;
-            width: 60%; height: 100%;
-            background: linear-gradient(120deg,
+            top: -60%; left: 0;
+            width: 18%; height: 220%;
+            background: linear-gradient(90deg,
                 transparent 0%,
-                rgba(0,210,255,0.04) 30%,
-                rgba(255,255,255,0.06) 50%,
-                rgba(99,102,241,0.04) 70%,
+                rgba(180, 220, 255, 0.08) 30%,
+                rgba(255, 255, 255, 0.22) 50%,
+                rgba(180, 220, 255, 0.08) 70%,
                 transparent 100%);
-            transform: skewX(-18deg);
-            animation: vaultSweepLight 8s ease-in-out infinite;
+            animation: lightRay 5s cubic-bezier(0.4,0,0.6,1) infinite;
+        }
+        /* Rayo de luz diagonal 2 — desfasado */
+        .cal-modal-sweep::after {
+            content: '';
+            position: absolute;
+            top: -60%; left: 0;
+            width: 10%; height: 220%;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(100, 200, 255, 0.05) 30%,
+                rgba(200, 240, 255, 0.14) 50%,
+                rgba(100, 200, 255, 0.05) 70%,
+                transparent 100%);
+            animation: lightRay2 5s cubic-bezier(0.4,0,0.6,1) 2.5s infinite;
         }
         /* Asegurar que el contenido de ambos modales quede sobre los efectos */
         #calMonthModal .cal-month-header,
@@ -3087,19 +3171,25 @@
             z-index:8301;width:min(98vw,920px);max-height:92vh;border-radius:20px;
             overflow:hidden;display:flex;flex-direction:column;
             opacity:0;visibility:hidden;transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
-            background: #06050f;
-            border:none;
-            box-shadow:0 40px 120px rgba(0,0,0,0.95),0 0 0 1.5px rgba(255,255,255,0.07),inset 0 1px 0 rgba(255,255,255,0.06);
+            background: transparent;
+            border: 1.5px solid rgba(0, 210, 255, 0.25);
+            box-shadow: 0 40px 120px rgba(0,0,0,0.95),
+                        0 0 0 1px rgba(0,210,255,0.15),
+                        0 0 40px rgba(0,80,200,0.15),
+                        inset 0 1px 0 rgba(0,210,255,0.08);
         }
         #calMonthModal.show-cal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
         .cal-month-header{
             display:flex;align-items:center;justify-content:space-between;
-            padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;
-            background:rgba(0,10,25,0.7);
+            padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.15);flex-shrink:0;
+            background: rgba(0, 20, 80, 0.55);
+            backdrop-filter: blur(12px);
+            position: relative; z-index: 3;
         }
         .cal-month-title{font-size:1.1rem;font-weight:900;color:#fff;}
-        /* Ring mode grid */
-        .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:8px;flex:1;overflow-y:auto;}
+        /* Ring mode grid — mismo fondo que las celdas de cuadrícula */
+        .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:8px;flex:1;overflow-y:auto;
+            background:rgba(0,20,70,0.45);backdrop-filter:blur(4px);}
         .cal-month-dow{text-align:center;font-size:0.7rem;font-weight:900;color:#64748b;text-transform:uppercase;padding:4px;}
         .cal-month-day{
             aspect-ratio:1;display:flex;flex-direction:column;align-items:center;
@@ -3114,14 +3204,15 @@
         .cal-day-mini-ring{width:28px;height:28px;}
 
         /* Full grid mode (Google Calendar style) */
-        .cal-month-grid-full{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;padding:0;flex:1;overflow-y:auto;background:rgba(0,210,255,0.05);}
+        .cal-month-grid-full{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;padding:0;flex:1;overflow-y:auto;background:rgba(0,10,50,0.25);}
         .cal-month-dow-full{text-align:center;font-size:0.7rem;font-weight:900;color:#64748b;text-transform:uppercase;padding:6px 4px;background:rgba(0,5,15,0.95);border-bottom:1px solid rgba(0,210,255,0.08);}
         .cal-month-cell{
-            min-height:90px;background:rgba(2,8,20,0.85);border:1px solid rgba(0,210,255,0.06);
+            min-height:90px;background:rgba(0,20,70,0.45);border:1px solid rgba(80,150,255,0.15);
             padding:4px;cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden;
             display:flex;flex-direction:column;gap:2px;
+            backdrop-filter: blur(4px);
         }
-        .cal-month-cell:hover{background:rgba(0,30,60,0.9);border-color:rgba(0,210,255,0.2);}
+        .cal-month-cell:hover{background:rgba(0,50,140,0.65);border-color:rgba(100,180,255,0.5);box-shadow:inset 0 0 12px rgba(0,100,255,0.2);}
         .cal-month-cell.today-cell{background:rgba(0,20,45,0.95);border-color:rgba(0,210,255,0.3);}
         .cal-month-cell.selected-cell{background:rgba(0,30,60,0.95);border-color:rgba(0,210,255,0.5);box-shadow:inset 0 0 10px rgba(0,210,255,0.1);}
         .cal-month-cell.other-month-cell{background:rgba(0,3,8,0.7);opacity:0.5;}
@@ -3157,23 +3248,29 @@
             z-index:8301;width:min(96vw,640px);max-height:88vh;border-radius:20px;
             overflow:hidden;display:flex;flex-direction:column;
             opacity:0;visibility:hidden;transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
-            background: #06050f;
-            border:none;
-            box-shadow:0 40px 120px rgba(0,0,0,0.95),0 0 0 1.5px rgba(255,255,255,0.07),inset 0 1px 0 rgba(255,255,255,0.06);
+            background: transparent;
+            border: 1.5px solid rgba(0, 210, 255, 0.25);
+            box-shadow: 0 40px 120px rgba(0,0,0,0.95),
+                        0 0 0 1px rgba(0,210,255,0.15),
+                        0 0 40px rgba(0,80,200,0.15),
+                        inset 0 1px 0 rgba(0,210,255,0.08);
         }
         #calDayModal.show-cal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
         .cal-day-header{
             display:flex;align-items:center;justify-content:space-between;
-            padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;
+            padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.15);flex-shrink:0;
+            background: rgba(0, 20, 80, 0.55);
+            backdrop-filter: blur(12px);
+            position: relative; z-index: 3;
         }
         .cal-day-title{font-size:1rem;font-weight:900;color:#fff;}
-        .cal-day-body{flex:1;overflow-y:auto;padding:0.5rem;position:relative;}
+        .cal-day-body{flex:1;overflow-y:auto;padding:0.5rem;position:relative;background:rgba(0,20,70,0.45);backdrop-filter:blur(4px);}
         .cal-day-body::-webkit-scrollbar{width:5px;}
         .cal-day-body::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#00d2ff,#0072ff);border-radius:4px;}
         .cal-day-allday{padding:8px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;flex-wrap:wrap;gap:4px;}
         .cal-timeline{position:relative;min-height:960px;} /* 24h * 40px */
         .cal-hour-line{
-            display:flex;align-items:flex-start;height:40px;border-top:1px solid rgba(255,255,255,0.05);
+            display:flex;align-items:flex-start;height:40px;border-top:1px solid rgba(150,200,255,0.12);
         }
         .cal-hour-label{font-size:0.65rem;color:#475569;font-weight:700;width:40px;flex-shrink:0;padding-top:3px;text-align:right;padding-right:8px;}
         .cal-hour-area{flex:1;position:relative;}
@@ -3236,9 +3333,10 @@
             background: linear-gradient(-45deg, #000d1a, #001833, #0a0020, #001224);
             background-size: 400% 400%;
             animation: auroraShift 8s ease-in-out infinite;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 1; transition: opacity 0.6s ease;
+            display: none; align-items: center; justify-content: center;
+            opacity: 1; transition: opacity 0.4s ease;
         }
+        #firebaseAuthOverlay.visible { display: flex; }
         #firebaseAuthOverlay.hide { opacity: 0; pointer-events: none; }
 
         .auth-box {
@@ -5346,7 +5444,7 @@
 
             // ── AGREGAR AUTOMÁTICAMENTE AL CALENDARIO DEL RELOJ SVG ──
             if (typeof calEvents !== 'undefined' && typeof saveCalEvents === 'function') {
-                const dateStr  = projViewDate.toISOString().split('T')[0];
+                const dateStr  = `${projViewDate.getFullYear()}-${String(projViewDate.getMonth()+1).padStart(2,'0')}-${String(projViewDate.getDate()).padStart(2,'0')}`;
                 const stMins   = to24(projStartH, projStartM, projStartAmPm);
                 const etMins   = to24(projEndH,   projEndM,   projEndAmPm);
                 const stTime   = minsToTime(stMins);
@@ -5546,7 +5644,8 @@
             let tableHtml = '';
             customCourses.forEach(c => {
                 const sel = keepTable === c ? 'selected' : '';
-                tableHtml += `<div class="custom-option ${sel}" onclick="selectCourseTable('${c}', '${c}')"><span>${c}${tableCheckHtml(c)}</span></div>`;
+                const archiveIconTable = `<span class="archive-method-btn" title="Archivar" onclick="event.stopPropagation();archiveDropdownItem('${c}', 'selectCourseTable')">📥</span>`;
+                tableHtml += `<div class="custom-option ${sel}" onclick="selectCourseTable('${c}', '${c}')"><span>${c}${tableCheckHtml(c)}</span>${archiveIconTable}</div>`;
             });
             tableHtml += `<div class="custom-option" style="color:var(--accent-cyan); font-weight:bold; border-top: 1px dashed rgba(0, 210, 255, 0.3);" onclick="selectCourseTable('nuevo', '+ AGREGAR CURSO NUEVO...')"><span>+ AGREGAR CURSO NUEVO...</span></div>`;
             if (tableItemsEl) tableItemsEl.innerHTML = tableHtml;
@@ -6961,7 +7060,7 @@
 
             // ── AGREGAR AUTOMÁTICAMENTE AL CALENDARIO DEL RELOJ SVG ──
             if (typeof calEvents !== 'undefined' && typeof saveCalEvents === 'function') {
-                const dateStr  = taskViewDate.toISOString().split('T')[0];
+                const dateStr  = `${taskViewDate.getFullYear()}-${String(taskViewDate.getMonth()+1).padStart(2,'0')}-${String(taskViewDate.getDate()).padStart(2,'0')}`;
                 const stMins   = to24(taskStartH, taskStartM, taskStartAmPm);
                 const etMins   = to24(taskEndH,   taskEndM,   taskEndAmPm);
                 const stTime   = minsToTime(stMins);
@@ -9061,8 +9160,9 @@
             if (sd === dateStr) return true;
             // Repetición
             if (!ev.repeat || ev.repeat === 'none') return false;
-            const start = new Date(ev.startDate);
-            const check = new Date(dateStr);
+            // Usar T12:00:00 para evitar desfase UTC en zonas horarias negativas
+            const start = new Date(sd + 'T12:00:00');
+            const check = new Date(dateStr + 'T12:00:00');
             if (check < start) return false;
             const diffDays = Math.round((check - start) / 86400000);
             if (ev.repeat === 'daily') return true;
@@ -10658,6 +10758,18 @@
 
     /* ── Reset al abrir cada modal ──────────────────────────────── */
     document.addEventListener('DOMContentLoaded', function() {
+
+        // Helper: aproxima hora al siguiente :00 o :30
+        function getApproxTime() {
+            const now = new Date();
+            let h = now.getHours();
+            let m = now.getMinutes();
+            if (m < 30) { m = 30; }
+            else { m = 0; h = (h + 1) % 24; }
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12  = h % 12 || 12;
+            return { h: h12, m, ampm, h24: h };
+        }
         /* Patch openNewProjectModal */
         const _origOpenProj = window.openNewProjectModal;
         window.openNewProjectModal = function() {
@@ -10666,8 +10778,15 @@
             projAllday = false; projRepeatVal = 'none'; projSelectedColor = '#10b981';
             projCurrentLabelColor = '#10b981'; projCurrentLabels = [];
             projViewDate = new Date();
-            projStartH=10; projStartM=0; projStartAmPm='AM';
-            projEndH=11;   projEndM=0;   projEndAmPm='AM';
+            // Aproximar hora de inicio al siguiente :00 o :30
+            (function(){
+                const s = getApproxTime();
+                projStartH = s.h; projStartM = s.m; projStartAmPm = s.ampm;
+                // Fin = 1 hora después
+                const endH24 = (s.h24 + 1) % 24;
+                projEndAmPm = endH24 >= 12 ? 'PM' : 'AM';
+                projEndH = endH24 % 12 || 12; projEndM = s.m;
+            })();
             // Reset UI
             const tog = document.getElementById('projAlldayToggle');
             if (tog) { tog.classList.remove('on'); }
@@ -10700,8 +10819,15 @@
             taskAllday = false; taskRepeatVal = 'none'; taskSelectedColor = '#f97316';
             taskCurrentLabelColor = '#f97316'; taskCurrentLabels = [];
             taskViewDate = new Date();
-            taskStartH=12; taskStartM=0; taskStartAmPm='AM';
-            taskEndH=1;    taskEndM=0;   taskEndAmPm='AM';
+            // Aproximar hora de inicio al siguiente :00 o :30
+            (function(){
+                const s = getApproxTime();
+                taskStartH = s.h; taskStartM = s.m; taskStartAmPm = s.ampm;
+                // Fin = 1 hora después
+                const endH24 = (s.h24 + 1) % 24;
+                taskEndAmPm = endH24 >= 12 ? 'PM' : 'AM';
+                taskEndH = endH24 % 12 || 12; taskEndM = s.m;
+            })();
             const tog = document.getElementById('taskAlldayToggle');
             if (tog) { tog.classList.remove('on'); tog.style.background=''; tog.style.boxShadow=''; }
             const sr = document.getElementById('taskStartRow'), er = document.getElementById('taskEndRow');
@@ -10734,18 +10860,27 @@
        FIREBASE AUTH + SYNC — SISTEMA COMPLETO
        ═══════════════════════════════════════════════════════════ */
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAKsILLuBeu6AXGzMICQtfIULL6-tMs5IE",
-        authDomain: "mi-planificador-86095.firebaseapp.com",
-        projectId: "mi-planificador-86095",
-        storageBucket: "mi-planificador-86095.firebasestorage.app",
-        messagingSenderId: "469097705640",
-        appId: "1:469097705640:web:7df14de48ff7d625dc529d"
-    };
+    function initFirebase() {
+        if (typeof firebase === 'undefined') {
+            // SDK aún no cargó, reintenta en 100ms
+            setTimeout(initFirebase, 100);
+            return;
+        }
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db   = firebase.firestore();
+        const firebaseConfig = {
+            apiKey: "AIzaSyAKsILLuBeu6AXGzMICQtfIULL6-tMs5IE",
+            authDomain: "mi-planificador-86095.firebaseapp.com",
+            projectId: "mi-planificador-86095",
+            storageBucket: "mi-planificador-86095.firebasestorage.app",
+            messagingSenderId: "469097705640",
+            appId: "1:469097705640:web:7df14de48ff7d625dc529d"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db   = firebase.firestore();
 
     let currentUser = null;
     let authTab = 'login';
@@ -10815,33 +10950,41 @@
     }
 
     /* ── Observador de estado auth ─────────────────────────── */
+    let authStateResolved = false;
+
     auth.onAuthStateChanged(async function(user) {
+        const overlay = document.getElementById('firebaseAuthOverlay');
+
         if (user) {
             currentUser = user;
-            // Ocultar overlay
-            const overlay = document.getElementById('firebaseAuthOverlay');
-            overlay.classList.add('hide');
-            setTimeout(() => { overlay.style.display = 'none'; }, 700);
+            // Asegurar que el overlay está completamente oculto
+            if (overlay) {
+                overlay.classList.remove('visible');
+                overlay.classList.add('hide');
+                overlay.style.display = 'none';
+            }
 
             // Actualizar UI perfil
             const initial = (user.displayName || user.email || 'U')[0].toUpperCase();
             document.getElementById('profileInitial').textContent = initial;
-            document.getElementById('profileEmailDisplay').textContent = user.displayName ? `${user.displayName}\n${user.email}` : user.email;
+            document.getElementById('profileEmailDisplay').textContent = user.displayName ? `${user.displayName} — ${user.email}` : user.email;
             document.getElementById('profileBtn').style.display = 'flex';
 
-            // Cargar datos desde la nube
-            await loadFromCloud();
-
-            // Auto-sync cada 3 minutos
-            setInterval(() => syncToCloud(false), 3 * 60 * 1000);
-
-            // Sync al cerrar pestaña
-            window.addEventListener('beforeunload', () => syncToCloud(false));
+            if (!authStateResolved) {
+                authStateResolved = true;
+                await loadFromCloud();
+                setInterval(() => syncToCloud(false), 3 * 60 * 1000);
+                window.addEventListener('beforeunload', () => syncToCloud(false));
+            }
 
         } else {
             currentUser = null;
-            document.getElementById('firebaseAuthOverlay').style.display = 'flex';
-            document.getElementById('firebaseAuthOverlay').classList.remove('hide');
+            authStateResolved = false;
+            if (overlay) {
+                overlay.style.display = 'flex';
+                overlay.classList.add('visible');
+                overlay.classList.remove('hide');
+            }
             document.getElementById('profileBtn').style.display = 'none';
         }
     });
@@ -10977,6 +11120,15 @@
             'auth/invalid-credential':  '❌ Correo o contraseña incorrectos.',
         };
         return errors[code] || '❌ Error: ' + code;
+    }
+
+    } // fin initFirebase
+
+    // Llamar initFirebase cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFirebase);
+    } else {
+        initFirebase();
     }
 
     </script>
