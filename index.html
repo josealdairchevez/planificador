@@ -52,8 +52,9 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+        html { overflow-x: hidden; max-width: 100%; }
 
-        body { background-color: var(--bg-dark); background-image: radial-gradient(circle at 50% 0%, #002244 0%, var(--bg-dark) 80%); color: var(--text-main); min-height: 100vh; padding: 2rem; position: relative; overflow-x: hidden; }
+        body { background-color: var(--bg-dark); background-image: radial-gradient(circle at 50% 0%, #002244 0%, var(--bg-dark) 80%); color: var(--text-main); min-height: 100vh; padding: 2rem; position: relative; overflow-x: hidden; max-width: 100vw; }
 
         /* --- FONDO ESTELAR ULTRA-LLAMATIVO --- */
         .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
@@ -1339,89 +1340,125 @@
         }
 
         @media (max-width: 480px) {
-            body { padding: 0.5rem; }
+            body { padding: 0.5rem; overflow-x: hidden; }
 
             /* Header compacto */
-            header h1 { font-size: 1.2rem; padding: 0.6rem 0.9rem; transform: none; letter-spacing: 0; }
-            header p { font-size: 0.7rem; letter-spacing: 0.5px; }
+            header h1 { font-size: 1.1rem; padding: 0.5rem 0.8rem; transform: none; letter-spacing: 0; }
+            header p { font-size: 0.65rem; letter-spacing: 0.5px; }
             header { margin-bottom: 0.8rem; }
 
             /* Cards más compactas */
-            .card { padding: 1rem 0.9rem; border-radius: 14px; }
-            .card h2 { font-size: 0.95rem; gap: 6px; margin-bottom: 1rem; }
-            .container-wrapper { gap: 0.8rem; }
+            .card { padding: 0.9rem 0.8rem; border-radius: 14px; overflow: hidden; }
+            .card h2 { font-size: 0.9rem; gap: 6px; margin-bottom: 0.8rem; }
+            .container-wrapper { gap: 0.7rem; }
+
+            /* Card header: apilar ring+contadores en columna */
+            .card-header-flex { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+            .header-stats-flex { width: 100%; justify-content: space-between; flex-wrap: nowrap; gap: 0.4rem; }
+            .progress-container { width: 52px !important; height: 52px !important; }
+            .table-ring-wrapper.large-ring { width: 52px; height: 52px; }
+            .coin-counter-container, .xp-counter-container {
+                min-width: 0 !important; padding: 0.3rem 0.6rem !important;
+                font-size: 0.75rem; flex: 1; height: 38px;
+            }
 
             /* Level */
-            .level-section { padding: 1rem; gap: 0.8rem; }
-            .gem-wrapper { width: 90px; }
-            .gem-icon-svg-container { width: 65px; height: 65px; }
-            .level-bar-bg { height: 24px; }
-            .level-percentage-text { font-size: 0.85rem; }
-            .level-subtext { font-size: 0.85rem; }
+            .level-section { padding: 0.8rem; gap: 0.7rem; }
+            .gem-wrapper { width: 80px; }
+            .gem-icon-svg-container { width: 60px; height: 60px; }
+            .level-bar-bg { height: 22px; }
+            .level-percentage-text { font-size: 0.82rem; }
+            .level-subtext { font-size: 0.8rem; }
 
             /* Vault cards: 2 por fila */
-            .vault-card { min-width: calc(50% - 0.3rem); padding: 0.6rem 0.8rem; }
-            .vault-icon { font-size: 1.3rem; }
-            .vault-value { font-size: 1rem; }
-            .vault-label { font-size: 0.6rem; }
+            .vault-card { min-width: calc(50% - 0.3rem); padding: 0.6rem 0.7rem; }
+            .vault-icon { font-size: 1.2rem; }
+            .vault-value { font-size: 0.95rem; }
+            .vault-label { font-size: 0.58rem; }
+
+            /* Selectores — ancho completo */
+            .custom-select-wrapper { width: 100% !important; min-width: 0 !important; }
+            .custom-select { font-size: 0.82rem; padding: 0.6rem 0.9rem; }
+
+            /* Barra progreso sesión */
+            .master-progress-wrapper { padding: 0.8rem 1rem; }
+            .master-progress-title { font-size: 0.72rem; }
 
             /* Timer */
-            .timer-display { font-size: 2.8rem; }
-            .timer-controls button { padding: 0.6rem 0.8rem; font-size: 0.75rem; }
-            .mode-btn { padding: 0.4rem 0.6rem; font-size: 0.68rem; }
+            .timer-display { font-size: 2.6rem; }
+            .timer-controls { gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
+            .timer-controls button { padding: 0.55rem 0.7rem !important; font-size: 0.72rem !important; flex: 1; min-width: 0; }
+            .timer-modes { gap: 0.3rem; flex-wrap: wrap; }
+            .mode-btn { padding: 0.38rem 0.55rem !important; font-size: 0.65rem !important; }
 
             /* Kanban */
-            .kanban-col-title { font-size: 0.75rem; padding: 0.4rem 0.8rem; }
-            .kanban-cards-wrapper { max-height: 250px; }
+            .kanban-col-title { font-size: 0.72rem; padding: 0.35rem 0.7rem; }
+            .kanban-cards-wrapper { max-height: 220px; }
 
             /* Botones creación */
             .creation-buttons-grid { grid-template-columns: 1fr; gap: 0.5rem; }
-            .btn-create-base { padding: 0.8rem; font-size: 0.8rem; }
+            .btn-create-base { padding: 0.75rem; font-size: 0.78rem; }
 
             /* Chart scroll */
-            .chart-bars-container { min-width: 320px; }
+            .chart-bars-container { min-width: 280px; }
 
             /* Reloj */
-            #calSvgClock { width: 240px !important; height: 240px !important; }
-            .cal-clock-col { padding: 0.5rem; }
+            #calSvgClock { width: 220px !important; height: 220px !important; }
+            .cal-clock-col { padding: 0.4rem; }
 
             /* Modales full width */
-            .custom-time-modal { width: 98vw !important; padding: 1.2rem !important; border-radius: 14px !important; }
-            #newProjectModal, #newTaskModal, #newMethodModal { width: 98vw !important; border-radius: 14px !important; }
-            #calEventModal { width: 98vw !important; border-radius: 14px !important; }
+            .custom-time-modal { width: 99vw !important; padding: 1rem !important; border-radius: 12px !important; }
+            #newProjectModal, #newTaskModal, #newMethodModal { width: 99vw !important; border-radius: 12px !important; }
+            #calEventModal { width: 99vw !important; border-radius: 12px !important; }
 
             /* Perfil */
-            #profileBtn { width: 34px; height: 34px; top: 0.5rem; left: 0.5rem; }
-            #profilePanel { left: 0.5rem; top: 3.2rem; width: 210px; padding: 1rem; }
+            #profileBtn { width: 34px; height: 34px; top: 0.5rem; left: 0.5rem; font-size: 1rem; }
+            #profilePanel { left: 0.5rem; top: 3.2rem; width: 200px; padding: 0.9rem; }
 
             /* Check items en rutinas */
-            .check-item { padding: 0.5rem 0.3rem; }
-            .time-badge, .coin-badge, .xp-badge { font-size: 0.65rem; padding: 1px 5px; }
+            .check-item { padding: 0.5rem 0.2rem; }
+            .time-badge, .coin-badge, .xp-badge { font-size: 0.62rem; padding: 1px 4px; }
 
             /* Auth */
-            .auth-box { padding: 1.4rem 1.1rem; border-radius: 18px; }
-            .auth-logo h2 { font-size: 1.3rem; }
-            .auth-tab { font-size: 0.75rem; padding: 0.5rem; }
+            .auth-box { padding: 1.3rem 1rem; border-radius: 16px; }
+            .auth-logo h2 { font-size: 1.2rem; }
+            .auth-tab { font-size: 0.72rem; padding: 0.5rem; }
             .auth-input { padding: 10px 12px; font-size: 0.88rem; }
-            .auth-btn { padding: 0.85rem; font-size: 0.88rem; }
+            .auth-btn { padding: 0.8rem; font-size: 0.85rem; }
 
             /* Store items */
-            .store-item { padding: 0.8rem; }
-            .store-item-icon { font-size: 1.8rem; }
+            .store-item { padding: 0.75rem; }
+            .store-item-icon { font-size: 1.7rem; }
         }
 
         /* Touch: botones más grandes para dedos */
         @media (hover: none) and (pointer: coarse) {
-            button, .cal-reminder-chip, .task-reminder-chip, .cal-reminder-chip,
+            button, .cal-reminder-chip, .task-reminder-chip,
             .cal-color-dot, .cal-nav-btn, .cal-close-btn, .mode-btn {
-                min-height: 40px;
+                min-height: 38px;
             }
-            .cal-color-dot { width: 26px !important; height: 26px !important; }
+            .cal-color-dot { width: 24px !important; height: 24px !important; }
             input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
-                font-size: 16px !important; /* evita zoom automático en iOS */
+                font-size: 16px !important;
             }
-            .check-item { padding: 0.8rem 0.4rem; }
-            .kanban-card { padding: 1rem; }
+            .check-item { padding: 0.75rem 0.3rem; }
+            .kanban-card { padding: 0.9rem; }
+        }
+
+        /* Anti-lag en móvil: reducir animaciones pesadas */
+        @media (max-width: 768px) {
+            /* Desactivar animaciones del fondo que consumen GPU */
+            .stars, .stars::after { animation: none !important; opacity: 0.5; }
+            /* Reducir animaciones de bordes de tarjetas */
+            .card::before { animation: none !important; }
+            /* Simplificar animaciones del fondo de modales en móvil */
+            .cal-modal-landing-bg { animation-duration: 15s !important; }
+            .cal-modal-landing-bg::before,
+            .cal-modal-landing-bg::after { animation: none !important; }
+            .cal-modal-sweep::before,
+            .cal-modal-sweep::after { animation: none !important; }
+            /* Reducir backdrop-filter que es muy pesado en móvil */
+            .card { backdrop-filter: blur(8px) !important; }
         }
 
         /* --- OVERLAY DE CELEBRACIÓN ÉPICA (RUTINAS) --- */
@@ -8445,7 +8482,7 @@
         const isRepeatEv = ev.repeat && ev.repeat !== 'none';
         const todayForToggle = new Date().toLocaleDateString('en-CA');
         // Vista activa del calendario (puede ser otro día)
-        const viewDateStr = typeof calViewDate !== 'undefined' ? calViewDate.toISOString().split('T')[0] : todayForToggle;
+        const viewDateStr = typeof calViewDate !== 'undefined' ? localDateStr(calViewDate) : todayForToggle;
 
         if (isRepeatEv) {
             // Evento repetitivo: guardar estado por fecha, NO mutar el objeto raíz
@@ -8598,7 +8635,7 @@
         updateCalBadge();
     }
     function updateCalBadge() {
-        const today = new Date().toISOString().split('T')[0];
+        const today = localDateStr(new Date());
         const todayCount = calEvents.filter(e => {
             if (!e.startDate) return false;
             const sd = e.startDate.split('T')[0];
@@ -8735,7 +8772,7 @@
         const isToday = calViewDate.toDateString() === now.toDateString();
 
         // Eventos del día
-        const dateStr = calViewDate.toISOString().split('T')[0];
+        const dateStr = localDateStr(calViewDate);
         const dayEvents = getEventsForDate(dateStr).filter(e => !e.allDay);
         const alldayEvs = getEventsForDate(dateStr).filter(e => e.allDay);
 
@@ -9036,7 +9073,7 @@
     function renderCalEvents() {
         const list = document.getElementById('calEventsList');
         if (!list) return;
-        const dateStr = calViewDate.toISOString().split('T')[0];
+        const dateStr = localDateStr(calViewDate);
         const evs = getEventsForDate(dateStr);
 
         if (evs.length === 0) {
@@ -9153,6 +9190,10 @@
         }).join('');
     }
 
+    // Helper: obtiene dateStr en hora LOCAL evitando desfase UTC
+    function localDateStr(d) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
     function getEventsForDate(dateStr) {
         return calEvents.filter(ev => {
             if (!ev.startDate) return false;
@@ -9316,7 +9357,7 @@
         const labels = window._calCurrentLabels ? [...window._calCurrentLabels] : [];
 
         // Construir objeto
-        const dateStr = calViewDate.toISOString().split('T')[0];
+        const dateStr = localDateStr(calViewDate);
         const stMins  = to24(calStartH, calStartM, calStartAmPm);
         const etMins  = to24(calEndH,   calEndM,   calEndAmPm);
         const stTime  = minsToTime(stMins);
@@ -9567,7 +9608,7 @@
         calRepeatMode = mode;
         const cfg = document.getElementById('calRepeatConfig');
         if (!cfg) return;
-        const endDate = calViewDate.toISOString().split('T')[0];
+        const endDate = localDateStr(calViewDate);
         let html = '';
         if (mode === 'daily') {
             html = `<div class="cal-repeat-cfg-row">Cada <input class="cal-repeat-num-input" id="calRepeatN" type="number" min="1" value="1"> día(s)</div>`;
@@ -9639,7 +9680,7 @@
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        if (dateInput) dateInput.value = calViewDate.toISOString().split('T')[0];
+        if (dateInput) dateInput.value = localDateStr(calViewDate);
         renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -9852,7 +9893,7 @@
             // Days of current month
             for (let d = 1; d <= daysInMonth; d++) {
                 const date = new Date(y, m, d);
-                const ds = date.toISOString().split('T')[0];
+                const ds = localDateStr(date);
                 const isToday = date.toDateString() === today.toDateString();
                 const isSel   = date.toDateString() === calViewDate.toDateString();
                 const evs = getEventsForDate(ds);
@@ -9895,7 +9936,7 @@
 
             for (let d = 1; d <= daysInMonth; d++) {
                 const date = new Date(y, m, d);
-                const ds = date.toISOString().split('T')[0];
+                const ds = localDateStr(date);
                 const isToday = date.toDateString() === today.toDateString();
                 const isSel   = date.toDateString() === calViewDate.toDateString();
                 const evs = getEventsForDate(ds);
@@ -9967,7 +10008,7 @@
         const title = document.getElementById('calDayTitle');
         if (!body || !title) return;
 
-        const ds = calDayViewDate.toISOString().split('T')[0];
+        const ds = localDateStr(calDayViewDate);
         title.textContent = calDayViewDate.toLocaleDateString('es-PE', {weekday:'long', day:'numeric', month:'long'});
         title.textContent = title.textContent.replace(/^\w/, c => c.toUpperCase());
 
