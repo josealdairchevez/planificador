@@ -1453,6 +1453,34 @@
             /* Store items */
             .store-item { padding: 0.75rem; }
             .store-item-icon { font-size: 1.7rem; }
+
+            /* Tabla Matriz y Registro en pantallas muy pequeñas */
+            #leitnerTable, #sessionTrackingTable {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+                font-size: 0.75rem;
+            }
+            th { padding: 0 0.5rem 0.6rem !important; font-size: 0.68rem !important; }
+            td { padding: 0.65rem 0.5rem !important; font-size: 0.75rem !important; }
+            .add-row-form {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+                align-items: stretch !important;
+            }
+            .add-row-form .custom-select-wrapper,
+            .add-row-form input[type="text"],
+            .add-row-form button.success-btn {
+                width: 100% !important;
+                flex: none !important;
+            }
+            .custom-option {
+                padding: 0.7rem 0.9rem !important;
+                font-size: 0.85rem !important;
+                white-space: normal !important;
+                word-break: break-word !important;
+            }
         }
 
         /* Touch: botones más grandes para dedos */
@@ -1508,6 +1536,48 @@
             .dashboard .card > div[style*="display: flex"] > div[style*="min-width"] {
                 min-width: 0 !important;
                 width: 100% !important;
+            }
+
+            /* ── MEJORA 2: Tabla Matriz — scroll horizontal + columnas compactas ── */
+            #leitnerTable, #sessionTrackingTable {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+            }
+            th { padding: 0 0.6rem 0.8rem 0.6rem !important; font-size: 0.72rem !important; letter-spacing: 1px !important; }
+            td { padding: 0.8rem 0.6rem !important; font-size: 0.8rem !important; }
+
+            /* ── MEJORA 2: add-row-form en columna ── */
+            .add-row-form {
+                flex-direction: column !important;
+                gap: 0.6rem !important;
+                align-items: stretch !important;
+            }
+            .add-row-form .custom-select-wrapper,
+            .add-row-form input[type="text"],
+            .add-row-form button.success-btn {
+                width: 100% !important;
+                flex: none !important;
+                margin-bottom: 0 !important;
+            }
+            .add-row-form button.success-btn {
+                padding: 0.9rem 1rem !important;
+                border-radius: 30px !important;
+            }
+
+            /* ── MEJORA 3: Dropdown Matriz más ancho y opciones legibles ── */
+            #ddCourseSelectTable,
+            #optionsCourseSelectTable {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+            .custom-option {
+                padding: 0.75rem 1rem !important;
+                font-size: 0.88rem !important;
+                white-space: normal !important;
+                word-break: break-word !important;
+                line-height: 1.4 !important;
             }
         }
 
@@ -3520,7 +3590,7 @@
 
         /* Ícono de perfil en esquina superior izquierda */
         #profileBtn {
-            position: fixed; top: 1.2rem; left: 1.2rem; z-index: 9000;
+            position: fixed; top: 1.2rem; left: 1.2rem; z-index: 900;
             width: 46px; height: 46px; border-radius: 50%;
             background: linear-gradient(135deg, rgba(0,210,255,0.2), rgba(177,0,255,0.2));
             border: 2px solid rgba(0,210,255,0.5);
@@ -3543,7 +3613,7 @@
 
         /* Panel de perfil desplegable */
         #profilePanel {
-            position: fixed; top: 4.5rem; left: 1.2rem; z-index: 8999;
+            position: fixed; top: 4.5rem; left: 1.2rem; z-index: 899;
             background: rgba(2,12,28,0.97); border: 1.5px solid rgba(0,210,255,0.3);
             border-radius: 16px; padding: 1.2rem 1.4rem; width: 260px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.9), 0 0 20px rgba(0,210,255,0.1);
