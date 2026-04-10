@@ -1652,6 +1652,171 @@
             100% { transform: translateX(300%) skewX(-25deg); opacity: 0; }
         }
 
+        /* ═══════════════════════════════════════════════════════════════════
+           ANTI-LAG MÓVIL AVANZADO — FIX PARPADEO, INPUT LAG Y SCROLL LAG
+           Soluciona: Bóveda Archivados, Modales Rutinas/Proyecto/Tarea,
+                      Línea de Tiempo, Ventana Editar Evento
+           ═══════════════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+
+            /* ── 1. BÓVEDA DE ARCHIVADOS ──────────────────────────────── */
+            /* Reducir blur del backdrop para aliviar la GPU */
+            #archiveVaultBackdrop {
+                backdrop-filter: blur(5px) !important;
+                -webkit-backdrop-filter: blur(5px) !important;
+            }
+            /* Detener animaciones del fondo del modal */
+            .vault-landing-bg { animation: none !important; }
+            #archiveVaultModal .vault-sweep-layer::before { animation: none !important; }
+            .vault-sheen::before { animation: none !important; }
+            /* Scroll fluido con aceleración nativa de iOS/Android */
+            .vault-scroll-area {
+                -webkit-overflow-scrolling: touch !important;
+                will-change: transform !important;
+                transform: translateZ(0) !important;
+            }
+            /* Reducir blur en las tarjetas archivadas (múltiples blur = muy pesado) */
+            .arch-card {
+                backdrop-filter: blur(4px) !important;
+                -webkit-backdrop-filter: blur(4px) !important;
+            }
+            /* Buscador de bóveda: respuesta inmediata sin transition lenta */
+            .vault-search-input {
+                transition: border-color 0.1s ease, box-shadow 0.1s ease !important;
+                -webkit-transition: border-color 0.1s ease, box-shadow 0.1s ease !important;
+            }
+            .vault-search-input:focus {
+                transform: none !important; /* Evitar creación de stacking context al enfocar */
+            }
+            /* Detener animación de brillo en títulos de secciones bóveda (reduce repaint) */
+            .vault-section-methods .vault-section-label,
+            .vault-section-projects .vault-section-label { animation: none !important; }
+            /* Detener top-shine de cada arch-card */
+            .arch-card::before { animation: none !important; }
+            /* Detener animación del ícono vacío */
+            .vault-empty-icon { animation: none !important; }
+
+            /* ── 2. MODALES: CREAR NUEVO MÉTODO, NUEVO PROYECTO, CREAR TAREA ── */
+            /* Detener la animación de gradiente diagonal del fondo (causa principal del lag) */
+            .modal-obsidian {
+                animation: none !important;
+                background-image: linear-gradient(135deg,
+                    rgba(0, 210, 255, 0.12) 0%,
+                    rgba(0, 20, 35, 0.04) 50%,
+                    rgba(16, 185, 129, 0.10) 100%) !important;
+                backdrop-filter: blur(6px) !important;
+                -webkit-backdrop-filter: blur(6px) !important;
+            }
+            /* Detener la animación del borde giratorio de estos modales */
+            #newProjectModal::before,
+            #newTaskModal::before,
+            #newMethodModal::before {
+                animation: none !important;
+                background: linear-gradient(45deg,
+                    transparent, rgba(0,210,255,0.3),
+                    transparent, rgba(0,114,255,0.3), transparent) !important;
+            }
+            /* Quitar transform en focus de inputs para evitar repaint extra */
+            .input-futurista:focus,
+            #projectNameInput:focus,
+            #txtNewMethodName:focus {
+                transform: none !important;
+            }
+            #taskNameInput:focus { transform: none !important; }
+            .input-jade:focus { transform: none !important; }
+            /* Inputs con respuesta de texto inmediata: solo animar propiedades baratas */
+            .input-futurista, .input-jade {
+                transition: border-color 0.1s ease, box-shadow 0.1s ease !important;
+                -webkit-transition: border-color 0.1s ease, box-shadow 0.1s ease !important;
+            }
+            /* Scroll fluido en los cuerpos de estos modales */
+            #projModalBody, #taskModalBody {
+                -webkit-overflow-scrolling: touch !important;
+                will-change: transform !important;
+            }
+
+            /* ── 3. LÍNEA DE TIEMPO (calDayModal) ────────────────────── */
+            /* PARPADEO: El fondo transparente + capa animada detrás causa el parpadeo.
+               Solución: fondo opaco sólido que bloquea la composición de capas traseras */
+            #calDayModal {
+                background: rgba(0, 10, 35, 0.97) !important;
+            }
+            /* Quitar blur del body para evitar re-composición en cada frame de scroll */
+            .cal-day-body {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: rgba(0, 12, 40, 0.96) !important;
+                /* Scroll con aceleración nativa */
+                -webkit-overflow-scrolling: touch !important;
+                will-change: transform !important;
+                transform: translateZ(0) !important;
+            }
+            /* HORAS: color blanco puro visible */
+            .cal-hour-label {
+                color: #ffffff !important;
+                opacity: 0.9 !important;
+                text-shadow: 0 0 4px rgba(0,0,0,0.8) !important;
+            }
+
+            /* ── 4. VENTANA EDITAR EVENTO (calEventModal) ────────────── */
+            /* RECTÁNGULOS NEGROS: causados por la animación de auroraShift en el modal
+               + la capa shineSwipe en ::after que intenta crear un compositor GPU separado.
+               Solución: detener animaciones y fijar un gradiente estático. */
+            #calEventModal {
+                animation: none !important;
+                background: linear-gradient(145deg,
+                    #0d1b4b 0%, #1a2f70 30%,
+                    #3b1280 60%, #1e3a8a 100%) !important;
+                background-size: 100% 100% !important;
+            }
+            /* Detener aurora en la capa de blobs */
+            #calEventModal::before {
+                animation: none !important;
+            }
+            /* ELIMINAR la capa shineSwipe (::after) — es la responsable directa
+               de los rectángulos negros en móvil al intentar crear una capa GPU */
+            #calEventModal::after {
+                display: none !important;
+                animation: none !important;
+            }
+            /* Backdrop: reducir blur */
+            #calEventBackdrop {
+                backdrop-filter: blur(5px) !important;
+                -webkit-backdrop-filter: blur(5px) !important;
+            }
+            /* Scroll fluido en el body del modal de edición */
+            .cal-event-body {
+                -webkit-overflow-scrolling: touch !important;
+                will-change: transform !important;
+                transform: translateZ(0) !important;
+            }
+            /* Input de título: respuesta inmediata sin transform */
+            .cal-title-input {
+                transition: border-color 0.1s ease, box-shadow 0.1s ease !important;
+                -webkit-transition: border-color 0.1s ease, box-shadow 0.1s ease !important;
+            }
+            .cal-title-input:focus {
+                transform: none !important;
+            }
+            /* Reducir backdrop de backdrops secundarios del calendario */
+            #calRepeatBackdrop, #calTimePickerBackdrop,
+            #calMonthBackdrop, #calDayBackdrop {
+                backdrop-filter: blur(5px) !important;
+                -webkit-backdrop-filter: blur(5px) !important;
+            }
+
+            /* ── 5. MEJORAS GENERALES ADICIONALES ───────────────────── */
+            /* Detener animaciones shineText en modales para reducir repaint */
+            #archiveVaultModal .vault-modal-main-title { animation: none !important; }
+            /* Contener layout para evitar que los modales disparen repaints en cadena */
+            #archiveVaultModal, #calEventModal, #calDayModal,
+            #newProjectModal, #newTaskModal, #newMethodModal {
+                contain: layout style !important;
+            }
+            /* Reducir animación del ícono del modal de bóveda */
+            .vault-modal-icon-wrap { animation: none !important; }
+        }
+
         /* --- OVERLAY DE CELEBRACIÓN ÉPICA (RUTINAS) --- */
         #celebration-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
