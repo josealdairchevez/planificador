@@ -805,11 +805,13 @@
         .check-item input[type="checkbox"]:checked { background: var(--accent-cyan); border-color: #ffffff; box-shadow: 0 0 15px var(--accent-cyan), 0 0 30px var(--accent-cyan), inset 0 0 10px rgba(255,255,255,0.8); transform: scale(1.15) rotate(5deg); }
         .check-item input[type="checkbox"]:checked::after { content: "✓"; position: absolute; color: #001224; font-weight: 900; top: -2px; left: 4px; font-size: 1.2rem; text-shadow: 0 0 2px #fff; }
         .check-text { font-size: 0.95rem; color: #e2e8f0; line-height: 1.5; transition: opacity 0.3s; width: 100%; }
+        /* Fila de badges+lápiz siempre en la misma línea */
+        .check-badges-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
         .check-text b { color: var(--text-main); font-weight: 800; display: block; margin-bottom: 0.3rem; }
-        .time-badge, .coin-badge, .xp-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 5px; }
+        .time-badge, .coin-badge, .xp-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; margin-right: 0; margin-bottom: 0; flex-shrink: 0; }
         .time-badge { background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.4); font-weight: 600; box-shadow: 0 0 8px rgba(0, 210, 255, 0.1); letter-spacing: 0.5px; }
-        .coin-badge { background: rgba(251, 191, 36, 0.15); color: var(--accent-gold); border: 1px solid rgba(251, 191, 36, 0.5); font-weight: 800; transition: all 0.3s; perspective: 1000px; transform-style: preserve-3d; margin-bottom: 5px; }
-        .xp-badge { background: rgba(177, 0, 255, 0.15); color: #e8a0ff; border: 1px solid rgba(177, 0, 255, 0.5); font-weight: 800; transition: all 0.3s; margin-bottom: 5px; box-shadow: 0 0 8px rgba(177,0,255,0.2); }
+        .coin-badge { background: rgba(251, 191, 36, 0.15); color: var(--accent-gold); border: 1px solid rgba(251, 191, 36, 0.5); font-weight: 800; transition: all 0.3s; }
+        .xp-badge { background: rgba(177, 0, 255, 0.15); color: #e8a0ff; border: 1px solid rgba(177, 0, 255, 0.5); font-weight: 800; transition: all 0.3s; box-shadow: 0 0 8px rgba(177,0,255,0.2); }
         .check-item input[type="checkbox"]:checked + .check-text { text-decoration: line-through; opacity: 0.4; color: var(--accent-cyan); }
 
         .completed-separator { width: 100%; text-align: center; border-bottom: 1px dashed var(--accent-green); line-height: 0.1em; margin: 2rem 0 1.5rem 0; display: none; }
@@ -1024,7 +1026,7 @@
         .store-current-coins span { font-size: 1.5rem; font-weight: 900; color: var(--accent-gold); text-shadow: 0 0 10px rgba(251,191,36,0.5); }
         
         /* 2. Solución al Clipping (Corte) de las Tarjetas usando padding/margin inversos */
-        .store-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; max-height: 50vh; overflow-y: auto; padding: 20px; margin: -20px; }
+        .store-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-height: 55vh; overflow-y: auto; padding: 16px; margin: -16px; }
         .store-grid::-webkit-scrollbar { width: 8px; } .store-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; } .store-grid::-webkit-scrollbar-thumb { background: var(--accent-cyan); border-radius: 4px; }
         
         /* Tarjeta Base */
@@ -1032,9 +1034,8 @@
         
         /* ESTADO DESBLOQUEADO (CON DINERO SUFICIENTE) - ¡Vida, Color y Dinamismo! */
         @keyframes availableItemPulse { 
-            /* Efecto de respiración restaurado con un aumento progresivo elegante que no cubre la estrella */
-            0% { box-shadow: 0 5px 15px rgba(0, 210, 255, 0.2), inset -4px 4px 15px rgba(255, 255, 255, 0.2), inset -1px 1px 2px rgba(255, 255, 255, 0.4); } 
-            100% { box-shadow: 0 10px 25px rgba(0, 210, 255, 0.6), inset -10px 10px 25px rgba(255, 255, 255, 0.6), inset -2px 2px 6px rgba(255, 255, 255, 0.8); } 
+            0% { box-shadow: 0 5px 15px rgba(0, 210, 255, 0.3), 0 0 0 0 rgba(0,210,255,0.15); } 
+            100% { box-shadow: 0 10px 25px rgba(0, 210, 255, 0.6), 0 0 20px rgba(0,210,255,0.3); } 
         }
 
         @keyframes hoverItemPulse {
@@ -1044,9 +1045,9 @@
         }
         
         @keyframes storePremiumSweep {
-            0% { left: -100%; opacity: 0; }
-            20% { left: 100%; opacity: 0.6; }
-            100% { left: 100%; opacity: 0; }
+            0%   { transform: translateX(-200%); opacity: 0; }
+            15%  { opacity: 0.5; }
+            100% { transform: translateX(200%); opacity: 0; }
         }
 
         /* La nueva Estrella Brillante de exactamente 4 puntas */
@@ -1066,7 +1067,11 @@
         .store-item:not(.locked) {
             border: 2px solid #fff;
             background: linear-gradient(135deg, #0072ff, #00d2ff);
-            animation: availableItemPulse 2s infinite alternate;
+            animation: availableItemPulse 2.5s infinite alternate;
+            will-change: box-shadow;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translateZ(0);
         }
 
         /* Destello Óptico de 8 puntas DIFUMINADO (Luz radiante sin bordes sólidos) en estado normal */
@@ -1091,14 +1096,15 @@
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
+            left: 0;
             width: 50%;
             height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.6), transparent);
-            transform: skewX(-25deg);
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent);
+            transform: translateX(-200%) skewX(-25deg);
             animation: storePremiumSweep 4s infinite;
             z-index: 0;
             pointer-events: none;
+            will-change: transform;
         }
 
         /* Destello Óptico Ultra-Difuminado con núcleo "Blanco-Dorado" al pasar el cursor */
@@ -4194,6 +4200,13 @@
             </div>
             <button class="store-close-btn" onclick="closeStore()">✖</button>
         </div>
+        <!-- Buscador de recompensas -->
+        <div style="padding: 0 4px 12px 4px;">
+            <input type="text" id="storeSearchInput"
+                placeholder="🔍 Buscar recompensa..."
+                oninput="filterStoreItems(this.value)"
+                style="width:100%;background:rgba(0,15,35,0.7);border:1px solid rgba(0,210,255,0.3);color:#fff;padding:10px 16px;border-radius:30px;font-size:0.9rem;outline:none;box-sizing:border-box;">
+        </div>
         <div class="store-grid" id="storeGridItems">
             <!-- Los items de la tienda se generan aquí desde JS -->
         </div>
@@ -5202,6 +5215,8 @@
             playStoreOpenSound();
             document.getElementById('storeModalBackdrop').classList.add('show-modal');
             document.getElementById('storeModal').classList.add('show-modal');
+            const si = document.getElementById('storeSearchInput');
+            if (si) si.value = '';
             renderStoreItems();
         }
 
@@ -5238,6 +5253,35 @@
                 grid.appendChild(itemDiv);
             });
         }
+
+        window.filterStoreItems = function(query) {
+            const q = query.toLowerCase().trim();
+            const grid = document.getElementById('storeGridItems');
+            if (!grid) return;
+            let masteryStats = JSON.parse(localStorage.getItem('studyMasteryStats_v3')) || { totalCoins: 0 };
+            const currentCoins = masteryStats.totalCoins || 0;
+            grid.innerHTML = '';
+            // Filtrar y ordenar: coincidencias primero
+            const matches = storeItems.filter(i => !q || i.name.toLowerCase().includes(q) || i.desc.toLowerCase().includes(q));
+            const rest    = storeItems.filter(i => q && !i.name.toLowerCase().includes(q) && !i.desc.toLowerCase().includes(q));
+            const sorted  = q ? [...matches, ...rest] : storeItems;
+            sorted.forEach(item => {
+                const canAfford = currentCoins >= item.cost;
+                const hidden = q && !item.name.toLowerCase().includes(q) && !item.desc.toLowerCase().includes(q);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `store-item ${canAfford ? '' : 'locked'}`;
+                if (hidden) itemDiv.style.opacity = '0.35';
+                itemDiv.innerHTML = `
+                    <div class="store-item-icon">${item.icon}</div>
+                    <h3 class="store-item-title">${item.name}</h3>
+                    <p class="store-item-desc">${item.desc}</p>
+                    <button class="store-btn-buy" ${canAfford ? `onclick="buyStoreItem('${item.id}', ${item.cost})"` : 'disabled'}>
+                        ${item.cost} 🪙 Canjear
+                    </button>
+                `;
+                grid.appendChild(itemDiv);
+            });
+        };
 
         window.buyStoreItem = function(id, cost) {
             let masteryStats = JSON.parse(localStorage.getItem('studyMasteryStats_v3')) || { totalCoins: 0 };
@@ -6981,8 +7025,24 @@
                     }
 
                     timeBadge.textContent = `[${mins} min]`;
-                    if (!item.querySelector('.task-edit-btn')) {
-                        timeBadge.insertAdjacentHTML('afterend', `<button type="button" class="task-edit-btn" onclick="window.openEditTaskModal(this, event)">${svgPencil}</button>`);
+                    // Envolver time-badge + lápiz + badges en una fila flex
+                    if (!item.querySelector('.check-badges-row')) {
+                        const row = document.createElement('span');
+                        row.className = 'check-badges-row';
+                        const parent = timeBadge.parentNode;
+                        // Insertar el row antes del time-badge
+                        parent.insertBefore(row, timeBadge);
+                        // Mover time-badge, coin-badge, xp-badge al row
+                        row.appendChild(timeBadge);
+                        row.appendChild(document.createTextNode(''));
+                        const pencilBtn = document.createElement('button');
+                        pencilBtn.type = 'button';
+                        pencilBtn.className = 'task-edit-btn';
+                        pencilBtn.setAttribute('onclick', 'window.openEditTaskModal(this, event)');
+                        pencilBtn.innerHTML = svgPencil;
+                        row.appendChild(pencilBtn);
+                        if (coinBadge) row.appendChild(coinBadge);
+                        if (xpBadge) row.appendChild(xpBadge);
                     }
                 }
             });
