@@ -1512,18 +1512,28 @@
             .card { backdrop-filter: blur(6px) !important; }
             .custom-select-wrapper { min-width: 0 !important; }
 
-            /* ── RUTINAS: scroll-area en móvil sin flex colapsado ── */
+            /* ── RUTINAS: card crece con su contenido en móvil ── */
             .routines-scroll-area {
                 flex: none !important;
                 min-height: auto !important;
                 height: auto !important;
-                overflow-y: visible !important;
-                overflow-x: hidden !important;
+                max-height: none !important;
+                overflow: visible !important;
             }
             #routinasCard {
                 height: auto !important;
                 min-height: auto !important;
+                max-height: none !important;
                 overflow: visible !important;
+                /* Forzar que el card ocupe todo el espacio que necesita */
+                display: flex !important;
+                flex-direction: column !important;
+                position: relative !important;
+                z-index: 2 !important;
+            }
+            /* Asegurar que el dashboard en móvil apile correctamente */
+            .dashboard {
+                align-items: stretch !important;
             }
 
             /* ── Forzar todos los apartados a ancho completo ── */
@@ -1531,6 +1541,7 @@
                 display: flex !important;
                 flex-direction: column !important;
                 gap: 1rem !important;
+                align-items: stretch !important;
             }
             .dashboard > .card,
             .dashboard > #routinasCard {
@@ -1539,12 +1550,20 @@
                 grid-row: auto !important;
                 grid-column: auto !important;
                 min-height: auto !important;
+                height: auto !important;
                 box-sizing: border-box !important;
+                position: relative !important;
+            }
+            /* routinasCard con z-index alto para que su contenido no quede tapado */
+            #routinasCard {
+                z-index: 10 !important;
             }
             /* table-section: quitar grid span en móvil */
             .table-section {
                 grid-column: auto !important;
                 width: 100% !important;
+                position: relative !important;
+                z-index: 1 !important;
             }
             /* Flex row con min-width dentro de pomodoro */
             .dashboard .card > div[style*="display: flex"][style*="gap"] {
