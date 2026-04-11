@@ -1653,260 +1653,228 @@
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           ANTI-LAG MÓVIL v2 — FIX DEFINITIVO: INPUT LAG, PARPADEO, SCROLL
+           ANTI-LAG MÓVIL v3 — SOLUCIÓN DEFINITIVA CAUSA RAÍZ
+           La causa #1 de TODO el input lag y scroll lag es:
+           backdrop-filter:blur(20px) en .custom-time-modal y en los modales
+           del calendario. En WebKit móvil, backdrop-filter fuerza un
+           compositor GPU separado que compite con el renderizado del teclado.
            ═══════════════════════════════════════════════════════════════════ */
         @media (max-width: 768px) {
 
-            /* ── 1. BÓVEDA DE ARCHIVADOS — input lag + scroll ─────────── */
-            #archiveVaultBackdrop {
-                backdrop-filter: blur(4px) !important;
-                -webkit-backdrop-filter: blur(4px) !important;
+            /* ═══ SOLUCIÓN RAÍZ GLOBAL ════════════════════════════════════
+               Eliminar backdrop-filter de TODOS los modales en móvil.
+               Esto resuelve de golpe: input lag, scroll lag y ghost effect.
+               ════════════════════════════════════════════════════════════ */
+            .custom-time-modal,
+            #storeModal,
+            #newMethodModal,
+            #newProjectModal,
+            #newTaskModal,
+            #calEventModal,
+            #calDayModal,
+            #calendarModal,
+            #archiveVaultModal,
+            #archEditModal, #archEditProjectModal, #archEditTaskModal,
+            .modal-obsidian {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
             }
-            /* Detener todas las animaciones de fondo del modal */
-            .vault-landing-bg { animation: none !important; }
-            #archiveVaultModal .vault-sweep-layer::before { animation: none !important; }
-            .vault-sheen::before { animation: none !important; }
-            .vault-modal-icon-wrap { animation: none !important; }
-            #archiveVaultModal .vault-modal-main-title { animation: none !important; }
-            .vault-section-methods .vault-section-label,
-            .vault-section-projects .vault-section-label,
-            .vault-section-tasks .vault-section-label,
-            .vault-section-sessions .vault-section-label { animation: none !important; }
-            .arch-card::before { animation: none !important; }
-            .vault-empty-icon { animation: none !important; }
-            /* Tarjetas archivadas: blur reducido */
-            .arch-card {
-                backdrop-filter: blur(2px) !important;
-                -webkit-backdrop-filter: blur(2px) !important;
+            /* Backdrops: blur mínimo (4px ya es suficiente visualmente) */
+            .modal-backdrop,
+            #storeModalBackdrop,
+            #archiveVaultBackdrop,
+            #calEventBackdrop,
+            #calDayBackdrop,
+            #calMonthBackdrop,
+            #calRepeatBackdrop,
+            #calTimePickerBackdrop,
+            #archEditBackdrop, #archEditProjectBackdrop, #archEditTaskBackdrop {
+                backdrop-filter: blur(3px) !important;
+                -webkit-backdrop-filter: blur(3px) !important;
             }
-            /* SCROLL NATIVO FLUIDO en bóveda */
-            .vault-scroll-area {
-                -webkit-overflow-scrolling: touch !important;
-                overflow-y: scroll !important;
-                transform: translateZ(0) !important;
-            }
-            /* BUSCADOR BÓVEDA — texto aparece INSTANTÁNEAMENTE:
-               Eliminar TODA transición del input (es lo que causa el delay visual) */
-            .vault-search-input {
+
+            /* ═══ 1. TODOS LOS INPUTS — texto aparece INSTANTÁNEAMENTE ══
+               transition:none elimina cualquier delay visual al tipear.
+               ════════════════════════════════════════════════════════════ */
+            input[type="text"],
+            input[type="email"],
+            input[type="password"],
+            input[type="number"],
+            input[type="search"],
+            textarea,
+            .vault-search-input,
+            #storeSearchInput,
+            .cal-title-input,
+            .input-futurista,
+            .input-jade,
+            .input-magenta,
+            .auth-input,
+            .modal-input-box {
                 transition: none !important;
                 -webkit-transition: none !important;
                 animation: none !important;
+                transform: none !important;
+                will-change: auto !important;
             }
-            .vault-search-input:focus {
+            input[type="text"]:focus,
+            input[type="email"]:focus,
+            input[type="password"]:focus,
+            textarea:focus,
+            .vault-search-input:focus,
+            #storeSearchInput:focus,
+            .cal-title-input:focus,
+            .input-futurista:focus,
+            .input-jade:focus,
+            .input-magenta:focus {
                 transition: none !important;
                 -webkit-transition: none !important;
                 transform: none !important;
             }
 
-            /* ── 2. BÓVEDA DE RECOMPENSAS (storeModal) — input lag + scroll ── */
-            /* Buscador de tienda: sin transición para respuesta inmediata */
-            #storeSearchInput {
-                transition: none !important;
-                -webkit-transition: none !important;
+            /* ═══ 2. BÓVEDA DE RECOMPENSAS (storeModal) ═════════════════ */
+            #storeModal {
                 animation: none !important;
-                -webkit-appearance: none !important;
+                background: linear-gradient(145deg, #0f172a 0%, #3b0764 50%, #1d4ed8 100%) !important;
+                background-size: 100% 100% !important;
             }
-            /* Scroll fluido en la grilla de recompensas */
             .store-grid {
                 -webkit-overflow-scrolling: touch !important;
                 overflow-y: scroll !important;
-                transform: translateZ(0) !important;
-                will-change: scroll-position !important;
+                overscroll-behavior: contain !important;
             }
-            /* Detener animaciones pesadas de tarjetas de tienda en móvil */
+            /* Desactivar animaciones de tarjetas para aliviar GPU */
             .store-item:not(.locked) {
-                animation: availableItemPulseMobile 2.5s infinite alternate !important;
-                will-change: box-shadow !important;
-            }
-            .store-item:not(.locked)::after {
-                animation: storeSweepMobile 4s infinite !important;
-            }
-            .store-item:not(.locked)::before {
-                animation-duration: 5s !important;
-            }
-            /* Backdrop tienda: blur reducido */
-            #storeModalBackdrop {
-                backdrop-filter: blur(4px) !important;
-                -webkit-backdrop-filter: blur(4px) !important;
-            }
-            /* Animaciones de la tienda al hover — eliminar transforms costosos */
-            .store-item:not(.locked):hover {
-                transform: none !important;
-            }
-
-            /* ── 3. MODALES RUTINAS: MÉTODO / PROYECTO / TAREA ────────── */
-            /* CAUSA PRINCIPAL del input lag: la animación diagonalGradientFlow
-               en .modal-obsidian fuerza repaints constantes que compiten con
-               el renderizado del teclado. Se detiene completamente. */
-            .modal-obsidian {
                 animation: none !important;
-                background-image: linear-gradient(135deg,
-                    rgba(0, 210, 255, 0.08) 0%,
-                    rgba(0, 15, 30, 0.02) 50%,
-                    rgba(16, 185, 129, 0.06) 100%) !important;
-                backdrop-filter: blur(5px) !important;
-                -webkit-backdrop-filter: blur(5px) !important;
+                will-change: auto !important;
             }
-            /* RECUADRO DEGRADADO al abrir (::before y custom-time-modal::before):
-               Se detiene la animación borderGlow que causa el flash visual al abrir */
+            .store-item:not(.locked)::after { animation: none !important; }
+            .store-item:not(.locked)::before { animation: none !important; }
+            .store-item.locked { animation: none !important; }
+
+            /* ═══ 3. EFECTO SILUETA/FANTASMA AL ABRIR MODALES ═══════════
+               Causa: backdrop-filter captura un "snapshot" del botón
+               presionado. Al eliminar backdrop-filter (sección raíz arriba)
+               este problema desaparece. Adicionalmente, quitamos la
+               animación borderGlow del ::before que causa el flash.
+               ════════════════════════════════════════════════════════════ */
             .custom-time-modal::before {
                 animation: none !important;
-                opacity: 0.4 !important;
+                display: none !important;
             }
             #newMethodModal::before {
                 animation: none !important;
-                opacity: 0.3 !important;
+                display: none !important;
             }
             #newProjectModal::before {
                 animation: none !important;
-                opacity: 0 !important;
                 display: none !important;
             }
             #newTaskModal::before {
                 animation: none !important;
-                opacity: 0 !important;
                 display: none !important;
             }
-            /* Inputs de texto: TRANSICIÓN CERO = texto aparece al instante */
-            .input-futurista {
-                transition: none !important;
-                -webkit-transition: none !important;
+            /* Eliminar animación del fondo de los modales de rutinas */
+            .modal-obsidian {
                 animation: none !important;
+                background-image: linear-gradient(135deg,
+                    rgba(0, 210, 255, 0.07) 0%,
+                    rgba(0, 12, 25, 0.02) 50%,
+                    rgba(16, 185, 129, 0.05) 100%) !important;
             }
-            .input-futurista:focus {
-                transition: none !important;
-                transform: none !important;
-            }
-            .input-jade {
-                transition: none !important;
-                -webkit-transition: none !important;
-                animation: none !important;
-            }
-            .input-jade:focus {
-                transition: none !important;
-                transform: none !important;
-            }
-            .input-magenta {
-                transition: none !important;
-                -webkit-transition: none !important;
-                animation: none !important;
-            }
-            .input-magenta:focus {
-                transition: none !important;
-                transform: none !important;
-            }
-            /* Scroll nativo fluido en cuerpos de modales */
+            /* Scroll fluido en cuerpos de modales de rutinas */
             #projModalBody, #taskModalBody {
                 -webkit-overflow-scrolling: touch !important;
                 overflow-y: scroll !important;
-                transform: translateZ(0) !important;
+                overscroll-behavior: contain !important;
             }
 
-            /* ── 4. LÍNEA DE TIEMPO (calDayModal) ─────────────────────── */
-            /* PARPADEO: background:transparent + capas animadas atrás = parpadeo.
-               Solución: fondo completamente opaco y sólido, sin transparencias */
+            /* ═══ 4. LÍNEA DE TIEMPO (calDayModal) ══════════════════════
+               Fondo opaco hexadecimal puro (sin rgba) para máxima
+               estabilidad de composición. Scrollbar sin delay.
+               ════════════════════════════════════════════════════════════ */
             #calDayModal {
                 background: #020c22 !important;
-                border: 1.5px solid rgba(0,210,255,0.3) !important;
+                border: 1.5px solid rgba(0,210,255,0.25) !important;
             }
-            /* Eliminar las capas de efectos animados (cal-modal-sweep, cal-modal-landing-bg)
-               dentro del calDayModal si existen */
             #calDayModal .cal-modal-landing-bg,
-            #calDayModal .cal-modal-sweep {
-                display: none !important;
-            }
-            /* body de la línea de tiempo: opaco + scroll nativo */
-            .cal-day-body {
+            #calDayModal .cal-modal-sweep { display: none !important; }
+            .cal-day-header {
                 background: #020c22 !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
-                -webkit-overflow-scrolling: touch !important;
-                overflow-y: scroll !important;
-                transform: translateZ(0) !important;
-                /* La barra de scroll seguirá al contenido sin delay */
-                scroll-behavior: auto !important;
             }
-            /* Forzar que el header de línea de tiempo sea también opaco */
-            .cal-day-header {
-                background: rgba(2, 12, 34, 0.98) !important;
+            .cal-day-body {
+                background: #010a1c !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
+                /* overflow:scroll (no auto) + overscroll-behavior:none
+                   elimina el "trancazo" de la barra lateral */
+                -webkit-overflow-scrolling: touch !important;
+                overflow-y: scroll !important;
+                overscroll-behavior: none !important;
+                /* Forzar composición en capa GPU propia */
+                transform: translateZ(0) !important;
+                will-change: scroll-position !important;
             }
-            /* HORAS: blanco puro legible */
             .cal-hour-label {
                 color: #ffffff !important;
                 opacity: 1 !important;
                 font-weight: 800 !important;
-                text-shadow: 0 1px 3px rgba(0,0,0,0.9) !important;
-            }
-            /* Backdrop: reducir blur */
-            #calDayBackdrop {
-                backdrop-filter: blur(4px) !important;
-                -webkit-backdrop-filter: blur(4px) !important;
             }
 
-            /* ── 5. VENTANA EDITAR EVENTO (calEventModal) ─────────────── */
-            /* RECTÁNGULOS NEGROS: ::after con shineSwipe crea layer GPU que falla */
+            /* ═══ 5. VENTANA EDITAR EVENTO (calEventModal) ══════════════
+               Apertura/cierre instantáneos + sin rectángulos negros.
+               ════════════════════════════════════════════════════════════ */
             #calEventModal {
                 animation: none !important;
                 background: #0d1b4b !important;
-                background-image: linear-gradient(145deg,
-                    #0d1b4b 0%, #1a2f70 35%, #3b1280 65%, #1e3a8a 100%) !important;
-                background-size: 100% 100% !important;
+                /* Reducir tiempo de transición: 0.4s → 0.15s = apertura rápida */
+                transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease !important;
+            }
+            #calEventBackdrop {
+                transition: opacity 0.15s ease, visibility 0.15s ease !important;
             }
             #calEventModal::before { animation: none !important; }
             #calEventModal::after {
                 display: none !important;
                 content: none !important;
-                animation: none !important;
             }
-            /* Backdrop reducido */
-            #calEventBackdrop {
-                backdrop-filter: blur(4px) !important;
-                -webkit-backdrop-filter: blur(4px) !important;
-            }
-            /* Scroll nativo + barra sin delay */
             .cal-event-body {
                 -webkit-overflow-scrolling: touch !important;
                 overflow-y: scroll !important;
+                overscroll-behavior: contain !important;
                 transform: translateZ(0) !important;
-                scroll-behavior: auto !important;
-            }
-            /* Input título: texto aparece instantáneamente */
-            .cal-title-input {
-                transition: none !important;
-                -webkit-transition: none !important;
-                animation: none !important;
-            }
-            .cal-title-input:focus {
-                transition: none !important;
-                transform: none !important;
-            }
-            /* Backdrops secundarios del calendario */
-            #calRepeatBackdrop, #calTimePickerBackdrop,
-            #calMonthBackdrop {
-                backdrop-filter: blur(4px) !important;
-                -webkit-backdrop-filter: blur(4px) !important;
+                will-change: scroll-position !important;
             }
 
-            /* ── 6. AJUSTES GENERALES ─────────────────────────────────── */
-            /* Eliminar la animación de shineText en todos los modales
-               para reducir el presupuesto de repaint global */
-            #archiveVaultModal [class*="shine"],
-            #archiveVaultModal [style*="shineText"] { animation: none !important; }
-            /* Botón trigger del bóveda: sin animación flotante en móvil */
-            .archive-vault-trigger-btn { animation: none !important; }
-            /* Modal de edición de arch: sin animación de fondo */
+            /* ═══ 6. BÓVEDA DE ARCHIVADOS ═══════════════════════════════ */
+            .vault-landing-bg { animation: none !important; }
+            #archiveVaultModal .vault-sweep-layer::before { animation: none !important; }
+            .vault-sheen::before { animation: none !important; }
+            .vault-modal-icon-wrap { animation: none !important; }
+            .vault-section-methods .vault-section-label,
+            .vault-section-projects .vault-section-label,
+            .vault-section-tasks .vault-section-label,
+            .vault-section-sessions .vault-section-label { animation: none !important; }
+            .arch-card::before { animation: none !important; }
+            .arch-card { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+            .vault-empty-icon { animation: none !important; }
+            .vault-scroll-area {
+                -webkit-overflow-scrolling: touch !important;
+                overflow-y: scroll !important;
+                overscroll-behavior: contain !important;
+                transform: translateZ(0) !important;
+            }
+
+            /* ═══ 7. MODALES EDIT BÓVEDA ════════════════════════════════ */
             #archEditModal, #archEditProjectModal, #archEditTaskModal {
                 animation: none !important;
-                backdrop-filter: blur(5px) !important;
-                -webkit-backdrop-filter: blur(5px) !important;
             }
             #archEditModal::before,
             #archEditProjectModal::before,
             #archEditTaskModal::before {
                 animation: none !important;
-                opacity: 0.3 !important;
+                display: none !important;
             }
         }
 
