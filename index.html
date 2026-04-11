@@ -3405,6 +3405,66 @@
         #calEventModal .cal-event-modal-header,
         #calEventModal .cal-event-body { position: relative; z-index: 2; }
 
+        /* ═══════════════════════════════════════════════════════════════════
+           EDITAR EVENTO — OVERRIDE MÓVIL (debe ir DESPUÉS de #calEventModal
+           para ganar en cascada CSS cuando ambos tienen !important)
+           ═══════════════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            /* Fondo estático + apertura rápida */
+            #calEventModal {
+                animation: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: #0e1d50 !important;
+                background-image: linear-gradient(145deg,
+                    #0d1b4b 0%, #1a2f70 30%, #2d1580 60%, #1e3a8a 100%) !important;
+                background-size: 100% 100% !important;
+                transition: opacity 0.12s linear, visibility 0.12s linear,
+                            transform 0.12s linear !important;
+            }
+            #calEventBackdrop {
+                transition: opacity 0.12s linear, visibility 0.12s linear !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+            /* Quitar capas de efectos animados */
+            #calEventModal::before { animation: none !important; }
+            #calEventModal::after {
+                display: none !important;
+                content: none !important;
+                animation: none !important;
+            }
+            /* Scroll fluido del body */
+            .cal-event-body {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
+                scroll-behavior: auto !important;
+            }
+            /* INPUT LAG — cal-title-input tiene transition:all y transform en :focus
+               Este bloque viene DESPUÉS del base CSS, por eso gana */
+            .cal-title-input {
+                transition: none !important;
+                -webkit-transition: none !important;
+                animation: none !important;
+                transform: none !important;
+            }
+            .cal-title-input:focus {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+            }
+            /* cal-form-row dentro de EDITAR: sin transition en cascada */
+            #calEventModal .cal-form-row {
+                transition: none !important;
+            }
+            /* Guardar botón: sin transition innecesaria */
+            .cal-event-modal-save {
+                transition: none !important;
+            }
+        }
+
         .cal-event-modal-header {
             display:flex;align-items:center;justify-content:space-between;
             padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;
@@ -4241,7 +4301,7 @@
                 </div>
                 <div class="vault-card" style="overflow: visible;">
                     <!-- ÍCONO DE REGALO PARA ABRIR LA TIENDA -->
-                    <div class="store-gift-wrapper" onclick="openStore()" title="Tienda de Recompensas">
+                    <div class="store-gift-wrapper" onclick="playMenuSound();openStore()" title="Tienda de Recompensas">
                         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 12 20 22 4 22 4 12"></polyline>
                             <rect x="2" y="7" width="20" height="5"></rect>
@@ -4476,7 +4536,7 @@
                         <div class="custom-options" id="optionsRoutineMethod"></div>
                     </div>
                     <!-- Botón RELOJ → abre ventana Sectograph con reloj circular -->
-                    <button class="cal-trigger-btn" id="clockTrigger" onclick="openCalendar()" title="Reloj de Eventos (Sectograph)">
+                    <button class="cal-trigger-btn" id="clockTrigger" onclick="playMenuSound();openCalendar()" title="Reloj de Eventos (Sectograph)">
                         <div class="cal-glow-ring"></div>
                         <svg class="avt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/>
@@ -4498,7 +4558,7 @@
                         </svg>
                         <span class="cal-badge" id="calBadgeCount2">0</span>
                     </button>
-                    <button class="archive-vault-trigger-btn" id="archiveVaultTrigger" onclick="openArchiveVault()" title="Bóveda de Archivados">
+                    <button class="archive-vault-trigger-btn" id="archiveVaultTrigger" onclick="playMenuSound();openArchiveVault()" title="Bóveda de Archivados">
                         <div class="avt-glow-ring"></div>
                         <svg class="avt-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M21 8V21H3V8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
