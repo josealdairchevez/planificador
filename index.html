@@ -1663,9 +1663,10 @@
 
             /* ═══ SOLUCIÓN RAÍZ GLOBAL ════════════════════════════════════
                Eliminar backdrop-filter de TODOS los modales en móvil.
-               Esto resuelve de golpe: input lag, scroll lag y ghost effect.
+               Esto resuelve: input lag, scroll lag y ghost effect.
                ════════════════════════════════════════════════════════════ */
             .custom-time-modal,
+            .modal-amber,
             #storeModal,
             #newMethodModal,
             #newProjectModal,
@@ -1679,7 +1680,7 @@
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
             }
-            /* Backdrops: blur mínimo (4px ya es suficiente visualmente) */
+            /* Backdrops: blur mínimo */
             .modal-backdrop,
             #storeModalBackdrop,
             #archiveVaultBackdrop,
@@ -1693,9 +1694,7 @@
                 -webkit-backdrop-filter: blur(3px) !important;
             }
 
-            /* ═══ 1. TODOS LOS INPUTS — texto aparece INSTANTÁNEAMENTE ══
-               transition:none elimina cualquier delay visual al tipear.
-               ════════════════════════════════════════════════════════════ */
+            /* ═══ 1. TODOS LOS INPUTS — texto aparece INSTANTÁNEAMENTE ══ */
             input[type="text"],
             input[type="email"],
             input[type="password"],
@@ -1708,6 +1707,7 @@
             .input-futurista,
             .input-jade,
             .input-magenta,
+            .input-amber,
             .auth-input,
             .modal-input-box {
                 transition: none !important;
@@ -1725,16 +1725,19 @@
             .cal-title-input:focus,
             .input-futurista:focus,
             .input-jade:focus,
-            .input-magenta:focus {
+            .input-magenta:focus,
+            .input-amber:focus {
                 transition: none !important;
                 -webkit-transition: none !important;
                 transform: none !important;
             }
 
-            /* ═══ 2. BÓVEDA DE RECOMPENSAS (storeModal) ═════════════════ */
+            /* ═══ 2. BÓVEDA DE RECOMPENSAS (storeModal) ═════════════════
+               Restaurar fondo original (solo detener animación en móvil).
+               ════════════════════════════════════════════════════════════ */
             #storeModal {
                 animation: none !important;
-                background: linear-gradient(145deg, #0f172a 0%, #3b0764 50%, #1d4ed8 100%) !important;
+                background: linear-gradient(-45deg, #0f172a, #3b0764, #7e22ce, #1d4ed8, #0f172a) !important;
                 background-size: 100% 100% !important;
             }
             .store-grid {
@@ -1742,7 +1745,6 @@
                 overflow-y: scroll !important;
                 overscroll-behavior: contain !important;
             }
-            /* Desactivar animaciones de tarjetas para aliviar GPU */
             .store-item:not(.locked) {
                 animation: none !important;
                 will-change: auto !important;
@@ -1751,29 +1753,70 @@
             .store-item:not(.locked)::before { animation: none !important; }
             .store-item.locked { animation: none !important; }
 
-            /* ═══ 3. EFECTO SILUETA/FANTASMA AL ABRIR MODALES ═══════════
-               Causa: backdrop-filter captura un "snapshot" del botón
-               presionado. Al eliminar backdrop-filter (sección raíz arriba)
-               este problema desaparece. Adicionalmente, quitamos la
-               animación borderGlow del ::before que causa el flash.
+            /* ═══ 3. SILUETA/FANTASMA DEL BOTÓN AL ABRIR MODALES ════════
+               Tres causas: (a) ::before con borderGlow animado, (b) el
+               highlight táctil del botón presionado, (c) el focus ring.
                ════════════════════════════════════════════════════════════ */
-            .custom-time-modal::before {
-                animation: none !important;
+            /* (a) Quitar borde animado de TODOS los modales */
+            .custom-time-modal::before,
+            #newMethodModal::before,
+            #newProjectModal::before,
+            #newTaskModal::before,
+            .modal-amber::before {
                 display: none !important;
-            }
-            #newMethodModal::before {
+                content: none !important;
                 animation: none !important;
-                display: none !important;
             }
-            #newProjectModal::before {
+            /* (b) Quitar tap-highlight de los botones que abren modales */
+            .btn-create-base,
+            .btn-create-magenta,
+            .btn-create-emerald,
+            .btn-create-amber,
+            button {
+                -webkit-tap-highlight-color: transparent !important;
+                outline: none !important;
+            }
+            /* (c) Quitar animación del propio botón naranja que causa el glow residual */
+            .btn-create-amber { animation: none !important; }
+
+            /* ═══ 4. CREAR TAREA (modal-amber) — fondo estático naranja ═
+               Reemplazar fondo animado con gradiente estático naranja
+               similar al de MÉTODO y PROYECTO (que usan gradientes fijos).
+               ════════════════════════════════════════════════════════════ */
+            .modal-amber,
+            #newTaskModal {
                 animation: none !important;
-                display: none !important;
+                background-color: rgba(18, 7, 0, 0.97) !important;
+                background-image:
+                    radial-gradient(ellipse 70% 50% at 10% 10%, rgba(255,100,0,0.30) 0%, transparent 55%),
+                    radial-gradient(ellipse 60% 55% at 85% 85%, rgba(220,70,0,0.22) 0%, transparent 55%),
+                    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(255,130,0,0.10) 0%, transparent 60%) !important;
+                background-size: 100% 100% !important;
+                border: 1.5px solid rgba(255,165,0,0.45) !important;
+                box-shadow:
+                    0 0 30px rgba(255,140,0,0.20),
+                    0 10px 40px rgba(0,0,0,0.80) !important;
             }
+            /* Scroll fluido en CREAR TAREA */
+            #taskModalBody {
+                -webkit-overflow-scrolling: touch !important;
+                overflow-y: scroll !important;
+                overscroll-behavior: contain !important;
+                transform: translateZ(0) !important;
+            }
+            /* Mantener animación del ::before de newTaskModal desactivada */
             #newTaskModal::before {
-                animation: none !important;
                 display: none !important;
+                content: none !important;
+                animation: none !important;
             }
-            /* Eliminar animación del fondo de los modales de rutinas */
+            /* Scroll fluido también en NUEVO PROYECTO */
+            #projModalBody {
+                -webkit-overflow-scrolling: touch !important;
+                overflow-y: scroll !important;
+                overscroll-behavior: contain !important;
+            }
+            /* Eliminar animación del fondo de MÉTODO y PROYECTO */
             .modal-obsidian {
                 animation: none !important;
                 background-image: linear-gradient(135deg,
@@ -1781,16 +1824,9 @@
                     rgba(0, 12, 25, 0.02) 50%,
                     rgba(16, 185, 129, 0.05) 100%) !important;
             }
-            /* Scroll fluido en cuerpos de modales de rutinas */
-            #projModalBody, #taskModalBody {
-                -webkit-overflow-scrolling: touch !important;
-                overflow-y: scroll !important;
-                overscroll-behavior: contain !important;
-            }
 
-            /* ═══ 4. LÍNEA DE TIEMPO (calDayModal) ══════════════════════
-               Fondo opaco hexadecimal puro (sin rgba) para máxima
-               estabilidad de composición. Scrollbar sin delay.
+            /* ═══ 5. LÍNEA DE TIEMPO (calDayModal) ══════════════════════
+               Fondo opaco + scroll nativo sin delay de barra lateral.
                ════════════════════════════════════════════════════════════ */
             #calDayModal {
                 background: #020c22 !important;
@@ -1807,14 +1843,15 @@
                 background: #010a1c !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
-                /* overflow:scroll (no auto) + overscroll-behavior:none
-                   elimina el "trancazo" de la barra lateral */
-                -webkit-overflow-scrolling: touch !important;
+                /* overflow-y:scroll (no auto) fuerza barra siempre visible = sin delay */
                 overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
                 overscroll-behavior: none !important;
-                /* Forzar composición en capa GPU propia */
+                /* Capa GPU propia para scroll independiente */
                 transform: translateZ(0) !important;
                 will-change: scroll-position !important;
+                /* Sin smooth: el scroll sigue al dedo sin lag */
+                scroll-behavior: auto !important;
             }
             .cal-hour-label {
                 color: #ffffff !important;
@@ -1822,17 +1859,18 @@
                 font-weight: 800 !important;
             }
 
-            /* ═══ 5. VENTANA EDITAR EVENTO (calEventModal) ══════════════
-               Apertura/cierre instantáneos + sin rectángulos negros.
+            /* ═══ 6. VENTANA EDITAR EVENTO (calEventModal) ══════════════
+               Apertura/cierre rápidos (0.15s) + sin rectángulos negros.
                ════════════════════════════════════════════════════════════ */
             #calEventModal {
                 animation: none !important;
                 background: #0d1b4b !important;
-                /* Reducir tiempo de transición: 0.4s → 0.15s = apertura rápida */
-                transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease !important;
+                background-image: none !important;
+                /* 0.4s → 0.12s: apertura y cierre casi instantáneos */
+                transition: opacity 0.12s ease, visibility 0.12s ease, transform 0.12s ease !important;
             }
             #calEventBackdrop {
-                transition: opacity 0.15s ease, visibility 0.15s ease !important;
+                transition: opacity 0.12s ease, visibility 0.12s ease !important;
             }
             #calEventModal::before { animation: none !important; }
             #calEventModal::after {
@@ -1845,9 +1883,10 @@
                 overscroll-behavior: contain !important;
                 transform: translateZ(0) !important;
                 will-change: scroll-position !important;
+                scroll-behavior: auto !important;
             }
 
-            /* ═══ 6. BÓVEDA DE ARCHIVADOS ═══════════════════════════════ */
+            /* ═══ 7. BÓVEDA DE ARCHIVADOS ═══════════════════════════════ */
             .vault-landing-bg { animation: none !important; }
             #archiveVaultModal .vault-sweep-layer::before { animation: none !important; }
             .vault-sheen::before { animation: none !important; }
@@ -1866,7 +1905,7 @@
                 transform: translateZ(0) !important;
             }
 
-            /* ═══ 7. MODALES EDIT BÓVEDA ════════════════════════════════ */
+            /* ═══ 8. MODALES EDIT BÓVEDA ════════════════════════════════ */
             #archEditModal, #archEditProjectModal, #archEditTaskModal {
                 animation: none !important;
             }
