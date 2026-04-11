@@ -2412,6 +2412,44 @@
         .arch-edit-scroll{flex:1;overflow-y:auto;padding-right:6px;}
         .arch-edit-scroll::-webkit-scrollbar{width:5px;}
 
+        /* ═══ MOBILE FIX — arch-edit-scroll y inputs de editar bóveda ═══
+           Viene DESPUÉS de .arch-edit-scroll para ganar en cascada.
+           ════════════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            /* Scroll fluido en todos los contenedores de editar */
+            .arch-edit-scroll {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
+            }
+            /* Scroll del modal completo (archEditModal no tiene body separado) */
+            #archEditModal, #archEditProjectModal, #archEditTaskModal {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                touch-action: pan-y !important;
+            }
+            /* Todos los inputs de los modales de editar — sin transition ni transform */
+            #archEditModal input, #archEditModal textarea,
+            #archEditProjectModal input, #archEditProjectModal textarea,
+            #archEditTaskModal input, #archEditTaskModal textarea,
+            #archEditMethodName, #archEditProjectName, #archEditTaskName,
+            .input-magenta, .input-jade, .input-amber {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+                animation: none !important;
+            }
+            #archEditModal input:focus, #archEditModal textarea:focus,
+            #archEditProjectModal input:focus, #archEditProjectModal textarea:focus,
+            #archEditTaskModal input:focus, #archEditTaskModal textarea:focus,
+            #archEditMethodName:focus, #archEditProjectName:focus, #archEditTaskName:focus {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+            }
+        }
+
         /* --- SECCIÓN SESIONES ARCHIVADAS --- */
         .vault-section-sessions{background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(255,107,0,0.06));border:1px solid rgba(251,191,36,0.22);}
         .vault-section-sessions::before{background:linear-gradient(135deg,rgba(251,191,36,0.07),transparent);}
@@ -3507,13 +3545,12 @@
         .cal-title-input:focus{border-color:#00d2ff!important;box-shadow:0 0 20px rgba(0,210,255,0.4)!important;background:rgba(0,20,45,0.85)!important;transform:translateY(-1px);}
         .cal-title-input::placeholder{color:rgba(255,255,255,0.35)!important;}
 
-        /* ═══ MOBILE FIX — cal-title-input, cal-event-body, cal-form-row ═══
-           Estas definiciones vienen DESPUÉS del override anterior (línea ~3410),
-           por lo que necesitan su propio bloque @media aquí para ganar cascada.
-           ════════════════════════════════════════════════════════════════════ */
+        /* ═══ MOBILE FIX — cal-title-input, cal-event-body (2do bloque) ═══
+           Estos vienen DESPUÉS del override anterior por lo que necesitan
+           su propio bloque aquí para garantizar la cascada correcta.
+           ════════════════════════════════════════════════════════════════ */
         @media (max-width: 768px) {
-            /* Input lag fix — transition:all 0.3s está sin !important, pero
-               para seguridad lo sobreescribimos aquí después de la definición */
+            /* Input lag: transition:all y transform eliminados */
             .cal-title-input {
                 transition: none !important;
                 -webkit-transition: none !important;
@@ -3524,13 +3561,28 @@
                 -webkit-transition: none !important;
                 transform: none !important;
             }
-            /* Scroll fluido — overflow-y:auto está aquí, override con scroll */
+            /* Todos los inputs dentro de la ventana Editar Evento */
+            #calEventModal input, #calEventModal textarea {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+                animation: none !important;
+            }
+            #calEventModal input:focus, #calEventModal textarea:focus {
+                transition: none !important;
+                transform: none !important;
+            }
+            /* Scroll fluido del body */
             .cal-event-body {
                 overflow-y: scroll !important;
                 -webkit-overflow-scrolling: touch !important;
                 overscroll-behavior-y: contain !important;
                 touch-action: pan-y !important;
                 scroll-behavior: auto !important;
+            }
+            /* cal-form-row sin transition en cascada */
+            #calEventModal .cal-form-row {
+                transition: none !important;
             }
         }
 
@@ -8288,9 +8340,7 @@
         </div>
         <label style="color:#fdba74;font-size:0.78rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;position:relative;z-index:1;">Nombre de la Tarea</label>
         <input type="text" id="archEditTaskName" class="input-amber" placeholder="Nombre de la tarea..." autocomplete="off"
-            style="margin-bottom:0;border-radius:30px!important;background:rgba(15,5,0,0.6)!important;border:1.5px solid rgba(249,115,22,0.6)!important;"
-            onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 20px rgba(249,115,22,0.75)'"
-            onblur="this.style.borderColor='rgba(249,115,22,0.6)';this.style.boxShadow=''">
+            style="margin-bottom:0;border-radius:30px!important;background:rgba(15,5,0,0.6)!important;border:1.5px solid rgba(249,115,22,0.6)!important;transition:none!important;">
         <div class="arch-edit-scroll" id="archEditTaskStepsContainer" style="max-height:340px;"></div>
         <div style="display:flex;gap:1rem;margin-top:0.5rem;position:relative;z-index:1;">
             <button onclick="archAddTaskSubtask()"
