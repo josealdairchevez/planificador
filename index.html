@@ -1772,58 +1772,48 @@
             .store-item:not(.locked)::after,
             .store-item:not(.locked)::before { animation: none !important; }
 
-            /* ═══ E. CREAR TAREA (modal-amber) — lag + scroll ════════════
-               Reemplazar fondo animado con gradiente naranja estático.
+            /* ═══ E. CREAR TAREA — fondo naranja estilo NUEVO PROYECTO ══
+               Linear-gradient naranja simple (igual que modal-obsidian).
+               Sin radial-gradients múltiples que generan repaints extra.
                ════════════════════════════════════════════════════════════ */
             .modal-amber, #newTaskModal {
                 animation: none !important;
-                background-color: rgba(18, 7, 0, 0.97) !important;
-                background-image:
-                    radial-gradient(ellipse 70% 50% at 10% 10%, rgba(255,100,0,0.28) 0%, transparent 55%),
-                    radial-gradient(ellipse 60% 55% at 85% 85%, rgba(220,70,0,0.20) 0%, transparent 55%),
-                    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(255,130,0,0.08) 0%, transparent 60%) !important;
-                background-size: 100% 100% !important;
-                border: 1.5px solid rgba(255,165,0,0.40) !important;
-                box-shadow: 0 0 25px rgba(255,140,0,0.15), 0 10px 40px rgba(0,0,0,0.80) !important;
-            }
-            /* taskModalBody: touch-action + scroll nativo — la clave del scroll fluido */
-            #taskModalBody {
-                overflow-y: scroll !important;
-                -webkit-overflow-scrolling: touch !important;
-                overscroll-behavior-y: contain !important;
-                touch-action: pan-y !important;
-                will-change: scroll-position !important;
-                max-height: 80vh !important;
-            }
-
-            /* ═══ F. CREAR MÉTODO y NUEVO PROYECTO ══════════════════════ */
-            .modal-obsidian {
-                animation: none !important;
-                /* Fondo opaco para compensar la falta de backdrop-filter */
-                background-color: rgba(0, 18, 32, 0.97) !important;
+                background-color: rgba(20, 8, 0, 0.97) !important;
                 background-image: linear-gradient(135deg,
-                    rgba(0,210,255,0.20) 0%, rgba(0,12,25,0.05) 50%,
-                    rgba(16,185,129,0.15) 100%) !important;
+                    rgba(255,140,0,0.22) 0%,
+                    rgba(20,8,0,0.05) 50%,
+                    rgba(249,115,22,0.16) 100%) !important;
+                background-size: 100% 100% !important;
+                border: 1px solid rgba(255,165,0,0.50) !important;
+                box-shadow:
+                    -20px 20px 50px rgba(255,140,0,0.12),
+                    20px -20px 50px rgba(249,115,22,0.08),
+                    0 10px 40px rgba(0,0,0,0.90),
+                    inset 0 0 30px rgba(255,140,0,0.10) !important;
             }
-            #projModalBody {
-                overflow-y: scroll !important;
-                -webkit-overflow-scrolling: touch !important;
-                overscroll-behavior-y: contain !important;
-                touch-action: pan-y !important;
-            }
-
-            /* ═══ F2. CREAR TAREA — replicar exactamente lo de NUEVO PROYECTO ══
-               Mismas 4 propiedades de projModalBody → taskModalBody
-               Misma eliminación de transition en inputs por clase explícita
-               ════════════════════════════════════════════════════════════ */
+            /* Scroll fluido */
             #taskModalBody {
                 overflow-y: scroll !important;
                 -webkit-overflow-scrolling: touch !important;
                 overscroll-behavior-y: contain !important;
                 touch-action: pan-y !important;
             }
-            /* Inputs CREAR TAREA: transition none por selectores de clase
-               (misma lógica que .input-futurista y .input-jade en NUEVO PROYECTO) */
+            /* ── INPUT LAG: #taskNameInput usa ID selector con !important ─
+               El ID selector tiene mayor especificidad que cualquier clase.
+               Hay que sobreescribirlo también con ID en el bloque móvil.
+               ════════════════════════════════════════════════════════════ */
+            #taskNameInput {
+                transition: none !important;
+                -webkit-transition: none !important;
+                animation: none !important;
+                transform: none !important;
+            }
+            #taskNameInput:focus {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+            }
+            /* Todos los inputs de CREAR TAREA por clase */
             .input-amber {
                 transition: none !important;
                 -webkit-transition: none !important;
@@ -1835,7 +1825,6 @@
                 -webkit-transition: none !important;
                 transform: none !important;
             }
-            /* Sub-inputs de pasos dentro de CREAR TAREA */
             #newTaskModal .input-amber,
             #newTaskModal textarea.input-amber,
             #newTaskModal #newTaskStepsContainer .task-subtask-title-input,
@@ -1854,6 +1843,21 @@
                 transition: none !important;
                 -webkit-transition: none !important;
                 transform: none !important;
+            }
+
+            /* ═══ F. CREAR MÉTODO y NUEVO PROYECTO ══════════════════════ */
+            .modal-obsidian {
+                animation: none !important;
+                background-color: rgba(0, 18, 32, 0.97) !important;
+                background-image: linear-gradient(135deg,
+                    rgba(0,210,255,0.20) 0%, rgba(0,12,25,0.05) 50%,
+                    rgba(16,185,129,0.15) 100%) !important;
+            }
+            #projModalBody {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
             }
 
             /* ═══ G. LÍNEA DE TIEMPO (calDayModal) ══════════════════════
