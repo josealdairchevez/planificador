@@ -2748,6 +2748,69 @@
             display: block !important;
         }
         .modal-amber::after { display: none !important; }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           CREAR TAREA — OVERRIDE MÓVIL (debe ir DESPUÉS de .modal-amber
+           para ganar en cascada CSS cuando ambos tienen !important)
+           ═══════════════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            /* Fondo naranja estático — estilo NUEVO PROYECTO pero en naranja */
+            .modal-amber, #newTaskModal {
+                animation: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background-color: rgba(20, 8, 0, 0.97) !important;
+                background-image: linear-gradient(135deg,
+                    rgba(255,140,0,0.22) 0%,
+                    rgba(20,8,0,0.05) 50%,
+                    rgba(249,115,22,0.16) 100%) !important;
+                background-size: 100% 100% !important;
+                border: 1px solid rgba(255,165,0,0.45) !important;
+                box-shadow:
+                    -20px 20px 50px rgba(255,140,0,0.10),
+                    20px -20px 50px rgba(249,115,22,0.07),
+                    0 10px 40px rgba(0,0,0,0.90),
+                    inset 0 0 25px rgba(255,140,0,0.08) !important;
+            }
+            /* Ocultar el borde giratorio animado */
+            #newTaskModal::before {
+                display: none !important;
+                content: none !important;
+                animation: none !important;
+            }
+            /* Todos los inputs de CREAR TAREA — sin transition ni transform */
+            #taskNameInput,
+            #taskEventLabel,
+            #newTaskModal input,
+            #newTaskModal textarea,
+            #newTaskModal .input-amber,
+            #newTaskModal .input-futurista,
+            #newTaskModal textarea.input-amber,
+            #newTaskModal #newTaskStepsContainer .task-subtask-title-input,
+            #newTaskModal #newTaskStepsContainer .task-subtask-desc-input {
+                transition: none !important;
+                -webkit-transition: none !important;
+                animation: none !important;
+                transform: none !important;
+            }
+            #taskNameInput:focus,
+            #taskEventLabel:focus,
+            #newTaskModal input:focus,
+            #newTaskModal textarea:focus,
+            #newTaskModal .input-amber:focus,
+            #newTaskModal .input-futurista:focus,
+            #newTaskModal textarea.input-amber:focus,
+            #newTaskModal #newTaskStepsContainer .task-subtask-title-input:focus,
+            #newTaskModal #newTaskStepsContainer .task-subtask-desc-input:focus {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+            }
+            /* cal-form-row dentro del modal tarea: sin transition en cascada */
+            #newTaskModal .cal-form-row {
+                transition: none !important;
+            }
+        }
         /* Sub-task inputs dentro del modal tarea — también cyan */
         /* Input amber en modal tarea: fondo oscuro legible con borde naranja */
         #newTaskModal .input-amber,
