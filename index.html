@@ -1812,11 +1812,30 @@
                 touch-action: pan-y !important;
             }
 
-            /* ═══ F2. CREAR TAREA — eliminar transition de inputs por clase ══
-               Uso selectores de clase (mayor especificidad que 'input')
-               para sobrescribir el !important de .input-amber, etc.
+            /* ═══ F2. CREAR TAREA — replicar exactamente lo de NUEVO PROYECTO ══
+               Mismas 4 propiedades de projModalBody → taskModalBody
+               Misma eliminación de transition en inputs por clase explícita
                ════════════════════════════════════════════════════════════ */
-            .input-amber,
+            #taskModalBody {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
+            }
+            /* Inputs CREAR TAREA: transition none por selectores de clase
+               (misma lógica que .input-futurista y .input-jade en NUEVO PROYECTO) */
+            .input-amber {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+                animation: none !important;
+            }
+            .input-amber:focus {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+            }
+            /* Sub-inputs de pasos dentro de CREAR TAREA */
             #newTaskModal .input-amber,
             #newTaskModal textarea.input-amber,
             #newTaskModal #newTaskStepsContainer .task-subtask-title-input,
@@ -1827,7 +1846,6 @@
                 transform: none !important;
                 animation: none !important;
             }
-            .input-amber:focus,
             #newTaskModal .input-amber:focus,
             #newTaskModal textarea.input-amber:focus,
             #newTaskModal #newTaskStepsContainer .task-subtask-title-input:focus,
@@ -4771,7 +4789,7 @@
             <h2 class="modal-title-amber" style="font-size: 1.5rem; margin:0; display: block; width: 100%; text-align: center;">🔥 CREAR TAREA</h2>
             <span class="close-modal" onclick="playSparkleSound(); closeNewTaskModal()" style="position: absolute; top: -10px; right: -10px; cursor: pointer; font-size: 1.5rem; color: #fff; opacity: 0.5; transition: 0.3s; z-index: 2;">✕</span>
         </div>
-        <div class="modal-body" id="taskModalBody" style="position: relative; z-index: 1; display: flex; flex-direction: column; max-height: 82vh; overflow-y:auto; overflow-x:hidden; padding-right:6px; padding-top:6px;">
+        <div class="modal-body" id="taskModalBody" style="position: relative; z-index: 1; display: flex; flex-direction: column; max-height: 82vh; overflow-y:scroll; overflow-x:hidden; padding-right:6px; padding-top:6px; -webkit-overflow-scrolling:touch; touch-action:pan-y;">
             <div class="form-group" style="margin-bottom: 1.2rem; flex-shrink: 0;">
                 <input type="text" id="taskNameInput" class="input-futurista" style="border-radius:30px!important;" placeholder="Nombre de la Tarea (Ej: Rutina Mañanera)" autocomplete="off">
             </div>
