@@ -1799,15 +1799,43 @@
             /* ═══ F. CREAR MÉTODO y NUEVO PROYECTO ══════════════════════ */
             .modal-obsidian {
                 animation: none !important;
+                /* Fondo opaco para compensar la falta de backdrop-filter */
+                background-color: rgba(0, 18, 32, 0.97) !important;
                 background-image: linear-gradient(135deg,
-                    rgba(0,210,255,0.06) 0%, rgba(0,12,25,0.02) 50%,
-                    rgba(16,185,129,0.04) 100%) !important;
+                    rgba(0,210,255,0.20) 0%, rgba(0,12,25,0.05) 50%,
+                    rgba(16,185,129,0.15) 100%) !important;
             }
             #projModalBody {
                 overflow-y: scroll !important;
                 -webkit-overflow-scrolling: touch !important;
                 overscroll-behavior-y: contain !important;
                 touch-action: pan-y !important;
+            }
+
+            /* ═══ F2. CREAR TAREA — eliminar transition de inputs por clase ══
+               Uso selectores de clase (mayor especificidad que 'input')
+               para sobrescribir el !important de .input-amber, etc.
+               ════════════════════════════════════════════════════════════ */
+            .input-amber,
+            #newTaskModal .input-amber,
+            #newTaskModal textarea.input-amber,
+            #newTaskModal #newTaskStepsContainer .task-subtask-title-input,
+            #newTaskModal #newTaskStepsContainer .task-subtask-desc-input,
+            #newTaskModal #newTaskStepsContainer textarea.input-amber {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+                animation: none !important;
+            }
+            .input-amber:focus,
+            #newTaskModal .input-amber:focus,
+            #newTaskModal textarea.input-amber:focus,
+            #newTaskModal #newTaskStepsContainer .task-subtask-title-input:focus,
+            #newTaskModal #newTaskStepsContainer .task-subtask-desc-input:focus,
+            #newTaskModal #newTaskStepsContainer textarea.input-amber:focus {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
             }
 
             /* ═══ G. LÍNEA DE TIEMPO (calDayModal) ══════════════════════
