@@ -3463,7 +3463,10 @@
            para ganar en cascada CSS cuando ambos tienen !important)
            ═══════════════════════════════════════════════════════════════════ */
         @media (max-width: 768px) {
-            /* Fondo estático + apertura rápida */
+            /* CAUSA RAÍZ DEL SCROLL LAG: overflow:hidden en el padre impide
+               que el navegador cree una capa GPU independiente para el scroll.
+               En CREAR TAREA funciona porque .modal-amber usa overflow:visible.
+               Replicamos exactamente eso aquí. */
             #calEventModal {
                 animation: none !important;
                 backdrop-filter: none !important;
@@ -3474,6 +3477,8 @@
                 background-size: 100% 100% !important;
                 transition: opacity 0.12s linear, visibility 0.12s linear,
                             transform 0.12s linear !important;
+                /* overflow:hidden → visible: igual que modal-amber en CREAR TAREA */
+                overflow: visible !important;
             }
             #calEventBackdrop {
                 transition: opacity 0.12s linear, visibility 0.12s linear !important;
@@ -3487,32 +3492,44 @@
                 content: none !important;
                 animation: none !important;
             }
-            /* Scroll fluido del body */
+            /* Scroll fluido del body — replicando exactamente #taskModalBody */
             .cal-event-body {
                 overflow-y: scroll !important;
                 -webkit-overflow-scrolling: touch !important;
                 overscroll-behavior-y: contain !important;
                 touch-action: pan-y !important;
                 scroll-behavior: auto !important;
+                /* Capa GPU propia para scroll independiente del padre */
+                transform: translateZ(0) !important;
+                will-change: scroll-position !important;
             }
-            /* INPUT LAG — cal-title-input tiene transition:all y transform en :focus
-               Este bloque viene DESPUÉS del base CSS, por eso gana */
-            .cal-title-input {
+            /* INPUT LAG — todos los inputs del modal sin transition ni transform */
+            #calEventModal input,
+            #calEventModal textarea,
+            .cal-title-input,
+            #calEventTitle,
+            #calEventDetails,
+            #calEventLabel {
                 transition: none !important;
                 -webkit-transition: none !important;
                 animation: none !important;
                 transform: none !important;
             }
-            .cal-title-input:focus {
+            #calEventModal input:focus,
+            #calEventModal textarea:focus,
+            .cal-title-input:focus,
+            #calEventTitle:focus,
+            #calEventDetails:focus,
+            #calEventLabel:focus {
                 transition: none !important;
                 -webkit-transition: none !important;
                 transform: none !important;
             }
-            /* cal-form-row dentro de EDITAR: sin transition en cascada */
-            #calEventModal .cal-form-row {
+            /* cal-form-row: sin transition que dispara repaints en cascada */
+            #calEventModal .cal-form-row,
+            .cal-form-row {
                 transition: none !important;
             }
-            /* Guardar botón: sin transition innecesaria */
             .cal-event-modal-save {
                 transition: none !important;
             }
