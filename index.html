@@ -4103,8 +4103,31 @@
         }
         .cal-day-title{font-size:1rem;font-weight:900;color:#fff;}
         .cal-day-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;padding:0.5rem;position:relative;background:rgba(0,15,55,0.97);min-height:0;}
-        .cal-day-body::-webkit-scrollbar{width:5px;}
-        .cal-day-body::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#00d2ff,#0072ff);border-radius:4px;}
+        /* Barra de scroll personalizada — siempre visible, sin animación del sistema */
+        .cal-day-body::-webkit-scrollbar{width:4px;background:rgba(0,0,0,0.3);}
+        .cal-day-body::-webkit-scrollbar-track{background:rgba(0,0,0,0.25);border-radius:4px;}
+        .cal-day-body::-webkit-scrollbar-thumb{background:rgba(0,210,255,0.7);border-radius:4px;}
+        .cal-day-body::-webkit-scrollbar-thumb:active{background:rgba(0,210,255,1);}
+        /* En móvil: barra siempre visible y sin la animación de fade del sistema */
+        @media (max-width: 768px) {
+            .cal-day-body {
+                /* scrollbar-width: thin fuerza barra siempre visible en Firefox */
+                scrollbar-width: thin;
+                scrollbar-color: rgba(0,210,255,0.7) rgba(0,0,0,0.25);
+            }
+            .cal-day-body::-webkit-scrollbar {
+                width: 4px !important;
+                /* display:block fuerza que siempre esté visible, sin fade */
+                display: block !important;
+            }
+            .cal-day-body::-webkit-scrollbar-thumb {
+                background: rgba(0,210,255,0.75) !important;
+                border-radius: 4px !important;
+            }
+            .cal-day-body::-webkit-scrollbar-track {
+                background: rgba(0,0,0,0.2) !important;
+            }
+        }
         .cal-day-allday{padding:8px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;flex-wrap:wrap;gap:4px;}
         .cal-timeline{position:relative;min-height:960px;} /* 24h * 40px */
         .cal-hour-line{
