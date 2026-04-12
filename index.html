@@ -1875,11 +1875,12 @@
             #calDayModal {
                 background: #020c22 !important;
                 border: 1.5px solid rgba(0,210,255,0.22) !important;
+                transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease !important;
             }
             #calDayModal .cal-modal-landing-bg,
             #calDayModal .cal-modal-sweep { display: none !important; }
             .cal-day-header {
-                background: #020c22 !important;
+                background: rgba(0, 12, 50, 0.98) !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
             }
@@ -1890,9 +1891,8 @@
                 overflow-y: scroll !important;
                 -webkit-overflow-scrolling: touch !important;
                 overscroll-behavior-y: none !important;
-                /* touch-action:pan-y es la clave para la barra fluida */
                 touch-action: pan-y !important;
-                will-change: scroll-position !important;
+                min-height: 0 !important;
                 scroll-behavior: auto !important;
             }
             .cal-hour-label {
@@ -1900,6 +1900,9 @@
                 opacity: 1 !important;
                 font-weight: 800 !important;
             }
+            /* Hora lines: sin transiciones extra */
+            .cal-hour-line { transition: none !important; }
+            .cal-timeline-event { transition: none !important; }
 
             /* ═══ H. VENTANA EDITAR (calEventModal) ═════════════════════
                Apertura rápida: transition 0.4s → 0.1s
@@ -4083,8 +4086,8 @@
             position:fixed;top:50%;left:50%;transform:translate(-50%,-60%) scale(0.92);
             z-index:8301;width:min(96vw,640px);max-height:88vh;border-radius:20px;
             overflow:hidden;display:flex;flex-direction:column;
-            opacity:0;visibility:hidden;transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
-            background: transparent;
+            opacity:0;visibility:hidden;transition:opacity 0.2s ease,visibility 0.2s ease,transform 0.2s ease;
+            background: #020c22;
             border: 1.5px solid rgba(0, 210, 255, 0.25);
             box-shadow: 0 40px 120px rgba(0,0,0,0.95),
                         0 0 0 1px rgba(0,210,255,0.15),
@@ -4095,12 +4098,11 @@
         .cal-day-header{
             display:flex;align-items:center;justify-content:space-between;
             padding:1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.15);flex-shrink:0;
-            background: rgba(0, 20, 80, 0.55);
-            backdrop-filter: blur(12px);
+            background: rgba(0, 12, 50, 0.98);
             position: relative; z-index: 3;
         }
         .cal-day-title{font-size:1rem;font-weight:900;color:#fff;}
-        .cal-day-body{flex:1;overflow-y:auto;padding:0.5rem;position:relative;background:rgba(0,20,70,0.45);backdrop-filter:blur(4px);}
+        .cal-day-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;padding:0.5rem;position:relative;background:rgba(0,15,55,0.97);min-height:0;}
         .cal-day-body::-webkit-scrollbar{width:5px;}
         .cal-day-body::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#00d2ff,#0072ff);border-radius:4px;}
         .cal-day-allday{padding:8px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;flex-wrap:wrap;gap:4px;}
@@ -11387,7 +11389,7 @@
             </div>
             <button onclick="closeCalDay()" class="cal-close-btn">✕</button>
         </div>
-        <div class="cal-day-body" id="calDayBody"></div>
+        <div class="cal-day-body" id="calDayBody" style="overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:none;min-height:0;scroll-behavior:auto;"></div>
     </div>
 
     <script>
