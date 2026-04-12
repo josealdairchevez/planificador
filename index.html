@@ -3503,14 +3503,13 @@
         #calEventModal .cal-event-body { position: relative; z-index: 2; }
 
         /* ═══════════════════════════════════════════════════════════════════
-           EDITAR EVENTO — OVERRIDE MÓVIL (debe ir DESPUÉS de #calEventModal
-           para ganar en cascada CSS cuando ambos tienen !important)
+           EDITAR EVENTO — OVERRIDE MÓVIL DEFINITIVO
+           Causa raíz del scroll lag: .cal-event-body usa flex:1 sin min-height:0
+           En flex containers, min-height:auto (default) impide que el hijo
+           se encoja → overflow-y:scroll nunca se activa → no hay scroll real.
+           Solución: min-height:0 + max-height inline en el HTML del elemento.
            ═══════════════════════════════════════════════════════════════════ */
         @media (max-width: 768px) {
-            /* CAUSA RAÍZ DEL SCROLL LAG: overflow:hidden en el padre impide
-               que el navegador cree una capa GPU independiente para el scroll.
-               En CREAR TAREA funciona porque .modal-amber usa overflow:visible.
-               Replicamos exactamente eso aquí. */
             #calEventModal {
                 animation: none !important;
                 backdrop-filter: none !important;
@@ -3521,33 +3520,31 @@
                 background-size: 100% 100% !important;
                 transition: opacity 0.12s linear, visibility 0.12s linear,
                             transform 0.12s linear !important;
-                /* overflow:hidden → visible: igual que modal-amber en CREAR TAREA */
-                overflow: visible !important;
+                /* SIN overflow:visible — el padre debe contener al hijo flex */
+                overflow: hidden !important;
             }
             #calEventBackdrop {
                 transition: opacity 0.12s linear, visibility 0.12s linear !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
             }
-            /* Quitar capas de efectos animados */
             #calEventModal::before { animation: none !important; }
             #calEventModal::after {
                 display: none !important;
                 content: none !important;
                 animation: none !important;
             }
-            /* Scroll fluido del body — replicando exactamente #taskModalBody */
+            /* Scroll fluido — el inline style del HTML ya tiene max-height y touch-action.
+               min-height:0 es la clave: permite que flex:1 se encoja y el scroll funcione */
             .cal-event-body {
                 overflow-y: scroll !important;
                 -webkit-overflow-scrolling: touch !important;
                 overscroll-behavior-y: contain !important;
                 touch-action: pan-y !important;
+                min-height: 0 !important;
                 scroll-behavior: auto !important;
-                /* Capa GPU propia para scroll independiente del padre */
-                transform: translateZ(0) !important;
-                will-change: scroll-position !important;
             }
-            /* INPUT LAG — todos los inputs del modal sin transition ni transform */
+            /* INPUT LAG — todos los inputs sin transition ni transform */
             #calEventModal input,
             #calEventModal textarea,
             .cal-title-input,
@@ -3569,14 +3566,13 @@
                 -webkit-transition: none !important;
                 transform: none !important;
             }
-            /* cal-form-row: sin transition que dispara repaints en cascada */
-            #calEventModal .cal-form-row,
-            .cal-form-row {
-                transition: none !important;
-            }
-            .cal-event-modal-save {
-                transition: none !important;
-            }
+            /* Eliminar transitions de elementos dentro del modal */
+            #calEventModal .cal-form-row { transition: none !important; }
+            #calEventModal .cal-toggle { transition: none !important; }
+            #calEventModal .cal-toggle::after { transition: none !important; }
+            #calEventModal .cal-reminder-chip { transition: none !important; }
+            #calEventModal .cal-color-dot { transition: none !important; }
+            .cal-event-modal-save { transition: none !important; }
         }
 
         .cal-event-modal-header {
@@ -3665,7 +3661,7 @@
             position:relative;cursor:pointer;transition:all 0.3s;flex-shrink:0;
         }
         .cal-toggle.on{background:linear-gradient(90deg,#00d2ff,#0072ff);box-shadow:0 0 12px rgba(0,210,255,0.5);}
-        .cal-toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:all 0.3s;box-shadow:0 2px 4px rgba(0,0,0,0.3);}
+        .cal-toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left 0.2s ease;box-shadow:0 2px 4px rgba(0,0,0,0.3);}
         .cal-toggle.on::after{left:22px;}
 
         /* Color picker row */
@@ -11156,7 +11152,7 @@
                 <button onclick="closeCalEventModal()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.8rem;transition:none;" onmouseover="this.style.background='rgba(255,50,50,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">✕</button>
             </div>
         </div>
-        <div class="cal-event-body" id="calEventBody">
+        <div class="cal-event-body" id="calEventBody" style="overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;max-height:78vh;min-height:0;">
             <!-- Title -->
             <input type="text" class="cal-title-input" id="calEventTitle" placeholder="Título del evento...">
             <input type="text" class="cal-title-input" id="calEventDetails" placeholder="Agregar detalles..." style="font-size:0.88rem;opacity:0.8;">
