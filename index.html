@@ -3473,12 +3473,10 @@
             border-radius:20px;padding:0;
             display:flex;flex-direction:column;overflow:hidden;
             opacity:0;visibility:hidden;
-            transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
-            background: linear-gradient(-45deg, #0d1b4b, #1e3a8a, #6d28d9, #2563eb, #4f46e5, #0d1b4b);
-            background-size: 400% 400%;
-            animation: auroraShift 12s ease-in-out infinite;
+            transition:opacity 0.15s ease,visibility 0.15s ease,transform 0.15s ease;
+            background: #0e1d50;
             border:none;
-            box-shadow:0 40px 120px rgba(0,0,0,0.95), 0 0 0 2px rgba(99,102,241,0.5), 0 0 30px rgba(99,102,241,0.25), inset 0 0 40px rgba(99,102,241,0.08);
+            box-shadow:0 40px 120px rgba(0,0,0,0.95), 0 0 0 2px rgba(99,102,241,0.5), 0 0 30px rgba(99,102,241,0.25);
         }
         #calEventModal.show-cal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
         /* Aurora blobs para calEventModal */
@@ -3607,9 +3605,29 @@
         }
         .cal-event-modal-save:hover{filter:brightness(1.2);box-shadow:0 0 20px rgba(0,210,255,0.5);}
 
-        .cal-event-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;padding:1.2rem;display:flex;flex-direction:column;gap:1rem;}
-        .cal-event-body::-webkit-scrollbar{width:5px;}
-        .cal-event-body::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#00d2ff,#0072ff);border-radius:4px;}
+        .cal-event-body{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;padding:1.2rem;display:flex;flex-direction:column;gap:1rem;min-height:0;}
+        /* Barra de scroll personalizada — siempre visible, sin fade del sistema */
+        .cal-event-body::-webkit-scrollbar{width:4px;background:rgba(0,0,0,0.3);}
+        .cal-event-body::-webkit-scrollbar-track{background:rgba(0,0,0,0.25);border-radius:4px;}
+        .cal-event-body::-webkit-scrollbar-thumb{background:rgba(0,210,255,0.7);border-radius:4px;}
+        .cal-event-body::-webkit-scrollbar-thumb:active{background:rgba(0,210,255,1);}
+        @media (max-width: 768px) {
+            .cal-event-body {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(0,210,255,0.7) rgba(0,0,0,0.25);
+            }
+            .cal-event-body::-webkit-scrollbar {
+                width: 4px !important;
+                display: block !important;
+            }
+            .cal-event-body::-webkit-scrollbar-thumb {
+                background: rgba(0,210,255,0.75) !important;
+                border-radius: 4px !important;
+            }
+            .cal-event-body::-webkit-scrollbar-track {
+                background: rgba(0,0,0,0.2) !important;
+            }
+        }
 
         /* Title input event */
         .cal-title-input {
