@@ -763,19 +763,18 @@
             border: 1px solid rgba(177, 0, 255, 0.3) !important; 
             color: #fff !important; 
             width: 100% !important; 
-            /* LA SOLUCIÓN: Respetamos los estilos originales de la casilla de descripción */
             padding: 15px 20px; 
             font-size: 1.1rem; 
             border-radius: 12px; 
             
             outline: none !important; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; 
+            transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
             font-family: inherit !important; 
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.5) !important; 
             position: relative; z-index: 1; box-sizing: border-box !important;
         }
         .input-magenta::placeholder { color: rgba(255,255,255,0.4) !important; font-weight: 500 !important; }
-        .input-magenta:focus { border-color: #ff007a !important; box-shadow: 0 0 20px rgba(255, 0, 122, 0.4), inset 0 2px 5px rgba(0,0,0,0.5) !important; background: rgba(20, 0, 40, 0.8) !important; transform: translateY(-2px); }
+        .input-magenta:focus { border-color: #ff007a !important; box-shadow: 0 0 20px rgba(255, 0, 122, 0.4), inset 0 2px 5px rgba(0,0,0,0.5) !important; background: rgba(20, 0, 40, 0.8) !important; }
         
         .modal-title-obsidian {
             color: #34d399 !important; /* Verde Jade Brillante y Claro para destacar sobre el Cyan */
@@ -2406,7 +2405,56 @@
         }
         #archEditTaskModal .arch-edit-scroll::-webkit-scrollbar { width: 6px; }
         #archEditTaskModal .arch-edit-scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#fb923c,#f97316); border-radius: 8px; box-shadow: 0 0 6px rgba(249,115,22,0.6); }
-        .arch-edit-scroll{flex:1;overflow-y:auto;padding-right:6px;}
+
+        /* ═══ MOBILE FIX — arch edit modals: backdrop + animation + scroll + inputs ═══
+           Viene DESPUÉS de las definiciones base para ganar en cascada.
+           ════════════════════════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            /* Quitar backdrop-filter y animation de los 3 modales de editar */
+            #archEditModal, #archEditProjectModal, #archEditTaskModal {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                animation: none !important;
+                /* Apertura rápida */
+                transition: opacity 0.12s linear, visibility 0.12s linear,
+                            transform 0.12s linear !important;
+                /* overflow:visible igual que modal-amber (CREAR TAREA que funciona) */
+                overflow: visible !important;
+            }
+            /* Quitar animación de los ::before */
+            #archEditModal::before, #archEditProjectModal::before,
+            #archEditTaskModal::before {
+                animation: none !important;
+                display: none !important;
+            }
+            /* Scroll fluido en arch-edit-scroll */
+            .arch-edit-scroll {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
+                transform: translateZ(0) !important;
+            }
+            /* Todos los inputs de editar bóveda — sin transition ni transform */
+            #archEditModal input, #archEditModal textarea,
+            #archEditProjectModal input, #archEditProjectModal textarea,
+            #archEditTaskModal input, #archEditTaskModal textarea,
+            #archEditMethodName, #archEditProjectName, #archEditTaskName,
+            .input-magenta, .input-jade, .input-amber {
+                transition: none !important;
+                -webkit-transition: none !important;
+                transform: none !important;
+                animation: none !important;
+            }
+            #archEditMethodName:focus, #archEditProjectName:focus,
+            #archEditTaskName:focus,
+            #archEditModal input:focus, #archEditModal textarea:focus,
+            #archEditProjectModal input:focus, #archEditProjectModal textarea:focus,
+            #archEditTaskModal input:focus, #archEditTaskModal textarea:focus {
+                transition: none !important;
+                transform: none !important;
+            }
+        }
         .arch-edit-scroll::-webkit-scrollbar{width:5px;}
 
         /* ═══ MOBILE FIX — arch-edit-scroll y inputs de editar bóveda ═══
