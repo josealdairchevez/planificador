@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#001224">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>Planificador de Alto Rendimiento JCH</title>
     <!-- NUEVO: Fuente premium ovalada, gordita y muy amigable -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@900&display=swap" rel="stylesheet">
@@ -12167,6 +12169,16 @@
         initFirebase();
     }
 
+    </script>
+    <!-- ═══ PWA: Registro del Service Worker ═══ -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/planificador/service-worker.js')
+                    .then(reg => console.log('[PWA] Service Worker registrado:', reg.scope))
+                    .catch(err => console.warn('[PWA] Error al registrar SW:', err));
+            });
+        }
     </script>
 
 </body>
