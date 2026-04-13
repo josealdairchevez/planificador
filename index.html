@@ -280,7 +280,7 @@
         .custom-select { position: relative; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 30px; padding: 0.6rem 1.5rem; font-weight: 800; color: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         .custom-select:hover, .custom-select-wrapper.open .custom-select { border-color: var(--accent-cyan); background: rgba(0, 20, 40, 0.8); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3), inset 0 2px 5px rgba(0,0,0,0.5); }
         
-        .custom-options { position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid var(--accent-cyan); border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; max-height: 250px; overflow-y: auto; }
+        .custom-options { position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--accent-cyan); border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; max-height: 250px; overflow-y: auto; }
         .custom-options::-webkit-scrollbar { width: 6px; } .custom-options::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; } .custom-options::-webkit-scrollbar-thumb { background: var(--accent-cyan); border-radius: 4px; box-shadow: 0 0 10px var(--accent-cyan); }
         .custom-select-wrapper.open .custom-options { opacity: 1; visibility: visible; transform: translateY(0); }
         
@@ -1673,6 +1673,13 @@
             #archEditModal, #archEditProjectModal, #archEditTaskModal {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
+            }
+            /* Proteger .custom-options: siempre fondo oscuro sólido visible */
+            .custom-options {
+                background: #0f1726 !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                z-index: 9999 !important;
             }
             /* Backdrops: eliminar blur por completo — causa el ghost cyan */
             .modal-backdrop,
