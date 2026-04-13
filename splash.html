@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Planificador JCH</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:'Segoe UI',system-ui,sans-serif; }
+
+  /* ── CANVAS DE FONDO ── */
+  #bgCanvas { position:fixed; inset:0; width:100%; height:100%; z-index:0; }
+
+  /* ── ESCENA PRINCIPAL ── */
+  #scene {
+    position:fixed; inset:0; z-index:1;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:flex-end;
+    overflow:hidden;
+  }
+
+  /* ── PARTÍCULAS FLOTANTES (libros, estrellas, átomos) ── */
+  .particle {
+    position:absolute;
+    font-size:clamp(18px, 4vw, 32px);
+    opacity:0;
+    pointer-events:none;
+    animation: floatUp var(--dur, 4s) ease-in var(--delay, 0s) forwards;
+    left: var(--x, 50%);
+    top: 110%;
+  }
+  @keyframes floatUp {
+    0%   { transform:translateY(0) rotate(0deg) scale(0.5); opacity:0; }
+    10%  { opacity:1; }
+    80%  { opacity:0.8; }
+    100% { transform:translateY(calc(-110vh)) rotate(var(--rot,360deg)) scale(1.2); opacity:0; }
+  }
+
+  /* ── PLATAFORMA DE LANZAMIENTO ── */
+  #launchPad {
+    width:80vw; max-width:340px; height:12px;
+    background:linear-gradient(90deg,transparent,#00d2ff,#00d2ff,transparent);
+    border-radius:6px;
+    box-shadow:0 0 30px #00d2ff, 0 0 60px rgba(0,210,255,0.4);
+    position:relative; z-index:5;
+    margin-bottom:0;
+    opacity:0; animation:fadeIn 0.5s 0.5s forwards;
+  }
+  @keyframes fadeIn { to { opacity:1; } }
+
+  /* ── COHETE ── */
+  #rocketWrapper {
+    position:relative; z-index:10;
+    display:flex; flex-direction:column; align-items:center;
+    margin-bottom: -6px;
+    animation: rocketLaunch 2.2s 2s cubic-bezier(0.4,0,0.2,1) forwards;
+    transform-origin: bottom center;
+  }
+  @keyframes rocketLaunch {
+    0%   { transform:translateY(0) scale(1);     filter:brightness(1); }
+    15%  { transform:translateY(8px) scale(0.98); filter:brightness(1.3); }
+    30%  { transform:translateY(-20px) scale(1.02); }
+    100% { transform:translateY(-120vh) scale(0.4); filter:brightness(2) blur(2px); opacity:0; }
+  }
+
+  /* SVG del cohete */
+  #rocket { width:clamp(80px,20vw,140px); height:auto; filter:drop-shadow(0 0 20px #00d2ff); }
+
+  /* Llama animada */
+  #flame {
+    width:clamp(30px,8vw,55px);
+    animation:flameAnim 0.1s infinite alternate;
+    margin-top:-4px;
+    filter:drop-shadow(0 4px 15px #ff6600);
+  }
+  @keyframes flameAnim {
+    0%  { transform:scaleX(1)   scaleY(1);   }
+    50% { transform:scaleX(1.1) scaleY(1.15); }
+    100%{ transform:scaleX(0.9) scaleY(0.95); }
+  }
+
+  /* Humo de la base */
+  .smoke {
+    position:absolute; bottom:-10px;
+    width:clamp(60px,15vw,100px); height:clamp(60px,15vw,100px);
+    border-radius:50%;
+    background:radial-gradient(circle,rgba(200,200,255,0.5),transparent 70%);
+    animation:smokeExpand 2s 2s ease-out forwards;
+    opacity:0; pointer-events:none;
+  }
+  @keyframes smokeExpand {
+    0%  { transform:scale(0.5); opacity:0.8; }
+    100%{ transform:scale(4);   opacity:0; }
+  }
+
+  /* ── ONDAS DE CHOQUE AL LANZAMIENTO ── */
+  .shockwave {
+    position:absolute; bottom:10px;
+    width:50px; height:50px;
+    border-radius:50%;
+    border:3px solid rgba(0,210,255,0.8);
+    animation:shockwaveAnim 1s ease-out forwards;
+    opacity:0; pointer-events:none;
+  }
+  @keyframes shockwaveAnim {
+    0%  { transform:scale(1); opacity:0.9; }
+    100%{ transform:scale(8); opacity:0; }
+  }
+
+  /* ── ESTELA DEL COHETE ── */
+  #trail {
+    position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+    width:4px;
+    background:linear-gradient(to top,#ff6600,#ffaa00,#00d2ff,transparent);
+    height:0; border-radius:2px;
+    animation:trailGrow 2.2s 2s ease-in forwards;
+    z-index:4;
+  }
+  @keyframes trailGrow {
+    0%  { height:0; opacity:1; }
+    60% { height:60vh; opacity:1; }
+    100%{ height:100vh; opacity:0; }
+  }
+
+  /* ── TEXTO SUPERIOR ── */
+  #headerText {
+    position:fixed; top:0; left:0; right:0;
+    text-align:center; z-index:20; padding:clamp(20px,6vh,60px) 20px 0;
+    opacity:0; animation:slideDown 0.8s 0.3s ease-out forwards;
+  }
+  @keyframes slideDown {
+    from { transform:translateY(-30px); opacity:0; }
+    to   { transform:translateY(0);     opacity:1; }
+  }
+  #appTitle {
+    font-size:clamp(1.3rem,5vw,2.2rem); font-weight:900; text-transform:uppercase;
+    letter-spacing:3px;
+    background:linear-gradient(135deg,#fff 0%,#00f0ff 40%,#0072ff 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    text-shadow:none;
+    margin-bottom:6px;
+  }
+  #appSubtitle {
+    font-size:clamp(0.65rem,2.5vw,0.9rem); color:rgba(0,210,255,0.8);
+    letter-spacing:2px; text-transform:uppercase; font-weight:600;
+  }
+
+  /* ── MOTIVATIONAL TEXT ── */
+  #motivText {
+    position:fixed; bottom:clamp(80px,18vh,160px); left:0; right:0;
+    text-align:center; z-index:20; padding:0 30px;
+    opacity:0; animation:fadeInUp 0.8s 1s ease-out forwards;
+  }
+  @keyframes fadeInUp {
+    from { transform:translateY(20px); opacity:0; }
+    to   { transform:translateY(0);    opacity:1; }
+  }
+  #quote {
+    font-size:clamp(0.85rem,3vw,1.1rem); color:#fff; font-weight:700;
+    line-height:1.5; font-style:italic;
+    text-shadow:0 0 20px rgba(0,210,255,0.5);
+  }
+  #quoteAuthor {
+    font-size:clamp(0.65rem,2vw,0.8rem); color:rgba(0,210,255,0.6);
+    margin-top:6px; letter-spacing:2px; text-transform:uppercase;
+  }
+
+  /* ── BARRA DE CARGA ── */
+  #loadBar {
+    position:fixed; bottom:clamp(30px,8vh,60px); left:50%; transform:translateX(-50%);
+    width:clamp(180px,60vw,300px); z-index:20;
+    opacity:0; animation:fadeIn 0.5s 1.2s forwards;
+  }
+  #loadTrack {
+    width:100%; height:4px; background:rgba(0,210,255,0.15);
+    border-radius:2px; overflow:hidden;
+  }
+  #loadFill {
+    height:100%; width:0%; border-radius:2px;
+    background:linear-gradient(90deg,#00d2ff,#0072ff);
+    box-shadow:0 0 10px #00d2ff;
+    animation:loadProgress 3.5s 1.2s cubic-bezier(0.25,0.1,0.25,1) forwards;
+  }
+  @keyframes loadProgress { to { width:100%; } }
+  #loadLabel {
+    text-align:center; margin-top:8px;
+    font-size:clamp(0.55rem,2vw,0.7rem); color:rgba(0,210,255,0.5);
+    letter-spacing:2px; text-transform:uppercase;
+    animation:pulseText 1s 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes pulseText { to { color:rgba(0,210,255,0.9); } }
+
+  /* ── OVERLAY FINAL DE TRANSICIÓN ── */
+  #exitOverlay {
+    position:fixed; inset:0; z-index:100;
+    background:radial-gradient(circle,#00d2ff,#0072ff,#001224);
+    opacity:0; pointer-events:none;
+    animation:exitFlash 0.6s 4.6s ease-in forwards;
+  }
+  @keyframes exitFlash {
+    0%  { opacity:0; transform:scale(0.5); border-radius:100%; }
+    60% { opacity:1; transform:scale(1.5); border-radius:0; }
+    100%{ opacity:1; transform:scale(1);   border-radius:0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- FONDO ANIMADO (canvas) -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- TEXTO SUPERIOR -->
+<div id="headerText">
+  <div id="appTitle">🚀 Planificador JCH</div>
+  <div id="appSubtitle">Centro de Comando de Alto Rendimiento</div>
+</div>
+
+<!-- ESCENA DEL COHETE -->
+<div id="scene">
+  <!-- Partículas flotantes (se generan via JS) -->
+  <div id="particlesContainer"></div>
+
+  <!-- Estela -->
+  <div id="trail"></div>
+
+  <!-- Cohete + llama -->
+  <div id="rocketWrapper">
+    <!-- SVG Cohete -->
+    <svg id="rocket" viewBox="0 0 120 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#4a9eff"/>
+          <stop offset="50%" style="stop-color:#e8f4ff"/>
+          <stop offset="100%" style="stop-color:#4a9eff"/>
+        </linearGradient>
+        <linearGradient id="noseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#00f0ff"/>
+          <stop offset="100%" style="stop-color:#0072ff"/>
+        </linearGradient>
+        <radialGradient id="windowGrad" cx="40%" cy="35%">
+          <stop offset="0%" style="stop-color:#ffffff"/>
+          <stop offset="40%" style="stop-color:#00d2ff"/>
+          <stop offset="100%" style="stop-color:#0033aa"/>
+        </radialGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Aletas izquierda -->
+      <polygon points="20,140 5,185 30,160" fill="#0072ff" opacity="0.9"/>
+      <!-- Aletas derecha -->
+      <polygon points="100,140 115,185 90,160" fill="#0072ff" opacity="0.9"/>
+      <!-- Cuerpo -->
+      <rect x="30" y="80" width="60" height="100" rx="18" fill="url(#bodyGrad)"/>
+      <!-- Nariz -->
+      <polygon points="60,10 30,80 90,80" fill="url(#noseGrad)" filter="url(#glow)"/>
+      <!-- Ventana -->
+      <circle cx="60" cy="115" r="20" fill="url(#windowGrad)" stroke="white" stroke-width="3"/>
+      <!-- Brillo ventana -->
+      <ellipse cx="53" cy="108" rx="7" ry="5" fill="white" opacity="0.6"/>
+      <!-- Detalle central -->
+      <rect x="52" y="145" width="16" height="30" rx="4" fill="rgba(0,50,120,0.4)"/>
+      <!-- Linea decorativa -->
+      <line x1="60" y1="80" x2="60" y2="180" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    </svg>
+
+    <!-- Llama SVG -->
+    <svg id="flame" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="flameGrad" cx="50%" cy="0%">
+          <stop offset="0%" style="stop-color:#ffffff"/>
+          <stop offset="30%" style="stop-color:#ffee00"/>
+          <stop offset="65%" style="stop-color:#ff6600"/>
+          <stop offset="100%" style="stop-color:transparent"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="30" cy="25" rx="22" ry="30" fill="url(#flameGrad)" opacity="0.95"/>
+      <ellipse cx="30" cy="30" rx="12" ry="20" fill="#ffee00" opacity="0.7"/>
+      <ellipse cx="30" cy="20" rx="6" ry="12" fill="white" opacity="0.8"/>
+    </svg>
+  </div>
+
+  <!-- Humos -->
+  <div class="smoke" style="left:calc(50% - 50px)"></div>
+  <div class="smoke" style="left:calc(50% - 20px); animation-delay:2.1s;"></div>
+  <div class="smoke" style="left:calc(50% + 10px); animation-delay:2.2s;"></div>
+
+  <!-- Ondas de choque -->
+  <div class="shockwave" style="animation-delay:2s;"></div>
+  <div class="shockwave" style="animation-delay:2.3s; border-color:rgba(255,150,0,0.6);"></div>
+
+  <!-- Plataforma de lanzamiento -->
+  <div id="launchPad"></div>
+</div>
+
+<!-- TEXTO MOTIVACIONAL -->
+<div id="motivText">
+  <div id="quote">"El éxito es la suma de pequeños esfuerzos<br>repetidos día tras día."</div>
+  <div id="quoteAuthor">— Robert Collier</div>
+</div>
+
+<!-- BARRA DE CARGA -->
+<div id="loadBar">
+  <div id="loadTrack"><div id="loadFill"></div></div>
+  <div id="loadLabel">Iniciando sistema...</div>
+</div>
+
+<!-- FLASH DE SALIDA -->
+<div id="exitOverlay"></div>
+
+<script>
+// ═══════════════════════════════════
+// FONDO: Espacio estelar animado
+// ═══════════════════════════════════
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, stars = [], nebulas = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  initStars();
+}
+
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 200; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 2.5 + 0.3,
+      speed: Math.random() * 0.4 + 0.05,
+      alpha: Math.random(),
+      dalpha: (Math.random() - 0.5) * 0.02,
+      color: Math.random() > 0.7 ? '#00d2ff' : '#ffffff'
+    });
+  }
+  nebulas = [];
+  for (let i = 0; i < 5; i++) {
+    nebulas.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 150 + 80,
+      color: ['rgba(0,50,120,', 'rgba(50,0,120,', 'rgba(0,80,100,'][Math.floor(Math.random()*3)],
+      alpha: Math.random() * 0.3 + 0.05
+    });
+  }
+}
+
+function drawBg(t) {
+  // Fondo degradado
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#000510');
+  grad.addColorStop(0.5, '#001030');
+  grad.addColorStop(1, '#000820');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Nebulosidades
+  nebulas.forEach(n => {
+    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+    g.addColorStop(0, n.color + n.alpha + ')');
+    g.addColorStop(1, n.color + '0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Estrellas
+  stars.forEach(s => {
+    s.alpha += s.dalpha;
+    if (s.alpha > 1 || s.alpha < 0) s.dalpha *= -1;
+    s.alpha = Math.max(0.1, Math.min(1, s.alpha));
+
+    // Movimiento de paralaje (caen levemente hacia abajo)
+    s.y += s.speed;
+    if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+
+    ctx.save();
+    ctx.globalAlpha = s.alpha;
+    ctx.fillStyle = s.color;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = s.r > 1.5 ? 6 : 2;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Planeta lejano decorativo
+  const px = W * 0.82, py = H * 0.15, pr = Math.min(W, H) * 0.07;
+  const pg = ctx.createRadialGradient(px - pr*0.3, py - pr*0.3, 0, px, py, pr);
+  pg.addColorStop(0, 'rgba(100,50,200,0.6)');
+  pg.addColorStop(0.6, 'rgba(60,20,140,0.4)');
+  pg.addColorStop(1, 'rgba(20,0,60,0)');
+  ctx.fillStyle = pg;
+  ctx.beginPath();
+  ctx.arc(px, py, pr, 0, Math.PI * 2);
+  ctx.fill();
+  // Anillo del planeta
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(-0.3);
+  ctx.scale(1, 0.3);
+  ctx.beginPath();
+  ctx.arc(0, 0, pr * 1.6, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(150,80,255,0.25)';
+  ctx.lineWidth = pr * 0.25;
+  ctx.stroke();
+  ctx.restore();
+}
+
+let raf;
+function animate(t) {
+  drawBg(t);
+  raf = requestAnimationFrame(animate);
+}
+window.addEventListener('resize', resize);
+resize();
+animate(0);
+
+// ═══════════════════════════════════
+// PARTÍCULAS DE ESTUDIO FLOTANTES
+// ═══════════════════════════════════
+const studyIcons = ['📚','🎓','⭐','🧠','💡','📐','🔬','🏆','📝','⚡','🌟','💎','🚀','📊','🎯'];
+const container = document.getElementById('particlesContainer');
+
+function spawnParticle() {
+  const el = document.createElement('div');
+  el.className = 'particle';
+  el.textContent = studyIcons[Math.floor(Math.random() * studyIcons.length)];
+  const dur  = (Math.random() * 3 + 3).toFixed(1);
+  const delay = (Math.random() * 1.5).toFixed(1);
+  const x    = (Math.random() * 90 + 5).toFixed(0);
+  const rot  = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 360 + 180);
+  el.style.cssText += `--dur:${dur}s;--delay:${delay}s;--x:${x}%;--rot:${rot}deg;`;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), (parseFloat(dur) + parseFloat(delay) + 0.5) * 1000);
+}
+
+// Lanzar partículas escalonadas
+function startParticles() {
+  for (let i = 0; i < 20; i++) {
+    setTimeout(spawnParticle, i * 180);
+  }
+  // Ciclo continuo
+  let interval = setInterval(spawnParticle, 350);
+  setTimeout(() => clearInterval(interval), 4000);
+}
+setTimeout(startParticles, 800);
+
+// ═══════════════════════════════════
+// TEXTO DE CARGA DINÁMICO
+// ═══════════════════════════════════
+const loadMsgs = [
+  'Iniciando sistema...', 'Cargando módulos...', 'Sincronizando datos...',
+  'Preparando misión...', '¡Listo para despegar! 🚀'
+];
+const loadLabel = document.getElementById('loadLabel');
+let msgIdx = 0;
+const labelInterval = setInterval(() => {
+  msgIdx = (msgIdx + 1) % loadMsgs.length;
+  loadLabel.textContent = loadMsgs[msgIdx];
+}, 700);
+setTimeout(() => clearInterval(labelInterval), 4000);
+
+// ═══════════════════════════════════
+// REDIRECCIÓN A LA APP PRINCIPAL
+// ═══════════════════════════════════
+setTimeout(() => {
+  cancelAnimationFrame(raf);
+  // Redirigir al planificador principal
+  window.location.href = 'index.html';
+}, 5200);
+</script>
+</body>
+</html>
