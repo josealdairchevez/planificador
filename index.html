@@ -12170,15 +12170,225 @@
     }
 
     </script>
-    <!-- ═══ PWA: Registro del Service Worker ═══ -->
+    <!-- ═══ GOOGLE CALENDAR API — INTEGRACIÓN ═══ -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/planificador/service-worker.js')
-                    .then(reg => console.log('[PWA] Service Worker registrado:', reg.scope))
-                    .catch(err => console.warn('[PWA] Error al registrar SW:', err));
-            });
+    // ─── CONFIGURACIÓN ────────────────────────────────────────────────
+    const GC_CLIENT_ID = '693221156138-sh8t4a7kd1qtvl4g018bi7q7qfmmn2f6.apps.googleusercontent.com';
+    const GC_SCOPES    = 'https://www.googleapis.com/auth/calendar.events';
+    let   gcToken      = null; // access token activo
+
+    // ─── ESTADO DE CONEXIÓN ───────────────────────────────────────────
+    function gcIsConnected() { return !!gcToken; }
+
+    // ─── BOTÓN EN EL PANEL DE PERFIL ─────────────────────────────────
+    function gcAddProfileButton() {
+        const panel = document.getElementById('profilePanel');
+        if (!panel || document.getElementById('gcConnectBtn')) return;
+
+        const divider = document.createElement('div');
+        divider.className = 'profile-divider';
+
+        const btn = document.createElement('button');
+        btn.id = 'gcConnectBtn';
+        btn.className = 'profile-sync-btn';
+        btn.style.cssText = 'background:linear-gradient(135deg,rgba(66,133,244,.15),rgba(52,168,83,.15));border-color:rgba(66,133,244,.4);color:#4285f4;margin-bottom:.5rem;gap:8px;';
+        btn.innerHTML = '📅 Conectar Google Calendar';
+        btn.onclick = gcConnect;
+
+        const status = document.createElement('div');
+        status.id = 'gcStatus';
+        status.style.cssText = 'font-size:.68rem;color:rgba(66,133,244,.6);text-align:center;margin-bottom:.4rem;';
+        status.textContent = 'No conectado';
+
+        panel.insertBefore(status,  panel.querySelector('.profile-divider'));
+        panel.insertBefore(btn,     panel.querySelector('.profile-divider'));
+        panel.insertBefore(divider, panel.querySelector('.profile-divider'));
+    }
+
+    function gcUpdateStatus(msg, color) {
+        const el = document.getElementById('gcStatus');
+        if (el) { el.textContent = msg; el.style.color = color || 'rgba(66,133,244,.6)'; }
+        const btn = document.getElementById('gcConnectBtn');
+        if (btn && gcIsConnected()) {
+            btn.innerHTML = '✅ Google Calendar conectado';
+            btn.style.color = '#34d399';
+            btn.style.borderColor = 'rgba(52,211,153,.4)';
+            btn.onclick = gcDisconnect;
         }
+    }
+
+    // ─── CONNECT (OAuth popup) ────────────────────────────────────────
+    function gcConnect() {
+        const params = new URLSearchParams({
+            client_id:     GC_CLIENT_ID,
+            redirect_uri:  'https://josealdairchevez.github.io/planificador/index.html',
+            response_type: 'token',
+            scope:         GC_SCOPES,
+            prompt:        'consent'
+        });
+        // Guardar intención para procesar al regresar
+        sessionStorage.setItem('gc_pending', '1');
+        window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+    }
+
+    function gcDisconnect() {
+        gcToken = null;
+        sessionStorage.removeItem('gc_token');
+        sessionStorage.removeItem('gc_pending');
+        gcUpdateStatus('Desconectado', 'rgba(239,68,68,.7)');
+        const btn = document.getElementById('gcConnectBtn');
+        if (btn) {
+            btn.innerHTML = '📅 Conectar Google Calendar';
+            btn.style.color = '#4285f4';
+            btn.style.borderColor = 'rgba(66,133,244,.4)';
+            btn.onclick = gcConnect;
+        }
+        setTimeout(() => gcUpdateStatus('No conectado', 'rgba(66,133,244,.6)'), 2000);
+    }
+
+    // ─── PROCESAR TOKEN AL REGREDIR DE GOOGLE ────────────────────────
+    (function gcHandleRedirect() {
+        const hash = window.location.hash;
+        if (!hash.includes('access_token')) return;
+        const params = new URLSearchParams(hash.replace('#',''));
+        const token  = params.get('access_token');
+        if (!token) return;
+        gcToken = token;
+        sessionStorage.setItem('gc_token', token);
+        // Limpiar hash de la URL
+        history.replaceState(null, '', window.location.pathname);
+        console.log('[GC] Token recibido ✅');
+    })();
+
+    // Restaurar token de sesión si existe
+    (function gcRestoreSession() {
+        const saved = sessionStorage.getItem('gc_token');
+        if (saved) { gcToken = saved; }
+    })();
+
+    // ─── CREAR EVENTO EN GOOGLE CALENDAR ─────────────────────────────
+    async function gcCreateEvent(ev) {
+        if (!gcIsConnected()) return;
+        try {
+            // Construir fechas ISO
+            const startDT = ev.allDay
+                ? { date: ev.startDate.split('T')[0] }
+                : { dateTime: ev.startDate, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+            const endDT = ev.allDay
+                ? { date: ev.endDate.split('T')[0] }
+                : { dateTime: ev.endDate, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+
+            const body = {
+                summary:     ev.title,
+                description: ev.details || '',
+                start:       startDT,
+                end:         endDT,
+                colorId:     gcColorId(ev.color),
+                reminders: {
+                    useDefault: false,
+                    overrides: gcReminders(ev.reminders || [])
+                }
+            };
+
+            const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+                method:  'POST',
+                headers: { 'Authorization': 'Bearer ' + gcToken, 'Content-Type': 'application/json' },
+                body:    JSON.stringify(body)
+            });
+
+            if (resp.status === 401) { gcDisconnect(); return; }
+            if (!resp.ok) { console.warn('[GC] Error al crear evento:', resp.status); return; }
+
+            const data = await resp.json();
+            console.log('[GC] Evento creado:', data.id);
+
+            // Guardar id de Google en el evento local
+            if (typeof calEvents !== 'undefined') {
+                const local = calEvents.find(e => e.id === ev.id);
+                if (local) { local.gcId = data.id; if(typeof saveCalEvents==='function') saveCalEvents(); }
+            }
+
+            gcUpdateStatus('✅ Sincronizado', '#34d399');
+            setTimeout(() => gcUpdateStatus('Conectado', '#34d399'), 3000);
+
+        } catch(e) { console.warn('[GC] Error:', e); }
+    }
+
+    // ─── ACTUALIZAR EVENTO EN GOOGLE CALENDAR ────────────────────────
+    async function gcUpdateEvent(ev) {
+        if (!gcIsConnected() || !ev.gcId) { gcCreateEvent(ev); return; }
+        try {
+            const startDT = ev.allDay
+                ? { date: ev.startDate.split('T')[0] }
+                : { dateTime: ev.startDate, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+            const endDT = ev.allDay
+                ? { date: ev.endDate.split('T')[0] }
+                : { dateTime: ev.endDate, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+
+            await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${ev.gcId}`, {
+                method:  'PATCH',
+                headers: { 'Authorization': 'Bearer ' + gcToken, 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ summary: ev.title, description: ev.details||'', start: startDT, end: endDT, colorId: gcColorId(ev.color) })
+            });
+        } catch(e) { console.warn('[GC] Update error:', e); }
+    }
+
+    // ─── ELIMINAR EVENTO DE GOOGLE CALENDAR ──────────────────────────
+    async function gcDeleteEvent(gcId) {
+        if (!gcIsConnected() || !gcId) return;
+        try {
+            await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${gcId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + gcToken }
+            });
+        } catch(e) {}
+    }
+
+    // ─── HELPERS ─────────────────────────────────────────────────────
+    function gcColorId(hex) {
+        const map = {
+            '#00d2ff':'7','#10b981':'2','#f97316':'6',
+            '#ef4444':'11','#8b5cf6':'3','#ec4899':'4',
+            '#f59e0b':'5','#6ee7b7':'2','#a78bfa':'3'
+        };
+        return map[hex] || '1';
+    }
+
+    function gcReminders(arr) {
+        const map = {'exact':0,'5m':5,'10m':10,'30m':30,'1h':60,'2h':120,'1d':1440,'2d':2880,'1w':10080};
+        return arr.map(r => ({ method:'popup', minutes: map[r] ?? 30 })).slice(0,5);
+    }
+
+    // ─── PARCHEAR saveCalEvent PARA SINCRONIZAR ───────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        gcAddProfileButton();
+        if (gcIsConnected()) gcUpdateStatus('Conectado', '#34d399');
+
+        // Patch saveCalEvent
+        const _origSave = window.saveCalEvent;
+        window.saveCalEvent = function() {
+            const wasEditing = window.calEditingId;
+            _origSave && _origSave.apply(this, arguments);
+            // Buscar el evento recién guardado
+            if (typeof calEvents === 'undefined') return;
+            const saved = calEvents.find(e => e.id === (wasEditing || calEvents[0]?.id));
+            if (!saved) return;
+            if (wasEditing && saved.gcId) {
+                gcUpdateEvent(saved);
+            } else if (!wasEditing) {
+                gcCreateEvent(saved);
+            }
+        };
+
+        // Patch deleteCalEvent
+        const _origDel = window.deleteCalEvent;
+        window.deleteCalEvent = function(id) {
+            const ev = typeof calEvents !== 'undefined' ? calEvents.find(e => e.id === id) : null;
+            const gcId = ev?.gcId;
+            _origDel && _origDel.apply(this, arguments);
+            if (gcId) gcDeleteEvent(gcId);
+        };
+    });
     </script>
 
 </body>
