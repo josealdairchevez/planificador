@@ -12391,5 +12391,242 @@
     });
     </script>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     SISTEMA DE NOTIFICACIONES Y ALARMAS — JCH
+     Funciona en PWA/APK. Pide permiso, programa recordatorios
+     reales con Web Notifications + AudioContext alarm sound.
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    // ── CONSTANTES ─────────────────────────────────────────────
+    const STORAGE_KEY = 'jch_scheduled_reminders_v1';
+    const CHECK_INTERVAL_MS = 30000; // revisa cada 30 seg
+    let _checkTimer = null;
+
+    // ── SONIDO DE ALARMA (Web Audio API, sin archivos externos) ─
+    function playAlarmSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const pattern = [
+                {f:880, t:0,    d:0.18},
+                {f:880, t:0.22, d:0.18},
+                {f:1100,t:0.44, d:0.28},
+                {f:880, t:0.76, d:0.18},
+                {f:880, t:0.98, d:0.18},
+                {f:1100,t:1.20, d:0.40},
+            ];
+            pattern.forEach(n => {
+                const osc  = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = n.f;
+                gain.gain.setValueAtTime(0, ctx.currentTime + n.t);
+                gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + n.t + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.t + n.d);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + n.t);
+                osc.stop(ctx.currentTime + n.t + n.d + 0.05);
+            });
+        } catch(e) {}
+    }
+
+    // ── PEDIR PERMISO DE NOTIFICACIONES ────────────────────────
+    function requestNotifPermission(cb) {
+        if (!('Notification' in window)) { cb && cb(false); return; }
+        if (Notification.permission === 'granted') { cb && cb(true); return; }
+        if (Notification.permission === 'denied')  { cb && cb(false); return; }
+        Notification.requestPermission().then(p => cb && cb(p === 'granted'));
+    }
+
+    // ── MOSTRAR NOTIFICACIÓN ────────────────────────────────────
+    function showNotif(title, body, icon) {
+        playAlarmSound();
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        const opts = { body, icon: icon || './icon-192.png', badge: './icon-192.png',
+                       vibrate: [200,100,200,100,400], requireInteraction: true };
+        // Preferir SW registration para funcionar en segundo plano
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, opts).catch(() => new Notification(title, opts));
+            }).catch(() => new Notification(title, opts));
+        } else {
+            try { new Notification(title, opts); } catch(e) {}
+        }
+    }
+
+    // ── CALCULAR TIMESTAMP DEL RECORDATORIO ────────────────────
+    function reminderTimestamp(eventDateStr, reminderVal) {
+        const base = new Date(eventDateStr).getTime();
+        if (isNaN(base)) return null;
+        const offsets = { 'exact':0, '5m':5*60000, '10m':10*60000,
+                          '30m':30*60000, '1h':3600000, '2h':7200000,
+                          '1d':86400000, '2d':172800000, '1w':604800000 };
+        const off = offsets[reminderVal];
+        if (off === undefined) return null;
+        return base - off;
+    }
+
+    // ── GUARDAR RECORDATORIOS PROGRAMADOS ──────────────────────
+    function loadScheduled() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
+    }
+    function saveScheduled(arr) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
+
+    // ── PROGRAMAR RECORDATORIOS DE UN EVENTO ───────────────────
+    window.scheduleEventReminders = function(ev) {
+        if (!ev || !ev.id || !ev.startDate) return;
+        const reminders = ev.reminders || [];
+        if (!reminders.length) return;
+        let scheduled = loadScheduled();
+        // Eliminar los anteriores de este evento
+        scheduled = scheduled.filter(r => r.evId !== ev.id);
+        const title = ev.title || ev.name || 'Evento';
+        reminders.forEach(val => {
+            const fireAt = reminderTimestamp(ev.startDate, val);
+            if (!fireAt || fireAt < Date.now()) return; // ya pasó
+            const labels = { 'exact':'¡Es ahora!', '5m':'en 5 minutos', '10m':'en 10 minutos',
+                             '30m':'en 30 minutos', '1h':'en 1 hora', '2h':'en 2 horas',
+                             '1d':'mañana', '2d':'en 2 días', '1w':'en 1 semana' };
+            scheduled.push({
+                evId: ev.id,
+                fireAt,
+                title: '🚀 ' + title,
+                body: (labels[val] || val) + ' — ' + (ev.startDate ? new Date(ev.startDate).toLocaleString('es', {hour:'2-digit',minute:'2-digit',weekday:'short',day:'numeric',month:'short'}) : ''),
+            });
+        });
+        saveScheduled(scheduled);
+    };
+
+    // ── CANCELAR RECORDATORIOS DE UN EVENTO ────────────────────
+    window.cancelEventReminders = function(evId) {
+        if (!evId) return;
+        saveScheduled(loadScheduled().filter(r => r.evId !== evId));
+    };
+
+    // ── LOOP PRINCIPAL: revisa cada 30s si hay que disparar ────
+    function checkReminders() {
+        const now = Date.now();
+        let scheduled = loadScheduled();
+        const toFire = scheduled.filter(r => r.fireAt <= now + 15000); // 15s de tolerancia
+        const remaining = scheduled.filter(r => r.fireAt > now + 15000);
+        toFire.forEach(r => showNotif(r.title, r.body));
+        if (toFire.length) saveScheduled(remaining);
+    }
+
+    function startReminderLoop() {
+        if (_checkTimer) return;
+        checkReminders(); // check inmediato al iniciar
+        _checkTimer = setInterval(checkReminders, CHECK_INTERVAL_MS);
+    }
+
+    // ── PARCHEAR saveCalEvents para auto-programar ─────────────
+    function patchSaveCalEvents() {
+        const calScope = window;
+        let _origSaveCal = null;
+
+        function doScheduleAll() {
+            try {
+                const events = JSON.parse(localStorage.getItem('jch_calendar_v1')) || [];
+                events.forEach(ev => {
+                    if (ev.reminders && ev.reminders.length) {
+                        window.scheduleEventReminders(ev);
+                    }
+                });
+            } catch(e) {}
+        }
+
+        // Monkey-patch localStorage.setItem para detectar cuando se guarda jch_calendar_v1
+        const _origSetItem = localStorage.setItem.bind(localStorage);
+        localStorage.setItem = function(key, value) {
+            _origSetItem(key, value);
+            if (key === 'jch_calendar_v1') {
+                try {
+                    const events = JSON.parse(value) || [];
+                    events.forEach(ev => {
+                        if (ev.reminders && ev.reminders.length) {
+                            window.scheduleEventReminders(ev);
+                        }
+                    });
+                } catch(e) {}
+            }
+        };
+
+        // Programar todos los eventos existentes al cargar
+        doScheduleAll();
+    }
+
+    // ── BOTÓN DE ACTIVAR NOTIFICACIONES en la UI ───────────────
+    function injectNotifButton() {
+        if (document.getElementById('jch-notif-btn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'jch-notif-btn';
+        btn.title = 'Activar notificaciones y alarmas';
+        btn.innerHTML = '🔔';
+        btn.style.cssText = `
+            position: fixed; bottom: 80px; right: 18px; z-index: 9999;
+            width: 48px; height: 48px; border-radius: 50%;
+            background: linear-gradient(135deg, #00d2ff, #0072ff);
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 20px rgba(0,210,255,0.5);
+            font-size: 1.4rem; cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        `;
+        btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+        btn.onmouseleave = () => btn.style.transform = 'scale(1)';
+        btn.onclick = () => {
+            requestNotifPermission(granted => {
+                if (granted) {
+                    btn.innerHTML = '🔔';
+                    btn.style.background = 'linear-gradient(135deg, #10b981, #34d399)';
+                    btn.style.boxShadow = '0 4px 20px rgba(16,185,129,0.6)';
+                    btn.title = '¡Notificaciones activas!';
+                    showNotif('🚀 Planificador JCH', '¡Notificaciones activadas! Recibirás recordatorios de tus eventos.');
+                } else {
+                    btn.innerHTML = '🔕';
+                    btn.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+                    alert('Para recibir alarmas, ve a Configuración del sistema → Aplicaciones → Chrome/Planificador → Notificaciones y actívalas.');
+                }
+            });
+        };
+
+        // Actualizar ícono según estado actual
+        if (Notification.permission === 'granted') {
+            btn.innerHTML = '🔔';
+            btn.style.background = 'linear-gradient(135deg, #10b981, #34d399)';
+            btn.style.boxShadow = '0 4px 20px rgba(16,185,129,0.6)';
+            btn.title = '¡Notificaciones activas!';
+        } else if (Notification.permission === 'denied') {
+            btn.innerHTML = '🔕';
+            btn.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+        }
+
+        document.body.appendChild(btn);
+    }
+
+    // ── INIT ───────────────────────────────────────────────────
+    function init() {
+        injectNotifButton();
+        patchSaveCalEvents();
+        startReminderLoop();
+
+        // Si ya tiene permiso, pedir automáticamente al cargar
+        if (Notification.permission === 'default') {
+            // Esperar 3s para no interrumpir la carga
+            setTimeout(() => requestNotifPermission(() => {}), 3000);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+
 </body>
 </html>
