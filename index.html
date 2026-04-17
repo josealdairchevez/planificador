@@ -10718,7 +10718,6 @@
         svg.innerHTML = '';
         const R = 100;
 
-        // Fondo reloj
         const bg = doc('circle');
         bg.setAttribute('cx',0); bg.setAttribute('cy',0); bg.setAttribute('r', R);
         bg.setAttribute('fill','#f0f4f8'); bg.setAttribute('stroke','#dde');
@@ -10751,33 +10750,60 @@
                 svg.appendChild(centerDot);
             }
 
+            // Zona tactil ampliada (invisible)
+            const hit = doc('circle');
+            hit.setAttribute('cx', x); hit.setAttribute('cy', y); hit.setAttribute('r', '18');
+            hit.setAttribute('fill', 'transparent'); hit.setAttribute('cursor', 'pointer');
+            svg.appendChild(hit);
+
             const t = doc('text');
             t.setAttribute('x', x); t.setAttribute('y', y);
             t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
             t.setAttribute('fill', isSelected ? '#fff' : '#334155');
             t.setAttribute('font-size', '13'); t.setAttribute('font-weight','700');
-            t.setAttribute('cursor','pointer');
+            t.setAttribute('pointer-events','none');
             t.textContent = calTpPhase === 'hour' ? n : String(n).padStart(2,'0');
-            t.addEventListener('click', () => {
-                if (calTpPhase === 'hour') {
-                    calTpHour = n;
-                    calTpPhase = 'minute';
-                } else {
-                    calTpMinute = n;
-                }
+            svg.appendChild(t);
+
+            // Anti-doble-disparo para touch en APK/WebView
+            let _didTouch = false;
+            function _doSelect(e) {
+                e.preventDefault(); e.stopPropagation();
+                if (calTpPhase === 'hour') { calTpHour = n; }
+                else { calTpMinute = n; }
                 renderCalTimePicker();
                 updateCalTpDisplay();
-                playMenuSound();
+                if (typeof playMenuSound === 'function') playMenuSound();
+            }
+            hit.addEventListener('touchend', function(e) {
+                _didTouch = true;
+                _doSelect(e);
+                setTimeout(function(){ _didTouch = false; }, 400);
+            }, { passive: false });
+            hit.addEventListener('click', function(e) {
+                if (_didTouch) return;
+                _doSelect(e);
             });
-            svg.appendChild(t);
         });
 
         updateCalTpDisplay();
+
+        // Resaltar span activo hora/minuto en el display
+        var hSp = document.getElementById('calTpHourDisplay');
+        var mSp = document.getElementById('calTpMinDisplay');
+        if (hSp) hSp.style.background = calTpPhase === 'hour'   ? 'rgba(0,160,192,0.25)' : 'transparent';
+        if (mSp) mSp.style.background = calTpPhase === 'minute' ? 'rgba(0,160,192,0.25)' : 'transparent';
     }
 
     function updateCalTpDisplay() {
         const el = document.getElementById('calTpDisplay');
-        if (el) el.textContent = `${String(calTpHour).padStart(2,'0')}:${String(calTpMinute).padStart(2,'0')}`;
+        const hSp = document.getElementById('calTpHourDisplay');
+        const mSp = document.getElementById('calTpMinDisplay');
+        const hStr = String(calTpHour).padStart(2,'0');
+        const mStr = String(calTpMinute).padStart(2,'0');
+        if (el) el.textContent = hStr + ':' + mStr;
+        if (hSp) hSp.textContent = hStr;
+        if (mSp) mSp.textContent = mStr;
     }
     function updateCalTimeDisplay() {
         const sEl = document.getElementById('calStartDisplay');
@@ -11366,7 +11392,11 @@
         <div class="cal-tp-header">
             <div>
                 <div style="font-size:0.7rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;" id="calTpLabel">HORA DE INICIO</div>
-                <div class="cal-tp-time-display" id="calTpDisplay">10:00</div>
+                <div class="cal-tp-time-display" id="calTpDisplay" style="display:flex;align-items:center;gap:0;cursor:pointer;">
+                    <span id="calTpHourDisplay" onclick="calTpPhase='hour';renderCalTimePicker();" style="padding:2px 4px;border-radius:6px;transition:background 0.2s;">10</span>
+                    <span style="opacity:0.6;">:</span>
+                    <span id="calTpMinDisplay" onclick="calTpPhase='minute';renderCalTimePicker();" style="padding:2px 4px;border-radius:6px;transition:background 0.2s;">00</span>
+                </div>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
                     <input type="date" id="calTpDate" style="background:rgba(0,210,255,0.08);border:1px solid rgba(0,210,255,0.25);color:#94a3b8;font-size:0.78rem;border-radius:8px;padding:4px 8px;font-family:inherit;outline:none;cursor:pointer;" onchange="updateCalTpDateLabel()">
                 </div>
@@ -12403,7 +12433,6 @@
     const CHECK_MS = 20000;
     let _timer = null;
 
-    // ── SONIDO DE ALARMA ────────────────────────────────────────
     function playAlarmSound() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -12422,7 +12451,6 @@
         } catch(e) {}
     }
 
-    // ── PERMISO ─────────────────────────────────────────────────
     function requestPerm(cb) {
         if (!('Notification' in window)) return cb && cb(false);
         if (Notification.permission === 'granted') return cb && cb(true);
@@ -12430,7 +12458,6 @@
         Notification.requestPermission().then(p => cb && cb(p === 'granted'));
     }
 
-    // ── MOSTRAR NOTIFICACIÓN ────────────────────────────────────
     function showNotif(title, body) {
         playAlarmSound();
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -12445,23 +12472,15 @@
         }
     }
 
-    // ── PARSEAR FECHA LOCAL (evita desfase UTC) ─────────────────
-    // startDate viene como "2026-04-16T14:00" — sin 'Z', pero
-    // new Date() lo trata como UTC en algunos entornos. Lo parseamos
-    // manualmente para garantizar hora local.
     function parseLocalDate(str) {
         if (!str) return null;
-        // Si ya tiene zona horaria explícita, usar directo
         if (str.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(str)) return new Date(str);
-        // Parsear como local: "YYYY-MM-DDTHH:MM" o "YYYY-MM-DD"
         const parts = str.split('T');
-        const dateParts = parts[0].split('-').map(Number);
-        const timeParts = parts[1] ? parts[1].split(':').map(Number) : [0, 0];
-        return new Date(dateParts[0], dateParts[1]-1, dateParts[2],
-                        timeParts[0] || 0, timeParts[1] || 0, 0);
+        const dp = parts[0].split('-').map(Number);
+        const tp = parts[1] ? parts[1].split(':').map(Number) : [0, 0];
+        return new Date(dp[0], dp[1]-1, dp[2], tp[0]||0, tp[1]||0, 0);
     }
 
-    // ── CALCULAR TIMESTAMP DEL RECORDATORIO ────────────────────
     const OFFSETS = { 'exact':0,'5m':300000,'10m':600000,'30m':1800000,
                       '1h':3600000,'2h':7200000,'1d':86400000,'2d':172800000,'1w':604800000 };
     function reminderTs(startDateStr, val) {
@@ -12472,38 +12491,31 @@
         return base.getTime() - off;
     }
 
-    // ── STORAGE ─────────────────────────────────────────────────
     function loadSched() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; } }
     function saveSched(a) { localStorage.setItem(STORAGE_KEY, JSON.stringify(a)); }
 
-    // ── ETIQUETA LEGIBLE DEL RECORDATORIO ──────────────────────
-    const LABELS = { 'exact':'¡Ahora!','5m':'en 5 min','10m':'en 10 min',
-                     '30m':'en 30 min','1h':'en 1 hora','2h':'en 2 horas',
-                     '1d':'mañana','2d':'en 2 días','1w':'en 1 semana' };
+    const LABELS = { 'exact':'Ahora','5m':'5 min antes','10m':'10 min antes',
+                     '30m':'30 min antes','1h':'1 hora antes','2h':'2 horas antes',
+                     '1d':'1 dia antes','2d':'2 dias antes','1w':'1 semana antes' };
 
     function fmtTime(str) {
         const d = parseLocalDate(str);
         if (!d || isNaN(d)) return '';
-        return d.toLocaleString('es', {weekday:'short', day:'numeric', month:'short',
-                                       hour:'2-digit', minute:'2-digit'});
+        return d.toLocaleString('es', {weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
     }
 
-    // ── PROGRAMAR RECORDATORIOS DE UN EVENTO ───────────────────
     window.scheduleEventReminders = function(ev) {
         if (!ev || !ev.id || !ev.startDate) return;
         const reminders = ev.reminders || [];
-        let sched = loadSched().filter(r => r.evId !== ev.id); // reemplazar anteriores
+        let sched = loadSched().filter(r => r.evId !== ev.id);
         const title = ev.title || ev.name || 'Evento';
-        const typeIcon = ev.type === 'tarea' ? '🔥' : ev.type === 'proyecto' ? '📋' : '📅';
+        const icon = ev.type === 'tarea' ? 'Tarea' : ev.type === 'proyecto' ? 'Proyecto' : 'Evento';
         reminders.forEach(val => {
             const fireAt = reminderTs(ev.startDate, val);
-            if (!fireAt || fireAt < Date.now() - 60000) return; // ignorar si ya pasó (con 1min tolerancia)
-            sched.push({
-                evId: ev.id,
-                fireAt,
-                title: typeIcon + ' ' + title,
-                body: (LABELS[val] || val) + ' · ' + fmtTime(ev.startDate),
-            });
+            if (!fireAt || fireAt < Date.now() - 60000) return;
+            sched.push({ evId: ev.id, fireAt,
+                title: icon + ': ' + title,
+                body: (LABELS[val] || val) + ' - ' + fmtTime(ev.startDate) });
         });
         saveSched(sched);
     };
@@ -12512,19 +12524,16 @@
         if (evId) saveSched(loadSched().filter(r => r.evId !== evId));
     };
 
-    // ── REPROGRAMAR TODOS LOS EVENTOS DEL STORAGE ──────────────
     function rescheduleAll() {
         try {
             const events = JSON.parse(localStorage.getItem('jch_calendar_v1')) || [];
             events.forEach(ev => {
-                if (ev.reminders && ev.reminders.length && ev.startDate) {
+                if (ev.reminders && ev.reminders.length && ev.startDate)
                     window.scheduleEventReminders(ev);
-                }
             });
         } catch(e) {}
     }
 
-    // ── LOOP PRINCIPAL ──────────────────────────────────────────
     function checkNow() {
         const now = Date.now();
         let sched = loadSched();
@@ -12540,7 +12549,6 @@
         _timer = setInterval(checkNow, CHECK_MS);
     }
 
-    // ── MONKEY-PATCH localStorage para detectar guardados ──────
     function patchStorage() {
         const _orig = localStorage.setItem.bind(localStorage);
         localStorage.setItem = function(key, value) {
@@ -12549,28 +12557,23 @@
                 try {
                     const events = JSON.parse(value) || [];
                     events.forEach(ev => {
-                        if (ev.reminders && ev.reminders.length && ev.startDate) {
+                        if (ev.reminders && ev.reminders.length && ev.startDate)
                             window.scheduleEventReminders(ev);
-                        }
                     });
                 } catch(e) {}
             }
         };
     }
 
-    // ── BOTÓN FLOTANTE 🔔 ───────────────────────────────────────
     function injectBtn() {
         if (document.getElementById('jch-notif-btn')) return;
         const btn = document.createElement('button');
         btn.id = 'jch-notif-btn';
-        btn.style.cssText = `position:fixed;bottom:80px;right:18px;z-index:9999;
-            width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);
-            font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
-            transition:transform 0.2s;`;
+        btn.style.cssText = 'position:fixed;bottom:80px;right:18px;z-index:9999;width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;';
 
         function updateBtn() {
             if (Notification.permission === 'granted') {
-                btn.innerHTML = '🔔'; btn.title = '¡Notificaciones activas!';
+                btn.innerHTML = '🔔'; btn.title = 'Notificaciones activas';
                 btn.style.background = 'linear-gradient(135deg,#10b981,#34d399)';
                 btn.style.boxShadow = '0 4px 20px rgba(16,185,129,0.6)';
             } else if (Notification.permission === 'denied') {
@@ -12578,42 +12581,38 @@
                 btn.style.background = 'linear-gradient(135deg,#ef4444,#b91c1c)';
                 btn.style.boxShadow = '0 4px 20px rgba(239,68,68,0.5)';
             } else {
-                btn.innerHTML = '🔔'; btn.title = 'Toca para activar alarmas';
+                btn.innerHTML = '🔔'; btn.title = 'Activar alarmas';
                 btn.style.background = 'linear-gradient(135deg,#00d2ff,#0072ff)';
                 btn.style.boxShadow = '0 4px 20px rgba(0,210,255,0.5)';
             }
         }
 
-        btn.onclick = () => {
+        btn.onclick = function() {
             if (Notification.permission === 'denied') {
-                alert('Las notificaciones están bloqueadas.\n\nVe a: Ajustes → Aplicaciones → Chrome (o Planificador) → Notificaciones → Activar.');
+                alert('Notificaciones bloqueadas.\nVe a: Ajustes > Aplicaciones > Chrome > Notificaciones > Activar.');
                 return;
             }
-            requestPerm(granted => {
+            requestPerm(function(granted) {
                 updateBtn();
                 if (granted) {
-                    showNotif('🚀 Planificador JCH', '¡Alarmas activadas! Te avisaré en el momento exacto de tus recordatorios.');
+                    showNotif('Planificador JCH', 'Alarmas activadas. Te avisare en el momento exacto de tus recordatorios.');
                     rescheduleAll();
                 }
             });
         };
-        btn.onmouseenter = () => btn.style.transform = 'scale(1.12)';
-        btn.onmouseleave = () => btn.style.transform = 'scale(1)';
+        btn.onmouseenter = function(){ btn.style.transform='scale(1.12)'; };
+        btn.onmouseleave = function(){ btn.style.transform='scale(1)'; };
         updateBtn();
         document.body.appendChild(btn);
     }
 
-    // ── INIT ────────────────────────────────────────────────────
     function init() {
         injectBtn();
         patchStorage();
-        rescheduleAll(); // programar eventos existentes al cargar
+        rescheduleAll();
         startLoop();
-        // Pedir permiso automáticamente si nunca se ha respondido
         if (Notification.permission === 'default') {
-            setTimeout(() => requestPerm(() => {
-                document.getElementById('jch-notif-btn') && injectBtn();
-            }), 2500);
+            setTimeout(function(){ requestPerm(function(){ injectBtn(); }); }, 2500);
         }
     }
 
