@@ -9616,6 +9616,9 @@
     let calStartH = 10, calStartM = 0, calStartAmPm = 'AM';
     let calEndH   = 11, calEndM   = 0, calEndAmPm   = 'AM';
     let calTpHour = 10, calTpMinute = 0, calTpPhase = 'hour';  // hour | minute
+    // Exponer setters para que proj/task escriban en estas vars locales directamente
+    Object.defineProperty(window, '_jchTpSet', { value: function(h,m,phase){ calTpHour=h; calTpMinute=m; calTpPhase=phase||'hour'; }, writable:true, configurable:true });
+    Object.defineProperty(window, '_jchTpGet', { value: function(){ return {h:calTpHour,m:calTpMinute,phase:calTpPhase}; }, writable:true, configurable:true });
     let calFabOpen = false;
     let calEditingId = null;
     let calTimerInterval = null;
@@ -10758,16 +10761,28 @@
             t.setAttribute('font-size', '13'); t.setAttribute('font-weight','700');
             t.setAttribute('cursor','pointer');
             t.textContent = calTpPhase === 'hour' ? n : String(n).padStart(2,'0');
-            t.addEventListener('click', () => {
+            // Fix double-fire on touch: touchend blocks synthetic click
+            let _tFired = false;
+            function _pick() {
                 if (calTpPhase === 'hour') {
                     calTpHour = n;
-                    calTpPhase = 'minute';
+                    calTpPhase = 'minute'; // auto-advance to minutes
                 } else {
                     calTpMinute = n;
                 }
                 renderCalTimePicker();
                 updateCalTpDisplay();
                 playMenuSound();
+            }
+            t.addEventListener('touchend', function(e) {
+                e.preventDefault(); // block synthetic click
+                _tFired = true;
+                _pick();
+                setTimeout(function(){ _tFired = false; }, 500);
+            }, { passive: false });
+            t.addEventListener('click', function() {
+                if (_tFired) return;
+                _pick();
             });
             svg.appendChild(t);
         });
@@ -11505,26 +11520,14 @@
         if (projAllday) return;
         window.calActiveContext = 'proj';
         window.calTimePicking = which;
-        // Inyectar los valores de proj en las vars LOCALES del calendario
-        // usando openCalTimePicker como puente (es la única función que escribe en calTpHour local)
-        const _savedAllday = calAllday;
-        const _savedStartH = calStartH, _savedStartM = calStartM, _savedStartAmPm = calStartAmPm;
-        const _savedEndH   = calEndH,   _savedEndM   = calEndM,   _savedEndAmPm   = calEndAmPm;
-        const _savedView   = calViewDate;
-        // Temporalmente apuntar las vars del cal a los valores de proj
-        calAllday = false;
-        calStartH = projStartH; calStartM = projStartM; calStartAmPm = projStartAmPm;
-        calEndH   = projEndH;   calEndM   = projEndM;   calEndAmPm   = projEndAmPm;
-        const d = projViewDate;
-        calViewDate = projViewDate;
-        // Llamar al openCalTimePicker original — escribe en calTpHour local correctamente
-        window.openCalTimePicker(which);
-        // Restaurar vars del calendario
-        calAllday = _savedAllday;
-        calStartH = _savedStartH; calStartM = _savedStartM; calStartAmPm = _savedStartAmPm;
-        calEndH   = _savedEndH;   calEndM   = _savedEndM;   calEndAmPm   = _savedEndAmPm;
-        calViewDate = _savedView;
-        // Actualizar label y fecha para que muestre "HORA DE INICIO/FIN"
+        // Escribir en las vars LOCALES del calendario via setter expuesto
+        if (which === 'start') {
+            window._jchTpSet(projStartH, projStartM, 'hour');
+            window.setCalTpAmPm(projStartAmPm, false);
+        } else {
+            window._jchTpSet(projEndH, projEndM, 'hour');
+            window.setCalTpAmPm(projEndAmPm, false);
+        }
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
@@ -11532,6 +11535,9 @@
             const pd = projViewDate;
             dateInput.value = pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0')+'-'+String(pd.getDate()).padStart(2,'0');
         }
+        if (window.renderCalTimePicker) window.renderCalTimePicker();
+        document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
+        document.getElementById('calTimePickerModal').classList.add('show-cal');
     };
 
     /* ── Time Picker — abrir desde TAREA ────────────────────────── */
@@ -11539,20 +11545,13 @@
         if (taskAllday) return;
         window.calActiveContext = 'task';
         window.calTimePicking = which;
-        // Mismo patrón que proj: inyectar en vars locales del cal via openCalTimePicker
-        const _savedAllday = calAllday;
-        const _savedStartH = calStartH, _savedStartM = calStartM, _savedStartAmPm = calStartAmPm;
-        const _savedEndH   = calEndH,   _savedEndM   = calEndM,   _savedEndAmPm   = calEndAmPm;
-        const _savedView   = calViewDate;
-        calAllday = false;
-        calStartH = taskStartH; calStartM = taskStartM; calStartAmPm = taskStartAmPm;
-        calEndH   = taskEndH;   calEndM   = taskEndM;   calEndAmPm   = taskEndAmPm;
-        calViewDate = taskViewDate;
-        window.openCalTimePicker(which);
-        calAllday = _savedAllday;
-        calStartH = _savedStartH; calStartM = _savedStartM; calStartAmPm = _savedStartAmPm;
-        calEndH   = _savedEndH;   calEndM   = _savedEndM;   calEndAmPm   = _savedEndAmPm;
-        calViewDate = _savedView;
+        if (which === 'start') {
+            window._jchTpSet(taskStartH, taskStartM, 'hour');
+            window.setCalTpAmPm(taskStartAmPm, false);
+        } else {
+            window._jchTpSet(taskEndH, taskEndM, 'hour');
+            window.setCalTpAmPm(taskEndAmPm, false);
+        }
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
@@ -11560,6 +11559,9 @@
             const td = taskViewDate;
             dateInput.value = td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
         }
+        if (window.renderCalTimePicker) window.renderCalTimePicker();
+        document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
+        document.getElementById('calTimePickerModal').classList.add('show-cal');
     };
 
     /* ── Patch confirmCalTimePicker para ser consciente del contexto */
@@ -11571,19 +11573,11 @@
             const which = window.calTimePicking;
 
             if (ctx === 'proj') {
-                // calTpHour/calTpMinute son vars locales del calendario — accedemos via
-                // el mismo mecanismo que el original: leer del display del reloj
+                // Leer vars LOCALES del calendario via getter expuesto
+                const tp = window._jchTpGet();
+                if (which === 'start') { projStartH = tp.h; projStartM = tp.m; projStartAmPm = ampm; }
+                else                   { projEndH   = tp.h; projEndM   = tp.m; projEndAmPm   = ampm; }
                 const dp = document.getElementById('calTpDate');
-                const dispEl = document.getElementById('calTpDisplay');
-                let h = calTpHour, m = calTpMinute;
-                if (dispEl && dispEl.textContent && dispEl.textContent.includes(':')) {
-                    const parts = dispEl.textContent.split(':');
-                    const ph = parseInt(parts[0]); const pm = parseInt(parts[1]);
-                    if (!isNaN(ph)) h = ph;
-                    if (!isNaN(pm)) m = pm;
-                }
-                if (which === 'start') { projStartH = h; projStartM = m; projStartAmPm = ampm; }
-                else                   { projEndH   = h; projEndM   = m; projEndAmPm   = ampm; }
                 if (dp && dp.value) projViewDate = new Date(dp.value + 'T00:00:00');
                 updateProjTimeDisplay();
                 window.closeCalTimePicker();
@@ -11591,17 +11585,10 @@
                 window.calActiveContext = 'cal';
 
             } else if (ctx === 'task') {
+                const tp = window._jchTpGet();
+                if (which === 'start') { taskStartH = tp.h; taskStartM = tp.m; taskStartAmPm = ampm; }
+                else                   { taskEndH   = tp.h; taskEndM   = tp.m; taskEndAmPm   = ampm; }
                 const dp = document.getElementById('calTpDate');
-                const dispEl = document.getElementById('calTpDisplay');
-                let h = calTpHour, m = calTpMinute;
-                if (dispEl && dispEl.textContent && dispEl.textContent.includes(':')) {
-                    const parts = dispEl.textContent.split(':');
-                    const ph = parseInt(parts[0]); const pm = parseInt(parts[1]);
-                    if (!isNaN(ph)) h = ph;
-                    if (!isNaN(pm)) m = pm;
-                }
-                if (which === 'start') { taskStartH = h; taskStartM = m; taskStartAmPm = ampm; }
-                else                   { taskEndH   = h; taskEndM   = m; taskEndAmPm   = ampm; }
                 if (dp && dp.value) taskViewDate = new Date(dp.value + 'T00:00:00');
                 updateTaskTimeDisplay();
                 window.closeCalTimePicker();
@@ -11609,6 +11596,7 @@
                 window.calActiveContext = 'cal';
 
             } else {
+                // Contexto calendario: comportamiento original
                 _origConfirm && _origConfirm();
                 window.calActiveContext = 'cal';
             }
@@ -12420,104 +12408,28 @@
     });
     </script>
 
-<!-- NOTIFICACIONES JCH v4 -->
+<!-- NOTIFICACIONES JCH -->
 <script>
 (function(){
 'use strict';
-var SK='jch_rem_v4', _lp=null;
-
+var SK='jch_rem_v4',_lp=null;
 function alarm(){try{var c=new(window.AudioContext||window.webkitAudioContext)();var m=c.createGain();m.gain.value=0.7;m.connect(c.destination);[987,1174,1318,1567,987,1174,1318,1567].forEach(function(f,i){var o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.value=f;var t=c.currentTime+[0,.13,.26,.39,.65,.78,.91,1.04][i];g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.6,t+.01);g.gain.setValueAtTime(0.6,t+.08);g.gain.exponentialRampToValueAtTime(.001,t+.11);o.connect(g);g.connect(m);o.start(t);o.stop(t+.12);});var b=c.createOscillator(),bg=c.createGain();b.type='sine';b.frequency.value=80;bg.gain.setValueAtTime(0.5,c.currentTime);bg.gain.exponentialRampToValueAtTime(.001,c.currentTime+.3);b.connect(bg);bg.connect(m);b.start(c.currentTime);b.stop(c.currentTime+.3);}catch(e){}}
-
 function parseLocal(s){if(!s)return null;if(s.endsWith('Z')||/[+-]\d\d:\d\d$/.test(s))return new Date(s);var p=s.split('T'),d=p[0].split('-').map(Number),t=p[1]?p[1].split(':').map(Number):[0,0];return new Date(d[0],d[1]-1,d[2],t[0]||0,t[1]||0,0);}
-
 var OFF={exact:0,'5m':3e5,'10m':6e5,'30m':18e5,'1h':36e5,'2h':72e5,'1d':864e5,'2d':1728e5,'1w':6048e5};
 var LBL={exact:'Ahora mismo','5m':'5 min antes','10m':'10 min antes','30m':'30 min antes','1h':'1 hora antes','2h':'2 horas antes','1d':'1 dia antes','2d':'2 dias antes','1w':'1 semana antes'};
-
 function load(){try{return JSON.parse(localStorage.getItem(SK))||[];}catch(e){return[];}}
 function save(a){localStorage.setItem(SK,JSON.stringify(a));}
-
 function fmt(s){var d=parseLocal(s);if(!d||isNaN(d))return '';return d.toLocaleString('es',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
-
-function sendSW(list){
-  if(!navigator.serviceWorker)return;
-  navigator.serviceWorker.ready.then(function(reg){
-    if(reg.active){
-      reg.active.postMessage({type:'SCHEDULE_NOTIFICATIONS',reminders:list});
-      reg.active.postMessage({type:'SET_REMINDERS',reminders:list});
-    }
-  }).catch(function(){});
-}
-
-function showNotif(title,body){
-  alarm();
-  if(!('Notification' in window)||Notification.permission!=='granted')return;
-  var opts={body:body,icon:'./icon-192.png',badge:'./icon-192.png',vibrate:[400,100,400,100,800],requireInteraction:true,tag:'jch-'+Date.now()};
-  if(navigator.serviceWorker&&navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(r){r.showNotification(title,opts);}).catch(function(){try{new Notification(title,opts);}catch(e){}});}else{try{new Notification(title,opts);}catch(e){}}
-}
-
-function buildList(evs){
-  var all=[];
-  evs.forEach(function(ev){
-    if(!ev.reminders||!ev.reminders.length||!ev.startDate)return;
-    var title=ev.title||ev.name||'Evento';
-    var icon=ev.type==='tarea'?'Tarea':ev.type==='proyecto'?'Proyecto':'Evento';
-    ev.reminders.forEach(function(val){
-      var base=parseLocal(ev.startDate);if(!base||isNaN(base))return;
-      var off=OFF[val];if(off===undefined)return;
-      var fireAt=base.getTime()-off;
-      if(fireAt<Date.now()-60000)return;
-      all.push({evId:ev.id,fireAt:fireAt,title:icon+': '+title,body:(LBL[val]||val)+' - '+fmt(ev.startDate)});
-    });
-  });
-  return all;
-}
-
-window.scheduleEventReminders=function(ev){
-  var sched=load().filter(function(r){return r.evId!==ev.id;});
-  sched=sched.concat(buildList([ev]));
-  save(sched);sendSW(sched);
-};
-window.cancelEventReminders=function(id){
-  var s=load().filter(function(r){return r.evId!==id;});save(s);sendSW(s);
-};
-
-function reschedAll(){
-  try{var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];var list=buildList(evs);save(list);sendSW(list);}catch(e){}
-}
-
-function check(){
-  var now=Date.now(),s=load();
-  var fire=s.filter(function(r){return r.fireAt<=now+10000;});
-  var rest=s.filter(function(r){return r.fireAt>now+10000;});
-  fire.forEach(function(r){showNotif(r.title,r.body);});
-  if(fire.length){save(rest);sendSW(rest);}
-}
-
-(function patchLS(){
-  var _o=localStorage.setItem.bind(localStorage);
-  localStorage.setItem=function(k,v){
-    _o(k,v);
-    if(k==='jch_calendar_v1'){try{var list=buildList(JSON.parse(v)||[]);save(list);sendSW(list);}catch(e){}}
-  };
-})();
-
-if(navigator.serviceWorker){
-  navigator.serviceWorker.addEventListener('message',function(e){
-    if(e.data&&e.data.type==='FIRE_REMINDER')showNotif(e.data.title,e.data.body);
-  });
-}
-
-function init(){
-  if(Notification.permission==='granted'){reschedAll();if(!_lp)_lp=setInterval(check,20000);check();}
-  else if(Notification.permission==='default'){
-    setTimeout(function(){
-      Notification.requestPermission().then(function(p){
-        if(p==='granted'){reschedAll();if(!_lp)_lp=setInterval(check,20000);check();}
-      });
-    },1000);
-  }
-}
-
+function sendSW(list){if(!navigator.serviceWorker)return;navigator.serviceWorker.ready.then(function(reg){if(reg.active){reg.active.postMessage({type:'SCHEDULE_NOTIFICATIONS',reminders:list});reg.active.postMessage({type:'SET_REMINDERS',reminders:list});}}).catch(function(){});}
+function showNotif(title,body){alarm();if(!('Notification' in window)||Notification.permission!=='granted')return;var opts={body:body,icon:'./icon-192.png',badge:'./icon-192.png',vibrate:[400,100,400,100,800],requireInteraction:true,tag:'jch-'+Date.now()};if(navigator.serviceWorker&&navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(r){r.showNotification(title,opts);}).catch(function(){try{new Notification(title,opts);}catch(e){}});}else{try{new Notification(title,opts);}catch(e){}}}
+function buildList(evs){var all=[];evs.forEach(function(ev){if(!ev.reminders||!ev.reminders.length||!ev.startDate)return;var title=ev.title||ev.name||'Evento';var icon=ev.type==='tarea'?'Tarea':ev.type==='proyecto'?'Proyecto':'Evento';ev.reminders.forEach(function(val){var base=parseLocal(ev.startDate);if(!base||isNaN(base))return;var off=OFF[val];if(off===undefined)return;var fireAt=base.getTime()-off;if(fireAt<Date.now()-60000)return;all.push({evId:ev.id,fireAt:fireAt,title:icon+': '+title,body:(LBL[val]||val)+' - '+fmt(ev.startDate)});});});return all;}
+window.scheduleEventReminders=function(ev){var s=load().filter(function(r){return r.evId!==ev.id;});s=s.concat(buildList([ev]));save(s);sendSW(s);};
+window.cancelEventReminders=function(id){var s=load().filter(function(r){return r.evId!==id;});save(s);sendSW(s);};
+function reschedAll(){try{var list=buildList(JSON.parse(localStorage.getItem('jch_calendar_v1'))||[]);save(list);sendSW(list);}catch(e){}}
+function check(){var now=Date.now(),s=load(),fire=s.filter(function(r){return r.fireAt<=now+10000;}),rest=s.filter(function(r){return r.fireAt>now+10000;});fire.forEach(function(r){showNotif(r.title,r.body);});if(fire.length){save(rest);sendSW(rest);}}
+(function(){var _o=localStorage.setItem.bind(localStorage);localStorage.setItem=function(k,v){_o(k,v);if(k==='jch_calendar_v1'){try{var list=buildList(JSON.parse(v)||[]);save(list);sendSW(list);}catch(e){}}};})();
+if(navigator.serviceWorker){navigator.serviceWorker.addEventListener('message',function(e){if(e.data&&e.data.type==='FIRE_REMINDER')showNotif(e.data.title,e.data.body);});}
+function init(){if(Notification.permission==='granted'){reschedAll();if(!_lp)_lp=setInterval(check,20000);check();}else if(Notification.permission==='default'){setTimeout(function(){Notification.requestPermission().then(function(p){if(p==='granted'){reschedAll();if(!_lp)_lp=setInterval(check,20000);check();}});},1000);}}
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 })();
 </script>
