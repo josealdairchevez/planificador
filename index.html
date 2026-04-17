@@ -9632,6 +9632,19 @@
     function saveCalEvents() {
         localStorage.setItem('jch_calendar_v1', JSON.stringify(calEvents));
         updateCalBadge();
+        // Sync inmediato a la nube cada vez que se guarda un evento
+        // Evita pérdida de datos cuando la app se cierra sin beforeunload
+        if (typeof syncToCloud === 'function' && typeof currentUser !== 'undefined' && currentUser) {
+            clearTimeout(window._autoSyncTimer);
+            window._autoSyncTimer = setTimeout(function(){ syncToCloud(false); }, 1500);
+        }
+        // Notificar al Service Worker para que actualice los recordatorios
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'UPDATE_REMINDERS',
+                events: calEvents
+            });
+        }
     }
     function updateCalBadge() {
         const today = localDateStr(new Date());
@@ -10664,17 +10677,6 @@
     }
 
     /* ─── TIME PICKER ───────────────────────────────────────────── */
-    // Setter/getter expuesto para que proj/task accedan a vars locales del calendario
-    window._calTpSetState = function(h, m, ampm, phase) {
-        calTpHour   = h;
-        calTpMinute = m;
-        calTpPhase  = phase || 'hour';
-        setCalTpAmPm(ampm, false);
-    };
-    window._calTpGetState = function() {
-        return { h: calTpHour, m: calTpMinute, phase: calTpPhase };
-    };
-
     window.openCalTimePicker = function(which) {
         if (calAllday) return;
         calTimePicking = which;
@@ -10769,28 +10771,16 @@
             t.setAttribute('font-size', '13'); t.setAttribute('font-weight','700');
             t.setAttribute('cursor','pointer');
             t.textContent = calTpPhase === 'hour' ? n : String(n).padStart(2,'0');
-            // Anti-doble-disparo para APK/WebView: touchend bloquea el click sintetico
-            let _didTouch = false;
-            function _doSelect(e) {
-                if (e && e.preventDefault) e.preventDefault();
+            t.addEventListener('click', () => {
                 if (calTpPhase === 'hour') {
                     calTpHour = n;
-                    calTpPhase = 'minute'; // auto-avanzar a minutos al seleccionar hora
+                    calTpPhase = 'minute';
                 } else {
                     calTpMinute = n;
                 }
                 renderCalTimePicker();
                 updateCalTpDisplay();
-                if (typeof playMenuSound === 'function') playMenuSound();
-            }
-            t.addEventListener('touchend', function(e) {
-                _didTouch = true;
-                _doSelect(e);
-                setTimeout(function(){ _didTouch = false; }, 500);
-            }, { passive: false });
-            t.addEventListener('click', function(e) {
-                if (_didTouch) { _didTouch = false; return; }
-                _doSelect(e);
+                playMenuSound();
             });
             svg.appendChild(t);
         });
@@ -11527,20 +11517,22 @@
     window.openProjTimePicker = function(which) {
         if (projAllday) return;
         window.calActiveContext = 'proj';
-        window.calTimePicking = which;
-        // Usar setter para escribir en las vars LOCALES del calendario (no window.*)
+        // Cargar tiempos del proyecto en el picker compartido
         if (which === 'start') {
-            window._calTpSetState(projStartH, projStartM, projStartAmPm, 'hour');
+            window.calTpHour    = projStartH;
+            window.calTpMinute  = projStartM;
+            window.setCalTpAmPm(projStartAmPm, false);
         } else {
-            window._calTpSetState(projEndH, projEndM, projEndAmPm, 'hour');
+            window.calTpHour    = projEndH;
+            window.calTpMinute  = projEndM;
+            window.setCalTpAmPm(projEndAmPm, false);
         }
+        window.calTimePicking = which;
+        window.calTpPhase = 'hour';
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        // Formatear fecha sin toISOString para evitar desfase UTC
-        const d = projViewDate;
-        const ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-        if (dateInput) dateInput.value = ds;
+        if (dateInput) dateInput.value = projViewDate.toISOString().split('T')[0];
         if (window.renderCalTimePicker) window.renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -11550,20 +11542,21 @@
     window.openTaskTimePicker = function(which) {
         if (taskAllday) return;
         window.calActiveContext = 'task';
-        window.calTimePicking = which;
-        // Usar setter para escribir en las vars LOCALES del calendario (no window.*)
         if (which === 'start') {
-            window._calTpSetState(taskStartH, taskStartM, taskStartAmPm, 'hour');
+            window.calTpHour    = taskStartH;
+            window.calTpMinute  = taskStartM;
+            window.setCalTpAmPm(taskStartAmPm, false);
         } else {
-            window._calTpSetState(taskEndH, taskEndM, taskEndAmPm, 'hour');
+            window.calTpHour    = taskEndH;
+            window.calTpMinute  = taskEndM;
+            window.setCalTpAmPm(taskEndAmPm, false);
         }
+        window.calTimePicking = which;
+        window.calTpPhase = 'hour';
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        // Formatear fecha sin toISOString para evitar desfase UTC
-        const d = taskViewDate;
-        const ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-        if (dateInput) dateInput.value = ds;
+        if (dateInput) dateInput.value = taskViewDate.toISOString().split('T')[0];
         if (window.renderCalTimePicker) window.renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -11573,34 +11566,33 @@
     document.addEventListener('DOMContentLoaded', function() {
         const _origConfirm = window.confirmCalTimePicker;
         window.confirmCalTimePicker = function() {
-            const ctx   = window.calActiveContext || 'cal';
-            const ampm  = document.getElementById('calTpAM').classList.contains('active') ? 'AM' : 'PM';
+            const ctx  = window.calActiveContext || 'cal';
+            const ampm = document.getElementById('calTpAM').classList.contains('active') ? 'AM' : 'PM';
             const which = window.calTimePicking;
-            // Leer vars LOCALES del calendario via getter (no window.calTpHour que es diferente)
-            const st = window._calTpGetState ? window._calTpGetState() : { h: 10, m: 0 };
-            const h = st.h, m = st.m;
 
             if (ctx === 'proj') {
-                if (which === 'start') { projStartH = h; projStartM = m; projStartAmPm = ampm; }
-                else                   { projEndH   = h; projEndM   = m; projEndAmPm   = ampm; }
+                if (which === 'start') { projStartH = window.calTpHour; projStartM = window.calTpMinute; projStartAmPm = ampm; }
+                else                   { projEndH   = window.calTpHour; projEndM   = window.calTpMinute; projEndAmPm   = ampm; }
+                // Leer fecha elegida en el picker
                 const dp = document.getElementById('calTpDate');
                 if (dp && dp.value) projViewDate = new Date(dp.value + 'T00:00:00');
                 updateProjTimeDisplay();
                 window.closeCalTimePicker();
-                if (typeof playMenuSound === 'function') playMenuSound();
+                playMenuSound();
                 window.calActiveContext = 'cal';
 
             } else if (ctx === 'task') {
-                if (which === 'start') { taskStartH = h; taskStartM = m; taskStartAmPm = ampm; }
-                else                   { taskEndH   = h; taskEndM   = m; taskEndAmPm   = ampm; }
+                if (which === 'start') { taskStartH = window.calTpHour; taskStartM = window.calTpMinute; taskStartAmPm = ampm; }
+                else                   { taskEndH   = window.calTpHour; taskEndM   = window.calTpMinute; taskEndAmPm   = ampm; }
                 const dp = document.getElementById('calTpDate');
                 if (dp && dp.value) taskViewDate = new Date(dp.value + 'T00:00:00');
                 updateTaskTimeDisplay();
                 window.closeCalTimePicker();
-                if (typeof playMenuSound === 'function') playMenuSound();
+                playMenuSound();
                 window.calActiveContext = 'cal';
 
             } else {
+                // Contexto calendario: comportamiento original
                 _origConfirm && _origConfirm();
                 window.calActiveContext = 'cal';
             }
@@ -12412,132 +12404,189 @@
     });
     </script>
 
-<!-- SISTEMA DE NOTIFICACIONES Y ALARMAS v2 — JCH -->
+<!-- ═══ SISTEMA DE NOTIFICACIONES Y ALARMAS v3 — JCH ═══ -->
 <script>
 (function() {
-    const STORAGE_KEY = 'jch_scheduled_reminders_v2';
-    const CHECK_MS = 20000;
-    let _timer = null;
+    var STORAGE_KEY = 'jch_reminders_v3';
+    var CHECK_MS = 20000;
+    var _timer = null;
 
+    // ── SONIDO ALARMA URGENTE ──────────────────────────────────
     function playAlarmSound() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            [{f:880,t:0,d:0.18},{f:880,t:0.22,d:0.18},{f:1100,t:0.44,d:0.28},
-             {f:880,t:0.76,d:0.18},{f:880,t:0.98,d:0.18},{f:1100,t:1.20,d:0.40}
-            ].forEach(function(n) {
-                var osc = ctx.createOscillator(), g = ctx.createGain();
-                osc.type = 'sine'; osc.frequency.value = n.f;
-                g.gain.setValueAtTime(0, ctx.currentTime + n.t);
-                g.gain.linearRampToValueAtTime(0.4, ctx.currentTime + n.t + 0.02);
-                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.t + n.d);
-                osc.connect(g); g.connect(ctx.destination);
-                osc.start(ctx.currentTime + n.t);
-                osc.stop(ctx.currentTime + n.t + n.d + 0.05);
+            var ctx = new (window.AudioContext || window.webkitAudioContext)();
+            var master = ctx.createGain();
+            master.gain.value = 0.7;
+            master.connect(ctx.destination);
+            // BIP BIP BIP BIP — BIP BIP BIP BIP ascendente urgente
+            var freqs = [987,1174,1318,1567, 987,1174,1318,1567];
+            var times = [0,0.13,0.26,0.39, 0.65,0.78,0.91,1.04];
+            freqs.forEach(function(f,i) {
+                var osc=ctx.createOscillator(), g=ctx.createGain();
+                osc.type='square'; osc.frequency.value=f;
+                var t=ctx.currentTime+times[i];
+                g.gain.setValueAtTime(0,t);
+                g.gain.linearRampToValueAtTime(0.6,t+0.01);
+                g.gain.setValueAtTime(0.6,t+0.08);
+                g.gain.exponentialRampToValueAtTime(0.001,t+0.11);
+                osc.connect(g); g.connect(master);
+                osc.start(t); osc.stop(t+0.12);
             });
+            // Golpe de bajo al inicio
+            var bass=ctx.createOscillator(), bg=ctx.createGain();
+            bass.type='sine'; bass.frequency.value=80;
+            bg.gain.setValueAtTime(0.5,ctx.currentTime);
+            bg.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);
+            bass.connect(bg); bg.connect(master);
+            bass.start(ctx.currentTime); bass.stop(ctx.currentTime+0.3);
         } catch(e) {}
     }
 
+    // ── PERMISO ────────────────────────────────────────────────
     function requestPerm(cb) {
-        if (!('Notification' in window)) return cb && cb(false);
-        if (Notification.permission === 'granted') return cb && cb(true);
-        if (Notification.permission === 'denied')  return cb && cb(false);
-        Notification.requestPermission().then(function(p){ cb && cb(p === 'granted'); });
+        if (!('Notification' in window)) return cb&&cb(false);
+        if (Notification.permission==='granted') return cb&&cb(true);
+        if (Notification.permission==='denied')  return cb&&cb(false);
+        Notification.requestPermission().then(function(p){ cb&&cb(p==='granted'); });
     }
 
+    // ── MOSTRAR NOTIFICACIÓN ───────────────────────────────────
     function showNotif(title, body) {
         playAlarmSound();
-        if (!('Notification' in window) || Notification.permission !== 'granted') return;
-        var opts = { body: body, icon: './icon-192.png', badge: './icon-192.png',
-                     vibrate: [300,100,300,100,600], requireInteraction: true, tag: title };
+        if (!('Notification' in window)||Notification.permission!=='granted') return;
+        var opts = {
+            body: body,
+            icon: './icon-192.png',
+            badge: './icon-192.png',
+            vibrate: [400,100,400,100,800],
+            requireInteraction: true,
+            tag: 'jch-reminder-'+Date.now()
+        };
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.ready
-                .then(function(r){ return r.showNotification(title, opts); })
-                .catch(function(){ try { new Notification(title, opts); } catch(e){} });
-        } else { try { new Notification(title, opts); } catch(e) {} }
+            navigator.serviceWorker.ready.then(function(r){
+                r.showNotification(title, opts);
+            }).catch(function(){ try{new Notification(title,opts);}catch(e){} });
+        } else { try{new Notification(title,opts);}catch(e){} }
     }
 
-    function parseLocalDate(str) {
+    // ── PARSEAR FECHA LOCAL (evitar desfase UTC) ───────────────
+    function parseLocal(str) {
         if (!str) return null;
-        if (str.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(str)) return new Date(str);
-        var parts = str.split('T');
-        var dp = parts[0].split('-').map(Number);
-        var tp = parts[1] ? parts[1].split(':').map(Number) : [0,0];
-        return new Date(dp[0], dp[1]-1, dp[2], tp[0]||0, tp[1]||0, 0);
+        if (str.endsWith('Z')||/[+-]\d{2}:\d{2}$/.test(str)) return new Date(str);
+        var p=str.split('T'), d=p[0].split('-').map(Number), t=p[1]?p[1].split(':').map(Number):[0,0];
+        return new Date(d[0],d[1]-1,d[2],t[0]||0,t[1]||0,0);
     }
 
-    var OFFSETS = {'exact':0,'5m':300000,'10m':600000,'30m':1800000,
-                   '1h':3600000,'2h':7200000,'1d':86400000,'2d':172800000,'1w':604800000};
-    var LABELS  = {'exact':'Ahora','5m':'5 min antes','10m':'10 min antes',
-                   '30m':'30 min antes','1h':'1 hora antes','2h':'2 horas antes',
-                   '1d':'1 dia antes','2d':'2 dias antes','1w':'1 semana antes'};
+    var OFFSETS={'exact':0,'5m':300000,'10m':600000,'30m':1800000,
+                 '1h':3600000,'2h':7200000,'1d':86400000,'2d':172800000,'1w':604800000};
+    var LABELS={'exact':'Ahora mismo','5m':'5 minutos antes','10m':'10 minutos antes',
+                '30m':'30 minutos antes','1h':'1 hora antes','2h':'2 horas antes',
+                '1d':'1 día antes','2d':'2 días antes','1w':'1 semana antes'};
 
-    function loadSched(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]; }catch(e){ return []; } }
-    function saveSched(a){ localStorage.setItem(STORAGE_KEY, JSON.stringify(a)); }
+    function loadSched(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch(e){return[];} }
+    function saveSched(a){ localStorage.setItem(STORAGE_KEY,JSON.stringify(a)); }
 
-    function fmtEvTime(str) {
-        var d = parseLocalDate(str);
-        if (!d || isNaN(d)) return '';
+    function fmtTime(str) {
+        var d=parseLocal(str);
+        if(!d||isNaN(d)) return '';
         return d.toLocaleString('es',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
     }
 
+    // ── PROGRAMAR RECORDATORIOS DE UN EVENTO ──────────────────
     window.scheduleEventReminders = function(ev) {
-        if (!ev || !ev.id || !ev.startDate) return;
-        var reminders = ev.reminders || [];
-        var sched = loadSched().filter(function(r){ return r.evId !== ev.id; });
-        var title = ev.title || ev.name || 'Evento';
-        var icon = ev.type === 'tarea' ? 'Tarea' : ev.type === 'proyecto' ? 'Proyecto' : 'Evento';
+        if (!ev||!ev.id||!ev.startDate) return;
+        var reminders=ev.reminders||[];
+        var sched=loadSched().filter(function(r){return r.evId!==ev.id;});
+        var title=ev.title||ev.name||'Evento';
+        var icon=ev.type==='tarea'?'🔥 Tarea':ev.type==='proyecto'?'📋 Proyecto':'📅 Evento';
         reminders.forEach(function(val) {
-            var base = parseLocalDate(ev.startDate);
-            if (!base || isNaN(base)) return;
-            var off = OFFSETS[val];
-            if (off === undefined) return;
-            var fireAt = base.getTime() - off;
-            if (fireAt < Date.now() - 60000) return;
-            sched.push({ evId: ev.id, fireAt: fireAt,
-                title: icon + ': ' + title,
-                body: (LABELS[val] || val) + ' - ' + fmtEvTime(ev.startDate) });
+            var base=parseLocal(ev.startDate);
+            if(!base||isNaN(base)) return;
+            var off=OFFSETS[val];
+            if(off===undefined) return;
+            var fireAt=base.getTime()-off;
+            if(fireAt<Date.now()-60000) return; // ya pasó
+            sched.push({evId:ev.id, fireAt:fireAt,
+                title: icon+': '+title,
+                body: (LABELS[val]||val)+' · '+fmtTime(ev.startDate)});
         });
         saveSched(sched);
+        // Notificar al SW para alarmas en background
+        _notifySwReminders(sched);
     };
 
     window.cancelEventReminders = function(evId) {
-        if (evId) saveSched(loadSched().filter(function(r){ return r.evId !== evId; }));
+        if (!evId) return;
+        var sched=loadSched().filter(function(r){return r.evId!==evId;});
+        saveSched(sched);
+        _notifySwReminders(sched);
     };
 
+    // ── ENVIAR RECORDATORIOS AL SERVICE WORKER ─────────────────
+    function _notifySwReminders(sched) {
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SET_REMINDERS',
+                reminders: sched || loadSched()
+            });
+        }
+    }
+
+    // ── REPROGRAMAR TODOS LOS EVENTOS GUARDADOS ────────────────
     function rescheduleAll() {
         try {
-            var events = JSON.parse(localStorage.getItem('jch_calendar_v1')) || [];
+            var events=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
+            // Limpiar primero y reconstruir
+            saveSched([]);
+            var allSched=[];
             events.forEach(function(ev) {
-                if (ev.reminders && ev.reminders.length && ev.startDate)
-                    window.scheduleEventReminders(ev);
+                if (!ev.reminders||!ev.reminders.length||!ev.startDate) return;
+                var title=ev.title||ev.name||'Evento';
+                var icon=ev.type==='tarea'?'🔥 Tarea':ev.type==='proyecto'?'📋 Proyecto':'📅 Evento';
+                ev.reminders.forEach(function(val) {
+                    var base=parseLocal(ev.startDate);
+                    if(!base||isNaN(base)) return;
+                    var off=OFFSETS[val];
+                    if(off===undefined) return;
+                    var fireAt=base.getTime()-off;
+                    if(fireAt<Date.now()-60000) return;
+                    allSched.push({evId:ev.id, fireAt:fireAt,
+                        title:icon+': '+title,
+                        body:(LABELS[val]||val)+' · '+fmtTime(ev.startDate)});
+                });
             });
+            saveSched(allSched);
+            _notifySwReminders(allSched);
         } catch(e) {}
     }
 
+    // ── LOOP PRINCIPAL (mientras app está abierta) ─────────────
     function checkNow() {
-        var now = Date.now();
-        var sched = loadSched();
-        var fired = sched.filter(function(r){ return r.fireAt <= now + 10000; });
-        var rest  = sched.filter(function(r){ return r.fireAt >  now + 10000; });
-        fired.forEach(function(r){ showNotif(r.title, r.body); });
-        if (fired.length) saveSched(rest);
+        var now=Date.now();
+        var sched=loadSched();
+        var fired=sched.filter(function(r){return r.fireAt<=now+10000;});
+        var rest =sched.filter(function(r){return r.fireAt> now+10000;});
+        fired.forEach(function(r){showNotif(r.title,r.body);});
+        if (fired.length) { saveSched(rest); _notifySwReminders(rest); }
     }
 
     function startLoop() {
         if (_timer) return;
         checkNow();
-        _timer = setInterval(checkNow, CHECK_MS);
+        _timer=setInterval(checkNow,CHECK_MS);
     }
 
+    // ── PATCH localStorage para auto-programar ─────────────────
     function patchStorage() {
-        var _orig = localStorage.setItem.bind(localStorage);
-        localStorage.setItem = function(key, value) {
-            _orig(key, value);
-            if (key === 'jch_calendar_v1') {
+        var _orig=localStorage.setItem.bind(localStorage);
+        localStorage.setItem=function(key,value) {
+            _orig(key,value);
+            if (key==='jch_calendar_v1') {
                 try {
-                    var events = JSON.parse(value) || [];
+                    var events=JSON.parse(value)||[];
+                    // Reprogramar solo los eventos modificados
                     events.forEach(function(ev) {
-                        if (ev.reminders && ev.reminders.length && ev.startDate)
+                        if (ev.reminders&&ev.reminders.length&&ev.startDate)
                             window.scheduleEventReminders(ev);
                     });
                 } catch(e) {}
@@ -12545,57 +12594,28 @@
         };
     }
 
-    function injectBtn() {
-        if (document.getElementById('jch-notif-btn')) return;
-        var btn = document.createElement('button');
-        btn.id = 'jch-notif-btn';
-        btn.style.cssText = 'position:fixed;bottom:80px;right:18px;z-index:9999;width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;';
-        function updateBtn() {
-            if (Notification.permission === 'granted') {
-                btn.innerHTML = '🔔'; btn.title = 'Notificaciones activas';
-                btn.style.background = 'linear-gradient(135deg,#10b981,#34d399)';
-                btn.style.boxShadow = '0 4px 20px rgba(16,185,129,0.6)';
-            } else if (Notification.permission === 'denied') {
-                btn.innerHTML = '🔕'; btn.title = 'Notificaciones bloqueadas';
-                btn.style.background = 'linear-gradient(135deg,#ef4444,#b91c1c)';
-                btn.style.boxShadow = '0 4px 20px rgba(239,68,68,0.5)';
-            } else {
-                btn.innerHTML = '🔔'; btn.title = 'Activar alarmas';
-                btn.style.background = 'linear-gradient(135deg,#00d2ff,#0072ff)';
-                btn.style.boxShadow = '0 4px 20px rgba(0,210,255,0.5)';
+    // ── ESCUCHAR MENSAJES DEL SW (alarmas disparadas en background) ──
+    if (navigator.serviceWorker) {
+        navigator.serviceWorker.addEventListener('message', function(e) {
+            if (e.data && e.data.type==='FIRE_REMINDER') {
+                showNotif(e.data.title, e.data.body);
             }
-        }
-        btn.onclick = function() {
-            if (Notification.permission === 'denied') {
-                alert('Notificaciones bloqueadas.\nVe a: Ajustes > Apps > Chrome > Notificaciones > Activar.');
-                return;
-            }
-            requestPerm(function(granted) {
-                updateBtn();
-                if (granted) {
-                    showNotif('Planificador JCH', 'Alarmas activadas. Te avisare en el momento exacto.');
-                    rescheduleAll();
-                }
-            });
-        };
-        btn.onmouseenter = function(){ btn.style.transform='scale(1.12)'; };
-        btn.onmouseleave = function(){ btn.style.transform='scale(1)'; };
-        updateBtn();
-        document.body.appendChild(btn);
+        });
     }
 
+    // ── INIT ───────────────────────────────────────────────────
     function init() {
-        injectBtn();
         patchStorage();
         rescheduleAll();
         startLoop();
-        if (Notification.permission === 'default') {
-            setTimeout(function(){ requestPerm(function(){ injectBtn(); }); }, 2500);
+        // Pedir permiso automáticamente — necesario para que funcionen las alarmas
+        if (Notification.permission==='default') {
+            setTimeout(function(){ requestPerm(function(){}); }, 1000);
         }
     }
 
-    document.readyState === 'loading'
-        ? document.addEventListener('DOMContentLoaded', init)
+    document.readyState==='loading'
+        ? document.addEventListener('DOMContentLoaded',init)
         : init();
 })();
 </script>
