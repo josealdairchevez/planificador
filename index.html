@@ -9628,12 +9628,55 @@
 
     /* ─── PERSISTENCIA ──────────────────────────────────────────── */
     function loadCalEvents() {
-        try { calEvents = JSON.parse(localStorage.getItem('jch_calendar_v1')) || []; }
-        catch(e) { calEvents = []; }
+        try {
+            var ls = localStorage.getItem('jch_calendar_v1');
+            if (ls) { calEvents = JSON.parse(ls) || []; return; }
+            // Fallback: sessionStorage
+            var ss = sessionStorage.getItem('jch_calendar_backup');
+            if (ss) {
+                calEvents = JSON.parse(ss) || [];
+                localStorage.setItem('jch_calendar_v1', ss); // restaurar
+                return;
+            }
+            // Fallback: IndexedDB
+            calEvents = [];
+            var req = indexedDB.open('jch_db', 1);
+            req.onupgradeneeded = function(e){ e.target.result.createObjectStore('kv'); };
+            req.onsuccess = function(e){
+                var tx = e.target.result.transaction('kv','readonly');
+                var get = tx.objectStore('kv').get('jch_calendar_v1');
+                get.onsuccess = function(){
+                    if (get.result) {
+                        try {
+                            calEvents = JSON.parse(get.result) || [];
+                            localStorage.setItem('jch_calendar_v1', get.result);
+                            updateCalBadge();
+                        } catch(e2) {}
+                    }
+                };
+            };
+        } catch(e) { calEvents = []; }
     }
     function saveCalEvents() {
-        localStorage.setItem('jch_calendar_v1', JSON.stringify(calEvents));
+        const data = JSON.stringify(calEvents);
+        localStorage.setItem('jch_calendar_v1', data);
+        // Backup en sessionStorage
+        try { sessionStorage.setItem('jch_calendar_backup', data); } catch(e) {}
+        // Backup en IndexedDB (más persistente en APK/TWA)
+        try {
+            var req = indexedDB.open('jch_db', 1);
+            req.onupgradeneeded = function(e){ e.target.result.createObjectStore('kv'); };
+            req.onsuccess = function(e){
+                var tx = e.target.result.transaction('kv','readwrite');
+                tx.objectStore('kv').put(data, 'jch_calendar_v1');
+            };
+        } catch(e) {}
         updateCalBadge();
+        // Sync inmediato a Firebase
+        if (typeof syncToCloud === 'function' && typeof currentUser !== 'undefined' && currentUser) {
+            clearTimeout(window._jchSt);
+            window._jchSt = setTimeout(function(){ syncToCloud(false); }, 1500);
+        }
     }
     function updateCalBadge() {
         const today = localDateStr(new Date());
@@ -12483,19 +12526,18 @@ function buildList(evs){
   var all=[], now=Date.now();
   evs.forEach(function(ev){
     if(!ev.reminders||!ev.reminders.length||!ev.startDate) return;
-    // startDate viene como "YYYY-MM-DDTHH:MM" — parsear como local
     var base=parseLocal(ev.startDate);
     if(!base||isNaN(base)) return;
     var baseMs=base.getTime();
-    // Validar que la fecha base sea una hora real (no epoch 0 ni fecha inválida)
-    if(baseMs < 1000000000000) return; // antes del año 2001 = inválido
+    if(baseMs < 1000000000000) return;
     var title=ev.title||ev.name||'Evento';
     var icon=ev.type==='tarea'?'Tarea':ev.type==='proyecto'?'Proyecto':'Evento';
     ev.reminders.forEach(function(val){
       var off=OFF[val]; if(off===undefined) return;
       var fireAt=baseMs-off;
-      // Solo programar si el recordatorio está al menos 60s en el futuro
-      if(fireAt <= now + 60000) return;
+      // SOLO programar si el recordatorio es ESTRICTAMENTE futuro (al menos 5 segundos)
+      // Esto evita disparar al momento de crear la tarea
+      if(fireAt <= now + 5000) return;
       all.push({
         evId:ev.id, fireAt:fireAt,
         title:icon+': '+title,
@@ -12528,12 +12570,11 @@ function reschedAll(){
 
 function check(){
   var now=Date.now(), s=load();
-  // Disparar solo recordatorios vencidos (con hasta 30s de tolerancia, no 10s)
-  // y que no sean del futuro inmediato (evitar disparar al guardar)
-  var fire=s.filter(function(r){return r.fireAt<=now && r.fireAt>=now-30000;});
+  // Disparar solo los que ya vencieron
+  var fire=s.filter(function(r){return r.fireAt<=now;});
   var rest=s.filter(function(r){return r.fireAt>now;});
-  fire.forEach(function(r){showNotif(r.title,r.body);});
-  if(fire.length){save(rest); sendSW(rest);}
+  fire.forEach(function(r){ showNotif(r.title,r.body); });
+  if(fire.length){ save(rest); sendSW(rest); }
 }
 
 // Patch localStorage — reprogramar cuando se guarda jch_calendar_v1
