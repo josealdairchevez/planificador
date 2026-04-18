@@ -12539,11 +12539,14 @@ function fmt(s){
 }
 
 // ── MOSTRAR NOTIFICACIÓN LOCAL (app abierta) ──────────────
-function showNotif(title,body){
+function showNotif(title,body,tag){
   alarm();
   if(!('Notification' in window)||Notification.permission!=='granted') return;
+  // Tag fijo por título+cuerpo — evita notificación doble del mismo evento
+  var notifTag = tag || ('jch-'+btoa(unescape(encodeURIComponent(title+body))).slice(0,16));
   var opts={body:body,icon:'./icon-192.png',badge:'./icon-192.png',
-            vibrate:[400,100,400,100,800],requireInteraction:true,tag:'jch-'+Date.now()};
+            vibrate:[400,100,400,100,800],requireInteraction:true,tag:notifTag,
+            renotify:false};
   if(navigator.serviceWorker&&navigator.serviceWorker.controller){
     navigator.serviceWorker.ready
       .then(function(r){r.showNotification(title,opts);})
@@ -12679,7 +12682,8 @@ function check(){
   var rest=s.filter(function(r){return r.fireAt>now;});
   fire.forEach(function(r){
     _fired[r.evId+'_'+r.fireAt]=true;
-    showNotif(r.title,r.body);
+    // Pasar tag único basado en evId+fireAt para evitar duplicados
+    showNotif(r.title,r.body,'jch-'+r.evId+'-'+r.fireAt);
   });
   if(fire.length){ save(rest); saveToFirestore(rest); }
 }
@@ -12712,7 +12716,11 @@ function setupFCMForeground(){
       messaging.onMessage(function(payload){
         var title=payload.notification?.title||payload.data?.title||'Planificador JCH';
         var body=payload.notification?.body||payload.data?.body||'Recordatorio';
-        showNotif(title,body);
+        // Tag basado en el mensaje para evitar duplicados con la notif del SW
+        var tag='jch-fcm-'+Date.now();
+        if(payload.data&&payload.data.evId&&payload.data.fireAt)
+          tag='jch-'+payload.data.evId+'-'+payload.data.fireAt;
+        showNotif(title,body,tag);
       });
     }catch(e){}
   }
