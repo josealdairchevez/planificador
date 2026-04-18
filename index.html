@@ -18,6 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
     <script>
         /* FIX: Desactivar Web Workers de canvas-confetti (bloqueados en iframe por política CORS de blob:) */
         (function patchConfetti() {
@@ -12608,6 +12609,261 @@ function init(){
         if(p==='granted'){
           reschedAll();
           if(!_lp) _lp=setInterval(check,20000);
+          check();
+        }
+      });
+    },1000);
+  }
+}
+
+document.readyState==='loading'
+  ?document.addEventListener('DOMContentLoaded',init):init();
+})();
+</script>
+
+<!-- ═══ SISTEMA FCM — NOTIFICACIONES CON APP CERRADA ═══ -->
+<script>
+(function(){
+'use strict';
+
+// ── VAPID KEY — obtenla de Firebase Console ────────────────
+// Firebase Console → tu proyecto → Cloud Messaging → Web configuration → Key pair
+// REEMPLAZA este valor con tu VAPID key real
+var VAPID_KEY = 'BDrIm0lnUTlTVRcjqMGFDA-Hm7TtWLE1gY7Mbvp_Qw_tqty4fprhVfB_5ck20Mq0FYUa66_Iimr9uRj9z1uPZ7g';
+
+var SK = 'jch_rem_v4';
+var _loop = null;
+var _fcmReady = false;
+
+// ── SONIDO ALARMA ──────────────────────────────────────────
+function alarm(){
+  try{
+    var c=new(window.AudioContext||window.webkitAudioContext)();
+    var m=c.createGain(); m.gain.value=0.7; m.connect(c.destination);
+    [987,1174,1318,1567,987,1174,1318,1567].forEach(function(f,i){
+      var o=c.createOscillator(),g=c.createGain();
+      o.type='square'; o.frequency.value=f;
+      var t=c.currentTime+[0,.13,.26,.39,.65,.78,.91,1.04][i];
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.6,t+.01);
+      g.gain.setValueAtTime(0.6,t+.08); g.gain.exponentialRampToValueAtTime(.001,t+.11);
+      o.connect(g); g.connect(m); o.start(t); o.stop(t+.12);
+    });
+    var b=c.createOscillator(),bg=c.createGain();
+    b.type='sine'; b.frequency.value=80;
+    bg.gain.setValueAtTime(0.5,c.currentTime);
+    bg.gain.exponentialRampToValueAtTime(.001,c.currentTime+.3);
+    b.connect(bg); bg.connect(m); b.start(c.currentTime); b.stop(c.currentTime+.3);
+  }catch(e){}
+}
+
+// ── PARSEAR FECHA LOCAL ────────────────────────────────────
+function parseLocal(s){
+  if(!s) return null;
+  if(s.endsWith('Z')||/[+-]\d\d:\d\d$/.test(s)) return new Date(s);
+  var p=s.split('T'),d=p[0].split('-').map(Number),t=p[1]?p[1].split(':').map(Number):[0,0];
+  if(isNaN(d[0])) return null;
+  return new Date(d[0],d[1]-1,d[2],t[0]||0,t[1]||0,0);
+}
+
+var OFF={exact:0,'5m':300000,'10m':600000,'30m':1800000,
+         '1h':3600000,'2h':7200000,'1d':86400000,'2d':172800000,'1w':604800000};
+var LBL={exact:'Ahora mismo','5m':'5 min antes','10m':'10 min antes','30m':'30 min antes',
+         '1h':'1 hora antes','2h':'2 horas antes','1d':'1 día antes','2d':'2 días antes','1w':'1 semana antes'};
+
+function load(){try{return JSON.parse(localStorage.getItem(SK))||[];}catch(e){return[];}}
+function save(a){localStorage.setItem(SK,JSON.stringify(a));}
+
+function fmt(s){
+  var d=parseLocal(s); if(!d||isNaN(d)) return '';
+  return d.toLocaleString('es',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+
+// ── MOSTRAR NOTIFICACIÓN LOCAL (app abierta) ──────────────
+function showNotif(title,body){
+  alarm();
+  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  var opts={body:body,icon:'./icon-192.png',badge:'./icon-192.png',
+            vibrate:[400,100,400,100,800],requireInteraction:true,tag:'jch-'+Date.now()};
+  if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+    navigator.serviceWorker.ready
+      .then(function(r){r.showNotification(title,opts);})
+      .catch(function(){try{new Notification(title,opts);}catch(e){}});
+  } else {try{new Notification(title,opts);}catch(e){}}
+}
+
+// ── CONSTRUIR LISTA DE RECORDATORIOS ──────────────────────
+function buildList(evs){
+  var all=[], now=Date.now();
+  evs.forEach(function(ev){
+    if(!ev.reminders||!ev.reminders.length||!ev.startDate) return;
+    var base=parseLocal(ev.startDate);
+    if(!base||isNaN(base)||base.getTime()<1000000000000) return;
+    var title=ev.title||ev.name||'Evento';
+    var icon=ev.type==='tarea'?'Tarea':ev.type==='proyecto'?'Proyecto':'Evento';
+    ev.reminders.forEach(function(val){
+      var off=OFF[val]; if(off===undefined) return;
+      var fireAt=base.getTime()-off;
+      // Solo programar si es ESTRICTAMENTE futuro
+      if(fireAt<=now+5000) return;
+      all.push({evId:ev.id,fireAt:fireAt,
+        title:icon+': '+title,
+        body:(LBL[val]||val)+' · '+fmt(ev.startDate)});
+    });
+  });
+  return all;
+}
+
+// ── GUARDAR RECORDATORIOS EN FIRESTORE (para Cloud Function) ─
+function saveToFirestore(list){
+  // Esperar a que Firebase esté listo
+  var tryCount=0;
+  function tryUpdate(){
+    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
+      if(++tryCount<20) setTimeout(tryUpdate,500);
+      return;
+    }
+    var auth=firebase.auth();
+    var db=firebase.firestore();
+    auth.onAuthStateChanged(function(user){
+      if(!user) return;
+      // Guardar recordatorios en Firestore con el campo fcm_reminders
+      db.collection('users').doc(user.uid).update({
+        fcm_reminders: list
+      }).catch(function(){
+        // Si el doc no existe, usar set con merge
+        db.collection('users').doc(user.uid).set({fcm_reminders:list},{merge:true});
+      });
+    });
+  }
+  tryUpdate();
+}
+
+// ── REGISTRAR TOKEN FCM ────────────────────────────────────
+function registerFCMToken(){
+  var tryCount=0;
+  function tryReg(){
+    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
+      if(++tryCount<20) setTimeout(tryReg,500);
+      return;
+    }
+    var messaging;
+    try{ messaging=firebase.messaging(); }catch(e){ return; }
+
+    navigator.serviceWorker.register('./firebase-messaging-sw.js')
+      .then(function(reg){
+        return messaging.getToken({
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: reg
+        });
+      })
+      .then(function(token){
+        if(!token) return;
+        _fcmReady=true;
+        console.log('FCM token registrado');
+        // Guardar token en Firestore
+        var auth=firebase.auth();
+        auth.onAuthStateChanged(function(user){
+          if(!user) return;
+          firebase.firestore().collection('users').doc(user.uid)
+            .update({fcm_token:token})
+            .catch(function(){
+              firebase.firestore().collection('users').doc(user.uid)
+                .set({fcm_token:token},{merge:true});
+            });
+        });
+      })
+      .catch(function(err){
+        console.warn('FCM token error:', err.message);
+      });
+  }
+  tryReg();
+}
+
+// ── PROGRAMAR RECORDATORIOS ────────────────────────────────
+window.scheduleEventReminders=function(ev){
+  if(!ev||!ev.id) return;
+  var sched=load().filter(function(r){return r.evId!==ev.id;});
+  sched=sched.concat(buildList([ev]));
+  save(sched);
+  // Enviar a Firestore para que Cloud Function los dispare con app cerrada
+  saveToFirestore(sched);
+};
+
+window.cancelEventReminders=function(id){
+  var s=load().filter(function(r){return r.evId!==id;});
+  save(s);
+  saveToFirestore(s);
+};
+
+function reschedAll(){
+  try{
+    var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
+    var list=buildList(evs);
+    save(list);
+    saveToFirestore(list);
+  }catch(e){}
+}
+
+// ── LOOP LOCAL (app abierta o en segundo plano) ────────────
+function check(){
+  var now=Date.now(), s=load();
+  var fire=s.filter(function(r){return r.fireAt<=now;});
+  var rest=s.filter(function(r){return r.fireAt>now;});
+  fire.forEach(function(r){showNotif(r.title,r.body);});
+  if(fire.length){ save(rest); saveToFirestore(rest); }
+}
+
+// ── PATCH localStorage ─────────────────────────────────────
+(function(){
+  var _o=localStorage.setItem.bind(localStorage);
+  localStorage.setItem=function(k,v){
+    _o(k,v);
+    if(k==='jch_calendar_v1'){
+      try{
+        var list=buildList(JSON.parse(v)||[]);
+        save(list);
+        saveToFirestore(list);
+      }catch(e){}
+    }
+  };
+})();
+
+// ── ESCUCHAR MENSAJES FCM (app en primer plano) ────────────
+function setupFCMForeground(){
+  var tryCount=0;
+  function trySetup(){
+    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
+      if(++tryCount<20) setTimeout(trySetup,500);
+      return;
+    }
+    try{
+      var messaging=firebase.messaging();
+      messaging.onMessage(function(payload){
+        var title=payload.notification?.title||payload.data?.title||'Planificador JCH';
+        var body=payload.notification?.body||payload.data?.body||'Recordatorio';
+        showNotif(title,body);
+      });
+    }catch(e){}
+  }
+  trySetup();
+}
+
+// ── INIT ───────────────────────────────────────────────────
+function init(){
+  if(Notification.permission==='granted'){
+    registerFCMToken();
+    setupFCMForeground();
+    reschedAll();
+    if(!_loop) _loop=setInterval(check,20000);
+    check();
+  } else if(Notification.permission==='default'){
+    setTimeout(function(){
+      Notification.requestPermission().then(function(p){
+        if(p==='granted'){
+          registerFCMToken();
+          setupFCMForeground();
+          reschedAll();
+          if(!_loop) _loop=setInterval(check,20000);
           check();
         }
       });
