@@ -12469,35 +12469,50 @@ var SK = 'jch_rem_v4';
 var _loop = null;
 var _fcmReady = false;
 
-// ── SONIDO ALARMA LLAMATIVO (estilo despertador) ───────────
+// ── SONIDO ALARMA ELEGANTE Y LLAMATIVO ─────────────────────
 function alarm(){
   try{
     var c=new(window.AudioContext||window.webkitAudioContext)();
-    var m=c.createGain(); m.gain.value=0.8; m.connect(c.destination);
-    // Patrón: 3 grupos de 3 bips ascendentes — como alarma de despertador
-    var pat=[
-      {f:880,t:0},{f:988,t:0.15},{f:1108,t:0.30},
-      {f:880,t:0.55},{f:988,t:0.70},{f:1108,t:0.85},
-      {f:1108,t:1.10},{f:1319,t:1.25},{f:1568,t:1.40}
+    var master=c.createGain(); master.gain.value=0.75; master.connect(c.destination);
+
+    // Melodía de alarma elegante: Do-Mi-Sol-Do (acorde ascendente)
+    // seguido de una segunda llamada más intensa
+    var melody=[
+      // Primera llamada suave
+      {f:523.25,t:0.00,d:0.18,v:0.5,type:'sine'},    // Do4
+      {f:659.25,t:0.20,d:0.18,v:0.6,type:'sine'},    // Mi4
+      {f:783.99,t:0.40,d:0.18,v:0.7,type:'sine'},    // Sol4
+      {f:1046.5,t:0.60,d:0.35,v:0.8,type:'sine'},    // Do5
+      // Pausa
+      // Segunda llamada más intensa
+      {f:523.25,t:1.10,d:0.14,v:0.6,type:'triangle'},
+      {f:659.25,t:1.26,d:0.14,v:0.7,type:'triangle'},
+      {f:783.99,t:1.42,d:0.14,v:0.8,type:'triangle'},
+      {f:1046.5,t:1.58,d:0.14,v:0.9,type:'triangle'},
+      {f:1318.5,t:1.74,d:0.40,v:1.0,type:'triangle'}, // Mi5 — nota alta final
     ];
-    pat.forEach(function(n){
-      var o=c.createOscillator(),g=c.createGain();
-      o.type='sine'; o.frequency.value=n.f;
+
+    melody.forEach(function(n){
+      var o=c.createOscillator(), g=c.createGain();
+      o.type=n.type; o.frequency.value=n.f;
       var t=c.currentTime+n.t;
       g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(0.7,t+0.02);
-      g.gain.setValueAtTime(0.7,t+0.09);
-      g.gain.exponentialRampToValueAtTime(0.001,t+0.13);
-      o.connect(g); g.connect(m); o.start(t); o.stop(t+0.14);
+      g.gain.linearRampToValueAtTime(n.v*0.7,t+0.015);
+      g.gain.setValueAtTime(n.v*0.7,t+n.d*0.7);
+      g.gain.exponentialRampToValueAtTime(0.001,t+n.d);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t+n.d+0.05);
     });
-    // Nota larga final para mayor impacto
-    var oF=c.createOscillator(),gF=c.createGain();
-    oF.type='triangle'; oF.frequency.value=1568;
-    var tf=c.currentTime+1.60;
-    gF.gain.setValueAtTime(0,tf);
-    gF.gain.linearRampToValueAtTime(0.6,tf+0.05);
-    gF.gain.exponentialRampToValueAtTime(0.001,tf+0.5);
-    oF.connect(gF); gF.connect(m); oF.start(tf); oF.stop(tf+0.55);
+
+    // Reverb sintético: eco sutil de la última nota
+    var echo=c.createOscillator(), eg=c.createGain();
+    echo.type='sine'; echo.frequency.value=1046.5;
+    var te=c.currentTime+2.30;
+    eg.gain.setValueAtTime(0,te);
+    eg.gain.linearRampToValueAtTime(0.25,te+0.02);
+    eg.gain.exponentialRampToValueAtTime(0.001,te+0.6);
+    echo.connect(eg); eg.connect(master);
+    echo.start(te); echo.stop(te+0.65);
   }catch(e){}
 }
 
@@ -12548,8 +12563,9 @@ function buildList(evs){
     ev.reminders.forEach(function(val){
       var off=OFF[val]; if(off===undefined) return;
       var fireAt=base.getTime()-off;
-      // Solo programar si es ESTRICTAMENTE futuro
-      if(fireAt<=now+5000) return;
+      // Descartar solo si ya pasó hace más de 2 minutos
+      // Esto permite que recordatorios muy cercanos al momento de creación se programen
+      if(fireAt < now - 120000) return;
       all.push({evId:ev.id,fireAt:fireAt,
         title:icon+': '+title,
         body:(LBL[val]||val)+' · '+fmt(ev.startDate)});
@@ -12651,10 +12667,13 @@ function reschedAll(){
 
 // ── LOOP LOCAL (app abierta o en segundo plano) ────────────
 var _fired={};
+var _sessionStart=Date.now(); // momento en que se abrió la app
+
 function check(){
   var now=Date.now(), s=load();
   var fire=s.filter(function(r){
-    if(_fired[r.evId+'_'+r.fireAt]) return false;
+    if(_fired[r.evId+'_'+r.fireAt]) return false; // ya disparado
+    if(r.fireAt < _sessionStart) return false; // vencido antes de abrir la app
     return r.fireAt<=now;
   });
   var rest=s.filter(function(r){return r.fireAt>now;});
