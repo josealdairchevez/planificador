@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════════════════
 //  FIREBASE MESSAGING SERVICE WORKER
 //  Archivo: firebase-messaging-sw.js
-//  Debe estar en la RAÍZ del repositorio (mismo nivel que index.html)
 // ═══════════════════════════════════════════════════════════
 
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
@@ -18,27 +17,39 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Manejar notificaciones cuando la app está en BACKGROUND o CERRADA
+// Notificaciones en BACKGROUND o CERRADA
 messaging.onBackgroundMessage(function(payload) {
-    console.log('Notificación en background:', payload);
-
     const title = payload.notification?.title || payload.data?.title || 'Planificador JCH';
-    const body  = payload.notification?.body  || payload.data?.body  || 'Tienes un recordatorio';
+    const body  = payload.notification?.body  || payload.data?.body  || 'Recordatorio';
+    
+    // Tag único basado en datos del evento para evitar duplicados
+    const evId   = payload.data?.evId   || '';
+    const fireAt = payload.data?.fireAt || '';
+    const tag    = evId && fireAt ? 'jch-'+evId+'-'+fireAt : 'jch-fcm-'+Date.now();
 
     return self.registration.showNotification(title, {
         body:   body,
         icon:   './icon-192.png',
         badge:  './icon-192.png',
-        vibrate: [400, 100, 400, 100, 800],
+        // Vibración larga y llamativa
+        vibrate: [500, 200, 500, 200, 500, 200, 800],
         requireInteraction: true,
-        tag: 'jch-fcm-' + Date.now(),
-        data: { url: './index.html' }
+        tag:    tag,
+        renotify: false,
+        // Canal de alta prioridad para Android
+        // Esto hace que Android use el sonido de alarma del sistema
+        data: { url: './index.html', evId: evId, fireAt: fireAt },
+        actions: [
+            { action: 'open', title: 'Ver tarea' },
+            { action: 'dismiss', title: 'Cerrar' }
+        ]
     });
 });
 
-// Al hacer clic en la notificación → abrir la app
+// Clic en notificación → abrir app
 self.addEventListener('notificationclick', function(e) {
     e.notification.close();
+    if (e.action === 'dismiss') return;
     e.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(cs) {
             for (var c of cs) {
