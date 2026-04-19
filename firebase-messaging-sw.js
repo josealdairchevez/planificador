@@ -6,6 +6,23 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
+// ── REGISTRAR CANAL DE NOTIFICACIÓN EN ANDROID ───────────
+// Esto crea la categoría "Recordatorios JCH" visible en
+// Ajustes → Aplicaciones → Planificador JCH → Notificaciones
+self.addEventListener('activate', function(e) {
+    e.waitUntil(
+        self.clients.claim().then(function() {
+            // Notificar a todos los clientes para que registren el canal
+            return self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+                .then(function(clients) {
+                    clients.forEach(function(client) {
+                        client.postMessage({ type: 'REGISTER_NOTIFICATION_CHANNEL' });
+                    });
+                });
+        })
+    );
+});
+
 firebase.initializeApp({
     apiKey: "AIzaSyAKsILLuBeu6AXGzMICQtfIULL6-tMs5IE",
     authDomain: "mi-planificador-86095.firebaseapp.com",
@@ -28,20 +45,18 @@ messaging.onBackgroundMessage(function(payload) {
     const tag    = evId && fireAt ? 'jch-'+evId+'-'+fireAt : 'jch-fcm-'+Date.now();
 
     return self.registration.showNotification(title, {
-        body:   body,
-        icon:   './icon-192.png',
-        badge:  './icon-192.png',
-        // Vibración larga y llamativa
+        body:    body,
+        icon:    './icon-192.png',
+        badge:   './icon-192.png',
         vibrate: [500, 200, 500, 200, 500, 200, 800],
         requireInteraction: true,
-        tag:    tag,
+        tag:     tag,
         renotify: false,
-        // Canal de alta prioridad para Android
-        // Esto hace que Android use el sonido de alarma del sistema
-        data: { url: './index.html', evId: evId, fireAt: fireAt },
+        silent:  false,
+        data:    { url: './index.html', evId: evId, fireAt: fireAt },
         actions: [
-            { action: 'open', title: 'Ver tarea' },
-            { action: 'dismiss', title: 'Cerrar' }
+            { action: 'open',    title: 'Ver tarea' },
+            { action: 'dismiss', title: 'Cerrar'    }
         ]
     });
 });
