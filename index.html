@@ -12703,6 +12703,48 @@ function check(){
   };
 })();
 
+// ── REGISTRAR CANAL DE NOTIFICACIÓN ANDROID ──────────────
+// Crea la categoría "Recordatorios JCH" en Ajustes del sistema
+function registerNotificationChannel(){
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    // Usar la API de notificaciones para forzar la creación del canal
+    // enviando una notificación silenciosa que se cierra sola
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(function(reg) {
+            // Mostrar y cerrar inmediatamente para registrar el canal
+            reg.showNotification('Planificador JCH listo', {
+                body: 'Las notificaciones de recordatorios están activas.',
+                icon: './icon-192.png',
+                badge: './icon-192.png',
+                tag: 'jch-channel-init',
+                silent: false,
+                requireInteraction: false,
+                vibrate: [100]
+            }).then(function() {
+                // Cerrar después de 3 segundos
+                setTimeout(function() {
+                    reg.getNotifications({ tag: 'jch-channel-init' })
+                        .then(function(notifs) {
+                            notifs.forEach(function(n) { n.close(); });
+                        });
+                }, 3000);
+            }).catch(function(){});
+        });
+    }
+}
+
+// Escuchar mensaje del SW para registrar canal
+if (navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener('message', function(e) {
+        if (e.data && e.data.type === 'REGISTER_NOTIFICATION_CHANNEL') {
+            registerNotificationChannel();
+        }
+        if (e.data && e.data.type === 'FIRE_REMINDER') {
+            showNotif(e.data.title, e.data.body, e.data.tag);
+        }
+    });
+}
+
 // ── ESCUCHAR MENSAJES FCM (app en primer plano) ────────────
 function setupFCMForeground(){
   var tryCount=0;
