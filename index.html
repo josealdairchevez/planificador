@@ -12611,9 +12611,20 @@ function registerFCMToken(){
       return;
     }
     var messaging;
-    try{ messaging=firebase.messaging(); }catch(e){ return; }
+    try{ messaging=firebase.messaging(); }catch(e){
+      console.warn('FCM messaging no disponible:', e.message);
+      return;
+    }
 
-    navigator.serviceWorker.register('./firebase-messaging-sw.js')
+    // Usar URL absoluta para el SW — evita problemas en TWA
+    var swUrl = 'https://josealdairchevez.github.io/planificador/firebase-messaging-sw.js';
+
+    navigator.serviceWorker.register(swUrl)
+      .then(function(reg){
+        console.log('SW FCM registrado:', reg.scope);
+        // Forzar activación del SW
+        return reg.update().then(function(){ return reg; });
+      })
       .then(function(reg){
         return messaging.getToken({
           vapidKey: VAPID_KEY,
@@ -12621,23 +12632,28 @@ function registerFCMToken(){
         });
       })
       .then(function(token){
-        if(!token) return;
+        if(!token){
+          console.warn('FCM: token vacío — verifica permisos de notificación');
+          return;
+        }
         _fcmReady=true;
-        console.log('FCM token registrado');
-        // Guardar token en Firestore
+        console.log('FCM token OK:', token.substring(0,20)+'...');
+        // Guardar token actualizado en Firestore
         var auth=firebase.auth();
         auth.onAuthStateChanged(function(user){
           if(!user) return;
-          firebase.firestore().collection('users').doc(user.uid)
-            .update({fcm_token:token})
-            .catch(function(){
-              firebase.firestore().collection('users').doc(user.uid)
-                .set({fcm_token:token},{merge:true});
-            });
+          var db=firebase.firestore();
+          // Siempre actualizar — puede haber cambiado tras reinstalación
+          db.collection('users').doc(user.uid)
+            .set({fcm_token: token, fcm_token_updated: Date.now()}, {merge:true})
+            .then(function(){ console.log('FCM token guardado en Firestore'); })
+            .catch(function(e){ console.error('Error guardando token:', e); });
         });
       })
       .catch(function(err){
         console.warn('FCM token error:', err.message);
+        // Reintentar en 5 segundos si falla
+        if(tryCount < 3){ tryCount++; setTimeout(tryReg, 5000); }
       });
   }
   tryReg();
