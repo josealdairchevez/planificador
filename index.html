@@ -3464,16 +3464,22 @@
         /* ═══════════════════════════════════════════════════════════
            CALENDAR_P3: Modal Crear Evento / Proyecto / Tarea
            ═══════════════════════════════════════════════════════════ */
-        #calRepeatBackdrop,#calTimePickerBackdrop,#calMonthBackdrop,#calDayBackdrop {
+        #calRepeatBackdrop,#calMonthBackdrop,#calDayBackdrop {
             position:fixed;inset:0;z-index:8200;background:rgba(0,2,10,0.88);
+            backdrop-filter:blur(16px);opacity:0;visibility:hidden;
+            transition:opacity 0.3s ease,visibility 0.3s ease;
+        }
+        /* Time picker backdrop por encima del calEventModal */
+        #calTimePickerBackdrop {
+            position:fixed;inset:0;z-index:8500;background:rgba(0,2,10,0.88);
             backdrop-filter:blur(16px);opacity:0;visibility:hidden;
             transition:opacity 0.3s ease,visibility 0.3s ease;
         }
         /* calEventBackdrop necesita z-index superior al calDayModal (8301) para aparecer encima */
         #calEventBackdrop {
             position:fixed;inset:0;z-index:8400;background:rgba(0,2,10,0.88);
-            backdrop-filter:blur(16px);opacity:0;visibility:hidden;
-            transition:opacity 0.3s ease,visibility 0.3s ease;
+            opacity:0;visibility:hidden;
+            transition:opacity 0.2s ease,visibility 0.2s ease;
         }
         #calEventBackdrop.show-cal,#calRepeatBackdrop.show-cal,#calTimePickerBackdrop.show-cal,#calMonthBackdrop.show-cal,#calDayBackdrop.show-cal {opacity:1;visibility:visible;}
 
@@ -3483,7 +3489,7 @@
             border-radius:20px;padding:0;
             display:flex;flex-direction:column;overflow:hidden;
             opacity:0;visibility:hidden;
-            transition:opacity 0.15s ease,visibility 0.15s ease,transform 0.15s ease;
+            transition:opacity 0.12s ease,visibility 0.12s ease,transform 0.12s ease;
             background: #0e1d50;
             border:none;
             box-shadow:0 40px 120px rgba(0,0,0,0.95), 0 0 0 2px rgba(99,102,241,0.5), 0 0 30px rgba(99,102,241,0.25);
@@ -3819,12 +3825,12 @@
         /* ═══ CALENDAR_P4: Time Picker Circular ═══ */
         #calTimePickerModal {
             position:fixed;top:50%;left:50%;transform:translate(-50%,-60%) scale(0.92);
-            z-index:8301;width:min(94vw,400px);border-radius:20px;padding:0;overflow:hidden;
+            z-index:8501;width:min(94vw,400px);border-radius:20px;padding:0;overflow:hidden;
             display:flex;flex-direction:column;
             background:rgba(2,10,25,0.99);
             border:1px solid rgba(0,210,255,0.2);
             box-shadow:0 30px 80px rgba(0,0,0,0.9),0 0 30px rgba(0,210,255,0.1);
-            opacity:0;visibility:hidden;transition:all 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+            opacity:0;visibility:hidden;transition:all 0.2s ease;
         }
         #calTimePickerModal.show-cal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
         .cal-tp-header{
@@ -9617,8 +9623,6 @@
     let calStartH = 10, calStartM = 0, calStartAmPm = 'AM';
     let calEndH   = 11, calEndM   = 0, calEndAmPm   = 'AM';
     let calTpHour = 10, calTpMinute = 0, calTpPhase = 'hour';  // hour | minute
-    Object.defineProperty(window,'_jchTpSet',{value:function(h,m,ph){calTpHour=h;calTpMinute=m;calTpPhase=ph||'hour';},writable:true,configurable:true});
-    Object.defineProperty(window,'_jchTpGet',{value:function(){return{h:calTpHour,m:calTpMinute,phase:calTpPhase};},writable:true,configurable:true});
     let calFabOpen = false;
     let calEditingId = null;
     let calTimerInterval = null;
@@ -9632,14 +9636,8 @@
         try {
             var ls = localStorage.getItem('jch_calendar_v1');
             if (ls) { calEvents = JSON.parse(ls) || []; return; }
-            // Fallback: sessionStorage
             var ss = sessionStorage.getItem('jch_calendar_backup');
-            if (ss) {
-                calEvents = JSON.parse(ss) || [];
-                localStorage.setItem('jch_calendar_v1', ss); // restaurar
-                return;
-            }
-            // Fallback: IndexedDB
+            if (ss) { calEvents = JSON.parse(ss) || []; localStorage.setItem('jch_calendar_v1', ss); return; }
             calEvents = [];
             var req = indexedDB.open('jch_db', 1);
             req.onupgradeneeded = function(e){ e.target.result.createObjectStore('kv'); };
@@ -9648,11 +9646,7 @@
                 var get = tx.objectStore('kv').get('jch_calendar_v1');
                 get.onsuccess = function(){
                     if (get.result) {
-                        try {
-                            calEvents = JSON.parse(get.result) || [];
-                            localStorage.setItem('jch_calendar_v1', get.result);
-                            updateCalBadge();
-                        } catch(e2) {}
+                        try { calEvents = JSON.parse(get.result) || []; localStorage.setItem('jch_calendar_v1', get.result); updateCalBadge(); } catch(e2) {}
                     }
                 };
             };
@@ -9661,9 +9655,7 @@
     function saveCalEvents() {
         const data = JSON.stringify(calEvents);
         localStorage.setItem('jch_calendar_v1', data);
-        // Backup en sessionStorage
         try { sessionStorage.setItem('jch_calendar_backup', data); } catch(e) {}
-        // Backup en IndexedDB (más persistente en APK/TWA)
         try {
             var req = indexedDB.open('jch_db', 1);
             req.onupgradeneeded = function(e){ e.target.result.createObjectStore('kv'); };
@@ -9673,7 +9665,6 @@
             };
         } catch(e) {}
         updateCalBadge();
-        // Sync inmediato a Firebase
         if (typeof syncToCloud === 'function' && typeof currentUser !== 'undefined' && currentUser) {
             clearTimeout(window._jchSt);
             window._jchSt = setTimeout(function(){ syncToCloud(false); }, 1500);
@@ -10349,15 +10340,6 @@
                 const chip = document.querySelector('#calReminderChips .cal-reminder-chip[data-val="' + val + '"]');
                 if (chip) chip.classList.add('active');
             });
-            // Restaurar chips de recordatorio seleccionados
-            document.querySelectorAll('#calReminderChips .cal-reminder-chip').forEach(c => {
-                const val = c.dataset.val || c.textContent.trim();
-                if ((existingEvent.reminders || []).includes(val)) {
-                    c.classList.add('active');
-                } else {
-                    c.classList.remove('active');
-                }
-            });
         } else {
             document.getElementById('calEventTitle').value   = '';
             document.getElementById('calEventDetails').value = '';
@@ -10819,20 +10801,17 @@
             t.setAttribute('font-size', '13'); t.setAttribute('font-weight','700');
             t.setAttribute('cursor','pointer');
             t.textContent = calTpPhase === 'hour' ? n : String(n).padStart(2,'0');
-            let _tFired = false;
-            function _pick() {
-                if (calTpPhase === 'hour') { calTpHour = n; calTpPhase = 'minute'; }
-                else { calTpMinute = n; }
+            t.addEventListener('click', () => {
+                if (calTpPhase === 'hour') {
+                    calTpHour = n;
+                    calTpPhase = 'minute';
+                } else {
+                    calTpMinute = n;
+                }
                 renderCalTimePicker();
                 updateCalTpDisplay();
                 playMenuSound();
-            }
-            t.addEventListener('touchend', function(e) {
-                e.preventDefault();
-                _tFired = true; _pick();
-                setTimeout(function(){ _tFired = false; }, 500);
-            }, { passive: false });
-            t.addEventListener('click', function() { if (_tFired) return; _pick(); });
+            });
             svg.appendChild(t);
         });
 
@@ -11568,21 +11547,22 @@
     window.openProjTimePicker = function(which) {
         if (projAllday) return;
         window.calActiveContext = 'proj';
-        window.calTimePicking = which;
+        // Cargar tiempos del proyecto en el picker compartido
         if (which === 'start') {
-            window._jchTpSet(projStartH, projStartM, 'hour');
+            window.calTpHour    = projStartH;
+            window.calTpMinute  = projStartM;
             window.setCalTpAmPm(projStartAmPm, false);
         } else {
-            window._jchTpSet(projEndH, projEndM, 'hour');
+            window.calTpHour    = projEndH;
+            window.calTpMinute  = projEndM;
             window.setCalTpAmPm(projEndAmPm, false);
         }
+        window.calTimePicking = which;
+        window.calTpPhase = 'hour';
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        if (dateInput) {
-            const pd = projViewDate;
-            dateInput.value = pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0')+'-'+String(pd.getDate()).padStart(2,'0');
-        }
+        if (dateInput) dateInput.value = projViewDate.toISOString().split('T')[0];
         if (window.renderCalTimePicker) window.renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -11592,21 +11572,21 @@
     window.openTaskTimePicker = function(which) {
         if (taskAllday) return;
         window.calActiveContext = 'task';
-        window.calTimePicking = which;
         if (which === 'start') {
-            window._jchTpSet(taskStartH, taskStartM, 'hour');
+            window.calTpHour    = taskStartH;
+            window.calTpMinute  = taskStartM;
             window.setCalTpAmPm(taskStartAmPm, false);
         } else {
-            window._jchTpSet(taskEndH, taskEndM, 'hour');
+            window.calTpHour    = taskEndH;
+            window.calTpMinute  = taskEndM;
             window.setCalTpAmPm(taskEndAmPm, false);
         }
+        window.calTimePicking = which;
+        window.calTpPhase = 'hour';
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        if (dateInput) {
-            const td = taskViewDate;
-            dateInput.value = td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
-        }
+        if (dateInput) dateInput.value = taskViewDate.toISOString().split('T')[0];
         if (window.renderCalTimePicker) window.renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -11621,9 +11601,9 @@
             const which = window.calTimePicking;
 
             if (ctx === 'proj') {
-                const tp = window._jchTpGet();
-                if (which === 'start') { projStartH = tp.h; projStartM = tp.m; projStartAmPm = ampm; }
-                else                   { projEndH   = tp.h; projEndM   = tp.m; projEndAmPm   = ampm; }
+                if (which === 'start') { projStartH = window.calTpHour; projStartM = window.calTpMinute; projStartAmPm = ampm; }
+                else                   { projEndH   = window.calTpHour; projEndM   = window.calTpMinute; projEndAmPm   = ampm; }
+                // Leer fecha elegida en el picker
                 const dp = document.getElementById('calTpDate');
                 if (dp && dp.value) projViewDate = new Date(dp.value + 'T00:00:00');
                 updateProjTimeDisplay();
@@ -11632,9 +11612,8 @@
                 window.calActiveContext = 'cal';
 
             } else if (ctx === 'task') {
-                const tp = window._jchTpGet();
-                if (which === 'start') { taskStartH = tp.h; taskStartM = tp.m; taskStartAmPm = ampm; }
-                else                   { taskEndH   = tp.h; taskEndM   = tp.m; taskEndAmPm   = ampm; }
+                if (which === 'start') { taskStartH = window.calTpHour; taskStartM = window.calTpMinute; taskStartAmPm = ampm; }
+                else                   { taskEndH   = window.calTpHour; taskEndM   = window.calTpMinute; taskEndAmPm   = ampm; }
                 const dp = document.getElementById('calTpDate');
                 if (dp && dp.value) taskViewDate = new Date(dp.value + 'T00:00:00');
                 updateTaskTimeDisplay();
@@ -11643,6 +11622,7 @@
                 window.calActiveContext = 'cal';
 
             } else {
+                // Contexto calendario: comportamiento original
                 _origConfirm && _origConfirm();
                 window.calActiveContext = 'cal';
             }
@@ -12454,109 +12434,74 @@
     });
     </script>
 
-
 <!-- ═══ SISTEMA FCM — NOTIFICACIONES CON APP CERRADA ═══ -->
 <script>
 (function(){
 'use strict';
+var VAPID_KEY='BDrIm0lnUTlTVRcjqMGFDA-Hm7TtWLE1gY7Mbvp_Qw_tqty4fprhVfB_5ck20Mq0FYUa66_Iimr9uRj9z1uPZ7g';
+var SK='jch_rem_v4', _loop=null, _fcmReady=false, _fired={}, _sessionStart=Date.now();
 
-// ── VAPID KEY — obtenla de Firebase Console ────────────────
-// Firebase Console → tu proyecto → Cloud Messaging → Web configuration → Key pair
-// REEMPLAZA este valor con tu VAPID key real
-var VAPID_KEY = 'BDrIm0lnUTlTVRcjqMGFDA-Hm7TtWLE1gY7Mbvp_Qw_tqty4fprhVfB_5ck20Mq0FYUa66_Iimr9uRj9z1uPZ7g';
+function alarm(){try{var c=new(window.AudioContext||window.webkitAudioContext)();var master=c.createGain();master.gain.value=0.75;master.connect(c.destination);var melody=[{f:523.25,t:0.00,d:0.18,v:0.5,type:'sine'},{f:659.25,t:0.20,d:0.18,v:0.6,type:'sine'},{f:783.99,t:0.40,d:0.18,v:0.7,type:'sine'},{f:1046.5,t:0.60,d:0.35,v:0.8,type:'sine'},{f:523.25,t:1.10,d:0.14,v:0.6,type:'triangle'},{f:659.25,t:1.26,d:0.14,v:0.7,type:'triangle'},{f:783.99,t:1.42,d:0.14,v:0.8,type:'triangle'},{f:1046.5,t:1.58,d:0.14,v:0.9,type:'triangle'},{f:1318.5,t:1.74,d:0.40,v:1.0,type:'triangle'}];melody.forEach(function(n){var o=c.createOscillator(),g=c.createGain();o.type=n.type;o.frequency.value=n.f;var t=c.currentTime+n.t;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(n.v*0.7,t+0.015);g.gain.setValueAtTime(n.v*0.7,t+n.d*0.7);g.gain.exponentialRampToValueAtTime(0.001,t+n.d);o.connect(g);g.connect(master);o.start(t);o.stop(t+n.d+0.05);});var echo=c.createOscillator(),eg=c.createGain();echo.type='sine';echo.frequency.value=1046.5;var te=c.currentTime+2.30;eg.gain.setValueAtTime(0,te);eg.gain.linearRampToValueAtTime(0.25,te+0.02);eg.gain.exponentialRampToValueAtTime(0.001,te+0.6);echo.connect(eg);eg.connect(master);echo.start(te);echo.stop(te+0.65);}catch(e){}}
 
-var SK = 'jch_rem_v4';
-var _loop = null;
-var _fcmReady = false;
+function parseLocal(s){if(!s)return null;if(s.endsWith('Z')||/[+-]\d\d:\d\d$/.test(s))return new Date(s);var p=s.split('T'),d=p[0].split('-').map(Number),t=p[1]?p[1].split(':').map(Number):[0,0];if(isNaN(d[0]))return null;return new Date(d[0],d[1]-1,d[2],t[0]||0,t[1]||0,0);}
 
-// ── SONIDO ALARMA ELEGANTE Y LLAMATIVO ─────────────────────
-function alarm(){
-  try{
-    var c=new(window.AudioContext||window.webkitAudioContext)();
-    var master=c.createGain(); master.gain.value=0.75; master.connect(c.destination);
-
-    // Melodía de alarma elegante: Do-Mi-Sol-Do (acorde ascendente)
-    // seguido de una segunda llamada más intensa
-    var melody=[
-      // Primera llamada suave
-      {f:523.25,t:0.00,d:0.18,v:0.5,type:'sine'},    // Do4
-      {f:659.25,t:0.20,d:0.18,v:0.6,type:'sine'},    // Mi4
-      {f:783.99,t:0.40,d:0.18,v:0.7,type:'sine'},    // Sol4
-      {f:1046.5,t:0.60,d:0.35,v:0.8,type:'sine'},    // Do5
-      // Pausa
-      // Segunda llamada más intensa
-      {f:523.25,t:1.10,d:0.14,v:0.6,type:'triangle'},
-      {f:659.25,t:1.26,d:0.14,v:0.7,type:'triangle'},
-      {f:783.99,t:1.42,d:0.14,v:0.8,type:'triangle'},
-      {f:1046.5,t:1.58,d:0.14,v:0.9,type:'triangle'},
-      {f:1318.5,t:1.74,d:0.40,v:1.0,type:'triangle'}, // Mi5 — nota alta final
-    ];
-
-    melody.forEach(function(n){
-      var o=c.createOscillator(), g=c.createGain();
-      o.type=n.type; o.frequency.value=n.f;
-      var t=c.currentTime+n.t;
-      g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(n.v*0.7,t+0.015);
-      g.gain.setValueAtTime(n.v*0.7,t+n.d*0.7);
-      g.gain.exponentialRampToValueAtTime(0.001,t+n.d);
-      o.connect(g); g.connect(master);
-      o.start(t); o.stop(t+n.d+0.05);
-    });
-
-    // Reverb sintético: eco sutil de la última nota
-    var echo=c.createOscillator(), eg=c.createGain();
-    echo.type='sine'; echo.frequency.value=1046.5;
-    var te=c.currentTime+2.30;
-    eg.gain.setValueAtTime(0,te);
-    eg.gain.linearRampToValueAtTime(0.25,te+0.02);
-    eg.gain.exponentialRampToValueAtTime(0.001,te+0.6);
-    echo.connect(eg); eg.connect(master);
-    echo.start(te); echo.stop(te+0.65);
-  }catch(e){}
-}
-
-// ── PARSEAR FECHA LOCAL ────────────────────────────────────
-function parseLocal(s){
-  if(!s) return null;
-  if(s.endsWith('Z')||/[+-]\d\d:\d\d$/.test(s)) return new Date(s);
-  var p=s.split('T'),d=p[0].split('-').map(Number),t=p[1]?p[1].split(':').map(Number):[0,0];
-  if(isNaN(d[0])) return null;
-  return new Date(d[0],d[1]-1,d[2],t[0]||0,t[1]||0,0);
-}
-
-var OFF={exact:0,'5m':300000,'10m':600000,'30m':1800000,
-         '1h':3600000,'2h':7200000,'1d':86400000,'2d':172800000,'1w':604800000};
-var LBL={exact:'Ahora mismo','5m':'5 min antes','10m':'10 min antes','30m':'30 min antes',
-         '1h':'1 hora antes','2h':'2 horas antes','1d':'1 día antes','2d':'2 días antes','1w':'1 semana antes'};
+var OFF={exact:0,'5m':300000,'10m':600000,'30m':1800000,'1h':3600000,'2h':7200000,'1d':86400000,'2d':172800000,'1w':604800000};
+var LBL={exact:'Ahora mismo','5m':'5 min antes','10m':'10 min antes','30m':'30 min antes','1h':'1 hora antes','2h':'2 horas antes','1d':'1 dia antes','2d':'2 dias antes','1w':'1 semana antes'};
 
 function load(){try{return JSON.parse(localStorage.getItem(SK))||[];}catch(e){return[];}}
 function save(a){localStorage.setItem(SK,JSON.stringify(a));}
+function fmt(s){var d=parseLocal(s);if(!d||isNaN(d))return '';return d.toLocaleString('es',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
 
-function fmt(s){
-  var d=parseLocal(s); if(!d||isNaN(d)) return '';
-  return d.toLocaleString('es',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-}
-
-// ── MOSTRAR NOTIFICACIÓN LOCAL (app abierta) ──────────────
 function showNotif(title,body,tag){
   alarm();
   if(!('Notification' in window)||Notification.permission!=='granted') return;
-  // Tag fijo por título+cuerpo — evita notificación doble del mismo evento
-  var notifTag = tag || ('jch-'+btoa(unescape(encodeURIComponent(title+body))).slice(0,16));
-  var opts={body:body,icon:'./icon-192.png',badge:'./icon-192.png',
-            vibrate:[400,100,400,100,800],requireInteraction:true,tag:notifTag,
-            renotify:false};
+  var notifTag=tag||('jch-'+btoa(encodeURIComponent(title+body)).slice(0,16));
+  var opts={body:body,icon:'./icon-192.png',badge:'./icon-192.png',vibrate:[400,100,400,100,800],requireInteraction:true,tag:notifTag,renotify:false};
   if(navigator.serviceWorker&&navigator.serviceWorker.controller){
-    navigator.serviceWorker.ready
-      .then(function(r){r.showNotification(title,opts);})
-      .catch(function(){try{new Notification(title,opts);}catch(e){}});
+    navigator.serviceWorker.ready.then(function(r){r.showNotification(title,opts);}).catch(function(){try{new Notification(title,opts);}catch(e){}});
   } else {try{new Notification(title,opts);}catch(e){}}
 }
 
-// ── CONSTRUIR LISTA DE RECORDATORIOS ──────────────────────
+function saveToFirestore(list){
+  var tryCount=0;
+  function tryUpdate(){
+    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){if(++tryCount<20)setTimeout(tryUpdate,500);return;}
+    var auth=firebase.auth(),db=firebase.firestore();
+    auth.onAuthStateChanged(function(user){
+      if(!user) return;
+      db.collection('users').doc(user.uid).set({fcm_reminders:list},{merge:true}).catch(function(){});
+    });
+  }
+  tryUpdate();
+}
+
+function registerFCMToken(){
+  var tryCount=0;
+  function tryReg(){
+    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){if(++tryCount<20)setTimeout(tryReg,500);return;}
+    var messaging;
+    try{messaging=firebase.messaging();}catch(e){return;}
+    var swUrl='https://josealdairchevez.github.io/planificador/firebase-messaging-sw.js';
+    navigator.serviceWorker.register(swUrl)
+      .then(function(reg){return reg.update().then(function(){return reg;});})
+      .then(function(reg){return messaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});})
+      .then(function(token){
+        if(!token) return;
+        _fcmReady=true;
+        var auth=firebase.auth();
+        auth.onAuthStateChanged(function(user){
+          if(!user) return;
+          firebase.firestore().collection('users').doc(user.uid)
+            .set({fcm_token:token,fcm_token_updated:Date.now()},{merge:true});
+        });
+      })
+      .catch(function(err){if(tryCount<3){tryCount++;setTimeout(tryReg,5000);}});
+  }
+  tryReg();
+}
+
 function buildList(evs){
-  var all=[], now=Date.now();
+  var all=[],now=Date.now();
   evs.forEach(function(ev){
     if(!ev.reminders||!ev.reminders.length||!ev.startDate) return;
     var base=parseLocal(ev.startDate);
@@ -12566,218 +12511,59 @@ function buildList(evs){
     ev.reminders.forEach(function(val){
       var off=OFF[val]; if(off===undefined) return;
       var fireAt=base.getTime()-off;
-      // Descartar solo si ya pasó hace más de 2 minutos
-      // Esto permite que recordatorios muy cercanos al momento de creación se programen
-      if(fireAt < now - 120000) return;
-      all.push({evId:ev.id,fireAt:fireAt,
-        title:icon+': '+title,
-        body:(LBL[val]||val)+' · '+fmt(ev.startDate)});
+      if(fireAt<now-120000) return;
+      all.push({evId:ev.id,fireAt:fireAt,title:icon+': '+title,body:(LBL[val]||val)+' - '+fmt(ev.startDate)});
     });
   });
   return all;
 }
 
-// ── GUARDAR RECORDATORIOS EN FIRESTORE (para Cloud Function) ─
-function saveToFirestore(list){
-  // Esperar a que Firebase esté listo
-  var tryCount=0;
-  function tryUpdate(){
-    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
-      if(++tryCount<20) setTimeout(tryUpdate,500);
-      return;
-    }
-    var auth=firebase.auth();
-    var db=firebase.firestore();
-    auth.onAuthStateChanged(function(user){
-      if(!user) return;
-      // Guardar recordatorios en Firestore con el campo fcm_reminders
-      db.collection('users').doc(user.uid).update({
-        fcm_reminders: list
-      }).catch(function(){
-        // Si el doc no existe, usar set con merge
-        db.collection('users').doc(user.uid).set({fcm_reminders:list},{merge:true});
-      });
-    });
-  }
-  tryUpdate();
-}
-
-// ── REGISTRAR TOKEN FCM ────────────────────────────────────
-function registerFCMToken(){
-  var tryCount=0;
-  function tryReg(){
-    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
-      if(++tryCount<20) setTimeout(tryReg,500);
-      return;
-    }
-    var messaging;
-    try{ messaging=firebase.messaging(); }catch(e){
-      console.warn('FCM messaging no disponible:', e.message);
-      return;
-    }
-
-    // Usar URL absoluta para el SW — evita problemas en TWA
-    var swUrl = 'https://josealdairchevez.github.io/planificador/firebase-messaging-sw.js';
-
-    navigator.serviceWorker.register(swUrl)
-      .then(function(reg){
-        console.log('SW FCM registrado:', reg.scope);
-        // Forzar activación del SW
-        return reg.update().then(function(){ return reg; });
-      })
-      .then(function(reg){
-        return messaging.getToken({
-          vapidKey: VAPID_KEY,
-          serviceWorkerRegistration: reg
-        });
-      })
-      .then(function(token){
-        if(!token){
-          console.warn('FCM: token vacío — verifica permisos de notificación');
-          return;
-        }
-        _fcmReady=true;
-        console.log('FCM token OK:', token.substring(0,20)+'...');
-        // Guardar token actualizado en Firestore
-        var auth=firebase.auth();
-        auth.onAuthStateChanged(function(user){
-          if(!user) return;
-          var db=firebase.firestore();
-          // Siempre actualizar — puede haber cambiado tras reinstalación
-          db.collection('users').doc(user.uid)
-            .set({fcm_token: token, fcm_token_updated: Date.now()}, {merge:true})
-            .then(function(){ console.log('FCM token guardado en Firestore'); })
-            .catch(function(e){ console.error('Error guardando token:', e); });
-        });
-      })
-      .catch(function(err){
-        console.warn('FCM token error:', err.message);
-        // Reintentar en 5 segundos si falla
-        if(tryCount < 3){ tryCount++; setTimeout(tryReg, 5000); }
-      });
-  }
-  tryReg();
-}
-
-// ── PROGRAMAR RECORDATORIOS ────────────────────────────────
 window.scheduleEventReminders=function(ev){
   if(!ev||!ev.id) return;
   var sched=load().filter(function(r){return r.evId!==ev.id;});
   sched=sched.concat(buildList([ev]));
-  save(sched);
-  // Enviar a Firestore para que Cloud Function los dispare con app cerrada
-  saveToFirestore(sched);
+  save(sched); saveToFirestore(sched);
 };
-
 window.cancelEventReminders=function(id){
   var s=load().filter(function(r){return r.evId!==id;});
-  save(s);
-  saveToFirestore(s);
+  save(s); saveToFirestore(s);
 };
 
 function reschedAll(){
-  try{
-    var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
-    var list=buildList(evs);
-    save(list);
-    saveToFirestore(list);
-  }catch(e){}
+  try{var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];var list=buildList(evs);save(list);saveToFirestore(list);}catch(e){}
 }
 
-// ── LOOP LOCAL (app abierta o en segundo plano) ────────────
-var _fired={};
-var _sessionStart=Date.now(); // momento en que se abrió la app
-
 function check(){
-  var now=Date.now(), s=load();
+  var now=Date.now(),s=load();
   var fire=s.filter(function(r){
-    if(_fired[r.evId+'_'+r.fireAt]) return false; // ya disparado
-    if(r.fireAt < _sessionStart) return false; // vencido antes de abrir la app
+    if(_fired[r.evId+'_'+r.fireAt]) return false;
+    if(r.fireAt<_sessionStart) return false;
     return r.fireAt<=now;
   });
   var rest=s.filter(function(r){return r.fireAt>now;});
-  fire.forEach(function(r){
-    _fired[r.evId+'_'+r.fireAt]=true;
-    // Pasar tag único basado en evId+fireAt para evitar duplicados
-    showNotif(r.title,r.body,'jch-'+r.evId+'-'+r.fireAt);
-  });
-  if(fire.length){ save(rest); saveToFirestore(rest); }
+  fire.forEach(function(r){_fired[r.evId+'_'+r.fireAt]=true;showNotif(r.title,r.body,'jch-'+r.evId+'-'+r.fireAt);});
+  if(fire.length){save(rest);saveToFirestore(rest);}
 }
 
-// ── PATCH localStorage ─────────────────────────────────────
 (function(){
   var _o=localStorage.setItem.bind(localStorage);
   localStorage.setItem=function(k,v){
     _o(k,v);
-    if(k==='jch_calendar_v1'){
-      try{
-        var list=buildList(JSON.parse(v)||[]);
-        save(list);
-        saveToFirestore(list);
-      }catch(e){}
-    }
+    if(k==='jch_calendar_v1'){try{var list=buildList(JSON.parse(v)||[]);save(list);saveToFirestore(list);}catch(e){}}
   };
 })();
 
-// ── REGISTRAR CANAL DE NOTIFICACIÓN ANDROID ──────────────
-// Crea la categoría "Recordatorios JCH" en Ajustes del sistema
-function registerNotificationChannel(){
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    // Usar la API de notificaciones para forzar la creación del canal
-    // enviando una notificación silenciosa que se cierra sola
-    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(function(reg) {
-            // Mostrar y cerrar inmediatamente para registrar el canal
-            reg.showNotification('Planificador JCH listo', {
-                body: 'Las notificaciones de recordatorios están activas.',
-                icon: './icon-192.png',
-                badge: './icon-192.png',
-                tag: 'jch-channel-init',
-                silent: false,
-                requireInteraction: false,
-                vibrate: [100]
-            }).then(function() {
-                // Cerrar después de 3 segundos
-                setTimeout(function() {
-                    reg.getNotifications({ tag: 'jch-channel-init' })
-                        .then(function(notifs) {
-                            notifs.forEach(function(n) { n.close(); });
-                        });
-                }, 3000);
-            }).catch(function(){});
-        });
-    }
-}
-
-// Escuchar mensaje del SW para registrar canal
-if (navigator.serviceWorker) {
-    navigator.serviceWorker.addEventListener('message', function(e) {
-        if (e.data && e.data.type === 'REGISTER_NOTIFICATION_CHANNEL') {
-            registerNotificationChannel();
-        }
-        if (e.data && e.data.type === 'FIRE_REMINDER') {
-            showNotif(e.data.title, e.data.body, e.data.tag);
-        }
-    });
-}
-
-// ── ESCUCHAR MENSAJES FCM (app en primer plano) ────────────
 function setupFCMForeground(){
   var tryCount=0;
   function trySetup(){
-    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
-      if(++tryCount<20) setTimeout(trySetup,500);
-      return;
-    }
+    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){if(++tryCount<20)setTimeout(trySetup,500);return;}
     try{
       var messaging=firebase.messaging();
       messaging.onMessage(function(payload){
-        var title=payload.notification?.title||payload.data?.title||'Planificador JCH';
-        var body=payload.notification?.body||payload.data?.body||'Recordatorio';
-        // Tag basado en el mensaje para evitar duplicados con la notif del SW
+        var title=payload.notification&&payload.notification.title||payload.data&&payload.data.title||'Planificador JCH';
+        var body=payload.notification&&payload.notification.body||payload.data&&payload.data.body||'Recordatorio';
         var tag='jch-fcm-'+Date.now();
-        if(payload.data&&payload.data.evId&&payload.data.fireAt)
-          tag='jch-'+payload.data.evId+'-'+payload.data.fireAt;
+        if(payload.data&&payload.data.evId&&payload.data.fireAt) tag='jch-'+payload.data.evId+'-'+payload.data.fireAt;
         showNotif(title,body,tag);
       });
     }catch(e){}
@@ -12785,14 +12571,17 @@ function setupFCMForeground(){
   trySetup();
 }
 
-// ── INIT ───────────────────────────────────────────────────
+if(navigator.serviceWorker){
+  navigator.serviceWorker.addEventListener('message',function(e){
+    if(e.data&&e.data.type==='FIRE_REMINDER') showNotif(e.data.title,e.data.body,e.data.tag);
+  });
+}
+
 function init(){
   if(Notification.permission==='granted'){
     registerFCMToken();
     setupFCMForeground();
     reschedAll();
-    // NO llamar check() al inicio — evita disparar notificaciones al abrir la app
-    // El loop empieza después de 20s para dar tiempo a que se cargue todo
     if(!_loop) _loop=setInterval(check,20000);
   } else if(Notification.permission==='default'){
     setTimeout(function(){
@@ -12808,8 +12597,7 @@ function init(){
   }
 }
 
-document.readyState==='loading'
-  ?document.addEventListener('DOMContentLoaded',init):init();
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 })();
 </script>
 
