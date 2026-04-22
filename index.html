@@ -6331,6 +6331,25 @@
         };
 
         window.saveNewProject = function() {
+            // Auto-confirmar etiqueta pendiente en el input (si el usuario no presionó Enter)
+            (function(){
+                const inp = document.getElementById('projEventLabel');
+                if (inp && inp.value.trim()) {
+                    const v = inp.value.trim().replace(/^#/,'');
+                    if (v && !projCurrentLabels.includes(v)) {
+                        projCurrentLabels.push(v);
+                        const c = projCurrentLabelColor;
+                        if (typeof saveLabelColor === 'function') saveLabelColor(v, c);
+                        const chip = document.createElement('div');
+                        chip.dataset.label = v; chip.dataset.color = c;
+                        const cont = document.getElementById('projLabelsContainer');
+                        if (cont) cont.appendChild(chip);
+                    }
+                    inp.value = '';
+                    const ghost = document.getElementById('projLabelGhost');
+                    if (ghost) ghost.textContent = '';
+                }
+            })();
             const name = document.getElementById('projectNameInput').value.trim();
             if(!name) { document.getElementById('projectNameInput').focus(); return; }
 
@@ -8051,6 +8070,25 @@
         };
 
         window.saveNewTask = function() {
+            // Auto-confirmar etiqueta pendiente en el input (si el usuario no presionó Enter)
+            (function(){
+                const inp = document.getElementById('taskEventLabel');
+                if (inp && inp.value.trim()) {
+                    const v = inp.value.trim().replace(/^#/,'');
+                    if (v && !taskCurrentLabels.includes(v)) {
+                        taskCurrentLabels.push(v);
+                        const c = taskCurrentLabelColor;
+                        if (typeof saveLabelColor === 'function') saveLabelColor(v, c);
+                        const chip = document.createElement('div');
+                        chip.dataset.label = v; chip.dataset.color = c;
+                        const cont = document.getElementById('taskLabelsContainer');
+                        if (cont) cont.appendChild(chip);
+                    }
+                    inp.value = '';
+                    const ghost = document.getElementById('taskLabelGhost');
+                    if (ghost) ghost.textContent = '';
+                }
+            })();
             const name = document.getElementById('taskNameInput').value.trim();
             if(!name) { document.getElementById('taskNameInput').focus(); return; }
 
@@ -9418,9 +9456,7 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const style = window.getComputedStyle(inp);
-            ctx.font = style.font || '700 0.88rem sans-serif';
-            const prefixWidth = ctx.measureText(val).width;
-            ghost.style.left = (14 + prefixWidth) + 'px';
+            ghost.style.left = _jchGhostPos(inp, val) + 'px';
             ghost.textContent = match.slice(val.length);
             // Preview: suggest stored color for this match
             const labelsWithColors = calGetAllKnownLabelsWithColors();
@@ -11754,7 +11790,19 @@
     };
 
     /* ── Label autocomplete/keydown — PROYECTO ──────────────────── */
-    window.projLabelAutocomplete = function(inp) {
+    function _jchGhostPos(inp, val) {
+        var m = document.getElementById('_jch_gm');
+        if (!m) { m = document.createElement('span'); m.id = '_jch_gm';
+            m.style.cssText = 'position:fixed;visibility:hidden;white-space:pre;pointer-events:none;z-index:-9999;top:-9999px;';
+            document.body.appendChild(m); }
+        var st = window.getComputedStyle(inp);
+        m.style.font = st.font; m.style.fontSize = st.fontSize;
+        m.style.fontWeight = st.fontWeight; m.style.fontFamily = st.fontFamily;
+        m.style.letterSpacing = st.letterSpacing;
+        m.textContent = val;
+        return 14 + m.getBoundingClientRect().width;
+    }
+        window.projLabelAutocomplete = function(inp) {
         const val = inp.value.trim().replace(/^#/,'');
         const ghost = document.getElementById('projLabelGhost');
         if (!ghost) return;
@@ -11762,11 +11810,7 @@
         const known = window.calGetAllKnownLabels ? window.calGetAllKnownLabels() : [];
         const match = known.find(l => l.toLowerCase().startsWith(val.toLowerCase()) && l.toLowerCase() !== val.toLowerCase());
         if (match) {
-            const canvas = document.createElement('canvas');
-            const ctx2 = canvas.getContext('2d');
-            const style = window.getComputedStyle(inp);
-            ctx2.font = style.font || '700 0.88rem sans-serif';
-            ghost.style.left = (14 + ctx2.measureText(val).width) + 'px';
+            ghost.style.left = _jchGhostPos(inp, val) + 'px';
             ghost.textContent = match.slice(val.length);
         } else { ghost.textContent = ''; }
     };
@@ -11814,11 +11858,7 @@
         const known = window.calGetAllKnownLabels ? window.calGetAllKnownLabels() : [];
         const match = known.find(l => l.toLowerCase().startsWith(val.toLowerCase()) && l.toLowerCase() !== val.toLowerCase());
         if (match) {
-            const canvas = document.createElement('canvas');
-            const ctx2 = canvas.getContext('2d');
-            const style = window.getComputedStyle(inp);
-            ctx2.font = style.font || '700 0.88rem sans-serif';
-            ghost.style.left = (14 + ctx2.measureText(val).width) + 'px';
+            ghost.style.left = _jchGhostPos(inp, val) + 'px';
             ghost.textContent = match.slice(val.length);
         } else { ghost.textContent = ''; }
     };
