@@ -6421,7 +6421,14 @@
                     reminders: reminders,
                     subtasks:  calSubtasks,
                     labels:    [...projCurrentLabels],
-                    labelColors: {},
+                    labelColors: (() => {
+                        const lc = {};
+                        document.querySelectorAll('#projLabelsContainer > div[data-label]').forEach(chip => {
+                            const l = chip.dataset.label, c = chip.dataset.color || projCurrentLabelColor;
+                            if (l) { lc[l] = c; saveLabelColor(l, c); }
+                        });
+                        return lc;
+                    })(),
                 };
 
                 calEvents.unshift(calEv);
@@ -8127,7 +8134,14 @@
                     reminders: reminders,
                     subtasks:  calSubtasks,
                     labels:    [...taskCurrentLabels],
-                    labelColors: {},
+                    labelColors: (() => {
+                        const lc = {};
+                        document.querySelectorAll('#taskLabelsContainer > div[data-label]').forEach(chip => {
+                            const l = chip.dataset.label, c = chip.dataset.color || taskCurrentLabelColor;
+                            if (l) { lc[l] = c; saveLabelColor(l, c); }
+                        });
+                        return lc;
+                    })(),
                 };
 
                 calEvents.unshift(calEv);
@@ -11780,6 +11794,8 @@
         const chip = document.createElement('div');
         chip.style.cssText = `background:${c}25;border:1.5px solid ${c};color:#fff;border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:900;display:inline-flex;align-items:center;gap:5px;cursor:pointer;box-shadow:0 0 8px ${c}50;`;
         chip.dataset.label = val;
+        chip.dataset.color = c;
+        if (typeof saveLabelColor === 'function') saveLabelColor(val, c);
         chip.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};box-shadow:0 0 4px ${c};"></span>#${val} <span onclick="this.closest('div').remove();projCurrentLabels=projCurrentLabels.filter(l=>l!=='${val}');" style="font-size:0.7rem;opacity:0.6;cursor:pointer;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</span>`;
         document.getElementById('projLabelsContainer').appendChild(chip);
         inp.value = '';
@@ -11830,6 +11846,8 @@
         const chip = document.createElement('div');
         chip.style.cssText = `background:${c}25;border:1.5px solid ${c};color:#fff;border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:900;display:inline-flex;align-items:center;gap:5px;cursor:pointer;box-shadow:0 0 8px ${c}50;`;
         chip.dataset.label = val;
+        chip.dataset.color = c;
+        if (typeof saveLabelColor === 'function') saveLabelColor(val, c);
         chip.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};box-shadow:0 0 4px ${c};"></span>#${val} <span onclick="this.closest('div').remove();taskCurrentLabels=taskCurrentLabels.filter(l=>l!=='${val}');" style="font-size:0.7rem;opacity:0.6;cursor:pointer;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</span>`;
         document.getElementById('taskLabelsContainer').appendChild(chip);
         inp.value = '';
