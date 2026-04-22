@@ -9623,6 +9623,8 @@
     let calStartH = 10, calStartM = 0, calStartAmPm = 'AM';
     let calEndH   = 11, calEndM   = 0, calEndAmPm   = 'AM';
     let calTpHour = 10, calTpMinute = 0, calTpPhase = 'hour';  // hour | minute
+    Object.defineProperty(window, '_jchTpSet', { value: function(h,m,phase){ calTpHour=h; calTpMinute=m; calTpPhase=phase||'hour'; }, writable:true, configurable:true });
+    Object.defineProperty(window, '_jchTpGet', { value: function(){ return {h:calTpHour,m:calTpMinute,phase:calTpPhase}; }, writable:true, configurable:true });
     let calFabOpen = false;
     let calEditingId = null;
     let calTimerInterval = null;
@@ -11547,22 +11549,21 @@
     window.openProjTimePicker = function(which) {
         if (projAllday) return;
         window.calActiveContext = 'proj';
-        // Cargar tiempos del proyecto en el picker compartido
+        window.calTimePicking = which;
         if (which === 'start') {
-            window.calTpHour    = projStartH;
-            window.calTpMinute  = projStartM;
+            window._jchTpSet(projStartH, projStartM, 'hour');
             window.setCalTpAmPm(projStartAmPm, false);
         } else {
-            window.calTpHour    = projEndH;
-            window.calTpMinute  = projEndM;
+            window._jchTpSet(projEndH, projEndM, 'hour');
             window.setCalTpAmPm(projEndAmPm, false);
         }
-        window.calTimePicking = which;
-        window.calTpPhase = 'hour';
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        if (dateInput) dateInput.value = projViewDate.toISOString().split('T')[0];
+        if (dateInput) {
+            const pd = projViewDate;
+            dateInput.value = pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0')+'-'+String(pd.getDate()).padStart(2,'0');
+        }
         if (window.renderCalTimePicker) window.renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -11572,21 +11573,21 @@
     window.openTaskTimePicker = function(which) {
         if (taskAllday) return;
         window.calActiveContext = 'task';
+        window.calTimePicking = which;
         if (which === 'start') {
-            window.calTpHour    = taskStartH;
-            window.calTpMinute  = taskStartM;
+            window._jchTpSet(taskStartH, taskStartM, 'hour');
             window.setCalTpAmPm(taskStartAmPm, false);
         } else {
-            window.calTpHour    = taskEndH;
-            window.calTpMinute  = taskEndM;
+            window._jchTpSet(taskEndH, taskEndM, 'hour');
             window.setCalTpAmPm(taskEndAmPm, false);
         }
-        window.calTimePicking = which;
-        window.calTpPhase = 'hour';
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        if (dateInput) dateInput.value = taskViewDate.toISOString().split('T')[0];
+        if (dateInput) {
+            const td = taskViewDate;
+            dateInput.value = td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
+        }
         if (window.renderCalTimePicker) window.renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -11601,9 +11602,9 @@
             const which = window.calTimePicking;
 
             if (ctx === 'proj') {
-                if (which === 'start') { projStartH = window.calTpHour; projStartM = window.calTpMinute; projStartAmPm = ampm; }
-                else                   { projEndH   = window.calTpHour; projEndM   = window.calTpMinute; projEndAmPm   = ampm; }
-                // Leer fecha elegida en el picker
+                const tp = window._jchTpGet();
+                if (which === 'start') { projStartH = tp.h; projStartM = tp.m; projStartAmPm = ampm; }
+                else                   { projEndH   = tp.h; projEndM   = tp.m; projEndAmPm   = ampm; }
                 const dp = document.getElementById('calTpDate');
                 if (dp && dp.value) projViewDate = new Date(dp.value + 'T00:00:00');
                 updateProjTimeDisplay();
@@ -11612,8 +11613,9 @@
                 window.calActiveContext = 'cal';
 
             } else if (ctx === 'task') {
-                if (which === 'start') { taskStartH = window.calTpHour; taskStartM = window.calTpMinute; taskStartAmPm = ampm; }
-                else                   { taskEndH   = window.calTpHour; taskEndM   = window.calTpMinute; taskEndAmPm   = ampm; }
+                const tp = window._jchTpGet();
+                if (which === 'start') { taskStartH = tp.h; taskStartM = tp.m; taskStartAmPm = ampm; }
+                else                   { taskEndH   = tp.h; taskEndM   = tp.m; taskEndAmPm   = ampm; }
                 const dp = document.getElementById('calTpDate');
                 if (dp && dp.value) taskViewDate = new Date(dp.value + 'T00:00:00');
                 updateTaskTimeDisplay();
