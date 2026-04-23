@@ -1974,6 +1974,73 @@
                 content: none !important;
                 animation: none !important;
             }
+
+            /* ═══ K. SCROLL FLUIDO — EVENTOS DEL DÍA ════════════════════
+               Causa del lag: overflow-y:auto + transition:all en items +
+               backdrop-filter:blur activos + auroraShift repintando el modal
+               Solución: scroll nativo en compositor thread + aislar capa GPU
+               ════════════════════════════════════════════════════════════ */
+
+            /* Detener animaciones que fuerzan repaint del modal completo */
+            #calendarModal {
+                animation: none !important;
+                background: linear-gradient(160deg,#0d1b4b 0%,#1e3a8a 40%,#2d1580 70%,#1a2f70 100%) !important;
+                background-size: 100% 100% !important;
+            }
+            #calendarModal::before,
+            #calendarModal::after { animation: none !important; }
+            #calendarModal .cal-body::before { animation: none !important; }
+
+            /* Backdrop sin blur (ya estaba en sección A, reforzar) */
+            #calendarBackdrop {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+            .cal-modal-header {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: rgba(0,15,40,0.97) !important;
+            }
+            .cal-clock-col {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: rgba(0,5,18,0.97) !important;
+            }
+
+            /* Scroll nativo del contenedor de eventos */
+            .cal-events-scroll {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
+                will-change: scroll-position !important;
+                transform: translateZ(0) !important;
+                scroll-behavior: auto !important;
+            }
+            /* Capa GPU propia para la columna de eventos */
+            .cal-events-col {
+                transform: translateZ(0) !important;
+            }
+            /* Quitar transition:all de items — recalcula layout en cada scroll */
+            .cal-event-item {
+                transition: background 0.15s !important;
+                transform: none !important;
+                will-change: auto !important;
+            }
+            .cal-event-item:hover {
+                transform: none !important;
+            }
+
+            /* Scroll fluido también en ventana Editar Evento */
+            .cal-event-body {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
+                will-change: scroll-position !important;
+                scroll-behavior: auto !important;
+                transform: translateZ(0) !important;
+            }
         }
 
         /* --- OVERLAY DE CELEBRACIÓN ÉPICA (RUTINAS) --- */
