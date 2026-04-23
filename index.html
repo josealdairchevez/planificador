@@ -1990,6 +1990,24 @@
                 animation: none !important;
             }
 
+            /* ═══ L. EDITAR DESDE LÍNEA DE TIEMPO ══════════════════════
+               Al abrir calEventModal desde la timeline, calDayModal queda
+               visible detrás y el compositor lo sigue pintando. Lo ocultamos.
+               ════════════════════════════════════════════════════════════ */
+            body:has(#calEventBackdrop.show-cal) #calDayModal {
+                opacity: 0 !important;
+                pointer-events: none !important;
+                visibility: hidden !important;
+            }
+            .cal-timeline-event {
+                transition: none !important;
+                will-change: auto !important;
+            }
+            .cal-timeline-event:hover {
+                filter: none !important;
+                transform: none !important;
+            }
+
             /* ═══ K. SCROLL FLUIDO — EVENTOS DEL DÍA ════════════════════
                Causa del lag: overflow-y:auto + transition:all en items +
                backdrop-filter:blur activos + auroraShift repintando el modal
