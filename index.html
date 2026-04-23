@@ -3129,6 +3129,7 @@
             z-index: 1 !important;
             pointer-events: none !important;
             animation: shineSwipe 4.5s cubic-bezier(0.4,0,0.6,1) infinite !important;
+            animation-play-state: var(--scroll-pause, running) !important;
             border-radius: 24px !important;
         }
         /* Capa 2: segundo shine desfasado más brillante */
@@ -3146,6 +3147,7 @@
             z-index: 1 !important;
             pointer-events: none !important;
             animation: shineSwipe2 4.5s cubic-bezier(0.4,0,0.6,1) infinite !important;
+            animation-play-state: var(--scroll-pause, running) !important;
         }
         /* Borde animado premium del modal */
         #calendarModal.show-cal {
@@ -3175,6 +3177,7 @@
                 radial-gradient(ellipse 40% 40% at 75% 20%,  rgba(37,99,235,0.22) 0%, transparent 55%) !important;
             background-size: 100% 100% !important;
             animation: auroraShift 10s ease-in-out infinite reverse !important;
+            animation-play-state: var(--scroll-pause, running) !important;
             border-radius: 24px !important;
         }
         @media (max-width: 768px) {
@@ -3355,10 +3358,10 @@
         .cal-clock-col {
             width:460px;flex-shrink:0;display:flex;flex-direction:column;
             align-items:center;justify-content:center;
-            padding:0.6rem 1rem;background:rgba(0,5,18,0.45);
+            padding:0.6rem 1rem;background:rgba(0,5,18,0.75);
             border-right:1px solid rgba(0,210,255,0.12);gap:0.4rem;
             position:relative;overflow:hidden;
-            backdrop-filter: blur(2px);
+            transform:translateZ(0);
         }
 
         /* All-day strip above clock */
@@ -3386,26 +3389,36 @@
         .cal-events-col {
             flex:1;display:flex;flex-direction:column;
             padding:1rem 1.2rem;overflow:hidden;min-height:0;
+            isolation:isolate;
+            transform:translateZ(0);
         }
         .cal-events-scroll {
-            flex:1;overflow-y:auto;padding-right:6px;
+            flex:1;overflow-y:scroll;padding-right:6px;
+            -webkit-overflow-scrolling:touch;
+            touch-action:pan-y;
+            overscroll-behavior-y:contain;
+            will-change:scroll-position;
+            transform:translateZ(0);
         }
-        .cal-events-scroll::-webkit-scrollbar{width:7px;}
-        .cal-events-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,0.2);border-radius:4px;}
+        .cal-events-scroll::-webkit-scrollbar{width:4px;}
+        .cal-events-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,0.15);border-radius:4px;}
         .cal-events-scroll::-webkit-scrollbar-thumb{
             background:linear-gradient(180deg,#00d2ff,#0072ff);
-            border-radius:4px;box-shadow:0 0 8px rgba(0,210,255,0.8);
+            border-radius:4px;box-shadow:0 0 6px rgba(0,210,255,0.6);
         }
         .cal-events-scroll::-webkit-scrollbar-thumb:hover{
             background:linear-gradient(180deg,#00e5ff,#00aaff);
-            box-shadow:0 0 14px rgba(0,210,255,1);
+            box-shadow:0 0 10px rgba(0,210,255,1);
         }
 
         .cal-event-item {
             display:flex;align-items:center;gap:12px;padding:10px 14px;
             border-radius:12px;margin-bottom:8px;cursor:pointer;
-            transition:all 0.3s;position:relative;overflow:hidden;
+            transition:transform 0.2s, background 0.2s;
+            position:relative;overflow:hidden;
             background:rgba(8,18,38,0.85);border:1px solid rgba(255,255,255,0.05);
+            contain:layout style;
+            transform:translateZ(0);
         }
         .cal-event-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;}
         .cal-event-item:hover{transform:translateX(4px);background:rgba(12,28,55,0.9);}
@@ -12689,6 +12702,34 @@ function init(){
 }
 
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
+})();
+
+// ── SCROLL PERFORMANCE: pausa animaciones del modal mientras se hace scroll ──
+(function() {
+    function attachScrollPerf() {
+        const scroller = document.getElementById('calEventsList');
+        const modal    = document.getElementById('calendarModal');
+        if (!scroller || !modal) { setTimeout(attachScrollPerf, 800); return; }
+
+        let scrollTimer = null;
+        let isScrolling = false;
+
+        scroller.addEventListener('scroll', function() {
+            if (!isScrolling) {
+                isScrolling = true;
+                // Pausar animaciones costosas del modal durante el scroll
+                modal.style.setProperty('--scroll-pause', 'paused');
+                scroller.style.pointerEvents = 'none'; // evita hover recalculos
+            }
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function() {
+                isScrolling = false;
+                modal.style.removeProperty('--scroll-pause');
+                scroller.style.pointerEvents = '';
+            }, 120);
+        }, { passive: true });
+    }
+    document.addEventListener('DOMContentLoaded', attachScrollPerf);
 })();
 </script>
 
