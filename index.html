@@ -1509,8 +1509,68 @@
             .cal-modal-landing-bg::after { animation: none !important; }
             .cal-modal-sweep::before,
             .cal-modal-sweep::after { animation: none !important; }
-            .card { backdrop-filter: blur(6px) !important; }
+            .card { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
             .custom-select-wrapper { min-width: 0 !important; }
+
+            /* ══ CALENDARIO PRINCIPAL: detener TODO lo animado ══════════ */
+            #calendarModal {
+                animation: none !important;
+                background: linear-gradient(160deg,#0d1b4b 0%,#1e3a8a 40%,#2d1580 70%,#1a2f70 100%) !important;
+                background-size: 100% 100% !important;
+                transition: opacity 0.15s linear, visibility 0.15s linear, transform 0.15s linear !important;
+                will-change: transform !important;
+            }
+            #calendarModal::before,
+            #calendarModal::after,
+            #calendarModal .cal-body::before { animation: none !important; }
+            #calendarBackdrop { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+            .cal-modal-header  { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+            /* ══ EVENTOS DEL DÍA — scroll nativo en compositor thread ═══ */
+            .cal-events-scroll, #calEventsList {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
+                will-change: scroll-position !important;
+                transform: translateZ(0) !important;
+                scroll-behavior: auto !important;
+                contain: strict !important;
+            }
+            .cal-events-col {
+                isolation: isolate !important;
+                transform: translateZ(0) !important;
+                overflow: hidden !important;
+            }
+            /* Quitar transiciones de items durante scroll */
+            .cal-event-item {
+                transition: none !important;
+                contain: layout style !important;
+                transform: translateZ(0) !important;
+            }
+            .cal-event-item:hover { transform: none !important; }
+
+            /* ══ EDITAR EVENTO (calEventModal) — scroll fluido ═══════════ */
+            #calEventModal {
+                animation: none !important;
+                background: linear-gradient(145deg,#0d1b4b 0%,#1a2f70 35%,#2d1580 65%,#1e3a8a 100%) !important;
+                background-size: 100% 100% !important;
+                transition: opacity 0.1s linear, visibility 0.1s linear, transform 0.1s linear !important;
+                will-change: transform !important;
+            }
+            #calEventModal::before { animation: none !important; }
+            #calEventModal::after  { display: none !important; content: none !important; }
+            .cal-event-body {
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-y: contain !important;
+                touch-action: pan-y !important;
+                will-change: scroll-position !important;
+                scroll-behavior: auto !important;
+                transform: translateZ(0) !important;
+                contain: layout !important;
+            }
+            #calEventBackdrop { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 
             /* ── BÓVEDA MÓVIL: 2 columnas, anti-lag, fix parpadeo ── */
             .store-grid {
@@ -3302,7 +3362,7 @@
 
         #calendarBackdrop {
             position:fixed;inset:0;z-index:8100;background:rgba(0,2,10,0.88);
-            backdrop-filter:blur(18px);opacity:0;visibility:hidden;
+            opacity:0;visibility:hidden;
             transition:opacity 0.4s ease,visibility 0.4s ease;
         }
         #calendarBackdrop.show-cal{opacity:1;visibility:visible;}
@@ -3312,11 +3372,13 @@
             background: linear-gradient(-45deg, #0d1b4b, #1e3a8a, #6d28d9, #2563eb, #4f46e5, #0d1b4b);
             background-size: 400% 400%;
             animation: auroraShift 12s ease-in-out infinite;
+            animation-play-state: var(--scroll-pause, running);
             border-radius:24px;padding:0;
             display:flex;flex-direction:column;
             box-shadow:0 40px 120px rgba(0,0,0,0.95), 0 0 0 2px rgba(99,102,241,0.5), inset 0 0 40px rgba(99,102,241,0.12);
             opacity:0;visibility:hidden;
             transition:all 0.45s cubic-bezier(0.175,0.885,0.32,1.275);overflow:hidden;
+            will-change: transform;
         }
         #calendarModal.show-cal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
 
@@ -3324,9 +3386,8 @@
         .cal-modal-header {
             display:flex;align-items:center;justify-content:space-between;
             padding:1rem 1.5rem;
-            background:linear-gradient(90deg,rgba(0,20,50,0.6),rgba(0,8,25,0.55));
+            background:linear-gradient(90deg,rgba(0,20,50,0.92),rgba(0,8,25,0.90));
             border-bottom:1px solid rgba(0,210,255,0.18);flex-shrink:0;
-            backdrop-filter: blur(4px);
         }
         .cal-header-left { display:flex;align-items:center;gap:12px; }
         .cal-header-date {
@@ -12707,29 +12768,49 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
 // ── SCROLL PERFORMANCE: pausa animaciones del modal mientras se hace scroll ──
 (function() {
     function attachScrollPerf() {
-        const scroller = document.getElementById('calEventsList');
-        const modal    = document.getElementById('calendarModal');
-        if (!scroller || !modal) { setTimeout(attachScrollPerf, 800); return; }
+        const modal = document.getElementById('calendarModal');
+        if (!modal) { setTimeout(attachScrollPerf, 800); return; }
 
         let scrollTimer = null;
         let isScrolling = false;
 
-        scroller.addEventListener('scroll', function() {
+        function onScrollStart() {
             if (!isScrolling) {
                 isScrolling = true;
-                // Pausar animaciones costosas del modal durante el scroll
                 modal.style.setProperty('--scroll-pause', 'paused');
-                scroller.style.pointerEvents = 'none'; // evita hover recalculos
             }
             clearTimeout(scrollTimer);
             scrollTimer = setTimeout(function() {
                 isScrolling = false;
                 modal.style.removeProperty('--scroll-pause');
-                scroller.style.pointerEvents = '';
-            }, 120);
-        }, { passive: true });
+            }, 150);
+        }
+
+        // Captura todos los scrolls dentro del modal con un solo listener
+        modal.addEventListener('scroll', onScrollStart, { passive: true, capture: true });
+
+        // Observar cuando se agregan los scrollers dinámicamente
+        function attachToScroller(el) {
+            if (!el || el._scrollPerfAttached) return;
+            el._scrollPerfAttached = true;
+            el.addEventListener('scroll', onScrollStart, { passive: true });
+        }
+
+        function tryAttach() {
+            attachToScroller(document.getElementById('calEventsList'));
+            attachToScroller(document.getElementById('calEventBody'));
+        }
+
+        tryAttach();
+        // Reintentar periódicamente por si los elementos se crean dinámicamente
+        setInterval(tryAttach, 2000);
     }
-    document.addEventListener('DOMContentLoaded', attachScrollPerf);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachScrollPerf);
+    } else {
+        attachScrollPerf();
+    }
 })();
 </script>
 
