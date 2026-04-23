@@ -1886,6 +1886,12 @@
                 background: #020c22 !important;
                 border: 1.5px solid rgba(0,210,255,0.22) !important;
                 transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease !important;
+                will-change: transform !important;
+                transform: translateZ(0) !important;
+            }
+            #calDayBackdrop {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
             }
             #calDayModal .cal-modal-landing-bg,
             #calDayModal .cal-modal-sweep { display: none !important; }
@@ -1900,8 +1906,10 @@
                 -webkit-backdrop-filter: none !important;
                 overflow-y: scroll !important;
                 -webkit-overflow-scrolling: touch !important;
-                overscroll-behavior-y: none !important;
+                overscroll-behavior-y: contain !important;
                 touch-action: pan-y !important;
+                will-change: scroll-position !important;
+                transform: translateZ(0) !important;
                 min-height: 0 !important;
                 scroll-behavior: auto !important;
             }
@@ -1925,11 +1933,13 @@
                 background-image: linear-gradient(145deg,
                     #0d1b4b 0%, #1a2f70 30%, #2d1580 60%, #1e3a8a 100%) !important;
                 background-size: 100% 100% !important;
-                /* Apertura y cierre casi instantáneos */
                 transition: opacity 0.1s linear, visibility 0.1s linear,
                             transform 0.1s linear !important;
+                will-change: transform !important;
             }
             #calEventBackdrop {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
                 transition: opacity 0.1s linear, visibility 0.1s linear !important;
             }
             #calEventModal::before { animation: none !important; }
@@ -1940,7 +1950,13 @@
                 overscroll-behavior-y: contain !important;
                 touch-action: pan-y !important;
                 will-change: scroll-position !important;
+                transform: translateZ(0) !important;
                 scroll-behavior: auto !important;
+            }
+            .cal-event-modal-header {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: rgba(0,15,40,0.97) !important;
             }
 
             /* ═══ I. BÓVEDA DE ARCHIVADOS ═══════════════════════════════ */
