@@ -1509,68 +1509,8 @@
             .cal-modal-landing-bg::after { animation: none !important; }
             .cal-modal-sweep::before,
             .cal-modal-sweep::after { animation: none !important; }
-            .card { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+            .card { backdrop-filter: blur(6px) !important; }
             .custom-select-wrapper { min-width: 0 !important; }
-
-            /* ══ CALENDARIO PRINCIPAL: detener TODO lo animado ══════════ */
-            #calendarModal {
-                animation: none !important;
-                background: linear-gradient(160deg,#0d1b4b 0%,#1e3a8a 40%,#2d1580 70%,#1a2f70 100%) !important;
-                background-size: 100% 100% !important;
-                transition: opacity 0.15s linear, visibility 0.15s linear, transform 0.15s linear !important;
-                will-change: transform !important;
-            }
-            #calendarModal::before,
-            #calendarModal::after,
-            #calendarModal .cal-body::before { animation: none !important; }
-            #calendarBackdrop { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-            .cal-modal-header  { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-
-            /* ══ EVENTOS DEL DÍA — scroll nativo en compositor thread ═══ */
-            .cal-events-scroll, #calEventsList {
-                overflow-y: scroll !important;
-                -webkit-overflow-scrolling: touch !important;
-                overscroll-behavior-y: contain !important;
-                touch-action: pan-y !important;
-                will-change: scroll-position !important;
-                transform: translateZ(0) !important;
-                scroll-behavior: auto !important;
-                contain: strict !important;
-            }
-            .cal-events-col {
-                isolation: isolate !important;
-                transform: translateZ(0) !important;
-                overflow: hidden !important;
-            }
-            /* Quitar transiciones de items durante scroll */
-            .cal-event-item {
-                transition: none !important;
-                contain: layout style !important;
-                transform: translateZ(0) !important;
-            }
-            .cal-event-item:hover { transform: none !important; }
-
-            /* ══ EDITAR EVENTO (calEventModal) — scroll fluido ═══════════ */
-            #calEventModal {
-                animation: none !important;
-                background: linear-gradient(145deg,#0d1b4b 0%,#1a2f70 35%,#2d1580 65%,#1e3a8a 100%) !important;
-                background-size: 100% 100% !important;
-                transition: opacity 0.1s linear, visibility 0.1s linear, transform 0.1s linear !important;
-                will-change: transform !important;
-            }
-            #calEventModal::before { animation: none !important; }
-            #calEventModal::after  { display: none !important; content: none !important; }
-            .cal-event-body {
-                overflow-y: scroll !important;
-                -webkit-overflow-scrolling: touch !important;
-                overscroll-behavior-y: contain !important;
-                touch-action: pan-y !important;
-                will-change: scroll-position !important;
-                scroll-behavior: auto !important;
-                transform: translateZ(0) !important;
-                contain: layout !important;
-            }
-            #calEventBackdrop { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 
             /* ── BÓVEDA MÓVIL: 2 columnas, anti-lag, fix parpadeo ── */
             .store-grid {
@@ -3189,7 +3129,6 @@
             z-index: 1 !important;
             pointer-events: none !important;
             animation: shineSwipe 4.5s cubic-bezier(0.4,0,0.6,1) infinite !important;
-            animation-play-state: var(--scroll-pause, running) !important;
             border-radius: 24px !important;
         }
         /* Capa 2: segundo shine desfasado más brillante */
@@ -3207,7 +3146,6 @@
             z-index: 1 !important;
             pointer-events: none !important;
             animation: shineSwipe2 4.5s cubic-bezier(0.4,0,0.6,1) infinite !important;
-            animation-play-state: var(--scroll-pause, running) !important;
         }
         /* Borde animado premium del modal */
         #calendarModal.show-cal {
@@ -3237,7 +3175,6 @@
                 radial-gradient(ellipse 40% 40% at 75% 20%,  rgba(37,99,235,0.22) 0%, transparent 55%) !important;
             background-size: 100% 100% !important;
             animation: auroraShift 10s ease-in-out infinite reverse !important;
-            animation-play-state: var(--scroll-pause, running) !important;
             border-radius: 24px !important;
         }
         @media (max-width: 768px) {
@@ -3362,7 +3299,7 @@
 
         #calendarBackdrop {
             position:fixed;inset:0;z-index:8100;background:rgba(0,2,10,0.88);
-            opacity:0;visibility:hidden;
+            backdrop-filter:blur(18px);opacity:0;visibility:hidden;
             transition:opacity 0.4s ease,visibility 0.4s ease;
         }
         #calendarBackdrop.show-cal{opacity:1;visibility:visible;}
@@ -3372,13 +3309,11 @@
             background: linear-gradient(-45deg, #0d1b4b, #1e3a8a, #6d28d9, #2563eb, #4f46e5, #0d1b4b);
             background-size: 400% 400%;
             animation: auroraShift 12s ease-in-out infinite;
-            animation-play-state: var(--scroll-pause, running);
             border-radius:24px;padding:0;
             display:flex;flex-direction:column;
             box-shadow:0 40px 120px rgba(0,0,0,0.95), 0 0 0 2px rgba(99,102,241,0.5), inset 0 0 40px rgba(99,102,241,0.12);
             opacity:0;visibility:hidden;
             transition:all 0.45s cubic-bezier(0.175,0.885,0.32,1.275);overflow:hidden;
-            will-change: transform;
         }
         #calendarModal.show-cal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
 
@@ -3386,8 +3321,9 @@
         .cal-modal-header {
             display:flex;align-items:center;justify-content:space-between;
             padding:1rem 1.5rem;
-            background:linear-gradient(90deg,rgba(0,20,50,0.92),rgba(0,8,25,0.90));
+            background:linear-gradient(90deg,rgba(0,20,50,0.6),rgba(0,8,25,0.55));
             border-bottom:1px solid rgba(0,210,255,0.18);flex-shrink:0;
+            backdrop-filter: blur(4px);
         }
         .cal-header-left { display:flex;align-items:center;gap:12px; }
         .cal-header-date {
@@ -3419,10 +3355,10 @@
         .cal-clock-col {
             width:460px;flex-shrink:0;display:flex;flex-direction:column;
             align-items:center;justify-content:center;
-            padding:0.6rem 1rem;background:rgba(0,5,18,0.75);
+            padding:0.6rem 1rem;background:rgba(0,5,18,0.45);
             border-right:1px solid rgba(0,210,255,0.12);gap:0.4rem;
             position:relative;overflow:hidden;
-            transform:translateZ(0);
+            backdrop-filter: blur(2px);
         }
 
         /* All-day strip above clock */
@@ -3450,36 +3386,26 @@
         .cal-events-col {
             flex:1;display:flex;flex-direction:column;
             padding:1rem 1.2rem;overflow:hidden;min-height:0;
-            isolation:isolate;
-            transform:translateZ(0);
         }
         .cal-events-scroll {
-            flex:1;overflow-y:scroll;padding-right:6px;
-            -webkit-overflow-scrolling:touch;
-            touch-action:pan-y;
-            overscroll-behavior-y:contain;
-            will-change:scroll-position;
-            transform:translateZ(0);
+            flex:1;overflow-y:auto;padding-right:6px;
         }
-        .cal-events-scroll::-webkit-scrollbar{width:4px;}
-        .cal-events-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,0.15);border-radius:4px;}
+        .cal-events-scroll::-webkit-scrollbar{width:7px;}
+        .cal-events-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,0.2);border-radius:4px;}
         .cal-events-scroll::-webkit-scrollbar-thumb{
             background:linear-gradient(180deg,#00d2ff,#0072ff);
-            border-radius:4px;box-shadow:0 0 6px rgba(0,210,255,0.6);
+            border-radius:4px;box-shadow:0 0 8px rgba(0,210,255,0.8);
         }
         .cal-events-scroll::-webkit-scrollbar-thumb:hover{
             background:linear-gradient(180deg,#00e5ff,#00aaff);
-            box-shadow:0 0 10px rgba(0,210,255,1);
+            box-shadow:0 0 14px rgba(0,210,255,1);
         }
 
         .cal-event-item {
             display:flex;align-items:center;gap:12px;padding:10px 14px;
             border-radius:12px;margin-bottom:8px;cursor:pointer;
-            transition:transform 0.2s, background 0.2s;
-            position:relative;overflow:hidden;
+            transition:all 0.3s;position:relative;overflow:hidden;
             background:rgba(8,18,38,0.85);border:1px solid rgba(255,255,255,0.05);
-            contain:layout style;
-            transform:translateZ(0);
         }
         .cal-event-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;}
         .cal-event-item:hover{transform:translateX(4px);background:rgba(12,28,55,0.9);}
@@ -9526,18 +9452,28 @@
         if (!val) { ghost.textContent = ''; return; }
         const known = calGetAllKnownLabels();
         const match = known.find(l => l.toLowerCase().startsWith(val.toLowerCase()) && l.toLowerCase() !== val.toLowerCase());
-        const exact = known.find(l => l.toLowerCase() === val.toLowerCase());
-        const candidate = match || exact;
         if (match) {
-            ghost.style.left = _jchGhostPos(inp, val) + 'px';
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const style = window.getComputedStyle(inp);
+            ctx.font = style.font || '700 0.88rem sans-serif';
+            const prefixWidth = ctx.measureText(val).width;
+            ghost.style.left = (14 + prefixWidth) + 'px';
             ghost.textContent = match.slice(val.length);
+            // Preview: suggest stored color for this match
+            const labelsWithColors = calGetAllKnownLabelsWithColors();
+            if (labelsWithColors[match]) {
+                window._calCurrentLabelColor = labelsWithColors[match];
+                // Update label color dots to reflect this match color
+                document.querySelectorAll('.cal-label-color-dot').forEach(d => {
+                    const isActive = d.dataset.color === window._calCurrentLabelColor;
+                    d.style.border = isActive ? '2px solid #fff' : '2px solid transparent';
+                    d.style.boxShadow = isActive ? `0 0 8px ${window._calCurrentLabelColor}` : '';
+                    d.style.transform = isActive ? 'scale(1.3)' : '';
+                });
+            }
         } else {
             ghost.textContent = '';
-        }
-        // Auto-apply stored color for matching or exact label
-        if (candidate) {
-            const stored = getLabelColor(candidate);
-            if (stored) _jchApplyLabelColor(stored, '.cal-label-color-dot', c => { window._calCurrentLabelColor = c; });
         }
     };
 
@@ -9555,7 +9491,9 @@
             const storedColor = getLabelColor(fullLabel);
             if (storedColor) {
                 window._calCurrentLabelColor = storedColor;
-                _jchApplyLabelColor(storedColor, '.cal-label-color-dot', c => { window._calCurrentLabelColor = c; });
+                // Update label color picker if visible
+                const dots = document.querySelectorAll('.cal-label-color-dot');
+                dots.forEach(d => d.classList.toggle('active', d.dataset.color === storedColor));
             }
         } else if (e.key === 'Enter') {
             e.preventDefault();
@@ -11854,30 +11792,7 @@
     };
 
     /* ── Label autocomplete/keydown — PROYECTO ──────────────────── */
-    function _jchGhostPos(inp, val) {
-        var m = document.getElementById('_jch_gm');
-        if (!m) { m = document.createElement('span'); m.id = '_jch_gm';
-            m.style.cssText = 'position:fixed;visibility:hidden;white-space:pre;pointer-events:none;z-index:-9999;top:-9999px;';
-            document.body.appendChild(m); }
-        var st = window.getComputedStyle(inp);
-        m.style.font = st.font; m.style.fontSize = st.fontSize;
-        m.style.fontWeight = st.fontWeight; m.style.fontFamily = st.fontFamily;
-        m.style.letterSpacing = st.letterSpacing;
-        m.textContent = val;
-        return 14 + m.getBoundingClientRect().width;
-    }
-        function _jchApplyLabelColor(storedColor, dotSelector, setColorFn) {
-        if (!storedColor) return;
-        // Select matching dot visually
-        document.querySelectorAll(dotSelector).forEach(d => {
-            const on = d.dataset.color === storedColor;
-            d.style.border = on ? '2px solid #fff' : '2px solid transparent';
-            d.style.boxShadow = on ? '0 0 8px ' + storedColor : '';
-            d.style.transform = on ? 'scale(1.3)' : '';
-        });
-        if (typeof setColorFn === 'function') setColorFn(storedColor);
-    }
-        window.projLabelAutocomplete = function(inp) {
+    window.projLabelAutocomplete = function(inp) {
         const val = inp.value.trim().replace(/^#/,'');
         const ghost = document.getElementById('projLabelGhost');
         if (!ghost) return;
@@ -11885,20 +11800,13 @@
         const known = window.calGetAllKnownLabels ? window.calGetAllKnownLabels() : [];
         const match = known.find(l => l.toLowerCase().startsWith(val.toLowerCase()) && l.toLowerCase() !== val.toLowerCase());
         if (match) {
-            ghost.style.left = _jchGhostPos(inp, val) + 'px';
+            const canvas = document.createElement('canvas');
+            const ctx2 = canvas.getContext('2d');
+            const style = window.getComputedStyle(inp);
+            ctx2.font = style.font || '700 0.88rem sans-serif';
+            ghost.style.left = (14 + ctx2.measureText(val).width) + 'px';
             ghost.textContent = match.slice(val.length);
-            // Auto-apply stored color for matching label
-            const stored = typeof getLabelColor === 'function' ? getLabelColor(match) : null;
-            if (stored) _jchApplyLabelColor(stored, '.proj-label-color-dot', c => { projCurrentLabelColor = c; });
-        } else {
-            ghost.textContent = '';
-            // Also check exact match (user typed whole label name)
-            const exact = known.find(l => l.toLowerCase() === val.toLowerCase());
-            if (exact) {
-                const stored = typeof getLabelColor === 'function' ? getLabelColor(exact) : null;
-                if (stored) _jchApplyLabelColor(stored, '.proj-label-color-dot', c => { projCurrentLabelColor = c; });
-            }
-        }
+        } else { ghost.textContent = ''; }
     };
     window.projLabelKeydown = function(e) {
         if (e.key === 'Tab') {
@@ -11906,12 +11814,8 @@
             const ghost = document.getElementById('projLabelGhost');
             const inp   = document.getElementById('projEventLabel');
             if (!ghost || !inp || !ghost.textContent) return;
-            const full = inp.value.trim().replace(/^#/,'') + ghost.textContent;
-            inp.value = full;
+            inp.value = inp.value.trim().replace(/^#/,'') + ghost.textContent;
             ghost.textContent = '';
-            // Auto-apply stored color for completed label
-            const stored = typeof getLabelColor === 'function' ? getLabelColor(full) : null;
-            if (stored) _jchApplyLabelColor(stored, '.proj-label-color-dot', c => { projCurrentLabelColor = c; });
         } else if (e.key === 'Enter') {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -11948,20 +11852,13 @@
         const known = window.calGetAllKnownLabels ? window.calGetAllKnownLabels() : [];
         const match = known.find(l => l.toLowerCase().startsWith(val.toLowerCase()) && l.toLowerCase() !== val.toLowerCase());
         if (match) {
-            ghost.style.left = _jchGhostPos(inp, val) + 'px';
+            const canvas = document.createElement('canvas');
+            const ctx2 = canvas.getContext('2d');
+            const style = window.getComputedStyle(inp);
+            ctx2.font = style.font || '700 0.88rem sans-serif';
+            ghost.style.left = (14 + ctx2.measureText(val).width) + 'px';
             ghost.textContent = match.slice(val.length);
-            // Auto-apply stored color for matching label
-            const stored = typeof getLabelColor === 'function' ? getLabelColor(match) : null;
-            if (stored) _jchApplyLabelColor(stored, '.task-label-color-dot', c => { taskCurrentLabelColor = c; });
-        } else {
-            ghost.textContent = '';
-            // Also check exact match
-            const exact = known.find(l => l.toLowerCase() === val.toLowerCase());
-            if (exact) {
-                const stored = typeof getLabelColor === 'function' ? getLabelColor(exact) : null;
-                if (stored) _jchApplyLabelColor(stored, '.task-label-color-dot', c => { taskCurrentLabelColor = c; });
-            }
-        }
+        } else { ghost.textContent = ''; }
     };
     window.taskLabelKeydown = function(e) {
         if (e.key === 'Tab') {
@@ -11969,12 +11866,8 @@
             const ghost = document.getElementById('taskLabelGhost');
             const inp   = document.getElementById('taskEventLabel');
             if (!ghost || !inp || !ghost.textContent) return;
-            const full = inp.value.trim().replace(/^#/,'') + ghost.textContent;
-            inp.value = full;
+            inp.value = inp.value.trim().replace(/^#/,'') + ghost.textContent;
             ghost.textContent = '';
-            // Auto-apply stored color for completed label
-            const stored = typeof getLabelColor === 'function' ? getLabelColor(full) : null;
-            if (stored) _jchApplyLabelColor(stored, '.task-label-color-dot', c => { taskCurrentLabelColor = c; });
         } else if (e.key === 'Enter') {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -12763,54 +12656,6 @@ function init(){
 }
 
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
-})();
-
-// ── SCROLL PERFORMANCE: pausa animaciones del modal mientras se hace scroll ──
-(function() {
-    function attachScrollPerf() {
-        const modal = document.getElementById('calendarModal');
-        if (!modal) { setTimeout(attachScrollPerf, 800); return; }
-
-        let scrollTimer = null;
-        let isScrolling = false;
-
-        function onScrollStart() {
-            if (!isScrolling) {
-                isScrolling = true;
-                modal.style.setProperty('--scroll-pause', 'paused');
-            }
-            clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(function() {
-                isScrolling = false;
-                modal.style.removeProperty('--scroll-pause');
-            }, 150);
-        }
-
-        // Captura todos los scrolls dentro del modal con un solo listener
-        modal.addEventListener('scroll', onScrollStart, { passive: true, capture: true });
-
-        // Observar cuando se agregan los scrollers dinámicamente
-        function attachToScroller(el) {
-            if (!el || el._scrollPerfAttached) return;
-            el._scrollPerfAttached = true;
-            el.addEventListener('scroll', onScrollStart, { passive: true });
-        }
-
-        function tryAttach() {
-            attachToScroller(document.getElementById('calEventsList'));
-            attachToScroller(document.getElementById('calEventBody'));
-        }
-
-        tryAttach();
-        // Reintentar periódicamente por si los elementos se crean dinámicamente
-        setInterval(tryAttach, 2000);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', attachScrollPerf);
-    } else {
-        attachScrollPerf();
-    }
 })();
 </script>
 
