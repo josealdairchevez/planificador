@@ -1758,7 +1758,9 @@
             /* Quitar tap-highlight de CUALQUIER elemento interactivo */
             button, a, [onclick], .store-gift-wrapper, .archive-vault-trigger-btn,
             .cal-trigger-btn, .btn-create-base, .btn-create-magenta,
-            .btn-create-emerald, .btn-create-amber {
+            .btn-create-emerald, .btn-create-amber,
+            .hab-card, .hab-card *, .hab-check-btn, .hab-rep-btn,
+            .hab-timer-ctrl, .hab-rep-ctrl {
                 -webkit-tap-highlight-color: transparent !important;
                 outline: none !important;
             }
@@ -4634,6 +4636,8 @@
             border:1.5px solid rgba(255,255,255,0.07);
             overflow:hidden;position:relative;
             transition:border-color 0.3s,box-shadow 0.3s,transform 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            tap-highlight-color: transparent;
         }
         /* Franja de color izquierda dinámica por hábito */
         .hab-card::before {
@@ -4642,6 +4646,7 @@
             border-radius:18px 0 0 18px;
             box-shadow:0 0 12px var(--hab-c,#10b981);
             opacity:0.85;
+            pointer-events:none;
         }
         /* Brillo sutil de fondo con el color del hábito */
         .hab-card::after {
@@ -4649,9 +4654,15 @@
             background:radial-gradient(ellipse at top left, var(--hab-c,#10b981) 0%, transparent 65%);
             opacity:0.04;border-radius:18px;
         }
+        /* Eliminar flash celeste en móvil al tocar la card */
+        .hab-card, .hab-card * {
+            -webkit-tap-highlight-color: transparent !important;
+            outline: none !important;
+        }
+        .hab-card:active { background:rgba(8,20,40,0.92) !important; }
         .hab-card:hover {
             border-color:var(--hab-c,rgba(255,255,255,0.12));
-            box-shadow:0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px var(--hab-c,transparent) inset;
+            box-shadow:0 4px 24px rgba(0,0,0,0.4);
             transform:translateY(-1px);
         }
         .hab-card.completed-today {
@@ -4775,6 +4786,19 @@
         }
         .hab-timer-ctrl.done-timer .hab-timer-arc { stroke:#22c55e!important; }
         .hab-timer-ctrl.done-timer .hab-timer-icon { font-size:1rem; }
+        /* Círculo verde con ✓ cuando el timer termina */
+        .hab-timer-ctrl.done-timer .hab-timer-ring-wrap::after {
+            content:'✓';
+            position:absolute;top:0;left:0;width:100%;height:100%;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.15rem;font-weight:900;color:#fff;
+            background:linear-gradient(135deg,#22c55e,#4ade80);
+            border-radius:50%;
+            box-shadow:0 0 16px rgba(34,197,94,0.6);
+            pointer-events:none;
+        }
+        .hab-timer-ctrl.done-timer .hab-timer-svg { display:none; }
+        .hab-timer-ctrl.done-timer .hab-timer-inner { display:none; }
 
         @keyframes habTimerPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
         .hab-timer-ctrl.running .hab-timer-ring-wrap { animation: habTimerPulse 1.5s ease-in-out infinite; }
@@ -15957,13 +15981,20 @@ window.habRepInc = function(habitId, target) {
     const card   = document.getElementById('habCard-' + habitId);
     const btnEl  = card ? card.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
 
-    if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
-    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
-    if (btnEl && isDone) {
-        btnEl.textContent = '✓';
-        btnEl.classList.add('plus-done');
-        btnEl.style.background = `linear-gradient(135deg,${color},${color}aa)`;
-        btnEl.style.borderColor = color;
+    if (isDone) {
+        // Reemplazar el control completo por un check verde premium
+        const ctrl = document.getElementById('habRepVal_' + habitId);
+        const repCtrl = ctrl ? ctrl.closest('.hab-rep-ctrl') : null;
+        if (repCtrl) {
+            repCtrl.innerHTML =
+                `<button class="hab-check-btn done" style="background:linear-gradient(135deg,${color},${color}cc);border-color:${color};box-shadow:0 0 18px ${color}88;">✓</button>` +
+                `<div style="font-size:0.48rem;color:${color};font-weight:900;margin-top:2px;">¡Listo!</div>`;
+        }
+        // Marcar card visualmente
+        if (card) card.classList.add('completed-today');
+    } else {
+        if (valEl)  { valEl.textContent = newVal; valEl.style.color = '#fff'; }
+        if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = color; }
     }
 
     // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
@@ -16114,17 +16145,17 @@ window.startHabTimer = function(habitId, totalSec) {
         localStorage.setItem(QTY_KEY, JSON.stringify(q2));
 
         if (e >= totalSec) {
-            // ¡Completado!
+            // ¡Completado! Mostrar círculo verde con ✓ igual al check-btn
             clearInterval(_habTimers[habitId].interval);
             _habTimers[habitId].interval = null;
             const ctrl2 = document.getElementById('habTimerCtrl_' + habitId);
-            if (ctrl2) { ctrl2.classList.remove('running'); ctrl2.classList.add('done-timer'); }
+            if (ctrl2) {
+                ctrl2.classList.remove('running');
+                ctrl2.classList.add('done-timer');
+                // El CSS ::after ya muestra el ✓ verde cuando tiene done-timer
+            }
             const lbl = document.getElementById('habTimerLbl_' + habitId);
             if (lbl) lbl.textContent = '¡Listo!';
-            const icon = ctrl2 ? ctrl2.querySelector('.hab-timer-icon') : null;
-            if (icon) { icon.style.display = ''; icon.textContent = '✅'; }
-            const cd2 = ctrl2 ? ctrl2.querySelector('.hab-timer-countdown') : null;
-            if (cd2) cd2.style.display = 'none';
 
             // ── Otorgar XP directamente sin re-renderizar la tarjeta ──
             const hList2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
