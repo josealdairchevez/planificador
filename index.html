@@ -15828,39 +15828,44 @@ window.buildHabControl = function(h, done) {
     const target  = h.qtyTarget || 1;
     const pct     = Math.min(100, Math.round((cur/target)*100));
     const color   = h.color || '#10b981';
+    // Para quantity/timer: isDone se basa SOLO en el contador, nunca en done
+    // Esto evita que el re-render por log bloquee el control
+    const isDone  = cur >= target;
 
-    // ── 2. CANTIDAD (repeticiones) ────────────────────────────
+    // ── 2. CANTIDAD (repeticiones) — siempre muestra +/- ─────
     if (ht === 'quantity') {
-        const unit  = h.qtyUnit || 'veces';
-        const isDone = cur >= target;
+        const unit = h.qtyUnit || 'veces';
         return `
         <div class="hab-rep-ctrl">
             <div class="hab-rep-row">
-                <button class="hab-rep-btn" onclick="habRepDec('${h.id}',${target})">−</button>
+                <button class="hab-rep-btn" onclick="event.stopPropagation();habRepDec('${h.id}',${target})">−</button>
                 <div class="hab-rep-val" id="habRepVal_${h.id}" style="color:${isDone?'#22c55e':'#fff'}">${cur}</div>
-                <button class="hab-rep-btn ${isDone?'plus-done':''}" onclick="habRepInc('${h.id}',${target})" style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};`:'border-color:${color}44;'}">${isDone?'✓':'+'}</button>
+                <button class="hab-rep-btn ${isDone?'plus-done':''}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
+                    style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
             </div>
             <div class="hab-rep-target" id="habRepTarget_${h.id}">/${target} ${unit}</div>
             <div class="hab-rep-bar"><div class="hab-rep-bar-fill" id="habRepFill_${h.id}" style="width:${pct}%;background:${isDone?'#22c55e':color};"></div></div>
         </div>`;
     }
 
-    // ── 3. TIMER (anillo circular) ────────────────────────────
+    // ── 3. TIMER (anillo circular) — siempre muestra el anillo ─
     if (ht === 'timer') {
-        const mins    = h.qtyTarget || 5;
-        const totalSec= mins * 60;
-        const elapsed = cur; // guardamos segundos transcurridos
-        const secLeft = Math.max(0, totalSec - elapsed);
-        const isDone  = elapsed >= totalSec;
+        const mins     = h.qtyTarget || 5;
+        const totalSec = mins * 60;
+        const elapsed  = cur;
+        const secLeft  = Math.max(0, totalSec - elapsed);
+        const timerDone = elapsed >= totalSec;
         const r = 17, circ = 2 * Math.PI * r;
-        const progress = isDone ? 1 : (elapsed / totalSec);
+        const progress = timerDone ? 1 : (elapsed / totalSec);
         const dashOff  = circ * (1 - progress);
-        const arcColor = isDone ? '#22c55e' : color;
+        const arcColor = timerDone ? '#22c55e' : color;
         const mm = String(Math.floor(secLeft/60)).padStart(2,'0');
         const ss = String(secLeft%60).padStart(2,'0');
 
         return `
-        <div class="hab-timer-ctrl ${isDone?'done-timer':''}" id="habTimerCtrl_${h.id}" onclick="startHabTimer('${h.id}',${totalSec})" title="${isDone?'¡Completado!':'Toca para iniciar el timer'}">
+        <div class="hab-timer-ctrl ${timerDone?'done-timer':''}" id="habTimerCtrl_${h.id}"
+            onclick="event.stopPropagation();startHabTimer('${h.id}',${totalSec})"
+            title="${timerDone?'¡Completado!':'Toca para iniciar el timer'}">
             <div class="hab-timer-ring-wrap">
                 <svg class="hab-timer-svg" viewBox="0 0 46 46">
                     <circle class="hab-timer-bg" cx="23" cy="23" r="${r}"/>
@@ -15870,16 +15875,16 @@ window.buildHabControl = function(h, done) {
                         stroke-dashoffset="${dashOff.toFixed(1)}"/>
                 </svg>
                 <div class="hab-timer-inner">
-                    <span class="hab-timer-icon">${isDone?'✅':'⏱️'}</span>
+                    <span class="hab-timer-icon">${timerDone?'✅':'⏱️'}</span>
                     <span class="hab-timer-countdown" id="habTimerCd_${h.id}">${mm}:${ss}</span>
                 </div>
             </div>
-            <div class="hab-timer-lbl" id="habTimerLbl_${h.id}">${isDone?'¡Listo!':mins+' min'}</div>
+            <div class="hab-timer-lbl" id="habTimerLbl_${h.id}">${timerDone?'¡Listo!':mins+' min'}</div>
         </div>`;
     }
 
     // Fallback check
-    return `<button class="hab-check-btn ${done?'done':''}" onclick="toggleHabit('${h.id}')">${done?'✓':''}</button>`;
+    return `<button class="hab-check-btn ${done?'done':''}" onclick="event.stopPropagation();toggleHabit('${h.id}')">${done?'✓':''}</button>`;
 };
 
 // ── INCREMENTO / DECREMENTO DE REPETICIONES ───────────────────
@@ -15893,24 +15898,67 @@ window.habRepInc = function(habitId, target) {
     qty[qtyKey]   = newVal;
     localStorage.setItem(QTY_KEY, JSON.stringify(qty));
 
-    const habits  = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
-    const h       = habits.find(x => x.id === habitId);
+    const hList = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+    const h     = hList.find(x => x.id === habitId);
     if (!h) return;
-    const tgt     = h.qtyTarget || target || 1;
-    const pct     = Math.min(100, Math.round((newVal/tgt)*100));
-    const isDone  = newVal >= tgt;
-    const color   = h.color || '#10b981';
+    const tgt   = h.qtyTarget || target || 1;
+    const pct   = Math.min(100, Math.round((newVal/tgt)*100));
+    const isDone = newVal >= tgt;
+    const color  = h.color || '#10b981';
 
-    const valEl   = document.getElementById('habRepVal_'  + habitId);
-    const fillEl  = document.getElementById('habRepFill_' + habitId);
-    const btnEl   = document.querySelector(`[onclick="habRepInc('${habitId}',${target})"]`);
+    // ── Actualizar DOM del control sin re-renderizar la tarjeta ──
+    const valEl  = document.getElementById('habRepVal_'  + habitId);
+    const fillEl = document.getElementById('habRepFill_' + habitId);
+    // Buscar el botón + por atributo data o por selector más robusto
+    const card   = document.getElementById('habCard-' + habitId);
+    const btnEl  = card ? card.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
 
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
     if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
-    if (btnEl)  { btnEl.textContent = isDone ? '✓' : '+'; btnEl.classList.toggle('plus-done', isDone); }
+    if (btnEl && isDone) {
+        btnEl.textContent = '✓';
+        btnEl.classList.add('plus-done');
+        btnEl.style.background = `linear-gradient(135deg,${color},${color}aa)`;
+        btnEl.style.borderColor = color;
+    }
 
+    // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
     if (isDone && !(h.log||[]).includes(today)) {
-        if (typeof window.toggleHabit === 'function') window.toggleHabit(habitId);
+        // Marcar en log
+        h.log = h.log || [];
+        h.log.push(today);
+        localStorage.setItem('jch_habits_v1', JSON.stringify(hList));
+
+        // XP al héroe
+        try {
+            const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+            const xpGain  = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
+            const coinGain= Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
+            heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+            heroRaw.coins = (heroRaw.coins||0) + coinGain;
+            // Level up
+            while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+                heroRaw.xp -= heroRaw.xpNext;
+                heroRaw.level = (heroRaw.level||1) + 1;
+                heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
+                if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
+            }
+            localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+        } catch(e) {}
+
+        // XP sistema global
+        if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
+        if (typeof playSparkleSound === 'function') playSparkleSound();
+
+        // Marcar card visualmente como completada sin re-renderizar
+        if (card) card.classList.add('completed-today');
+
+        // Actualizar badge y stats sin tocar la lista
+        if (typeof updateHabitBadge === 'function') updateHabitBadge();
+        if (typeof renderHabStats   === 'function') renderHabStats();
+        if (typeof renderHabHero    === 'function') renderHabHero();
+
+        // Confeti
         if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
     }
 };
@@ -15934,11 +15982,12 @@ window.habRepDec = function(habitId, target) {
 
     const valEl   = document.getElementById('habRepVal_'  + habitId);
     const fillEl  = document.getElementById('habRepFill_' + habitId);
-    const btnEl   = document.querySelector(`[onclick="habRepInc('${habitId}',${target})"]`);
+    const card2   = document.getElementById('habCard-' + habitId);
+    const btnEl   = card2 ? card2.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
 
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = '#fff'; }
     if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = color; }
-    if (btnEl)  { btnEl.textContent = '+'; btnEl.classList.remove('plus-done'); }
+    if (btnEl)  { btnEl.textContent = '+'; btnEl.classList.remove('plus-done'); btnEl.style.background=''; btnEl.style.borderColor=''; }
 };
 
 // ── SONIDO AL COMPLETAR TIMER ─────────────────────────────────
@@ -16033,12 +16082,42 @@ window.startHabTimer = function(habitId, totalSec) {
             const cd2 = ctrl2 ? ctrl2.querySelector('.hab-timer-countdown') : null;
             if (cd2) cd2.style.display = 'none';
 
-            // Marcar hábito como completado
-            const hab2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
-            const hh = hab2.find(x => x.id === habitId);
+            // ── Otorgar XP directamente sin re-renderizar la tarjeta ──
+            const hList2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+            const hh     = hList2.find(x => x.id === habitId);
             if (hh && !(hh.log||[]).includes(today)) {
-                if (typeof window.toggleHabit === 'function') window.toggleHabit(habitId);
+                hh.log = hh.log || [];
+                hh.log.push(today);
+                localStorage.setItem('jch_habits_v1', JSON.stringify(hList2));
+
+                // XP al héroe
+                try {
+                    const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+                    const xpGain  = Math.round((hh.xp||10) * (heroRaw.class==='mage'?1.25:1));
+                    const coinGain= Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
+                    heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+                    heroRaw.coins = (heroRaw.coins||0) + coinGain;
+                    while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+                        heroRaw.xp -= heroRaw.xpNext;
+                        heroRaw.level = (heroRaw.level||1) + 1;
+                        heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
+                        if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
+                    }
+                    localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+                } catch(err) {}
+
+                // XP sistema global
+                if (typeof addGlobalReward === 'function') addGlobalReward(hh.xp||10, 1);
+                if (typeof playSparkleSound === 'function') playSparkleSound();
+
+                // Marcar card como completada sin re-render
+                const card2 = document.getElementById('habCard-' + habitId);
+                if (card2) card2.classList.add('completed-today');
+                if (typeof updateHabitBadge === 'function') updateHabitBadge();
+                if (typeof renderHabStats   === 'function') renderHabStats();
+                if (typeof renderHabHero    === 'function') renderHabHero();
             }
+
             playHabTimerComplete();
             if (typeof window.launchConfetti === 'function') window.launchConfetti(60);
         }
