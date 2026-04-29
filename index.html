@@ -1758,9 +1758,7 @@
             /* Quitar tap-highlight de CUALQUIER elemento interactivo */
             button, a, [onclick], .store-gift-wrapper, .archive-vault-trigger-btn,
             .cal-trigger-btn, .btn-create-base, .btn-create-magenta,
-            .btn-create-emerald, .btn-create-amber,
-            .hab-card, .hab-card *, .hab-check-btn, .hab-rep-btn,
-            .hab-timer-ctrl, .hab-rep-ctrl {
+            .btn-create-emerald, .btn-create-amber {
                 -webkit-tap-highlight-color: transparent !important;
                 outline: none !important;
             }
@@ -4636,37 +4634,33 @@
             border:1.5px solid rgba(255,255,255,0.07);
             overflow:hidden;position:relative;
             transition:border-color 0.3s,box-shadow 0.3s,transform 0.2s;
-            -webkit-tap-highlight-color: transparent;
-            tap-highlight-color: transparent;
         }
-        /* Franja izquierda del color del hábito */
+        /* Franja de color izquierda dinámica por hábito */
         .hab-card::before {
-            content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+            content:'';position:absolute;left:0;top:0;bottom:0;width:3.5px;
             background:var(--hab-c,#10b981);
             border-radius:18px 0 0 18px;
-            box-shadow:0 0 10px var(--hab-c,#10b981);
-            opacity:0.9;pointer-events:none;z-index:1;
+            box-shadow:0 0 12px var(--hab-c,#10b981);
+            opacity:0.85;
         }
-        /* Brillo de fondo usando pseudo con opacity */
+        /* Brillo sutil de fondo con el color del hábito */
         .hab-card::after {
             content:'';position:absolute;inset:0;pointer-events:none;
-            background:var(--hab-c,#10b981);
+            background:radial-gradient(ellipse at top left, var(--hab-c,#10b981) 0%, transparent 65%);
             opacity:0.04;border-radius:18px;
         }
-        .hab-card, .hab-card * {
-            -webkit-tap-highlight-color: transparent !important;
-            outline: none !important;
-        }
-        .hab-card:active { background:rgba(8,20,40,0.92) !important; }
         .hab-card:hover {
             border-color:var(--hab-c,rgba(255,255,255,0.12));
-            box-shadow:0 4px 24px rgba(0,0,0,0.4);
+            box-shadow:0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px var(--hab-c,transparent) inset;
             transform:translateY(-1px);
         }
         .hab-card.completed-today {
             border-color:var(--hab-c,rgba(16,185,129,0.4));
+            box-shadow:0 0 20px color-mix(in srgb,var(--hab-c,#10b981) 30%,transparent);
         }
-        .hab-card.completed-today::after { opacity:0.08; }
+        .hab-card.completed-today::after {
+            opacity:0.09;
+        }
 
         .hab-card-top {
             display:flex;align-items:center;gap:10px;padding:11px 12px 8px 16px;
@@ -4674,8 +4668,9 @@
         .hab-card-emoji {
             width:42px;height:42px;border-radius:13px;display:flex;align-items:center;
             justify-content:center;font-size:1.35rem;flex-shrink:0;
-            background:rgba(255,255,255,0.07);
-            border:1px solid rgba(255,255,255,0.12);
+            background:linear-gradient(135deg, color-mix(in srgb,var(--hab-c,#10b981) 25%,transparent), color-mix(in srgb,var(--hab-c,#10b981) 10%,transparent));
+            border:1px solid color-mix(in srgb,var(--hab-c,#10b981) 35%,transparent);
+            box-shadow:0 2px 8px color-mix(in srgb,var(--hab-c,#10b981) 20%,transparent);
         }
         .hab-card-info { flex:1;min-width:0; }
         .hab-card-name {
@@ -4706,13 +4701,15 @@
             box-sizing:border-box;padding:0;
         }
         .hab-check-btn.done {
-            background:var(--hab-c,#10b981);
+            background:linear-gradient(135deg,var(--hab-c,#10b981),color-mix(in srgb,var(--hab-c,#10b981) 70%,#fff));
             border-color:var(--hab-c,#10b981);
-            box-shadow:0 0 16px var(--hab-c,#10b981);
+            box-shadow:0 0 18px color-mix(in srgb,var(--hab-c,#10b981) 55%,transparent),
+                       0 0 6px color-mix(in srgb,var(--hab-c,#10b981) 30%,transparent) inset;
         }
         .hab-check-btn:not(.done):hover {
             border-color:var(--hab-c,#10b981);
-            box-shadow:0 0 10px var(--hab-c,#10b981);
+            background:color-mix(in srgb,var(--hab-c,#10b981) 12%,transparent);
+            box-shadow:0 0 10px color-mix(in srgb,var(--hab-c,#10b981) 30%,transparent);
         }
 
         /* ── CONTROL CANTIDAD (repeticiones) ── */
@@ -4778,22 +4775,6 @@
         }
         .hab-timer-ctrl.done-timer .hab-timer-arc { stroke:#22c55e!important; }
         .hab-timer-ctrl.done-timer .hab-timer-icon { font-size:1rem; }
-        /* Círculo verde con ✓ cuando el timer termina — mismo tamaño que hab-check-btn */
-        .hab-timer-ctrl.done-timer .hab-timer-ring-wrap {
-            width:40px;height:40px;
-        }
-        .hab-timer-ctrl.done-timer .hab-timer-ring-wrap::after {
-            content:'✓';
-            position:absolute;top:0;left:0;width:100%;height:100%;
-            display:flex;align-items:center;justify-content:center;
-            font-size:1.15rem;font-weight:900;color:#fff;
-            background:linear-gradient(135deg,#22c55e,#4ade80);
-            border-radius:50%;
-            box-shadow:0 0 16px rgba(34,197,94,0.6);
-            pointer-events:none;
-        }
-        .hab-timer-ctrl.done-timer .hab-timer-svg { display:none; }
-        .hab-timer-ctrl.done-timer .hab-timer-inner { display:none; }
 
         @keyframes habTimerPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
         .hab-timer-ctrl.running .hab-timer-ring-wrap { animation: habTimerPulse 1.5s ease-in-out infinite; }
@@ -5106,7 +5087,7 @@
         /* ═══ HABITICA FEATURES: Color dinámico, +/-, Avatar, Tienda, Recompensas ═══ */
 
         /* Hábito con color dinámico según rendimiento */
-        .hab-card.perf-great  { border-color:var(--hab-c,rgba(34,197,94,0.5)); box-shadow:0 0 14px var(--hab-c,rgba(34,197,94,0.18)); }
+        .hab-card.perf-great  { border-color:color-mix(in srgb,var(--hab-c,#22c55e) 50%,transparent);  box-shadow:0 0 14px color-mix(in srgb,var(--hab-c,#22c55e) 18%,transparent); }
         .hab-card.perf-good   { border-color:rgba(234,179,8,0.5);  box-shadow:0 0 12px rgba(234,179,8,0.12); }
         .hab-card.perf-bad    { border-color:rgba(249,115,22,0.5); box-shadow:0 0 12px rgba(249,115,22,0.12);}
         .hab-card.perf-danger { border-color:rgba(239,68,68,0.6);  box-shadow:0 0 12px rgba(239,68,68,0.2); }
@@ -6469,13 +6450,7 @@
             overflow-y: auto;
             padding: 0 0 24px 0;
             box-shadow: 0 -20px 60px rgba(0,0,0,0.9);
-            animation: none;
-        }
-        .hab-detail-overlay.open .hab-detail-modal {
             animation: slideUpModal 0.3s cubic-bezier(0.34,1.26,0.64,1);
-        }
-        .hab-detail-overlay.open .hab-detail-modal.updating {
-            animation: none !important;
         }
         @keyframes slideUpModal {
             from { transform: translateY(100%); opacity: 0; }
@@ -15527,9 +15502,8 @@ function renderHabitCard(h, showEdit) {
     const isNeg = h.type==='negative';
     const weekBar=dots.map(d=>`<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`).join('');
     const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.58rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
-    const habColor = h.color && h.color !== 'undefined' ? h.color : '#6366f1';
     return `
-    <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-c:${habColor};border-color:${habColor}33;" data-habid="${h.id}">
+    <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-c:${h.color||'#10b981'};" data-habid="${h.id}">
         <div class="hab-card-top">
             <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
@@ -15572,7 +15546,7 @@ function renderHabToday() {
 
     const el=document.getElementById('habTodayList');
     if(!el) return;
-    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
+    const due=habits.filter(h=>isHabitDueToday(h));
     if(!due.length){
         el.innerHTML=`<div class="hab-empty"><div class="hab-empty-icon">🌱</div><div class="hab-empty-text">No hay hábitos para hoy.<br>¡Crea tu primer hábito en ➕!</div></div>`;
         return;
@@ -15618,7 +15592,7 @@ function renderHabStats() {
 
     const totalDone=habits.reduce((s,h)=>s+(h.log||[]).length,0);
     const topStreak=habits.reduce((m,h)=>Math.max(m,calcStreak(h)),0);
-    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
+    const due=habits.filter(h=>isHabitDueToday(h));
     const todayDone=due.filter(h=>isCompletedToday(h)).length;
 
     ovEl.innerHTML=`
@@ -15640,7 +15614,7 @@ function renderHabStats() {
     }
     hmEl.innerHTML=cells.join('');
 
-    if(allEl) allEl.innerHTML=`<div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Todos los hábitos</div>`+habits.filter(h=>!h.archived).map(h=>renderHabitCard(h,true)).join('');
+    if(allEl) allEl.innerHTML=`<div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Todos los hábitos</div>`+habits.map(h=>renderHabitCard(h,true)).join('');
 }
 
 // ── Tab HÉROE ─────────────────────────────────────────────────
@@ -15971,56 +15945,65 @@ window.habRepInc = function(habitId, target) {
     const hList = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
     const h     = hList.find(x => x.id === habitId);
     if (!h) return;
-    const tgt    = h.qtyTarget || target || 1;
-    const pct    = Math.min(100, Math.round((newVal/tgt)*100));
+    const tgt   = h.qtyTarget || target || 1;
+    const pct   = Math.min(100, Math.round((newVal/tgt)*100));
     const isDone = newVal >= tgt;
     const color  = h.color || '#10b981';
-    const card   = document.getElementById('habCard-' + habitId);
 
-    // Actualizar DOM sin re-renderizar
-    const valEl  = document.getElementById('habRepVal_' + habitId);
+    // ── Actualizar DOM del control sin re-renderizar la tarjeta ──
+    const valEl  = document.getElementById('habRepVal_'  + habitId);
     const fillEl = document.getElementById('habRepFill_' + habitId);
+    // Buscar el botón + por atributo data o por selector más robusto
+    const card   = document.getElementById('habCard-' + habitId);
+    const btnEl  = card ? card.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
+
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
     if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
+    if (btnEl && isDone) {
+        btnEl.textContent = '✓';
+        btnEl.classList.add('plus-done');
+        btnEl.style.background = `linear-gradient(135deg,${color},${color}aa)`;
+        btnEl.style.borderColor = color;
+    }
 
+    // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
     if (isDone && !(h.log||[]).includes(today)) {
-        // Reemplazar control por check verde
-        const ctrl = document.getElementById('habRepVal_' + habitId);
-        const repCtrl = ctrl ? ctrl.closest('.hab-rep-ctrl') : null;
-        if (repCtrl) {
-            repCtrl.innerHTML =
-                `<button class="hab-check-btn done" style="background:${color};border-color:${color};box-shadow:0 0 18px ${color}88;">✓</button>` +
-                `<div style="font-size:0.48rem;color:${color};font-weight:900;margin-top:2px;">¡Listo!</div>`;
-        }
+        // Marcar en log
+        h.log = h.log || [];
+        h.log.push(today);
+        localStorage.setItem('jch_habits_v1', JSON.stringify(hList));
+
+        // XP al héroe
+        try {
+            const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+            const xpGain  = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
+            const coinGain= Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
+            heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+            heroRaw.coins = (heroRaw.coins||0) + coinGain;
+            // Level up
+            while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+                heroRaw.xp -= heroRaw.xpNext;
+                heroRaw.level = (heroRaw.level||1) + 1;
+                heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
+                if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
+            }
+            localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+        } catch(e) {}
+
+        // XP sistema global
+        if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
+        if (typeof playSparkleSound === 'function') playSparkleSound();
+
+        // Marcar card visualmente como completada sin re-renderizar
         if (card) card.classList.add('completed-today');
 
-        // Bloquear TODOS los renders (window.X y la referencia local via IIFE)
-        const _r1 = window.renderHabToday,
-              _r2 = window.renderHabDisciplined,
-              _r3 = window.renderStrengthList,
-              _r4 = window.renderHabHero,
-              _r5 = window.renderHabStats;
-        window.renderHabToday       = function(){};
-        window.renderHabDisciplined = function(){};
-        window.renderStrengthList   = function(){};
-        window.renderHabHero        = function(){};
-        window.renderHabStats       = function(){};
-
-        // toggleHabit otorga XP + daño al boss + saveHero
-        if (typeof window.toggleHabit === 'function') window.toggleHabit(habitId);
-
-        window.renderHabToday       = _r1;
-        window.renderHabDisciplined = _r2;
-        window.renderStrengthList   = _r3;
-        window.renderHabHero        = _r4;
-        window.renderHabStats       = _r5;
-
-        // Refrescar hero y stats sin tocar las cards
-        if (typeof _r4 === 'function') _r4();
-        if (typeof _r5 === 'function') _r5();
+        // Actualizar badge y stats sin tocar la lista
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
+        if (typeof renderHabStats   === 'function') renderHabStats();
+        if (typeof renderHabHero    === 'function') renderHabHero();
 
-        if (typeof window.launchConfetti === 'function') window.launchConfetti(60);
+        // Confeti
+        if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
     }
 };
 
@@ -16077,48 +16060,6 @@ function playHabTimerComplete() {
         });
     } catch(e) {}
 }
-// ── HELPER: otorgar XP + daño al boss (igual que toggleHabit) ──
-function grantHabitReward(h) {
-    try {
-        const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-        const xpGain   = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
-        const coinGain = Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
-        heroRaw.xp    = (heroRaw.xp||0) + xpGain;
-        heroRaw.coins = (heroRaw.coins||0) + coinGain;
-        const BOSSES_LOCAL = (typeof BOSSES !== 'undefined') ? BOSSES : [];
-        const dmg     = Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4) * (heroRaw.class==='warrior'?1.3:1));
-        const bossIdx = heroRaw.bossIndex || 0;
-        const boss    = BOSSES_LOCAL[bossIdx] || {maxHp:100,xpReward:50,reward:'🎁',name:'Boss'};
-        heroRaw.bossHp = ((heroRaw.bossHp!=null) ? heroRaw.bossHp : boss.maxHp) - dmg;
-        const dmgEl = document.getElementById('habBossDmg');
-        if (dmgEl) { dmgEl.textContent='-'+dmg; dmgEl.classList.add('show'); setTimeout(()=>dmgEl.classList.remove('show'),900); }
-        if (heroRaw.bossHp <= 0) {
-            heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0)+1;
-            heroRaw.xp += boss.xpReward;
-            heroRaw.inventory = heroRaw.inventory||[];
-            heroRaw.inventory.push(boss.reward);
-            heroRaw.bossIndex = Math.min(bossIdx+1, BOSSES_LOCAL.length-1);
-            heroRaw.bossHp = (BOSSES_LOCAL[heroRaw.bossIndex]||boss).maxHp;
-            if (typeof showBossDefeated==='function') showBossDefeated(boss);
-        }
-        while (heroRaw.xp >= (heroRaw.xpNext||100)) {
-            heroRaw.xp -= heroRaw.xpNext;
-            heroRaw.level = (heroRaw.level||1)+1;
-            heroRaw.xpNext = Math.round((heroRaw.xpNext||100)*1.5);
-            heroRaw.maxHp = (heroRaw.maxHp||100)+(heroRaw.class==='warrior'?30:20);
-            heroRaw.hp = heroRaw.maxHp;
-            if (typeof showLevelUp==='function') showLevelUp(heroRaw.level);
-        }
-        if (heroRaw.class==='healer') heroRaw.hp = Math.min(heroRaw.maxHp,(heroRaw.hp||0)+3);
-        localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
-        if (typeof addGlobalReward  ==='function') addGlobalReward(h.xp||10,1);
-        if (typeof playSparkleSound ==='function') playSparkleSound();
-        if (typeof renderHabHero    ==='function') renderHabHero();
-        if (typeof renderHabStats   ==='function') renderHabStats();
-        if (typeof updateHabitBadge ==='function') updateHabitBadge();
-    } catch(e) { console.warn('grantHabitReward:',e); }
-}
-
 const _habTimers = {}; // { habitId: { interval, elapsed, total } }
 
 window.startHabTimer = function(habitId, totalSec) {
@@ -16173,47 +16114,52 @@ window.startHabTimer = function(habitId, totalSec) {
         localStorage.setItem(QTY_KEY, JSON.stringify(q2));
 
         if (e >= totalSec) {
-            // ¡Completado! Mostrar círculo verde con ✓ igual al check-btn
+            // ¡Completado!
             clearInterval(_habTimers[habitId].interval);
             _habTimers[habitId].interval = null;
             const ctrl2 = document.getElementById('habTimerCtrl_' + habitId);
-            if (ctrl2) {
-                ctrl2.classList.remove('running');
-                ctrl2.classList.add('done-timer');
-                // El CSS ::after ya muestra el ✓ verde cuando tiene done-timer
-            }
+            if (ctrl2) { ctrl2.classList.remove('running'); ctrl2.classList.add('done-timer'); }
             const lbl = document.getElementById('habTimerLbl_' + habitId);
             if (lbl) lbl.textContent = '¡Listo!';
+            const icon = ctrl2 ? ctrl2.querySelector('.hab-timer-icon') : null;
+            if (icon) { icon.style.display = ''; icon.textContent = '✅'; }
+            const cd2 = ctrl2 ? ctrl2.querySelector('.hab-timer-countdown') : null;
+            if (cd2) cd2.style.display = 'none';
 
-            // ── Otorgar XP + boss + confetti via toggleHabit (sin re-render) ──
+            // ── Otorgar XP directamente sin re-renderizar la tarjeta ──
             const hList2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
             const hh     = hList2.find(x => x.id === habitId);
             if (hh && !(hh.log||[]).includes(today)) {
+                hh.log = hh.log || [];
+                hh.log.push(today);
+                localStorage.setItem('jch_habits_v1', JSON.stringify(hList2));
+
+                // XP al héroe
+                try {
+                    const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+                    const xpGain  = Math.round((hh.xp||10) * (heroRaw.class==='mage'?1.25:1));
+                    const coinGain= Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
+                    heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+                    heroRaw.coins = (heroRaw.coins||0) + coinGain;
+                    while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+                        heroRaw.xp -= heroRaw.xpNext;
+                        heroRaw.level = (heroRaw.level||1) + 1;
+                        heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
+                        if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
+                    }
+                    localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+                } catch(err) {}
+
+                // XP sistema global
+                if (typeof addGlobalReward === 'function') addGlobalReward(hh.xp||10, 1);
+                if (typeof playSparkleSound === 'function') playSparkleSound();
+
+                // Marcar card como completada sin re-render
                 const card2 = document.getElementById('habCard-' + habitId);
                 if (card2) card2.classList.add('completed-today');
-
-                const _r1 = window.renderHabToday,
-                      _r2 = window.renderHabDisciplined,
-                      _r3 = window.renderStrengthList,
-                      _r4 = window.renderHabHero,
-                      _r5 = window.renderHabStats;
-                window.renderHabToday       = function(){};
-                window.renderHabDisciplined = function(){};
-                window.renderStrengthList   = function(){};
-                window.renderHabHero        = function(){};
-                window.renderHabStats       = function(){};
-
-                if (typeof window.toggleHabit === 'function') window.toggleHabit(habitId);
-
-                window.renderHabToday       = _r1;
-                window.renderHabDisciplined = _r2;
-                window.renderStrengthList   = _r3;
-                window.renderHabHero        = _r4;
-                window.renderHabStats       = _r5;
-
-                if (typeof _r4 === 'function') _r4();
-                if (typeof _r5 === 'function') _r5();
                 if (typeof updateHabitBadge === 'function') updateHabitBadge();
+                if (typeof renderHabStats   === 'function') renderHabStats();
+                if (typeof renderHabHero    === 'function') renderHabHero();
             }
 
             playHabTimerComplete();
@@ -16259,25 +16205,22 @@ window.saveHabit = function() {
 function scheduleHabitReminder(name, time, emoji) {
     try {
         const [h,m] = time.split(':').map(Number);
-        const now    = new Date();
+        const now   = new Date();
         const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
         if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
+
+        // Usar el mismo sistema de recordatorios del calendario (jch_rem_v4)
+        // para que se dispare exactamente a la hora configurada
         const SK_REMINDERS = 'jch_rem_v4';
-        const evId  = 'hab_' + Date.now();
-        const title = (emoji||'🌿') + ' ' + name;
-        const body  = '¡Es hora de tu hábito!';
-        const list  = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
-        const clean = list.filter(r => r.title !== title);
-        clean.push({ evId, fireAt: fireAt.getTime(), title, body });
-        localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-        // Enviar al SW para disparar cuando la app esté cerrada
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'SCHEDULE_NOTIFICATIONS',
-                reminders: [{ evId, fireAt: fireAt.getTime(), title, body }]
-            });
-        }
-    } catch(e) { console.warn('scheduleHabitReminder:', e); }
+        const evId = 'hab_' + Date.now();
+        try {
+            const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+            // Eliminar recordatorio previo del mismo hábito (por nombre) para evitar duplicados
+            const clean = list.filter(r => r.title !== `${emoji} ${name}`);
+            clean.push({ evId, fireAt: fireAt.getTime(), title: `${emoji} ${name}`, body: '¡Es hora de tu hábito! 🌿' });
+            localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
+        } catch(e) { console.warn('Recordatorio hábito (storage):', e); }
+    } catch(e) { console.warn('Recordatorio hábito:', e); }
 }
 
 // Re-programar todos los recordatorios al abrir
@@ -16288,34 +16231,16 @@ function rescheduleAllReminders() {
     const now = new Date();
     try {
         const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
-        // Eliminar recordatorios previos de hábitos (evitan duplicados)
-        const clean = list.filter(r => !String(r.evId).startsWith('hab_'));
-        habits.filter(h => h.reminderOn && h.reminderTime && !h.archived).forEach(h => {
+        // Eliminar recordatorios previos de hábitos
+        const clean = list.filter(r => !r.evId.startsWith('hab_'));
+        habits.filter(h => h.reminderOn && h.reminderTime).forEach(h => {
             const [hr, mn] = h.reminderTime.split(':').map(Number);
             const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hr, mn, 0);
             if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
-            clean.push({
-                evId: 'hab_' + h.id,
-                fireAt: fireAt.getTime(),
-                title: (h.emoji||'🌿') + ' ' + h.name,
-                body: '¡Es hora de tu hábito!'
-            });
+            clean.push({ evId: h.id, fireAt: fireAt.getTime(), title: `${h.emoji} ${h.name}`, body: '¡Es hora de tu hábito! 🌿' });
         });
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-
-        // Enviar al SW para que pueda disparar en segundo plano
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'SCHEDULE_NOTIFICATIONS',
-                reminders: clean.map(r => ({
-                    evId: r.evId,
-                    fireAt: r.fireAt,
-                    title: r.title,
-                    body: r.body
-                }))
-            });
-        }
-    } catch(e) { console.warn('rescheduleAllReminders:', e); }
+    } catch(e) { console.warn('Reschedule recordatorios hábitos:', e); }
 }
 
 // ── Editar / Borrar ───────────────────────────────────────────
@@ -16470,7 +16395,7 @@ window.switchHabTab = function(tab,el) {
 // ── Badge ─────────────────────────────────────────────────────
 function updateHabitBadge() {
     loadHabits();
-    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
+    const due=habits.filter(h=>isHabitDueToday(h));
     const pending=due.length-due.filter(h=>isCompletedToday(h)).length;
     const badge=document.getElementById('habitBadgeCount');
     if(badge){ badge.textContent=pending; badge.style.display=pending>0?'':'none'; }
@@ -16591,9 +16516,8 @@ window.renderHabitCardHabitica = function(h, showEdit) {
     const showPlus  = h.type !== 'negative';
     const showMinus = h.type !== 'positive';
 
-    const habColor2 = h.color && h.color !== 'undefined' ? h.color : '#6366f1';
     return `
-    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}" style="--hab-c:${habColor2};border-color:${habColor2}33;" data-habid="${h.id}">
+    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}" style="--hab-c:${h.color||'#10b981'};" data-habid="${h.id}">
         <div class="hab-card-top">
             <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
@@ -17189,7 +17113,7 @@ window.renderHabToday = function() {
     };
     window._isHabitDueToday = isHabitDueToday;
 
-    const due  = habits.filter(h => isHabitDueToday(h) && !h.archived);
+    const due  = habits.filter(h => isHabitDueToday(h));
     const done = due.filter(h => (h.log||[]).includes(todayKey())).length;
     const pct  = due.length ? Math.round(done/due.length*100) : 0;
 
@@ -18781,8 +18705,7 @@ function renderStrengthList() {
                 (done?'✓':'') + '</button>';
         }
 
-        const habC = (h.color && h.color !== 'undefined') ? h.color : '#6366f1';
-        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" style="--hab-c:'+habC+';border-color:'+habC+'33;" id="habCard-'+h.id+'">' +
+        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" style="--hab-c:'+(h.color||'#10b981')+';" id="habCard-'+h.id+'">' +
             '<div class="hab-card-top">' +
               renderStrengthRing(strength, sColor) +
               '<div class="hab-card-info">' +
@@ -20382,12 +20305,6 @@ window.openHabDetail = function(id) {
     var progressPct = isDone ? 100 : 0;
 
     var modal = document.getElementById('habDetailModal');
-    var overlay = document.getElementById('habDetailOverlay');
-    var alreadyOpen = overlay && overlay.classList.contains('open');
-
-    // Suprimir animación de entrada si el modal ya está abierto
-    if (alreadyOpen && modal) modal.classList.add('updating');
-
     modal.innerHTML =
         // ── Header ──────────────────────────────────────────────
         '<div class="hab-detail-header">' +
@@ -20405,10 +20322,10 @@ window.openHabDetail = function(id) {
             '<button class="hab-detail-close" onclick="closeHabDetail()" aria-label="Cerrar">✕</button>' +
         '</div>' +
 
-        // ── Botón completar grande (sin parpadeo — actualiza in-place) ─
+        // ── Botón completar grande (estilo HabitRix) ────────────
         '<button class="hab-detail-complete-btn ' + (isDone?'done':'not-done') + '"' +
             (isDone ? ' style="background:linear-gradient(135deg,' + color + 'cc,' + color + ');"' : '') +
-            ' onclick="toggleHabitNoRender(\'' + h.id + '\');">' +
+            ' onclick="toggleHabit(\'' + h.id + '\');setTimeout(function(){closeHabDetail();setTimeout(function(){openHabDetail(\'' + h.id + '\')},80);},120);">' +
             (isDone ? '✅ Completado Hoy' : '⬜ Marcar como Completado') +
             '<span style="margin-left:auto;font-size:0.8rem;opacity:0.7;">' + (isDone?'✓':'+') + '</span>' +
         '</button>' +
@@ -20480,62 +20397,20 @@ window.openHabDetail = function(id) {
             '</div>' +
         '</div>' +
 
-        // ── Acciones — Editar · Cerrar · Archive · Delete ────────
+        // ── Acciones — Archive · Delete ──────────────────────────
         '<div class="hab-detail-actions">' +
-            '<button class="hab-detail-action-btn" onclick="closeHabDetail();editHabit(\'' + h.id + '\');">✏️ Editar</button>' +
+            '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✏️ Editar</button>' +
             '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✓ Cerrar</button>' +
-            '<button class="hab-detail-action-btn" onclick="archiveHabitDetail(\'' + h.id + '\')" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
+            '<button class="hab-detail-action-btn" onclick="closeHabDetail()" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
             '<button class="hab-detail-action-btn danger" onclick="if(confirm(\'¿Eliminar este hábito?\')){ deleteHabit(\'' + h.id + '\');closeHabDetail();}">🗑️ Delete</button>' +
         '</div>';
 
-    if (!alreadyOpen) {
-        overlay.classList.add('open');
-    } else if (modal) {
-        // Quitar updating en el siguiente frame para restaurar animación futura
-        requestAnimationFrame(function(){ modal.classList.remove('updating'); });
-    }
+    document.getElementById('habDetailOverlay').classList.add('open');
 };
 
 window.closeHabDetail = function() {
     var ov = document.getElementById('habDetailOverlay');
     if (ov) ov.classList.remove('open');
-};
-
-// Marca/desmarca sin re-renderizar la lista — solo refresca el modal
-window.toggleHabitNoRender = function(id) {
-    // Bloquear todos los renders mientras toggleHabit corre
-    var _r1 = window.renderHabToday,
-        _r2 = window.renderHabDisciplined,
-        _r3 = window.renderStrengthList;
-    window.renderHabToday       = function(){};
-    window.renderHabDisciplined = function(){};
-    window.renderStrengthList   = function(){};
-
-    if (typeof window.toggleHabit === 'function') window.toggleHabit(id);
-
-    window.renderHabToday       = _r1;
-    window.renderHabDisciplined = _r2;
-    window.renderStrengthList   = _r3;
-
-    // Refrescar solo el modal (sin parpadeo)
-    if (typeof window.openHabDetail === 'function') window.openHabDetail(id);
-
-    // Actualizar badge y barra de progreso del fondo sin tocar las cards
-    if (typeof updateHabitBadge === 'function') updateHabitBadge();
-};
-
-window.archiveHabitDetail = function(id) {
-    if (!confirm('¿Archivar este hábito? Puedes restaurarlo después.')) return;
-    var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
-    var h = habits.find(function(x){ return x.id === id; });
-    if (h) {
-        h.archived = true;
-        localStorage.setItem('jch_habits_v1', JSON.stringify(habits));
-    }
-    closeHabDetail();
-    if (typeof window.renderHabToday       === 'function') window.renderHabToday();
-    if (typeof window.renderHabDisciplined === 'function') window.renderHabDisciplined();
-    if (typeof updateHabitBadge            === 'function') updateHabitBadge();
 };
 
 })();
