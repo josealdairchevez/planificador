@@ -14967,17 +14967,31 @@ function setupFCMForeground(){
 
 if(navigator.serviceWorker){
   navigator.serviceWorker.addEventListener('message',function(e){
-    if(e.data&&e.data.type==='FIRE_REMINDER') showNotif(e.data.title,e.data.body,e.data.tag);
+    if(e.data&&e.data.type==='FIRE_REMINDER'){
+      // Solo mostrar si el fireAt es real (dentro de una ventana de ±2 minutos del tiempo actual)
+      var fireAt = e.data.fireAt ? Number(e.data.fireAt) : Date.now();
+      var diff = Math.abs(Date.now() - fireAt);
+      if(diff < 2 * 60 * 1000) {
+        showNotif(e.data.title,e.data.body,e.data.tag);
+      }
+    }
   });
 }
 
 function init(){
-  // Limpiar entradas vencidas del storage al iniciar (evita acumulación)
+  // Limpiar TODAS las entradas de hábito del storage al iniciar
+  // Esto elimina cualquier acumulación de sesiones anteriores
   try {
     var nowMs = Date.now();
     var stored = load();
-    var future = stored.filter(function(r){ return r.fireAt > nowMs; });
-    if (future.length !== stored.length) save(future);
+    // Eliminar: (1) entradas de hábito (se reprograman a medianoche), (2) eventos ya vencidos
+    var clean = stored.filter(function(r){
+      if(String(r.evId).startsWith('hab_')) return false; // borrar todos los de hábitos
+      return r.fireAt > nowMs; // solo conservar eventos futuros del calendario
+    });
+    save(clean);
+    // Actualizar snapshot para que check() no dispare nada de lo que ya estaba
+    clean.forEach(function(r){ _preloadedFireAts[r.evId+'_'+r.fireAt]=true; });
   } catch(e) {}
 
   if(Notification.permission==='granted'){
@@ -16322,13 +16336,7 @@ function scheduleHabitReminder(name, time, emoji) {
             _preloadedFireAts[newEntry.evId + '_' + newEntry.fireAt] = true;
         }
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-        // Enviar al SW para disparar cuando la app esté cerrada
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'SCHEDULE_NOTIFICATIONS',
-                reminders: [{ evId, fireAt: fireAt.getTime(), title, body }]
-            });
-        }
+        // NO enviamos al SW — el loop check() del localStorage es el único que dispara
     } catch(e) { console.warn('scheduleHabitReminder:', e); }
 }
 
@@ -16365,19 +16373,7 @@ function rescheduleAllReminders() {
             }
         });
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-
-        // Enviar al SW para que pueda disparar en segundo plano
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'SCHEDULE_NOTIFICATIONS',
-                reminders: clean.map(r => ({
-                    evId: r.evId,
-                    fireAt: r.fireAt,
-                    title: r.title,
-                    body: r.body
-                }))
-            });
-        }
+        // NO enviamos al SW — evita que el SW reenvíe FIRE_REMINDER inmediatamente
     } catch(e) { console.warn('rescheduleAllReminders:', e); }
 }
 
@@ -16548,7 +16544,7 @@ window.openHabitModal = function() {
     (window.renderHabToday||renderHabToday)(); updateHabitBadge();
     document.getElementById('habitBackdrop').classList.add('show-hab');
     document.getElementById('habitModal').classList.add('show-hab');
-    rescheduleAllReminders();
+    // NO llamar rescheduleAllReminders() aquí — causaba que sonara al abrir
 };
 window.closeHabitModal = function() {
     document.getElementById('habitBackdrop').classList.remove('show-hab');
@@ -16559,10 +16555,16 @@ window.closeHabitModal = function() {
 document.addEventListener('DOMContentLoaded', function() {
     loadHabits(); loadHero();
     updateHabitBadge();
-    rescheduleAllReminders();
+    // Programar recordatorios UNA sola vez al día, a medianoche
+    // NO llamar rescheduleAllReminders() aquí — causaba disparos al abrir la app
     const now=new Date();
     const msToMidnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)-now;
-    setTimeout(()=>{ updateHabitBadge(); setInterval(updateHabitBadge,86400000); },msToMidnight);
+    // A medianoche: reprogramar para el nuevo día
+    setTimeout(()=>{
+        rescheduleAllReminders();
+        updateHabitBadge();
+        setInterval(()=>{ rescheduleAllReminders(); updateHabitBadge(); }, 86400000);
+    }, msToMidnight);
 });
 
 })();
