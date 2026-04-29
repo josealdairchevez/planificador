@@ -4670,6 +4670,14 @@
             font-size:0.58rem;font-weight:900;color:#a78bfa;
         }
 
+        /* FIX: quitar highlight celeste al hacer tap en tarjetas de hábito en móvil */
+        .hab-card, .hab-card * {
+            -webkit-tap-highlight-color: transparent !important;
+        }
+        .hab-card:active {
+            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 12%, transparent) 0%, transparent 60%);
+        }
+
         /* Botón check */
         .hab-check-btn {
             width:38px;height:38px;min-width:38px;min-height:38px;
@@ -6397,8 +6405,7 @@
            Estilo HabitRix — heatmap + stats + acciones
            ═══════════════════════════════════════════════════════ */
         .hab-detail-overlay {
-            /* FIX parpadeo: visibility+opacity en lugar de display:none/flex
-               para evitar el reflow que reiniciaba la animación del modal */
+            /* FIX parpadeo: visibility+opacity — sin display:none/flex */
             display: flex;
             position: fixed;
             inset: 0;
@@ -6410,7 +6417,7 @@
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
         }
         .hab-detail-overlay.open {
             opacity: 1;
@@ -6427,12 +6434,13 @@
             overflow-y: auto;
             padding: 0 0 24px 0;
             box-shadow: 0 -20px 60px rgba(0,0,0,0.9);
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.34,1.26,0.64,1);
-            will-change: transform;
+            transform: translateY(60px);
+            opacity: 0;
+            transition: transform 0.22s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.18s ease;
         }
         .hab-detail-overlay.open .hab-detail-modal {
             transform: translateY(0);
+            opacity: 1;
         }
         @keyframes slideUpModal {
             from { transform: translateY(100%); opacity: 0; }
@@ -15918,6 +15926,44 @@ window.buildHabControl = function(h, done) {
 };
 
 // ── INCREMENTO / DECREMENTO DE REPETICIONES ───────────────────
+// ── Helper: actualizar XP/coins/boss HP en el DOM al instante ─
+function _habInstantUIUpdate(h) {
+    try {
+        var heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+        // Actualizar monedas en el header global
+        if (typeof updateGoldDisplays === 'function') updateGoldDisplays(heroRaw);
+        // Actualizar contadores de XP y monedas en el header principal
+        var xpEl   = document.getElementById('xpTotalText');
+        var coinEl = document.getElementById('coinTotalText');
+        if (xpEl)   xpEl.textContent   = heroRaw.xp   || 0;
+        if (coinEl) coinEl.textContent  = heroRaw.coins || 0;
+        // Actualizar barra y texto de HP del boss en el panel HOY (mini)
+        var BOSSES_UI = window._HAB_BOSSES || [];
+        if (BOSSES_UI.length) {
+            var boss    = BOSSES_UI[Math.min(heroRaw.bossIndex||0, BOSSES_UI.length-1)];
+            var bossHp  = Math.max(0, heroRaw.bossHp || boss.maxHp);
+            var pct     = Math.round(bossHp / boss.maxHp * 100);
+            // Barra del panel heroe
+            var hpBar   = document.getElementById('habBossHpBar');
+            if (hpBar) hpBar.style.width = pct + '%';
+            // Texto HP (todos los que tengan la clase)
+            document.querySelectorAll('.hab-boss-hp-text').forEach(function(el) {
+                el.textContent = bossHp + '/' + boss.maxHp + ' HP';
+            });
+            // Barra del mini-panel en HOY
+            document.querySelectorAll('.hab-boss-hp-fill').forEach(function(el) {
+                el.style.width = pct + '%';
+            });
+        }
+        // Flash animación en las vault-cards (XP visual)
+        document.querySelectorAll('.vault-card').forEach(function(v) {
+            v.classList.remove('flash-vault');
+            void v.offsetWidth;
+            v.classList.add('flash-vault');
+        });
+    } catch(e) {}
+}
+
 window.habRepInc = function(habitId, target) {
     const QTY_KEY = 'jch_qty_v1';
     const today   = new Date().toISOString().split('T')[0];
@@ -15982,6 +16028,9 @@ window.habRepInc = function(habitId, target) {
 
         // Marcar card visualmente como completada sin re-renderizar
         if (card) card.classList.add('completed-today');
+
+        // FIX: actualizar UI de XP, monedas y boss HP al instante
+        _habInstantUIUpdate(h);
 
         // Actualizar badge y stats sin tocar la lista
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
@@ -16143,6 +16192,10 @@ window.startHabTimer = function(habitId, totalSec) {
                 // Marcar card como completada sin re-render
                 const card2 = document.getElementById('habCard-' + habitId);
                 if (card2) card2.classList.add('completed-today');
+
+                // FIX: actualizar UI de XP, monedas y boss HP al instante
+                _habInstantUIUpdate(hh);
+
                 if (typeof updateHabitBadge === 'function') updateHabitBadge();
                 if (typeof renderHabStats   === 'function') renderHabStats();
                 if (typeof renderHabHero    === 'function') renderHabHero();
@@ -17099,7 +17152,7 @@ window.renderHabToday = function() {
     };
     window._isHabitDueToday = isHabitDueToday;
 
-    const due  = habits.filter(h => isHabitDueToday(h));
+    const due  = habits.filter(h => !h.archived && isHabitDueToday(h));
     const done = due.filter(h => (h.log||[]).includes(todayKey())).length;
     const pct  = due.length ? Math.round(done/due.length*100) : 0;
 
@@ -18805,43 +18858,59 @@ window.saveHabit = function() {
     const qtyUnit  = document.getElementById('habQtyUnit')?.value.trim() || (ht==='timer'?'min':'');
     const editId   = document.getElementById('habEditId')?.value || '';
 
-    // FIX DEFINITIVO: parchear habitType en localStorage ANTES de llamar
-    // _origSaveHabit, para que el renderHabToday() interno ya lo lea correcto.
-    // Para hábito nuevo usamos un flag temporal; para edición buscamos por id.
-    if (ht !== 'check') {
+    // FIX DEFINITIVO: leer habitType desde el DOM también (por si _selectedHType
+    // no se actualizó correctamente por timing) y parchear ANTES del render.
+    // Buscar el botón activo en el selector de tipo de seguimiento.
+    var htFromDOM = ht;
+    var activeHTypeBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
+    if (activeHTypeBtn && activeHTypeBtn.dataset.ht) {
+        htFromDOM = activeHTypeBtn.dataset.ht;
+    }
+    // Si el DOM dice algo distinto, usar el del DOM (más confiable)
+    const htFinal = (htFromDOM !== 'check') ? htFromDOM : ht;
+
+    // Para edición: parchear ANTES de _origSaveHabit para que el render interno ya lo vea
+    if (htFinal !== 'check' && editId) {
         const habsPrePatch = loadHabits();
-        if (editId) {
-            const tgt = habsPrePatch.find(x => x.id === editId);
-            if (tgt) {
-                tgt.habitType = ht;
-                tgt.qtyTarget = qtyTarget;
-                tgt.qtyUnit   = qtyUnit;
-                saveHabits(habsPrePatch);
-            }
+        const tgt = habsPrePatch.find(x => x.id === editId);
+        if (tgt) {
+            tgt.habitType = htFinal;
+            tgt.qtyTarget = qtyTarget;
+            tgt.qtyUnit   = qtyUnit;
+            saveHabits(habsPrePatch);
         }
-        // Para hábito nuevo: _origSaveHabit lo va a pushear,
-        // después lo parcheamos y forzamos un re-render limpio.
     }
 
     _origSaveHabit && _origSaveHabit();
 
-    // Parchear el hábito correcto (nuevo = último, edición = por id)
+    // Parchear routine en el hábito (nuevo = último, edición = por id)
     const habits = loadHabits();
     if (habits.length) {
         const target = editId
             ? habits.find(x => x.id === editId)
             : habits[habits.length - 1];
         if (target) {
-            target.routine   = rt;
-            target.habitType = ht;
-            target.qtyTarget = ht !== 'check' ? qtyTarget : undefined;
-            target.qtyUnit   = ht !== 'check' ? qtyUnit   : undefined;
+            target.routine = rt;
             saveHabits(habits);
         }
     }
 
+    // Parche final con htFinal (puede diferir de ht si el DOM tenía otro valor)
+    const habsFinal = loadHabits();
+    if (habsFinal.length) {
+        const tgtFinal = editId
+            ? habsFinal.find(x => x.id === editId)
+            : habsFinal[habsFinal.length - 1];
+        if (tgtFinal) {
+            tgtFinal.habitType = htFinal;
+            tgtFinal.qtyTarget = htFinal !== 'check' ? qtyTarget : undefined;
+            tgtFinal.qtyUnit   = htFinal !== 'check' ? qtyUnit   : undefined;
+            saveHabits(habsFinal);
+        }
+    }
+
     // Re-render siempre después del parche para garantizar control correcto
-    if (ht !== 'check') {
+    if (htFinal !== 'check') {
         setTimeout(function() {
             (window.renderHabToday || renderHabToday)();
         }, 0);
@@ -20253,6 +20322,20 @@ window.selectHeroClass = function(cls) {
 //  Features: heatmap coloreado, barra progreso, stats 3-col,
 //  streak badge, botón completar grande, acciones archive/delete
 // ═══════════════════════════════════════════════════════════════
+// ── Archive un hábito (moverlo a archived, fuera de HOY) ────
+window._habArchive = function(id) {
+    var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+    var h = habits.find(function(x){ return x.id === id; });
+    if (!h) return;
+    if (!confirm('¿Archivar este hábito? Puedes restaurarlo desde el historial.')) return;
+    h.archived = true;
+    h.archivedAt = new Date().toISOString();
+    localStorage.setItem('jch_habits_v1', JSON.stringify(habits));
+    closeHabDetail();
+    if (typeof window.renderHabToday === 'function') window.renderHabToday();
+    if (typeof updateHabitBadge === 'function') updateHabitBadge();
+};
+
 window.openHabDetail = function(id) {
     var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
     var h = habits.find(function(x){ return x.id === id; });
@@ -20405,11 +20488,11 @@ window.openHabDetail = function(id) {
             '</div>' +
         '</div>' +
 
-        // ── Acciones — Archive · Delete ──────────────────────────
+        // ── Acciones — Editar · Cerrar · Archive · Delete ─────────
         '<div class="hab-detail-actions">' +
-            '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✏️ Editar</button>' +
+            '<button class="hab-detail-action-btn" onclick="closeHabDetail();setTimeout(function(){openHabitModal();setTimeout(function(){editHabit(\'' + h.id + '\')},80);},120);">✏️ Editar</button>' +
             '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✓ Cerrar</button>' +
-            '<button class="hab-detail-action-btn" onclick="closeHabDetail()" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
+            '<button class="hab-detail-action-btn" onclick="window._habArchive(\'' + h.id + '\')" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
             '<button class="hab-detail-action-btn danger" onclick="if(confirm(\'¿Eliminar este hábito?\')){ deleteHabit(\'' + h.id + '\');closeHabDetail();}">🗑️ Delete</button>' +
         '</div>';
 
