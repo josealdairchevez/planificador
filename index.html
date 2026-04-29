@@ -15521,8 +15521,9 @@ function renderHabitCard(h, showEdit) {
     const isNeg = h.type==='negative';
     const weekBar=dots.map(d=>`<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`).join('');
     const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.58rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
+    const habColor = h.color && h.color !== 'undefined' ? h.color : '#6366f1';
     return `
-    <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-c:${h.color||'#10b981'};" data-habid="${h.id}">
+    <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-c:${habColor};border-color:${habColor}33;" data-habid="${h.id}">
         <div class="hab-card-top">
             <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
@@ -16527,8 +16528,9 @@ window.renderHabitCardHabitica = function(h, showEdit) {
     const showPlus  = h.type !== 'negative';
     const showMinus = h.type !== 'positive';
 
+    const habColor2 = h.color && h.color !== 'undefined' ? h.color : '#6366f1';
     return `
-    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}" style="--hab-c:${h.color||'#10b981'};" data-habid="${h.id}">
+    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}" style="--hab-c:${habColor2};border-color:${habColor2}33;" data-habid="${h.id}">
         <div class="hab-card-top">
             <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
@@ -18716,7 +18718,8 @@ function renderStrengthList() {
                 (done?'✓':'') + '</button>';
         }
 
-        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" style="--hab-c:'+(h.color||'#10b981')+';" id="habCard-'+h.id+'">' +
+        const habC = (h.color && h.color !== 'undefined') ? h.color : '#6366f1';
+        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" style="--hab-c:'+habC+';border-color:'+habC+'33;" id="habCard-'+h.id+'">' +
             '<div class="hab-card-top">' +
               renderStrengthRing(strength, sColor) +
               '<div class="hab-card-info">' +
@@ -20336,7 +20339,7 @@ window.openHabDetail = function(id) {
         // ── Botón completar grande (sin parpadeo — actualiza in-place) ─
         '<button class="hab-detail-complete-btn ' + (isDone?'done':'not-done') + '"' +
             (isDone ? ' style="background:linear-gradient(135deg,' + color + 'cc,' + color + ');"' : '') +
-            ' onclick="toggleHabit(\'' + h.id + '\');openHabDetail(\'' + h.id + '\');">' +
+            ' onclick="toggleHabitNoRender(\'' + h.id + '\');">' +
             (isDone ? '✅ Completado Hoy' : '⬜ Marcar como Completado') +
             '<span style="margin-left:auto;font-size:0.8rem;opacity:0.7;">' + (isDone?'✓':'+') + '</span>' +
         '</button>' +
@@ -20424,7 +20427,28 @@ window.closeHabDetail = function() {
     if (ov) ov.classList.remove('open');
 };
 
-window.archiveHabitDetail = function(id) {
+// Marca/desmarca sin re-renderizar la lista — solo refresca el modal
+window.toggleHabitNoRender = function(id) {
+    // Bloquear todos los renders mientras toggleHabit corre
+    var _r1 = window.renderHabToday,
+        _r2 = window.renderHabDisciplined,
+        _r3 = window.renderStrengthList;
+    window.renderHabToday       = function(){};
+    window.renderHabDisciplined = function(){};
+    window.renderStrengthList   = function(){};
+
+    if (typeof window.toggleHabit === 'function') window.toggleHabit(id);
+
+    window.renderHabToday       = _r1;
+    window.renderHabDisciplined = _r2;
+    window.renderStrengthList   = _r3;
+
+    // Refrescar solo el modal (sin parpadeo)
+    if (typeof window.openHabDetail === 'function') window.openHabDetail(id);
+
+    // Actualizar badge y barra de progreso del fondo sin tocar las cards
+    if (typeof updateHabitBadge === 'function') updateHabitBadge();
+};
     if (!confirm('¿Archivar este hábito? Puedes restaurarlo después.')) return;
     var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
     var h = habits.find(function(x){ return x.id === id; });
