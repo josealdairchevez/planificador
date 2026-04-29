@@ -4629,41 +4629,12 @@
         .hab-empty-text { font-size:0.8rem;font-weight:700;color:#444;line-height:1.6; }
 
         .hab-card {
-            background: linear-gradient(145deg, rgba(8,20,40,0.95), rgba(5,12,28,0.98));
-            border-radius: 20px;
-            margin-bottom: 12px;
-            border: 1.5px solid rgba(255,255,255,0.07);
-            overflow: hidden;
-            transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
-            position: relative;
+            background:rgba(8,20,40,0.9);border-radius:16px;margin-bottom:10px;
+            border:1.5px solid rgba(255,255,255,0.06);overflow:hidden;
+            transition:border-color 0.3s,box-shadow 0.3s;
         }
-        /* Línea de color izquierda dinámica — usa CSS var inyectada por JS */
-        .hab-card::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 4px;
-            background: var(--hab-card-color, #6366f1);
-            border-radius: 20px 0 0 20px;
-            box-shadow: 0 0 12px var(--hab-card-color, #6366f1);
-            opacity: 0.9;
-        }
-        .hab-card:active { transform: scale(0.985); }
-        .hab-card.completed-today {
-            border-color: var(--hab-card-color, rgba(16,185,129,0.5));
-            box-shadow: 0 0 20px rgba(0,0,0,0.5), 0 0 0 1px var(--hab-card-color, #10b981),
-                        inset 0 0 30px rgba(0,0,0,0.2);
-        }
-        .hab-card.completed-today::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg,
-                rgba(var(--hab-card-rgb, 16,185,129), 0.06) 0%,
-                transparent 60%);
-            pointer-events: none;
-            border-radius: 20px;
-        }
+        .hab-card:hover { border-color:rgba(255,255,255,0.12); }
+        .hab-card.completed-today { border-color:rgba(16,185,129,0.4);box-shadow:0 0 15px rgba(16,185,129,0.1); }
 
         .hab-card-top {
             display:flex;align-items:center;gap:10px;padding:10px 12px 8px;
@@ -4693,49 +4664,79 @@
 
         /* Botón check */
         .hab-check-btn {
-            width: 42px; height: 42px;
-            min-width: 42px; min-height: 42px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            border: 2.5px solid rgba(255,255,255,0.2);
-            background: transparent;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.25s; font-size: 1.1rem;
-            aspect-ratio: 1 / 1;
+            width:38px;height:38px;border-radius:50%;flex-shrink:0;
+            border:2.5px solid rgba(255,255,255,0.2);background:transparent;
+            display:flex;align-items:center;justify-content:center;
+            cursor:pointer;transition:all 0.25s;font-size:1.1rem;
         }
         .hab-check-btn.done {
-            background: linear-gradient(135deg, var(--hab-card-color,#10b981), var(--hab-card-color,#34d399));
-            border-color: var(--hab-card-color, #10b981);
-            box-shadow: 0 0 18px var(--hab-card-color, rgba(16,185,129,0.5));
-        }
-        /* Botones + y − perfectamente circulares */
-        .hab-qty-btn {
-            width: 36px; height: 36px;
-            min-width: 36px; min-height: 36px;
-            border-radius: 50%;
-            border: none;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; font-weight: 900;
-            cursor: pointer; flex-shrink: 0;
-            transition: all 0.15s;
-            aspect-ratio: 1 / 1;
-        }
-        .hab-qty-minus {
-            background: rgba(239,68,68,0.15); color: #ef4444;
-            box-shadow: 0 0 0 1.5px rgba(239,68,68,0.3);
-        }
-        .hab-qty-minus:hover { background: rgba(239,68,68,0.3); transform: scale(1.1); }
-        .hab-qty-plus  {
-            background: rgba(16,185,129,0.15); color: #10b981;
-            box-shadow: 0 0 0 1.5px rgba(16,185,129,0.3);
-        }
-        .hab-qty-plus:hover  { background: rgba(16,185,129,0.3); transform: scale(1.1); }
-        .hab-qty-plus.done {
-            background: linear-gradient(135deg, #10b981, #34d399);
-            color: #fff;
-            box-shadow: 0 0 12px rgba(16,185,129,0.5);
+            background:linear-gradient(135deg,#10b981,#34d399);
+            border-color:#10b981;box-shadow:0 0 15px rgba(16,185,129,0.5);
         }
         .hab-check-btn:not(.done):hover { border-color:#10b981;box-shadow:0 0 10px rgba(16,185,129,0.3); }
+
+        /* ── CONTROL CANTIDAD (repeticiones) ── */
+        .hab-rep-ctrl {
+            display:flex;flex-direction:column;align-items:center;gap:3px;
+        }
+        .hab-rep-row {
+            display:flex;align-items:center;gap:5px;
+        }
+        .hab-rep-btn {
+            width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);
+            background:rgba(255,255,255,0.06);color:#fff;font-size:1rem;font-weight:900;
+            cursor:pointer;display:flex;align-items:center;justify-content:center;
+            transition:all 0.18s;line-height:1;padding:0;
+        }
+        .hab-rep-btn:hover { border-color:#10b981;background:rgba(16,185,129,0.2); }
+        .hab-rep-btn.plus-done { border-color:#10b981;background:linear-gradient(135deg,#10b981,#34d399);box-shadow:0 0 10px rgba(16,185,129,0.5); }
+        .hab-rep-val {
+            font-size:0.78rem;font-weight:900;color:#fff;min-width:28px;text-align:center;line-height:1;
+        }
+        .hab-rep-target {
+            font-size:0.52rem;color:#555;font-weight:700;letter-spacing:0.5px;
+        }
+        .hab-rep-bar {
+            width:48px;height:4px;border-radius:2px;background:rgba(255,255,255,0.07);overflow:hidden;
+        }
+        .hab-rep-bar-fill {
+            height:100%;border-radius:2px;transition:width 0.4s,background 0.3s;
+        }
+
+        /* ── CONTROL TIMER (anillo circular) ── */
+        .hab-timer-ctrl {
+            display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+        }
+        .hab-timer-ring-wrap {
+            position:relative;width:46px;height:46px;
+        }
+        .hab-timer-svg {
+            width:46px;height:46px;transform:rotate(-90deg);
+        }
+        .hab-timer-bg { fill:none;stroke:rgba(255,255,255,0.07);stroke-width:3.5; }
+        .hab-timer-arc { fill:none;stroke-width:3.5;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke 0.3s; }
+        .hab-timer-inner {
+            position:absolute;top:0;left:0;width:100%;height:100%;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+        }
+        .hab-timer-icon { font-size:0.95rem;line-height:1; }
+        .hab-timer-countdown {
+            font-size:0.42rem;font-weight:900;color:#fff;line-height:1;margin-top:1px;
+            display:none;
+        }
+        .hab-timer-ctrl.running .hab-timer-countdown { display:block; }
+        .hab-timer-ctrl.running .hab-timer-icon { display:none; }
+        .hab-timer-lbl {
+            font-size:0.48rem;color:#666;font-weight:700;letter-spacing:0.4px;
+        }
+        .hab-timer-ctrl.done-timer .hab-timer-arc { stroke:#22c55e!important; }
+        .hab-timer-ctrl.done-timer .hab-timer-icon { font-size:1rem; }
+
+        @keyframes habTimerPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+        .hab-timer-ctrl.running .hab-timer-ring-wrap { animation: habTimerPulse 1.5s ease-in-out infinite; }
+        .hab-timer-ctrl.running .hab-timer-arc { transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+        @keyframes habTimerDone { 0%{transform:scale(1);} 40%{transform:scale(1.25);} 70%{transform:scale(0.92);} 100%{transform:scale(1);} }
+        .hab-timer-ctrl.done-timer .hab-timer-ring-wrap { animation: habTimerDone 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
 
         /* Barra de progreso semanal */
         .hab-week-bar {
@@ -5819,37 +5820,6 @@
             overflow:hidden;margin-top:4px;
         }
         .hab-qty-fill { height:100%;border-radius:2px;transition:width 0.4s ease; }
-
-        /* Cantidad rediseñada */
-        .hab-qty-action { display:flex;flex-direction:column;align-items:center;gap:2px; }
-        .hab-qty-counter { display:flex;align-items:center;gap:8px; }
-        .hab-qty-mid { text-align:center;min-width:44px; }
-
-        /* ── ANILLO TIMER ──────────────────────────────────────── */
-        .hab-timer-action {
-            display:flex;flex-direction:column;align-items:center;gap:2px;
-        }
-        .hab-timer-ring-wrap {
-            position:relative;width:70px;height:70px;
-            cursor:pointer;flex-shrink:0;
-        }
-        .hab-timer-ring-wrap:hover { transform:scale(1.05); }
-        .hab-timer-svg { display:block; }
-        .hab-timer-inner {
-            position:absolute;inset:0;
-            display:flex;flex-direction:column;
-            align-items:center;justify-content:center;
-            pointer-events:none;
-        }
-        /* Pulso cuando está activo */
-        @keyframes timerPulse {
-            0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
-            50%      { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
-        }
-        .hab-timer-ring-wrap.active {
-            animation: timerPulse 1.5s ease infinite;
-            border-radius: 50%;
-        }
 
         /* ── RUTINAS MAÑANA/NOCHE ───────────────────────────── */
         .hab-routine-selector {
@@ -15324,6 +15294,7 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                             <input class="hab-unit-input" id="habQtyTarget" type="number" min="1" value="8" placeholder="Meta" style="flex:1;">
                             <input class="hab-unit-input" id="habQtyUnit" type="text" placeholder="vasos, min, págs..." style="flex:2;">
                         </div>
+                        <div id="habTimerHint" style="display:none;margin-top:5px;font-size:0.6rem;color:#60a5fa;">⏱️ El número de arriba = minutos totales del timer</div>
                     </div>
                 </div>
 
@@ -15501,8 +15472,7 @@ function renderHabitCard(h, showEdit) {
                 </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
-                <button class="hab-check-btn ${done?'done':''}" onclick="toggleHabit('${h.id}')"
-                    style="${done?`background:linear-gradient(135deg,${h.color},${h.color}aa);border-color:${h.color};box-shadow:0 0 15px ${h.color}66`:''}">${done?'✓':''}</button>
+                ${(window.buildHabControl||buildHabControl)(h, done)}
                 ${showEdit?`<span style="font-size:0.7rem;cursor:pointer;" onclick="editHabit('${h.id}')">✏️</span>`:''}
                 <span style="font-size:0.7rem;cursor:pointer;" onclick="deleteHabit('${h.id}')">🗑️</span>
             </div>
@@ -15559,7 +15529,7 @@ function renderHabToday() {
     // Event delegation — registrar siempre tras render
     el.removeEventListener('click', el._habDetailHandler);
     el._habDetailHandler = function(e) {
-        if (e.target.closest('.hab-btn-plus,.hab-btn-minus,.hab-plusminus')) return;
+        if (e.target.closest('.hab-btn-plus,.hab-btn-minus,.hab-plusminus,.hab-check-btn,.hab-rep-btn,.hab-rep-ctrl,.hab-timer-ctrl')) return;
         var card = e.target.closest('[data-habid]');
         if (card && typeof window.openHabDetail === 'function') {
             e.stopPropagation();
@@ -15838,7 +15808,323 @@ function checkAndGrantAchievements() {
     if(changed) saveHero();
 }
 
-// ── Guardar hábito ────────────────────────────────────────────
+// ── CONSTRUCCIÓN DEL CONTROL SEGÚN TIPO DE HÁBITO ────────────
+// Llamado desde renderHabitCard y renderHabitCardHabitica
+window.buildHabControl = function(h, done) {
+    const ht = h.habitType || 'check';
+
+    // ── 1. CHECK normal ───────────────────────────────────────
+    if (ht === 'check') {
+        return `<button class="hab-check-btn ${done?'done':''}" onclick="toggleHabit('${h.id}')"
+            style="${done?`background:linear-gradient(135deg,${h.color},${h.color}aa);border-color:${h.color};box-shadow:0 0 15px ${h.color}66`:''}">${done?'✓':''}</button>`;
+    }
+
+    // Leer cantidad actual del localStorage
+    const QTY_KEY = 'jch_qty_v1';
+    const today   = new Date().toISOString().split('T')[0];
+    const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
+    const qtyKey  = h.id + '_' + today;
+    const cur     = qty[qtyKey] || 0;
+    const target  = h.qtyTarget || 1;
+    const pct     = Math.min(100, Math.round((cur/target)*100));
+    const color   = h.color || '#10b981';
+    // Para quantity/timer: isDone se basa SOLO en el contador, nunca en done
+    // Esto evita que el re-render por log bloquee el control
+    const isDone  = cur >= target;
+
+    // ── 2. CANTIDAD (repeticiones) — siempre muestra +/- ─────
+    if (ht === 'quantity') {
+        const unit = h.qtyUnit || 'veces';
+        return `
+        <div class="hab-rep-ctrl">
+            <div class="hab-rep-row">
+                <button class="hab-rep-btn" onclick="event.stopPropagation();habRepDec('${h.id}',${target})">−</button>
+                <div class="hab-rep-val" id="habRepVal_${h.id}" style="color:${isDone?'#22c55e':'#fff'}">${cur}</div>
+                <button class="hab-rep-btn ${isDone?'plus-done':''}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
+                    style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
+            </div>
+            <div class="hab-rep-target" id="habRepTarget_${h.id}">/${target} ${unit}</div>
+            <div class="hab-rep-bar"><div class="hab-rep-bar-fill" id="habRepFill_${h.id}" style="width:${pct}%;background:${isDone?'#22c55e':color};"></div></div>
+        </div>`;
+    }
+
+    // ── 3. TIMER (anillo circular) — siempre muestra el anillo ─
+    if (ht === 'timer') {
+        const mins     = h.qtyTarget || 5;
+        const totalSec = mins * 60;
+        const elapsed  = cur;
+        const secLeft  = Math.max(0, totalSec - elapsed);
+        const timerDone = elapsed >= totalSec;
+        const r = 17, circ = 2 * Math.PI * r;
+        const progress = timerDone ? 1 : (elapsed / totalSec);
+        const dashOff  = circ * (1 - progress);
+        const arcColor = timerDone ? '#22c55e' : color;
+        const mm = String(Math.floor(secLeft/60)).padStart(2,'0');
+        const ss = String(secLeft%60).padStart(2,'0');
+
+        return `
+        <div class="hab-timer-ctrl ${timerDone?'done-timer':''}" id="habTimerCtrl_${h.id}"
+            onclick="event.stopPropagation();startHabTimer('${h.id}',${totalSec})"
+            title="${timerDone?'¡Completado!':'Toca para iniciar el timer'}">
+            <div class="hab-timer-ring-wrap">
+                <svg class="hab-timer-svg" viewBox="0 0 46 46">
+                    <circle class="hab-timer-bg" cx="23" cy="23" r="${r}"/>
+                    <circle class="hab-timer-arc" id="habTimerArc_${h.id}" cx="23" cy="23" r="${r}"
+                        stroke="${arcColor}"
+                        stroke-dasharray="${circ.toFixed(1)}"
+                        stroke-dashoffset="${dashOff.toFixed(1)}"/>
+                </svg>
+                <div class="hab-timer-inner">
+                    <span class="hab-timer-icon">${timerDone?'✅':'⏱️'}</span>
+                    <span class="hab-timer-countdown" id="habTimerCd_${h.id}">${mm}:${ss}</span>
+                </div>
+            </div>
+            <div class="hab-timer-lbl" id="habTimerLbl_${h.id}">${timerDone?'¡Listo!':mins+' min'}</div>
+        </div>`;
+    }
+
+    // Fallback check
+    return `<button class="hab-check-btn ${done?'done':''}" onclick="event.stopPropagation();toggleHabit('${h.id}')">${done?'✓':''}</button>`;
+};
+
+// ── INCREMENTO / DECREMENTO DE REPETICIONES ───────────────────
+window.habRepInc = function(habitId, target) {
+    const QTY_KEY = 'jch_qty_v1';
+    const today   = new Date().toISOString().split('T')[0];
+    const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
+    const qtyKey  = habitId + '_' + today;
+    const cur     = qty[qtyKey] || 0;
+    const newVal  = cur + 1;
+    qty[qtyKey]   = newVal;
+    localStorage.setItem(QTY_KEY, JSON.stringify(qty));
+
+    const hList = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+    const h     = hList.find(x => x.id === habitId);
+    if (!h) return;
+    const tgt   = h.qtyTarget || target || 1;
+    const pct   = Math.min(100, Math.round((newVal/tgt)*100));
+    const isDone = newVal >= tgt;
+    const color  = h.color || '#10b981';
+
+    // ── Actualizar DOM del control sin re-renderizar la tarjeta ──
+    const valEl  = document.getElementById('habRepVal_'  + habitId);
+    const fillEl = document.getElementById('habRepFill_' + habitId);
+    // Buscar el botón + por atributo data o por selector más robusto
+    const card   = document.getElementById('habCard-' + habitId);
+    const btnEl  = card ? card.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
+
+    if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
+    if (btnEl && isDone) {
+        btnEl.textContent = '✓';
+        btnEl.classList.add('plus-done');
+        btnEl.style.background = `linear-gradient(135deg,${color},${color}aa)`;
+        btnEl.style.borderColor = color;
+    }
+
+    // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
+    if (isDone && !(h.log||[]).includes(today)) {
+        // Marcar en log
+        h.log = h.log || [];
+        h.log.push(today);
+        localStorage.setItem('jch_habits_v1', JSON.stringify(hList));
+
+        // XP al héroe
+        try {
+            const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+            const xpGain  = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
+            const coinGain= Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
+            heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+            heroRaw.coins = (heroRaw.coins||0) + coinGain;
+            // Level up
+            while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+                heroRaw.xp -= heroRaw.xpNext;
+                heroRaw.level = (heroRaw.level||1) + 1;
+                heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
+                if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
+            }
+            localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+        } catch(e) {}
+
+        // XP sistema global
+        if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
+        if (typeof playSparkleSound === 'function') playSparkleSound();
+
+        // Marcar card visualmente como completada sin re-renderizar
+        if (card) card.classList.add('completed-today');
+
+        // Actualizar badge y stats sin tocar la lista
+        if (typeof updateHabitBadge === 'function') updateHabitBadge();
+        if (typeof renderHabStats   === 'function') renderHabStats();
+        if (typeof renderHabHero    === 'function') renderHabHero();
+
+        // Confeti
+        if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
+    }
+};
+
+window.habRepDec = function(habitId, target) {
+    const QTY_KEY = 'jch_qty_v1';
+    const today   = new Date().toISOString().split('T')[0];
+    const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
+    const qtyKey  = habitId + '_' + today;
+    const cur     = qty[qtyKey] || 0;
+    const newVal  = Math.max(0, cur - 1);
+    qty[qtyKey]   = newVal;
+    localStorage.setItem(QTY_KEY, JSON.stringify(qty));
+
+    const habits  = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+    const h       = habits.find(x => x.id === habitId);
+    if (!h) return;
+    const tgt     = h.qtyTarget || target || 1;
+    const pct     = Math.min(100, Math.round((newVal/tgt)*100));
+    const color   = h.color || '#10b981';
+
+    const valEl   = document.getElementById('habRepVal_'  + habitId);
+    const fillEl  = document.getElementById('habRepFill_' + habitId);
+    const card2   = document.getElementById('habCard-' + habitId);
+    const btnEl   = card2 ? card2.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
+
+    if (valEl)  { valEl.textContent = newVal; valEl.style.color = '#fff'; }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = color; }
+    if (btnEl)  { btnEl.textContent = '+'; btnEl.classList.remove('plus-done'); btnEl.style.background=''; btnEl.style.borderColor=''; }
+};
+
+// ── SONIDO AL COMPLETAR TIMER ─────────────────────────────────
+function playHabTimerComplete() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain();
+        master.gain.value = 0.6;
+        master.connect(ctx.destination);
+        const notes = [
+            {f:523.25, t:0.00, d:0.15, type:'sine'},
+            {f:659.25, t:0.17, d:0.15, type:'sine'},
+            {f:783.99, t:0.34, d:0.15, type:'sine'},
+            {f:1046.5, t:0.51, d:0.40, type:'triangle'},
+            {f:1318.5, t:0.95, d:0.55, type:'triangle'},
+        ];
+        notes.forEach(n => {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = n.type; o.frequency.value = n.f;
+            const t = ctx.currentTime + n.t;
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(0.7, t + 0.015);
+            g.gain.exponentialRampToValueAtTime(0.001, t + n.d);
+            o.connect(g); g.connect(master);
+            o.start(t); o.stop(t + n.d + 0.05);
+        });
+    } catch(e) {}
+}
+const _habTimers = {}; // { habitId: { interval, elapsed, total } }
+
+window.startHabTimer = function(habitId, totalSec) {
+    const QTY_KEY = 'jch_qty_v1';
+    const today   = new Date().toISOString().split('T')[0];
+    const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
+    const qtyKey  = habitId + '_' + today;
+
+    // Si ya está corriendo → pausar
+    if (_habTimers[habitId] && _habTimers[habitId].interval) {
+        clearInterval(_habTimers[habitId].interval);
+        _habTimers[habitId].interval = null;
+        const ctrl = document.getElementById('habTimerCtrl_' + habitId);
+        if (ctrl) ctrl.classList.remove('running');
+        return;
+    }
+
+    // Si ya está completado → no hacer nada
+    const elapsed = qty[qtyKey] || 0;
+    if (elapsed >= totalSec) return;
+
+    const r = 17, circ = 2 * Math.PI * r;
+    const habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+    const h = habits.find(x => x.id === habitId);
+    const color = h ? (h.color || '#10b981') : '#10b981';
+
+    _habTimers[habitId] = { interval: null, elapsed };
+
+    const ctrl = document.getElementById('habTimerCtrl_' + habitId);
+    if (ctrl) ctrl.classList.add('running');
+
+    _habTimers[habitId].interval = setInterval(function() {
+        _habTimers[habitId].elapsed++;
+        const e   = _habTimers[habitId].elapsed;
+        const pct = Math.min(1, e / totalSec);
+        const off = circ * (1 - pct);
+        const secLeft = Math.max(0, totalSec - e);
+        const mm = String(Math.floor(secLeft/60)).padStart(2,'0');
+        const ss = String(secLeft%60).padStart(2,'0');
+
+        // Actualizar arco
+        const arc = document.getElementById('habTimerArc_' + habitId);
+        if (arc) { arc.setAttribute('stroke-dashoffset', off.toFixed(1)); arc.setAttribute('stroke', pct>=1?'#22c55e':color); }
+
+        // Actualizar countdown
+        const cd = document.getElementById('habTimerCd_' + habitId);
+        if (cd) cd.textContent = mm + ':' + ss;
+
+        // Guardar progreso
+        const q2 = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
+        q2[qtyKey] = e;
+        localStorage.setItem(QTY_KEY, JSON.stringify(q2));
+
+        if (e >= totalSec) {
+            // ¡Completado!
+            clearInterval(_habTimers[habitId].interval);
+            _habTimers[habitId].interval = null;
+            const ctrl2 = document.getElementById('habTimerCtrl_' + habitId);
+            if (ctrl2) { ctrl2.classList.remove('running'); ctrl2.classList.add('done-timer'); }
+            const lbl = document.getElementById('habTimerLbl_' + habitId);
+            if (lbl) lbl.textContent = '¡Listo!';
+            const icon = ctrl2 ? ctrl2.querySelector('.hab-timer-icon') : null;
+            if (icon) { icon.style.display = ''; icon.textContent = '✅'; }
+            const cd2 = ctrl2 ? ctrl2.querySelector('.hab-timer-countdown') : null;
+            if (cd2) cd2.style.display = 'none';
+
+            // ── Otorgar XP directamente sin re-renderizar la tarjeta ──
+            const hList2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+            const hh     = hList2.find(x => x.id === habitId);
+            if (hh && !(hh.log||[]).includes(today)) {
+                hh.log = hh.log || [];
+                hh.log.push(today);
+                localStorage.setItem('jch_habits_v1', JSON.stringify(hList2));
+
+                // XP al héroe
+                try {
+                    const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+                    const xpGain  = Math.round((hh.xp||10) * (heroRaw.class==='mage'?1.25:1));
+                    const coinGain= Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
+                    heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+                    heroRaw.coins = (heroRaw.coins||0) + coinGain;
+                    while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+                        heroRaw.xp -= heroRaw.xpNext;
+                        heroRaw.level = (heroRaw.level||1) + 1;
+                        heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
+                        if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
+                    }
+                    localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+                } catch(err) {}
+
+                // XP sistema global
+                if (typeof addGlobalReward === 'function') addGlobalReward(hh.xp||10, 1);
+                if (typeof playSparkleSound === 'function') playSparkleSound();
+
+                // Marcar card como completada sin re-render
+                const card2 = document.getElementById('habCard-' + habitId);
+                if (card2) card2.classList.add('completed-today');
+                if (typeof updateHabitBadge === 'function') updateHabitBadge();
+                if (typeof renderHabStats   === 'function') renderHabStats();
+                if (typeof renderHabHero    === 'function') renderHabHero();
+            }
+
+            playHabTimerComplete();
+            if (typeof window.launchConfetti === 'function') window.launchConfetti(60);
+        }
+    }, 1000);
+};
+
+// ── GUARDAR HÁBITO ────────────────────────────────────────────
 window.saveHabit = function() {
     loadHabits();
     const name=document.getElementById('habNameInput').value.trim();
@@ -15874,34 +16160,43 @@ window.saveHabit = function() {
 // ── Recordatorio via SW ───────────────────────────────────────
 function scheduleHabitReminder(name, time, emoji) {
     try {
-        const [h,m]=time.split(':').map(Number);
-        const now=new Date();
-        const fireAt=new Date(now.getFullYear(),now.getMonth(),now.getDate(),h,m,0);
-        if(fireAt<=now) fireAt.setDate(fireAt.getDate()+1);
+        const [h,m] = time.split(':').map(Number);
+        const now   = new Date();
+        const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+        if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
 
-        navigator.serviceWorker.ready.then(reg=>{
-            reg.active && reg.active.postMessage({
-                type:'SCHEDULE_NOTIFICATIONS',
-                reminders:[{ title:`${emoji} ${name}`, body:'¡Es hora de tu hábito! 🌿', fireAt:fireAt.getTime(), evId:'hab_'+Date.now() }]
-            });
-        });
-    } catch(e){ console.warn('Recordatorio hábito:',e); }
+        // Usar el mismo sistema de recordatorios del calendario (jch_rem_v4)
+        // para que se dispare exactamente a la hora configurada
+        const SK_REMINDERS = 'jch_rem_v4';
+        const evId = 'hab_' + Date.now();
+        try {
+            const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+            // Eliminar recordatorio previo del mismo hábito (por nombre) para evitar duplicados
+            const clean = list.filter(r => r.title !== `${emoji} ${name}`);
+            clean.push({ evId, fireAt: fireAt.getTime(), title: `${emoji} ${name}`, body: '¡Es hora de tu hábito! 🌿' });
+            localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
+        } catch(e) { console.warn('Recordatorio hábito (storage):', e); }
+    } catch(e) { console.warn('Recordatorio hábito:', e); }
 }
 
 // Re-programar todos los recordatorios al abrir
 function rescheduleAllReminders() {
     loadHabits();
-    const reminders=habits.filter(h=>h.reminderOn&&h.reminderTime).map(h=>{
-        const [hr,mn]=h.reminderTime.split(':').map(Number);
-        const now=new Date();
-        const fireAt=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hr,mn,0);
-        if(fireAt<=now) fireAt.setDate(fireAt.getDate()+1);
-        return { title:`${h.emoji} ${h.name}`, body:'¡Es hora de tu hábito! 🌿', fireAt:fireAt.getTime(), evId:h.id };
-    });
-    if(!reminders.length) return;
-    navigator.serviceWorker && navigator.serviceWorker.ready.then(reg=>{
-        reg.active && reg.active.postMessage({ type:'SCHEDULE_NOTIFICATIONS', reminders });
-    });
+    if (!habits.length) return;
+    const SK_REMINDERS = 'jch_rem_v4';
+    const now = new Date();
+    try {
+        const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+        // Eliminar recordatorios previos de hábitos
+        const clean = list.filter(r => !r.evId.startsWith('hab_'));
+        habits.filter(h => h.reminderOn && h.reminderTime).forEach(h => {
+            const [hr, mn] = h.reminderTime.split(':').map(Number);
+            const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hr, mn, 0);
+            if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
+            clean.push({ evId: h.id, fireAt: fireAt.getTime(), title: `${h.emoji} ${h.name}`, body: '¡Es hora de tu hábito! 🌿' });
+        });
+        localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
+    } catch(e) { console.warn('Reschedule recordatorios hábitos:', e); }
 }
 
 // ── Editar / Borrar ───────────────────────────────────────────
@@ -15924,10 +16219,34 @@ window.editHabit = function(id) {
     document.querySelectorAll('.hab-freq-btn[data-diff]').forEach(b=>b.classList.toggle('selected',b.dataset.diff===selectedDiff));
     document.querySelectorAll('.hab-day-btn').forEach(b=>b.classList.toggle('selected',selectedDays.includes(parseInt(b.dataset.day))));
     document.getElementById('habDaysSection').style.display=selectedFreq==='custom'?'':'none';
-    // Tipo
+    // Tipo positivo/negativo
     document.querySelectorAll('.hab-type-btn').forEach(b=>{
         b.className='hab-type-btn'+(b.dataset.type===selectedType?(selectedType==='positive'?' selected-pos':' selected-neg'):'');
     });
+    // Restaurar tipo de seguimiento (check / quantity / timer)
+    if (typeof _selectedHType !== 'undefined') {
+        window._editHabType = h.habitType || 'check';
+        // Actualizar variables del módulo disciplined via evento
+        setTimeout(function() {
+            const ht = h.habitType || 'check';
+            const rt = h.routine   || 'morning';
+            document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b => b.classList.toggle('selected', b.dataset.ht === ht));
+            document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b => b.classList.toggle('selected', b.dataset.rt === rt));
+            const qtyConf = document.getElementById('habQtyConfig');
+            if (qtyConf) qtyConf.style.display = ht !== 'check' ? '' : 'none';
+            const hint = document.getElementById('habTimerHint');
+            if (hint) hint.style.display = ht === 'timer' ? '' : 'none';
+            const qtyInput = document.getElementById('habQtyTarget');
+            if (qtyInput && h.qtyTarget) qtyInput.value = h.qtyTarget;
+            const unitInput = document.getElementById('habQtyUnit');
+            if (unitInput) unitInput.value = h.qtyUnit || (ht === 'timer' ? 'min' : '');
+            // Sincronizar variables internas del módulo disciplined
+            if (typeof selectHabHType === 'function') {
+                const btn = document.querySelector('.hab-htype-btn[data-ht="'+ht+'"]');
+                if (btn) { window._selectedHType = ht; }
+            }
+        }, 50);
+    }
     const crearTab=document.querySelector('.hab-tab:last-child');
     if(crearTab) switchHabTab('crear',crearTab);
 };
@@ -16135,119 +16454,28 @@ function getHabitPerf(h) {
     return 'perf-danger';
 }
 
-// ── Render tarjeta con 3 tipos: check / cantidad / timer ──────
+// ── Render tarjeta con +/- botones estilo Habitica ────────────
 window.renderHabitCardHabitica = function(h, showEdit) {
-    const perf    = getHabitPerf(h);
-    const today   = todayKey();
-    const done    = (h.log||[]).includes(today);
-    const streak  = window._calcHabStreak ? window._calcHabStreak(h) : 0;
-    const rate    = window._calcHabRate   ? window._calcHabRate(h)   : 0;
-    const dots    = window._calcHabDots   ? window._calcHabDots(h)   : [];
-    const reminderBadge = (h.reminderOn && h.reminderTime)
-        ? `<span style="font-size:0.55rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
+    const perf = getHabitPerf(h);
+    const isNeg = h.type === 'negative';
+    const done  = (h.log||[]).includes(todayKey());
+    const streak = window._calcHabStreak ? window._calcHabStreak(h) : 0;
+    const rate   = window._calcHabRate   ? window._calcHabRate(h)   : 0;
+    const dots   = window._calcHabDots   ? window._calcHabDots(h)   : [];
+    const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.55rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
 
     const weekBar = dots.map ? dots.map(d =>
         `<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`
     ).join('') : '';
 
-    // ── Determinar tipo ────────────────────────────────────────
-    const hType  = h.habitType || 'check';
-    const target = Math.max(1, h.qtyTarget || 1);
-    const unit   = h.qtyUnit || (hType === 'timer' ? 'min' : 'veces');
-    // Usar window. para funciones definidas en scripts posteriores
-    const curQty = (typeof window.getQtyValue === 'function') ? window.getQtyValue(h.id) : 0;
-    const qtyPct = Math.min(100, Math.round((curQty / target) * 100));
-
-    // ── Área de acción según tipo ──────────────────────────────
-    let actionArea = '';
-
-    if (hType === 'quantity') {
-        actionArea = `
-            <div class="hab-qty-action">
-                <div class="hab-qty-counter">
-                    <button class="hab-qty-btn hab-qty-minus"
-                        onclick="event.stopPropagation();window.incrementQty&&window.incrementQty('${h.id}',-1,${target})">−</button>
-                    <div class="hab-qty-mid">
-                        <div class="hab-qty-display">
-                            <span id="habQtyVal_${h.id}" style="color:${qtyPct>=100?'#22c55e':h.color||'#6366f1'};font-size:1.1rem;font-weight:900;">${curQty}</span>
-                            <span style="color:#555;font-size:0.7rem;">/${target}</span>
-                        </div>
-                        <div class="hab-qty-unit">${unit}</div>
-                    </div>
-                    <button class="hab-qty-btn hab-qty-plus ${done?'done':''}"
-                        onclick="event.stopPropagation();window.incrementQty&&window.incrementQty('${h.id}',1,${target})"
-                        style="${done?`background:linear-gradient(135deg,${h.color},${h.color}aa);color:#fff;`:``}">+</button>
-                </div>
-                <div class="hab-qty-progress" style="margin-top:6px;">
-                    <div class="hab-qty-fill" id="habQtyFill_${h.id}"
-                        style="width:${qtyPct}%;background:${qtyPct>=100?'#22c55e':h.color||'#6366f1'};"></div>
-                </div>
-                ${qtyPct>=100?`<div style="text-align:center;font-size:0.6rem;color:#22c55e;font-weight:900;margin-top:3px;">✅ ¡Meta alcanzada!</div>`:''}
-            </div>`;
-
-    } else if (hType === 'timer') {
-        const timerKey  = 'hab_timer_' + h.id;
-        const timerData = JSON.parse(localStorage.getItem(timerKey) || '{}');
-        const elapsed   = timerData.date === today ? (timerData.elapsed || 0) : 0;
-        const targetSec = target * 60;
-        const timePct   = Math.min(100, Math.round((elapsed / targetSec) * 100));
-        const isActive  = timerData.date === today && !!timerData.running;
-        const elMin     = Math.floor(elapsed / 60);
-        const elSec     = elapsed % 60;
-        const radius = 28, circ = Math.round(2 * Math.PI * radius);
-        const dashOff = Math.round(circ * (1 - timePct / 100));
-        const ringColor = timePct >= 100 ? '#22c55e' : (h.color || '#6366f1');
-
-        actionArea = `
-            <div class="hab-timer-action" id="habTimerAction_${h.id}">
-                <div class="hab-timer-ring-wrap ${isActive?'active':''}"
-                    onclick="event.stopPropagation();window.habToggleTimer&&window.habToggleTimer('${h.id}',${target})">
-                    <svg class="hab-timer-svg" viewBox="0 0 70 70" width="70" height="70">
-                        <circle cx="35" cy="35" r="${radius}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
-                        <circle id="habTimerRing_${h.id}" cx="35" cy="35" r="${radius}"
-                            fill="none" stroke="${ringColor}" stroke-width="5" stroke-linecap="round"
-                            stroke-dasharray="${circ}" stroke-dashoffset="${dashOff}"
-                            transform="rotate(-90 35 35)"
-                            style="transition:stroke-dashoffset 1s linear,stroke 0.3s;"/>
-                    </svg>
-                    <div class="hab-timer-inner" id="habTimerInner_${h.id}">
-                        ${timePct>=100
-                            ? `<div style="font-size:1.4rem;">✅</div>`
-                            : `<div style="font-size:0.68rem;font-weight:900;color:#fff;line-height:1.1;">${String(elMin).padStart(2,'0')}:${String(elSec).padStart(2,'0')}</div>
-                               <div style="font-size:0.5rem;color:#666;">${isActive?'▶':'⏸'} ${target}min</div>`}
-                    </div>
-                </div>
-                <div style="font-size:0.58rem;color:#888;margin-top:3px;text-align:center;">
-                    ${timePct>=100?'<span style="color:#22c55e;font-weight:900;">¡Completado!</span>':elMin+'/'+target+' min'}
-                </div>
-            </div>`;
-
-    } else {
-        actionArea = `
-            <button class="hab-check-btn ${done?'done':''}"
-                onclick="event.stopPropagation();toggleHabit('${h.id}')"
-                style="${done
-                    ?`background:linear-gradient(135deg,${h.color},${h.color}aa);border-color:${h.color};box-shadow:0 0 15px ${h.color}66;`
-                    :`border-color:${h.color}44;`}">
-                ${done?'✓':''}
-            </button>`;
-    }
-
-    const perfColor = perf==='perf-great'?'#22c55e':perf==='perf-good'?'#eab308':perf==='perf-bad'?'#f97316':'#ef4444';
-    const perfEmoji = perf==='perf-great'?'🟢':perf==='perf-good'?'🟡':perf==='perf-bad'?'🟠':'🔴';
-    // Convertir color hex a RGB para el var CSS
-    const cardColor = h.color || '#6366f1';
-    function hexToRgb(hex) {
-        const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '99,102,241';
-    }
-    const cardRgb = hexToRgb(cardColor);
+    // Botones: positivo = solo +, negativo = solo -, both = ambos
+    const showPlus  = h.type !== 'negative';
+    const showMinus = h.type !== 'positive';
 
     return `
-    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}"
-        style="--hab-card-color:${cardColor};--hab-card-rgb:${cardRgb};">
-        <div class="hab-card-top" style="padding-left:16px;">
-            <div class="hab-card-emoji" style="background:${cardColor}25;border:1.5px solid ${cardColor}40;border-radius:12px;">${h.emoji||'🎯'}</div>
+    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}">
+        <div class="hab-card-top">
+            <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
                 <div class="hab-card-name">${h.name}</div>
                 <div class="hab-card-meta">
@@ -16258,9 +16486,13 @@ window.renderHabitCardHabitica = function(h, showEdit) {
                 </div>
             </div>
             <div class="hab-plusminus">
-                ${actionArea}
-                <span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;margin-top:4px;"
-                    onclick="event.stopPropagation();deleteHabit('${h.id}')">🗑️</span>
+                ${h.habitType === 'quantity' ? (window.buildHabControl||buildHabControl)(h, done) :
+                  h.habitType === 'timer'    ? (window.buildHabControl||buildHabControl)(h, done) :
+                  (showPlus  ? `<button class="hab-btn-plus"  onclick="habitPlus('${h.id}',event)">+</button>`  : '') +
+                  (showMinus ? `<button class="hab-btn-minus" onclick="habitMinus('${h.id}',event)">−</button>` : '')
+                }
+                ${showEdit  ? `<span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="editHabit('${h.id}')">✏️</span>` : ''}
+                <span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="deleteHabit('${h.id}')">🗑️</span>
             </div>
         </div>
         <div class="hab-week-bar">${weekBar}</div>
@@ -16268,12 +16500,11 @@ window.renderHabitCardHabitica = function(h, showEdit) {
             <div class="hab-stat-pill"><div class="hab-stat-val" style="color:${h.color};">${streak}</div><div class="hab-stat-lbl">Racha</div></div>
             <div class="hab-stat-pill"><div class="hab-stat-val">${(h.log||[]).length}</div><div class="hab-stat-lbl">Total</div></div>
             <div class="hab-stat-pill"><div class="hab-stat-val">${rate}%</div><div class="hab-stat-lbl">Tasa</div></div>
-            <div class="hab-stat-pill"><div class="hab-stat-val" style="color:${perfColor};">${perfEmoji}</div><div class="hab-stat-lbl">Salud</div></div>
+            <div class="hab-stat-pill"><div class="hab-stat-val" style="color:${perf==='perf-great'?'#22c55e':perf==='perf-good'?'#eab308':perf==='perf-bad'?'#f97316':'#ef4444'};">${{perf-great:'🟢',perf-good:'🟡',perf-bad:'🟠','perf-danger':'🔴'}[perf]||'🟡'}</div><div class="hab-stat-lbl">Salud</div></div>
         </div>
         <div class="hab-perf-bar ${perf}"></div>
     </div>`;
 };
-
 
 // ── Botón + (hábito positivo) ─────────────────────────────────
 window.habitPlus = function(id, evt) {
@@ -16869,7 +17100,7 @@ window.renderHabToday = function() {
     // Excluye botones de acción + − 🗑️ para que sigan funcionando
     el.removeEventListener('click', el._habDetailHandler);
     el._habDetailHandler = function(e) {
-        if (e.target.closest('.hab-btn-plus,.hab-btn-minus,.hab-plusminus')) return;
+        if (e.target.closest('.hab-btn-plus,.hab-btn-minus,.hab-plusminus,.hab-check-btn,.hab-rep-btn,.hab-rep-ctrl,.hab-timer-ctrl')) return;
         var card = e.target.closest('[data-habid]');
         if (card && typeof window.openHabDetail === 'function') {
             e.stopPropagation();
@@ -17628,7 +17859,7 @@ function renderIndividualStats() {
             const dd=new Date(today); dd.setDate(dd.getDate()-i);
             const k=dateKey(dd);
             const done=log.includes(k);
-            heatCells.push('<div style="width:10px;height:10px;border-radius:2px;background:'+(done?h.color+'cc':'rgba(255,255,255,0.05)')+';display:inline-block;margin:1px;"></div>');
+            heatCells.push('<div style="width:10px;height:10px;border-radius:2px;background:'+(done?h.color+'cc':'rgba(255,255,255,0.05)'+');display:inline-block;margin:1px;"></div>');
         }
 
         return '<div class="hab-individual-stat">' +
@@ -18201,6 +18432,9 @@ function todayKey()    { return new Date().toISOString().split('T')[0]; }
 let _routineFilter = 'all';
 let _selectedRoutine = 'morning';
 let _selectedHType   = 'check';
+// Exponer globalmente para que editHabit pueda actualizarlos
+Object.defineProperty(window, '_selectedHType',   { get: () => _selectedHType,   set: v => { _selectedHType   = v; } });
+Object.defineProperty(window, '_selectedRoutine', { get: () => _selectedRoutine, set: v => { _selectedRoutine = v; } });
 
 // ── HABIT STRENGTH ────────────────────────────────────────────
 // Basado en días de historial ponderado: más reciente = más peso
@@ -18259,109 +18493,7 @@ function renderStrengthRing(pct, color) {
         '</div>';
 }
 
-// ── TIMER DE HÁBITO — anillo circular ─────────────────────────
-// Almacena: { date, elapsed (seg), running, intervalId }
-window._habTimers = window._habTimers || {};
-
-window.habToggleTimer = function(habitId, targetMin) {
-    const timerKey  = 'hab_timer_' + habitId;
-    const todayK    = todayKey();
-    const targetSec = (targetMin || 1) * 60;
-
-    let data = JSON.parse(localStorage.getItem(timerKey) || '{}');
-    // Resetear si es de otro día
-    if (data.date !== todayK) data = { date: todayK, elapsed: 0, running: false };
-
-    // Si ya completó, no hacer nada
-    if (data.elapsed >= targetSec) return;
-
-    if (data.running) {
-        // ── Pausar ────────────────────────────────────────────
-        clearInterval(window._habTimers[habitId]);
-        delete window._habTimers[habitId];
-        data.running = false;
-        localStorage.setItem(timerKey, JSON.stringify(data));
-        _habTimerUpdateUI(habitId, data.elapsed, targetSec, false);
-    } else {
-        // ── Iniciar ───────────────────────────────────────────
-        data.running = true;
-        localStorage.setItem(timerKey, JSON.stringify(data));
-        _habTimerUpdateUI(habitId, data.elapsed, targetSec, true);
-
-        window._habTimers[habitId] = setInterval(function() {
-            let d = JSON.parse(localStorage.getItem(timerKey) || '{}');
-            d.elapsed = (d.elapsed || 0) + 1;
-
-            if (d.elapsed >= targetSec) {
-                // ── Completado ────────────────────────────────
-                d.running = false;
-                d.elapsed = targetSec;
-                clearInterval(window._habTimers[habitId]);
-                delete window._habTimers[habitId];
-                localStorage.setItem(timerKey, JSON.stringify(d));
-                _habTimerUpdateUI(habitId, d.elapsed, targetSec, false);
-                // Marcar hábito como completado y DAR XP con toggleHabit
-                if (typeof toggleHabit === 'function') {
-                    const habs = loadHabits();
-                    const hh = habs.find(x => x.id === habitId);
-                    if (hh && !(hh.log||[]).includes(todayKey())) toggleHabit(habitId);
-                }
-                if (typeof launchConfetti === 'function') launchConfetti();
-            } else {
-                localStorage.setItem(timerKey, JSON.stringify(d));
-                _habTimerUpdateUI(habitId, d.elapsed, targetSec, true);
-            }
-        }, 1000);
-    }
-};
-
-function _habTimerUpdateUI(habitId, elapsed, targetSec, running) {
-    const pct        = Math.min(100, Math.round((elapsed / targetSec) * 100));
-    const radius     = 28;
-    const circ       = Math.round(2 * Math.PI * radius);
-    const dashOffset = Math.round(circ * (1 - pct / 100));
-    const elMin      = Math.floor(elapsed / 60);
-    const elSec      = elapsed % 60;
-    const targetMin  = Math.round(targetSec / 60);
-
-    // Actualizar SVG ring
-    const ring = document.getElementById('habTimerRing_' + habitId);
-    if (ring) {
-        ring.setAttribute('stroke-dashoffset', dashOffset);
-        ring.setAttribute('stroke', pct >= 100 ? '#22c55e' : ring.getAttribute('stroke'));
-    }
-
-    // Actualizar texto interior
-    const inner = document.getElementById('habTimerInner_' + habitId);
-    if (inner) {
-        if (pct >= 100) {
-            inner.innerHTML = '<div style="font-size:1.4rem;">✅</div>';
-        } else {
-            inner.innerHTML = `
-                <div style="font-size:0.68rem;font-weight:900;color:#fff;line-height:1.1;">
-                    ${String(elMin).padStart(2,'0')}:${String(elSec).padStart(2,'0')}
-                </div>
-                <div style="font-size:0.5rem;color:#888;">${running?'▶':'⏸'} ${targetMin}min</div>`;
-        }
-    }
-
-    // Pulso visual cuando activo
-    const wrap = document.querySelector('.hab-timer-ring-wrap[onclick*="' + habitId + '"]');
-    if (wrap) {
-        wrap.classList.toggle('active', running);
-    }
-
-    // Texto bajo el anillo
-    const action = document.getElementById('habTimerAction_' + habitId);
-    if (action) {
-        const lbl = action.querySelector('div:last-child');
-        if (lbl) {
-            lbl.innerHTML = pct >= 100
-                ? '<span style="color:#22c55e;font-weight:900;">¡Completado!</span>'
-                : `${elMin}/${targetMin} min`;
-        }
-    }
-}
+// ── CANTIDAD / TIEMPO TRACKER ─────────────────────────────────
 function getQtyKey(habitId, date) { return habitId + '_' + date; }
 
 function getQtyValue(habitId) {
@@ -18376,28 +18508,24 @@ function setQtyValue(habitId, val) {
 }
 
 window.incrementQty = function(habitId, delta, targetVal) {
-    const cur    = getQtyValue(habitId);
-    const newVal = Math.max(0, cur + delta);
+    const cur     = getQtyValue(habitId);
+    const newVal  = Math.max(0, cur + delta);
     setQtyValue(habitId, newVal);
 
+    // Si alcanzó la meta → marcar como completado
     const habits = loadHabits();
     const h = habits.find(x => x.id === habitId);
     if (h && newVal >= (h.qtyTarget || targetVal || 1)) {
-        // FIX: usar toggleHabit que sí suma XP, no habitPlus
         if (!(h.log||[]).includes(todayKey())) {
-            if (typeof toggleHabit === 'function') toggleHabit(habitId);
-            else if (typeof habitPlus === 'function') habitPlus(habitId, null);
-            if (typeof launchConfetti === 'function') launchConfetti();
+            if (typeof habitPlus === 'function') habitPlus(habitId, null);
+            launchConfetti();
         }
     }
 
     // Actualizar display sin re-render completo
-    const valEl  = document.getElementById('habQtyVal_' + habitId);
-    const fillEl = document.getElementById('habQtyFill_' + habitId);
-    if (valEl) {
-        valEl.textContent = newVal;
-        valEl.style.color = (h && newVal >= (h.qtyTarget||1)) ? '#22c55e' : (h && h.color) || '#6366f1';
-    }
+    const valEl  = document.getElementById('habQtyVal_'+habitId);
+    const fillEl = document.getElementById('habQtyFill_'+habitId);
+    if (valEl) valEl.textContent = newVal;
     if (fillEl && h) {
         const pct = Math.min(100, Math.round((newVal / (h.qtyTarget||1)) * 100));
         fillEl.style.width = pct + '%';
@@ -18510,7 +18638,10 @@ function renderStrengthList() {
 
         let actionArea = '';
         if (isQty) {
-            actionArea =
+            if (h.habitType === 'timer') {
+                actionArea = (window.buildHabControl||buildHabControl)(h, done);
+            } else {
+                actionArea =
                 '<div class="hab-qty-row">' +
                   '<button class="hab-qty-btn hab-qty-minus" onclick="incrementQty(\''+h.id+'\',-1,'+target+')">−</button>' +
                   '<div>' +
@@ -18522,6 +18653,7 @@ function renderStrengthList() {
                 '<div class="hab-qty-progress">' +
                   '<div class="hab-qty-fill" id="habQtyFill_'+h.id+'" style="width:'+qtyPct+'%;background:'+(qtyPct>=100?'#22c55e':h.color||'#6366f1')+'"></div>' +
                 '</div>';
+            }
         } else {
             actionArea =
                 '<button class="hab-check-btn '+(done?'done':'')+'" onclick="toggleHabit(\''+h.id+'\')" ' +
@@ -18624,6 +18756,11 @@ window.selectHabHType = function(el) {
     el.classList.add('selected');
     const qtyConf = document.getElementById('habQtyConfig');
     if (qtyConf) qtyConf.style.display = _selectedHType !== 'check' ? '' : 'none';
+    const hint = document.getElementById('habTimerHint');
+    if (hint) hint.style.display = _selectedHType === 'timer' ? '' : 'none';
+    const unitInput = document.getElementById('habQtyUnit');
+    if (unitInput && _selectedHType === 'timer') { unitInput.value = 'min'; unitInput.placeholder = 'min'; }
+    else if (unitInput && _selectedHType === 'quantity') { unitInput.value = ''; unitInput.placeholder = 'vasos, págs, veces...'; }
 };
 
 // ── Extender saveHabit para guardar routine y habitType ───────
@@ -18633,28 +18770,25 @@ window.saveHabit = function() {
     const rt       = _selectedRoutine || 'morning';
     const ht       = _selectedHType   || 'check';
     const qtyTarget= parseInt(document.getElementById('habQtyTarget')?.value||'1');
-    const qtyUnit  = document.getElementById('habQtyUnit')?.value.trim() || '';
+    const qtyUnit  = document.getElementById('habQtyUnit')?.value.trim() || (ht==='timer'?'min':'');
+    const editId   = document.getElementById('habEditId')?.value || '';
 
     _origSaveHabit && _origSaveHabit();
 
-    // Parchear el hábito recién guardado con habitType
+    // Parchear el hábito correcto (nuevo = último, edición = por id)
     const habits = loadHabits();
     if (habits.length) {
-        const last = habits[habits.length-1];
-        last.routine    = rt;
-        last.habitType  = ht;
-        last.qtyTarget  = ht !== 'check' ? qtyTarget : undefined;
-        last.qtyUnit    = ht === 'timer'    ? 'min'
-                        : ht === 'quantity' ? (qtyUnit || 'veces')
-                        : undefined;
-        saveHabits(habits);
+        const target = editId
+            ? habits.find(x => x.id === editId)
+            : habits[habits.length - 1];
+        if (target) {
+            target.routine   = rt;
+            target.habitType = ht;
+            target.qtyTarget = ht !== 'check' ? qtyTarget : undefined;
+            target.qtyUnit   = ht !== 'check' ? qtyUnit   : undefined;
+            saveHabits(habits);
+        }
     }
-
-    // FIX: Re-renderizar DESPUÉS de guardar habitType para que la card
-    // muestre el contador o timer desde el primer momento
-    setTimeout(function() {
-        (window.renderHabToday || renderHabToday)();
-    }, 80);
 };
 
 // ── Extender switchHabTab ─────────────────────────────────────
