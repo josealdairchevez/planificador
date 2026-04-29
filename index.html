@@ -4786,7 +4786,10 @@
         }
         .hab-timer-ctrl.done-timer .hab-timer-arc { stroke:#22c55e!important; }
         .hab-timer-ctrl.done-timer .hab-timer-icon { font-size:1rem; }
-        /* Círculo verde con ✓ cuando el timer termina */
+        /* Círculo verde con ✓ cuando el timer termina — mismo tamaño que hab-check-btn */
+        .hab-timer-ctrl.done-timer .hab-timer-ring-wrap {
+            width:40px;height:40px;
+        }
         .hab-timer-ctrl.done-timer .hab-timer-ring-wrap::after {
             content:'✓';
             position:absolute;top:0;left:0;width:100%;height:100%;
@@ -15570,7 +15573,7 @@ function renderHabToday() {
 
     const el=document.getElementById('habTodayList');
     if(!el) return;
-    const due=habits.filter(h=>isHabitDueToday(h));
+    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
     if(!due.length){
         el.innerHTML=`<div class="hab-empty"><div class="hab-empty-icon">🌱</div><div class="hab-empty-text">No hay hábitos para hoy.<br>¡Crea tu primer hábito en ➕!</div></div>`;
         return;
@@ -15616,7 +15619,7 @@ function renderHabStats() {
 
     const totalDone=habits.reduce((s,h)=>s+(h.log||[]).length,0);
     const topStreak=habits.reduce((m,h)=>Math.max(m,calcStreak(h)),0);
-    const due=habits.filter(h=>isHabitDueToday(h));
+    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
     const todayDone=due.filter(h=>isCompletedToday(h)).length;
 
     ovEl.innerHTML=`
@@ -15638,7 +15641,7 @@ function renderHabStats() {
     }
     hmEl.innerHTML=cells.join('');
 
-    if(allEl) allEl.innerHTML=`<div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Todos los hábitos</div>`+habits.map(h=>renderHabitCard(h,true)).join('');
+    if(allEl) allEl.innerHTML=`<div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Todos los hábitos</div>`+habits.filter(h=>!h.archived).map(h=>renderHabitCard(h,true)).join('');
 }
 
 // ── Tab HÉROE ─────────────────────────────────────────────────
@@ -15997,43 +16000,13 @@ window.habRepInc = function(habitId, target) {
         if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = color; }
     }
 
-    // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
+    // ── Al llegar a la meta: otorgar XP + boss damage (sin re-render) ──
     if (isDone && !(h.log||[]).includes(today)) {
-        // Marcar en log
         h.log = h.log || [];
         h.log.push(today);
         localStorage.setItem('jch_habits_v1', JSON.stringify(hList));
-
-        // XP al héroe
-        try {
-            const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-            const xpGain  = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
-            const coinGain= Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
-            heroRaw.xp    = (heroRaw.xp||0) + xpGain;
-            heroRaw.coins = (heroRaw.coins||0) + coinGain;
-            // Level up
-            while (heroRaw.xp >= (heroRaw.xpNext||100)) {
-                heroRaw.xp -= heroRaw.xpNext;
-                heroRaw.level = (heroRaw.level||1) + 1;
-                heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
-                if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
-            }
-            localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
-        } catch(e) {}
-
-        // XP sistema global
-        if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
-        if (typeof playSparkleSound === 'function') playSparkleSound();
-
-        // Marcar card visualmente como completada sin re-renderizar
+        grantHabitReward(h);
         if (card) card.classList.add('completed-today');
-
-        // Actualizar badge y stats sin tocar la lista
-        if (typeof updateHabitBadge === 'function') updateHabitBadge();
-        if (typeof renderHabStats   === 'function') renderHabStats();
-        if (typeof renderHabHero    === 'function') renderHabHero();
-
-        // Confeti
         if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
     }
 };
@@ -16091,6 +16064,48 @@ function playHabTimerComplete() {
         });
     } catch(e) {}
 }
+// ── HELPER: otorgar XP + daño al boss (igual que toggleHabit) ──
+function grantHabitReward(h) {
+    try {
+        const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+        const xpGain   = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
+        const coinGain = Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
+        heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+        heroRaw.coins = (heroRaw.coins||0) + coinGain;
+        const BOSSES_LOCAL = (typeof BOSSES !== 'undefined') ? BOSSES : [];
+        const dmg     = Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4) * (heroRaw.class==='warrior'?1.3:1));
+        const bossIdx = heroRaw.bossIndex || 0;
+        const boss    = BOSSES_LOCAL[bossIdx] || {maxHp:100,xpReward:50,reward:'🎁',name:'Boss'};
+        heroRaw.bossHp = ((heroRaw.bossHp!=null) ? heroRaw.bossHp : boss.maxHp) - dmg;
+        const dmgEl = document.getElementById('habBossDmg');
+        if (dmgEl) { dmgEl.textContent='-'+dmg; dmgEl.classList.add('show'); setTimeout(()=>dmgEl.classList.remove('show'),900); }
+        if (heroRaw.bossHp <= 0) {
+            heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0)+1;
+            heroRaw.xp += boss.xpReward;
+            heroRaw.inventory = heroRaw.inventory||[];
+            heroRaw.inventory.push(boss.reward);
+            heroRaw.bossIndex = Math.min(bossIdx+1, BOSSES_LOCAL.length-1);
+            heroRaw.bossHp = (BOSSES_LOCAL[heroRaw.bossIndex]||boss).maxHp;
+            if (typeof showBossDefeated==='function') showBossDefeated(boss);
+        }
+        while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+            heroRaw.xp -= heroRaw.xpNext;
+            heroRaw.level = (heroRaw.level||1)+1;
+            heroRaw.xpNext = Math.round((heroRaw.xpNext||100)*1.5);
+            heroRaw.maxHp = (heroRaw.maxHp||100)+(heroRaw.class==='warrior'?30:20);
+            heroRaw.hp = heroRaw.maxHp;
+            if (typeof showLevelUp==='function') showLevelUp(heroRaw.level);
+        }
+        if (heroRaw.class==='healer') heroRaw.hp = Math.min(heroRaw.maxHp,(heroRaw.hp||0)+3);
+        localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+        if (typeof addGlobalReward  ==='function') addGlobalReward(h.xp||10,1);
+        if (typeof playSparkleSound ==='function') playSparkleSound();
+        if (typeof renderHabHero    ==='function') renderHabHero();
+        if (typeof renderHabStats   ==='function') renderHabStats();
+        if (typeof updateHabitBadge ==='function') updateHabitBadge();
+    } catch(e) { console.warn('grantHabitReward:',e); }
+}
+
 const _habTimers = {}; // { habitId: { interval, elapsed, total } }
 
 window.startHabTimer = function(habitId, totalSec) {
@@ -16157,40 +16172,16 @@ window.startHabTimer = function(habitId, totalSec) {
             const lbl = document.getElementById('habTimerLbl_' + habitId);
             if (lbl) lbl.textContent = '¡Listo!';
 
-            // ── Otorgar XP directamente sin re-renderizar la tarjeta ──
+            // ── Otorgar XP + daño al boss (sin re-renderizar la tarjeta) ──
             const hList2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
             const hh     = hList2.find(x => x.id === habitId);
             if (hh && !(hh.log||[]).includes(today)) {
                 hh.log = hh.log || [];
                 hh.log.push(today);
                 localStorage.setItem('jch_habits_v1', JSON.stringify(hList2));
-
-                // XP al héroe
-                try {
-                    const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-                    const xpGain  = Math.round((hh.xp||10) * (heroRaw.class==='mage'?1.25:1));
-                    const coinGain= Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
-                    heroRaw.xp    = (heroRaw.xp||0) + xpGain;
-                    heroRaw.coins = (heroRaw.coins||0) + coinGain;
-                    while (heroRaw.xp >= (heroRaw.xpNext||100)) {
-                        heroRaw.xp -= heroRaw.xpNext;
-                        heroRaw.level = (heroRaw.level||1) + 1;
-                        heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
-                        if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
-                    }
-                    localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
-                } catch(err) {}
-
-                // XP sistema global
-                if (typeof addGlobalReward === 'function') addGlobalReward(hh.xp||10, 1);
-                if (typeof playSparkleSound === 'function') playSparkleSound();
-
-                // Marcar card como completada sin re-render
+                grantHabitReward(hh);
                 const card2 = document.getElementById('habCard-' + habitId);
                 if (card2) card2.classList.add('completed-today');
-                if (typeof updateHabitBadge === 'function') updateHabitBadge();
-                if (typeof renderHabStats   === 'function') renderHabStats();
-                if (typeof renderHabHero    === 'function') renderHabHero();
             }
 
             playHabTimerComplete();
@@ -16426,7 +16417,7 @@ window.switchHabTab = function(tab,el) {
 // ── Badge ─────────────────────────────────────────────────────
 function updateHabitBadge() {
     loadHabits();
-    const due=habits.filter(h=>isHabitDueToday(h));
+    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
     const pending=due.length-due.filter(h=>isCompletedToday(h)).length;
     const badge=document.getElementById('habitBadgeCount');
     if(badge){ badge.textContent=pending; badge.style.display=pending>0?'':'none'; }
@@ -17144,7 +17135,7 @@ window.renderHabToday = function() {
     };
     window._isHabitDueToday = isHabitDueToday;
 
-    const due  = habits.filter(h => isHabitDueToday(h));
+    const due  = habits.filter(h => isHabitDueToday(h) && !h.archived);
     const done = due.filter(h => (h.log||[]).includes(todayKey())).length;
     const pct  = due.length ? Math.round(done/due.length*100) : 0;
 
@@ -20353,10 +20344,10 @@ window.openHabDetail = function(id) {
             '<button class="hab-detail-close" onclick="closeHabDetail()" aria-label="Cerrar">✕</button>' +
         '</div>' +
 
-        // ── Botón completar grande (estilo HabitRix) ────────────
+        // ── Botón completar grande (sin parpadeo — actualiza in-place) ─
         '<button class="hab-detail-complete-btn ' + (isDone?'done':'not-done') + '"' +
             (isDone ? ' style="background:linear-gradient(135deg,' + color + 'cc,' + color + ');"' : '') +
-            ' onclick="toggleHabit(\'' + h.id + '\');setTimeout(function(){closeHabDetail();setTimeout(function(){openHabDetail(\'' + h.id + '\')},80);},120);">' +
+            ' onclick="toggleHabit(\'' + h.id + '\');openHabDetail(\'' + h.id + '\');">' +
             (isDone ? '✅ Completado Hoy' : '⬜ Marcar como Completado') +
             '<span style="margin-left:auto;font-size:0.8rem;opacity:0.7;">' + (isDone?'✓':'+') + '</span>' +
         '</button>' +
@@ -20428,11 +20419,11 @@ window.openHabDetail = function(id) {
             '</div>' +
         '</div>' +
 
-        // ── Acciones — Archive · Delete ──────────────────────────
+        // ── Acciones — Editar · Cerrar · Archive · Delete ────────
         '<div class="hab-detail-actions">' +
-            '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✏️ Editar</button>' +
+            '<button class="hab-detail-action-btn" onclick="closeHabDetail();editHabit(\'' + h.id + '\');">✏️ Editar</button>' +
             '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✓ Cerrar</button>' +
-            '<button class="hab-detail-action-btn" onclick="closeHabDetail()" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
+            '<button class="hab-detail-action-btn" onclick="archiveHabitDetail(\'' + h.id + '\')" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
             '<button class="hab-detail-action-btn danger" onclick="if(confirm(\'¿Eliminar este hábito?\')){ deleteHabit(\'' + h.id + '\');closeHabDetail();}">🗑️ Delete</button>' +
         '</div>';
 
@@ -20442,6 +20433,20 @@ window.openHabDetail = function(id) {
 window.closeHabDetail = function() {
     var ov = document.getElementById('habDetailOverlay');
     if (ov) ov.classList.remove('open');
+};
+
+window.archiveHabitDetail = function(id) {
+    if (!confirm('¿Archivar este hábito? Puedes restaurarlo después.')) return;
+    var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+    var h = habits.find(function(x){ return x.id === id; });
+    if (h) {
+        h.archived = true;
+        localStorage.setItem('jch_habits_v1', JSON.stringify(habits));
+    }
+    closeHabDetail();
+    if (typeof window.renderHabToday       === 'function') window.renderHabToday();
+    if (typeof window.renderHabDisciplined === 'function') window.renderHabDisciplined();
+    if (typeof updateHabitBadge            === 'function') updateHabitBadge();
 };
 
 })();
