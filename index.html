@@ -14794,20 +14794,7 @@ try {
 (function(){
 'use strict';
 var VAPID_KEY='BDrIm0lnUTlTVRcjqMGFDA-Hm7TtWLE1gY7Mbvp_Qw_tqty4fprhVfB_5ck20Mq0FYUa66_Iimr9uRj9z1uPZ7g';
-var SK='jch_rem_v4', _loop=null, _fcmReady=false, _fired={};
-// ── GUARD ANTI-DISPARO INMEDIATO ─────────────────────────────
-// Tomamos un snapshot de los evId+fireAt que ya existían en localStorage
-// AL MOMENTO de cargar la página. Esos NUNCA se disparan en esta sesión.
-// Solo se disparan entradas que sean PROGRAMADAS NUEVAS durante la sesión.
-var _sessionStart = Date.now();
-var _preloadedFireAts = (function(){
-    var set = {};
-    try {
-        var existing = JSON.parse(localStorage.getItem(SK)||'[]');
-        existing.forEach(function(r){ set[r.evId+'_'+r.fireAt]=true; });
-    } catch(e) {}
-    return set;
-}());
+var SK='jch_rem_v4', _loop=null, _fcmReady=false, _fired={}, _sessionStart=Date.now();
 
 function alarm(){try{var c=new(window.AudioContext||window.webkitAudioContext)();var master=c.createGain();master.gain.value=0.75;master.connect(c.destination);var melody=[{f:523.25,t:0.00,d:0.18,v:0.5,type:'sine'},{f:659.25,t:0.20,d:0.18,v:0.6,type:'sine'},{f:783.99,t:0.40,d:0.18,v:0.7,type:'sine'},{f:1046.5,t:0.60,d:0.35,v:0.8,type:'sine'},{f:523.25,t:1.10,d:0.14,v:0.6,type:'triangle'},{f:659.25,t:1.26,d:0.14,v:0.7,type:'triangle'},{f:783.99,t:1.42,d:0.14,v:0.8,type:'triangle'},{f:1046.5,t:1.58,d:0.14,v:0.9,type:'triangle'},{f:1318.5,t:1.74,d:0.40,v:1.0,type:'triangle'}];melody.forEach(function(n){var o=c.createOscillator(),g=c.createGain();o.type=n.type;o.frequency.value=n.f;var t=c.currentTime+n.t;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(n.v*0.7,t+0.015);g.gain.setValueAtTime(n.v*0.7,t+n.d*0.7);g.gain.exponentialRampToValueAtTime(0.001,t+n.d);o.connect(g);g.connect(master);o.start(t);o.stop(t+n.d+0.05);});var echo=c.createOscillator(),eg=c.createGain();echo.type='sine';echo.frequency.value=1046.5;var te=c.currentTime+2.30;eg.gain.setValueAtTime(0,te);eg.gain.linearRampToValueAtTime(0.25,te+0.02);eg.gain.exponentialRampToValueAtTime(0.001,te+0.6);echo.connect(eg);eg.connect(master);echo.start(te);echo.stop(te+0.65);}catch(e){}}
 
@@ -14821,15 +14808,7 @@ function save(a){localStorage.setItem(SK,JSON.stringify(a));}
 function fmt(s){var d=parseLocal(s);if(!d||isNaN(d))return '';return d.toLocaleString('es',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
 
 function showNotif(title,body,tag){
-  // Usar la función de sonido configurada en la app si existe, sino usar alarm() propio
-  if (typeof window.playSparkleSound === 'function') {
-    // Tocar el sonido configurado en ajustes generales de la app
-    try {
-      var cfgSound = localStorage.getItem('jch_notif_sound') || 'alarm';
-      if (cfgSound === 'sparkle') { window.playSparkleSound(); }
-      else { alarm(); }
-    } catch(e) { alarm(); }
-  } else { alarm(); }
+  alarm();
   if(!('Notification' in window)||Notification.permission!=='granted') return;
   var notifTag=tag||('jch-'+btoa(encodeURIComponent(title+body)).slice(0,16));
   var opts={body:body,icon:'./icon-192.png',badge:'./icon-192.png',vibrate:[400,100,400,100,800],requireInteraction:true,tag:notifTag,renotify:false};
@@ -14906,24 +14885,15 @@ window.cancelEventReminders=function(id){
 };
 
 function reschedAll(){
-  try{
-    var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
-    var list=buildList(evs);
-    // Registrar las entradas nuevas como "pre-cargadas" para que no disparen
-    // en el mismo ciclo de check() en que fueron escritas
-    list.forEach(function(r){ _preloadedFireAts[r.evId+'_'+r.fireAt]=true; });
-    save(list);saveToFirestore(list);
-  }catch(e){}
+  try{var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];var list=buildList(evs);save(list);saveToFirestore(list);}catch(e){}
 }
 
 function check(){
   var now=Date.now(),s=load();
   var fire=s.filter(function(r){
-    var key=r.evId+'_'+r.fireAt;
-    if(_fired[key]) return false;                    // ya disparado en esta sesión
-    if(_preloadedFireAts[key]) return false;         // existía al cargar la app → NUNCA disparar
-    if(r.fireAt > now) return false;                 // aún no es la hora
-    return true;
+    if(_fired[r.evId+'_'+r.fireAt]) return false;
+    if(r.fireAt<_sessionStart) return false;
+    return r.fireAt<=now;
   });
   var rest=s.filter(function(r){return r.fireAt>now;});
   fire.forEach(function(r){_fired[r.evId+'_'+r.fireAt]=true;showNotif(r.title,r.body,'jch-'+r.evId+'-'+r.fireAt);});
@@ -14934,16 +14904,7 @@ function check(){
   var _o=localStorage.setItem.bind(localStorage);
   localStorage.setItem=function(k,v){
     _o(k,v);
-    if(k==='jch_calendar_v1'){
-      try{
-        var list=buildList(JSON.parse(v)||[]);
-        // Registrar nuevas entradas como pre-cargadas para no disparar inmediatamente
-        if(typeof _preloadedFireAts!=='undefined'){
-          list.forEach(function(r){ _preloadedFireAts[r.evId+'_'+r.fireAt]=true; });
-        }
-        save(list);saveToFirestore(list);
-      }catch(e){}
-    }
+    if(k==='jch_calendar_v1'){try{var list=buildList(JSON.parse(v)||[]);save(list);saveToFirestore(list);}catch(e){}}
   };
 })();
 
@@ -14967,25 +14928,11 @@ function setupFCMForeground(){
 
 if(navigator.serviceWorker){
   navigator.serviceWorker.addEventListener('message',function(e){
-    if(e.data&&e.data.type==='FIRE_REMINDER'){
-      // Solo mostrar si el fireAt es real (dentro de una ventana de ±2 minutos del tiempo actual)
-      var fireAt = e.data.fireAt ? Number(e.data.fireAt) : Date.now();
-      var diff = Math.abs(Date.now() - fireAt);
-      if(diff < 2 * 60 * 1000) {
-        showNotif(e.data.title,e.data.body,e.data.tag);
-      }
-    }
+    if(e.data&&e.data.type==='FIRE_REMINDER') showNotif(e.data.title,e.data.body,e.data.tag);
   });
 }
 
 function init(){
-  // Limpiar entradas hab_* del sistema viejo (queue-based) para que nunca se disparen
-  try {
-    var stored = load();
-    var clean = stored.filter(function(r){ return !String(r.evId).startsWith('hab_'); });
-    if (clean.length !== stored.length) save(clean);
-  } catch(e) {}
-
   if(Notification.permission==='granted'){
     registerFCMToken();
     setupFCMForeground();
@@ -16291,14 +16238,9 @@ window.saveHabit = function() {
     }
     saveHabits();
 
-    // Obtener el id real del hábito recién guardado
-    loadHabits();
-    const savedId = editId || habits[habits.length - 1].id;
-
-    // Cancelar timer anterior y reprogramar con setTimeout exacto
-    _cancelHabTimer(savedId);
-    if (reminderOn && reminderTime) {
-        scheduleHabitReminder(name, reminderTime, selectedEmoji, savedId);
+    // Programar recordatorio via Service Worker
+    if(reminderOn && reminderTime && 'serviceWorker' in navigator) {
+        scheduleHabitReminder(name, reminderTime, selectedEmoji);
     }
 
     document.getElementById('habNameInput').value='';
@@ -16313,100 +16255,66 @@ window.saveHabit = function() {
     (window.renderHabToday||renderHabToday)(); renderHabStats(); renderHabHero();
 };
 
-// ════════════════════════════════════════════════════════════════
-//  SISTEMA DE RECORDATORIOS DE HÁBITOS — setTimeout exacto
-//  NO usa localStorage queue, NO usa loop check(), NO usa SW.
-//  Dispara SOLO en el segundo exacto configurado. Nada más.
-// ════════════════════════════════════════════════════════════════
-var _habReminderTimers = {}; // { habitId: timeoutId }
-
-function _cancelHabTimer(habitId) {
-    if (_habReminderTimers[habitId]) {
-        clearTimeout(_habReminderTimers[habitId]);
-        clearTimeout(_habReminderTimers[habitId + '_next']);
-        delete _habReminderTimers[habitId];
-        delete _habReminderTimers[habitId + '_next'];
-    }
-}
-
-function _fireHabNotif(habitId, title, body) {
-    // Verificar que el hábito sigue activo con recordatorio
+// ── Recordatorio via SW ───────────────────────────────────────
+function scheduleHabitReminder(name, time, emoji) {
     try {
-        var hList = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
-        var h = hList.find(function(x){ return x.id === habitId; });
-        if (!h || !h.reminderOn || h.archived) return;
-    } catch(e) {}
-    // Mostrar la notificación
-    alarm();
-    if ('Notification' in window && Notification.permission === 'granted') {
-        var opts = {
-            body: body,
-            icon: './icon-192.png',
-            badge: './icon-192.png',
-            vibrate: [400, 100, 400, 100, 800],
-            requireInteraction: true,
-            tag: 'hab-' + habitId,
-            renotify: false
-        };
+        const [h,m] = time.split(':').map(Number);
+        const now    = new Date();
+        const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+        if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
+        const SK_REMINDERS = 'jch_rem_v4';
+        const evId  = 'hab_' + Date.now();
+        const title = (emoji||'🌿') + ' ' + name;
+        const body  = '¡Es hora de tu hábito!';
+        const list  = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+        const clean = list.filter(r => r.title !== title);
+        clean.push({ evId, fireAt: fireAt.getTime(), title, body });
+        localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
+        // Enviar al SW para disparar cuando la app esté cerrada
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.ready
-                .then(function(r){ r.showNotification(title, opts); })
-                .catch(function(){ try { new Notification(title, opts); } catch(e){} });
-        } else {
-            try { new Notification(title, opts); } catch(e) {}
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_NOTIFICATIONS',
+                reminders: [{ evId, fireAt: fireAt.getTime(), title, body }]
+            });
         }
-    }
-    // Reprogramar para MAÑANA a la misma hora
-    _scheduleHabTimerForTomorrow(habitId);
-}
-
-function _scheduleHabTimerForTomorrow(habitId) {
-    try {
-        var hList = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
-        var h = hList.find(function(x){ return x.id === habitId; });
-        if (!h || !h.reminderOn || !h.reminderTime || h.archived) return;
-        var parts = h.reminderTime.split(':').map(Number);
-        var tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(parts[0], parts[1], 0, 0);
-        var delay = tomorrow.getTime() - Date.now();
-        var title = (h.emoji || '🌿') + ' ' + h.name;
-        var body  = '¡Es hora de tu hábito!';
-        _habReminderTimers[habitId + '_next'] = setTimeout(function(){
-            _fireHabNotif(habitId, title, body);
-        }, delay);
-    } catch(e) {}
-}
-
-// Programar el recordatorio de UN hábito para HOY (o mañana si ya pasó)
-function scheduleHabitReminder(name, time, emoji, habitId) {
-    if (!time) return;
-    var id = habitId || ('hab_' + name.replace(/\s+/g,'_'));
-    _cancelHabTimer(id);
-    try {
-        var parts = time.split(':').map(Number);
-        var now   = new Date();
-        var fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parts[0], parts[1], 0, 0);
-        // Si ya pasó la hora de hoy → programar para mañana
-        if (fireAt.getTime() <= now.getTime()) fireAt.setDate(fireAt.getDate() + 1);
-        var delay = fireAt.getTime() - Date.now();
-        var title = (emoji || '🌿') + ' ' + name;
-        var body  = '¡Es hora de tu hábito!';
-        _habReminderTimers[id] = setTimeout(function(){
-            _fireHabNotif(id, title, body);
-        }, delay);
     } catch(e) { console.warn('scheduleHabitReminder:', e); }
 }
 
-// Programar recordatorios de TODOS los hábitos activos
-// Llamado UNA vez al arrancar y a medianoche
+// Re-programar todos los recordatorios al abrir
 function rescheduleAllReminders() {
+    loadHabits();
+    if (!habits.length) return;
+    const SK_REMINDERS = 'jch_rem_v4';
+    const now = new Date();
     try {
-        var hList = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
-        hList.filter(function(h){ return h.reminderOn && h.reminderTime && !h.archived; })
-             .forEach(function(h){
-                 scheduleHabitReminder(h.name, h.reminderTime, h.emoji, h.id);
-             });
+        const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+        // Eliminar recordatorios previos de hábitos (evitan duplicados)
+        const clean = list.filter(r => !String(r.evId).startsWith('hab_'));
+        habits.filter(h => h.reminderOn && h.reminderTime && !h.archived).forEach(h => {
+            const [hr, mn] = h.reminderTime.split(':').map(Number);
+            const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hr, mn, 0);
+            if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
+            clean.push({
+                evId: 'hab_' + h.id,
+                fireAt: fireAt.getTime(),
+                title: (h.emoji||'🌿') + ' ' + h.name,
+                body: '¡Es hora de tu hábito!'
+            });
+        });
+        localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
+
+        // Enviar al SW para que pueda disparar en segundo plano
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_NOTIFICATIONS',
+                reminders: clean.map(r => ({
+                    evId: r.evId,
+                    fireAt: r.fireAt,
+                    title: r.title,
+                    body: r.body
+                }))
+            });
+        }
     } catch(e) { console.warn('rescheduleAllReminders:', e); }
 }
 
@@ -16463,7 +16371,6 @@ window.editHabit = function(id) {
 };
 window.deleteHabit = function(id) {
     loadHabits();
-    _cancelHabTimer(id);
     habits=habits.filter(x=>x.id!==id);
     saveHabits(); updateHabitBadge();
     (window.renderHabToday||renderHabToday)(); renderHabStats(); renderHabHero();
@@ -16578,7 +16485,7 @@ window.openHabitModal = function() {
     (window.renderHabToday||renderHabToday)(); updateHabitBadge();
     document.getElementById('habitBackdrop').classList.add('show-hab');
     document.getElementById('habitModal').classList.add('show-hab');
-    // NO llamar rescheduleAllReminders() aquí — causaba que sonara al abrir
+    rescheduleAllReminders();
 };
 window.closeHabitModal = function() {
     document.getElementById('habitBackdrop').classList.remove('show-hab');
@@ -16589,19 +16496,10 @@ window.closeHabitModal = function() {
 document.addEventListener('DOMContentLoaded', function() {
     loadHabits(); loadHero();
     updateHabitBadge();
-    // Programar recordatorios al arrancar con setTimeout exacto
-    // Es seguro: solo disparará cuando llegue la hora exacta configurada
-    if ('Notification' in window && Notification.permission === 'granted') {
-        rescheduleAllReminders();
-    }
-    // Reprogramar cada día a medianoche
-    const now = new Date();
-    const msToMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now;
-    setTimeout(function() {
-        rescheduleAllReminders();
-        updateHabitBadge();
-        setInterval(function() { rescheduleAllReminders(); updateHabitBadge(); }, 86400000);
-    }, msToMidnight);
+    rescheduleAllReminders();
+    const now=new Date();
+    const msToMidnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)-now;
+    setTimeout(()=>{ updateHabitBadge(); setInterval(updateHabitBadge,86400000); },msToMidnight);
 });
 
 })();
@@ -20463,15 +20361,6 @@ window.openHabDetail = function(id) {
 
     var goal = 1;
     var remaining = isDone ? 0 : goal;
-    // Para hábitos de cantidad, usar el contador real
-    var _ht = h.habitType || 'check';
-    if (_ht === 'quantity' || _ht === 'timer') {
-        var _qty = JSON.parse(localStorage.getItem('jch_qty_v1')||'{}');
-        var _cur = _qty[h.id+'_'+todayK] || 0;
-        goal = h.qtyTarget || 1;
-        isDone = _cur >= goal;
-        remaining = Math.max(0, goal - _cur);
-    }
     var totalDays = log.length;
     var rate90 = totalDays > 0 ? Math.round(totalDays / 90 * 100) : 0;
 
@@ -20497,11 +20386,7 @@ window.openHabDetail = function(id) {
     var alreadyOpen = overlay && overlay.classList.contains('open');
 
     // Suprimir animación de entrada si el modal ya está abierto
-    // Aplicar ANTES de cambiar innerHTML para evitar el parpadeo
-    if (alreadyOpen && modal) {
-        modal.style.animation = 'none';
-        modal.classList.add('updating');
-    }
+    if (alreadyOpen && modal) modal.classList.add('updating');
 
     modal.innerHTML =
         // ── Header ──────────────────────────────────────────────
@@ -20520,50 +20405,13 @@ window.openHabDetail = function(id) {
             '<button class="hab-detail-close" onclick="closeHabDetail()" aria-label="Cerrar">✕</button>' +
         '</div>' +
 
-        // ── Botón completar / control de cantidad ─────────────────
-        (function(){
-            var ht = h.habitType || 'check';
-            if (ht === 'quantity') {
-                var QTY_KEY2 = 'jch_qty_v1';
-                var today2   = todayK;
-                var qty2     = JSON.parse(localStorage.getItem(QTY_KEY2)||'{}');
-                var cur2     = qty2[h.id+'_'+today2] || 0;
-                var target2  = h.qtyTarget || 1;
-                var pct2     = Math.min(100, Math.round((cur2/target2)*100));
-                var unit2    = h.qtyUnit || 'veces';
-                var qDone    = cur2 >= target2;
-                var col2     = h.color || '#10b981';
-                return '' +
-                '<div style="margin:14px 18px 0 18px;">' +
-                  '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-                    '<span style="font-size:0.75rem;font-weight:900;color:#aaa;">Cantidad</span>' +
-                    '<span style="font-size:0.8rem;font-weight:900;color:'+(qDone?'#22c55e':'#fff')+';">' + cur2 + ' / ' + target2 + ' ' + unit2 + '</span>' +
-                  '</div>' +
-                  '<div style="display:flex;gap:10px;align-items:center;">' +
-                    '<button onclick="habRepDec(\''+h.id+'\','+target2+');openHabDetail(\''+h.id+'\');" ' +
-                      'style="width:44px;height:44px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:1.4rem;cursor:pointer;flex-shrink:0;">−</button>' +
-                    '<div style="flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.07);overflow:hidden;">' +
-                      '<div style="height:100%;width:'+pct2+'%;background:'+(qDone?'#22c55e':col2)+';border-radius:4px;transition:width 0.4s;box-shadow:0 0 8px '+(qDone?'#22c55e':col2)+'88;"></div>' +
-                    '</div>' +
-                    '<button onclick="habRepInc(\''+h.id+'\','+target2+');openHabDetail(\''+h.id+'\');" ' +
-                      'style="width:44px;height:44px;border-radius:12px;border:1.5px solid '+(qDone?col2:'rgba(255,255,255,0.15)')+';background:'+(qDone?'linear-gradient(135deg,'+col2+','+col2+'aa)':'rgba(255,255,255,0.05)')+';color:#fff;font-size:1.4rem;cursor:pointer;flex-shrink:0;">'+(qDone?'✓':'+')+'</button>' +
-                  '</div>' +
-                  (qDone ? '<div style="text-align:center;margin-top:8px;font-size:0.72rem;color:#22c55e;font-weight:900;">✅ ¡Meta alcanzada!</div>' : '') +
-                '</div>';
-            } else if (ht === 'timer') {
-                // Para timer mostrar el control de buildHabControl
-                return '<div style="margin:14px 18px 0 18px;">' +
-                    (window.buildHabControl ? window.buildHabControl(h, isDone) : '') +
-                '</div>';
-            }
-            // check por defecto
-            return '<button class="hab-detail-complete-btn ' + (isDone?'done':'not-done') + '"' +
-                (isDone ? ' style="background:linear-gradient(135deg,' + color + 'cc,' + color + ');"' : '') +
-                ' onclick="toggleHabitNoRender(\'' + h.id + '\');">' +
-                (isDone ? '✅ Completado Hoy' : '⬜ Marcar como Completado') +
-                '<span style="margin-left:auto;font-size:0.8rem;opacity:0.7;">' + (isDone?'✓':'+') + '</span>' +
-                '</button>';
-        })() +
+        // ── Botón completar grande (sin parpadeo — actualiza in-place) ─
+        '<button class="hab-detail-complete-btn ' + (isDone?'done':'not-done') + '"' +
+            (isDone ? ' style="background:linear-gradient(135deg,' + color + 'cc,' + color + ');"' : '') +
+            ' onclick="toggleHabitNoRender(\'' + h.id + '\');">' +
+            (isDone ? '✅ Completado Hoy' : '⬜ Marcar como Completado') +
+            '<span style="margin-left:auto;font-size:0.8rem;opacity:0.7;">' + (isDone?'✓':'+') + '</span>' +
+        '</button>' +
 
         // ── Progreso numérico (1/goal · Daily) ──────────────────
         '<div style="padding:10px 18px 0;">' +
@@ -20643,11 +20491,8 @@ window.openHabDetail = function(id) {
     if (!alreadyOpen) {
         overlay.classList.add('open');
     } else if (modal) {
-        // Restaurar en el siguiente frame para que futuros opens puedan animar
-        requestAnimationFrame(function(){
-            modal.classList.remove('updating');
-            modal.style.animation = '';
-        });
+        // Quitar updating en el siguiente frame para restaurar animación futura
+        requestAnimationFrame(function(){ modal.classList.remove('updating'); });
     }
 };
 
@@ -20681,7 +20526,6 @@ window.toggleHabitNoRender = function(id) {
 
 window.archiveHabitDetail = function(id) {
     if (!confirm('¿Archivar este hábito? Puedes restaurarlo después.')) return;
-    _cancelHabTimer(id);
     var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
     var h = habits.find(function(x){ return x.id === id; });
     if (h) {
