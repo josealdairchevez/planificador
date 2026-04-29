@@ -4630,11 +4630,19 @@
 
         .hab-card {
             background:rgba(8,20,40,0.9);border-radius:16px;margin-bottom:10px;
-            border:1.5px solid rgba(255,255,255,0.06);overflow:hidden;
-            transition:border-color 0.3s,box-shadow 0.3s;
+            border:1.5px solid rgba(255,255,255,0.06);
+            border-left:4px solid var(--hab-card-color, rgba(255,255,255,0.1));
+            overflow:hidden;
+            transition:border-color 0.3s,box-shadow 0.3s,background 0.3s;
+            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 8%, transparent) 0%, transparent 60%);
         }
-        .hab-card:hover { border-color:rgba(255,255,255,0.12); }
-        .hab-card.completed-today { border-color:rgba(16,185,129,0.4);box-shadow:0 0 15px rgba(16,185,129,0.1); }
+        .hab-card:hover { border-color:rgba(255,255,255,0.15); border-left-color:var(--hab-card-color, rgba(255,255,255,0.15)); }
+        .hab-card.completed-today {
+            border-color: color-mix(in srgb, var(--hab-card-color, #10b981) 50%, transparent);
+            border-left-color: var(--hab-card-color, #10b981);
+            box-shadow: 0 0 18px color-mix(in srgb, var(--hab-card-color, #10b981) 25%, transparent);
+            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 18%, transparent) 0%, transparent 60%);
+        }
 
         .hab-card-top {
             display:flex;align-items:center;gap:10px;padding:10px 12px 8px;
@@ -4664,10 +4672,12 @@
 
         /* Botón check */
         .hab-check-btn {
-            width:38px;height:38px;border-radius:50%;flex-shrink:0;
+            width:38px;height:38px;min-width:38px;min-height:38px;
+            aspect-ratio:1/1;border-radius:50%;flex-shrink:0;
             border:2.5px solid rgba(255,255,255,0.2);background:transparent;
             display:flex;align-items:center;justify-content:center;
             cursor:pointer;transition:all 0.25s;font-size:1.1rem;
+            padding:0;box-sizing:border-box;
         }
         .hab-check-btn.done {
             background:linear-gradient(135deg,#10b981,#34d399);
@@ -4747,7 +4757,7 @@
             background:rgba(255,255,255,0.08);transition:background 0.3s;
         }
         .hab-day-dot.done-dot { background:var(--hab-color,#10b981); }
-        .hab-day-dot.today-dot { background:rgba(255,255,255,0.2);outline:1px solid var(--hab-color,#10b981); }
+        .hab-day-dot.today-dot { background:rgba(255,255,255,0.12);outline:2px solid var(--hab-color,#10b981);box-shadow:0 0 6px var(--hab-color,#10b981); }
 
         /* Stats strip */
         .hab-stats-strip {
@@ -15459,7 +15469,7 @@ function renderHabitCard(h, showEdit) {
     const weekBar=dots.map(d=>`<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`).join('');
     const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.58rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
     return `
-    <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}">
+    <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-card-color:${h.color||'#10b981'};">
         <div class="hab-card-top">
             <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
@@ -15512,8 +15522,12 @@ function renderHabToday() {
     // Inyectar data-habid en el div raíz de cada card para el modal HabitRix
     const cardsHtml = due.map(h => {
         let card = (window.renderHabitCardHabitica || renderHabitCard)(h, false);
-        card = card.replace('id="habCard-' + h.id + '"',
-            'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="cursor:pointer;"');
+        // FIX: preservar el style con --hab-card-color al inyectar data-habid
+        const colorVal = h.color || '#10b981';
+        card = card.replace(
+            'id="habCard-' + h.id + '" style="--hab-card-color:' + colorVal + ';"',
+            'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="--hab-card-color:' + colorVal + ';cursor:pointer;"'
+        );
         return card;
     }).join('');
     el.innerHTML=`
@@ -16473,7 +16487,7 @@ window.renderHabitCardHabitica = function(h, showEdit) {
     const showMinus = h.type !== 'positive';
 
     return `
-    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}">
+    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}" style="--hab-card-color:${h.color||'#10b981'};">
         <div class="hab-card-top">
             <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
@@ -17089,9 +17103,11 @@ window.renderHabToday = function() {
             let card = window.renderHabitCardHabitica(h, false);
             // Inyectar data-habid en el div RAIZ .hab-card para que closest() funcione
             // sin importar en qué elemento hijo haga clic el usuario
+            // FIX: inyectar data-habid sin sobreescribir el style existente
+            // (que ya contiene --hab-card-color del color del hábito)
             card = card.replace(
-                'id="habCard-' + h.id + '"',
-                'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="cursor:pointer;"'
+                'id="habCard-' + h.id + '" style="--hab-card-color:' + (h.color||'#10b981') + ';"',
+                'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="--hab-card-color:' + (h.color||'#10b981') + ';cursor:pointer;"'
             );
             return card;
         }).join('')}
@@ -18788,6 +18804,15 @@ window.saveHabit = function() {
             target.qtyUnit   = ht !== 'check' ? qtyUnit   : undefined;
             saveHabits(habits);
         }
+    }
+
+    // FIX: forzar re-render DESPUES de parchear habitType en localStorage,
+    // ya que _origSaveHabit dispara renderHabToday() antes de que habitType
+    // quede guardado, provocando que quantity/timer se mostraran como check.
+    if (ht !== 'check') {
+        setTimeout(function() {
+            (window.renderHabToday || renderHabToday)();
+        }, 30);
     }
 };
 
