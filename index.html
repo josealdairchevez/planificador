@@ -16217,22 +16217,25 @@ window.saveHabit = function() {
 function scheduleHabitReminder(name, time, emoji) {
     try {
         const [h,m] = time.split(':').map(Number);
-        const now   = new Date();
+        const now    = new Date();
         const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
         if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
-
-        // Usar el mismo sistema de recordatorios del calendario (jch_rem_v4)
-        // para que se dispare exactamente a la hora configurada
         const SK_REMINDERS = 'jch_rem_v4';
-        const evId = 'hab_' + Date.now();
-        try {
-            const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
-            // Eliminar recordatorio previo del mismo hábito (por nombre) para evitar duplicados
-            const clean = list.filter(r => r.title !== `${emoji} ${name}`);
-            clean.push({ evId, fireAt: fireAt.getTime(), title: `${emoji} ${name}`, body: '¡Es hora de tu hábito! 🌿' });
-            localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-        } catch(e) { console.warn('Recordatorio hábito (storage):', e); }
-    } catch(e) { console.warn('Recordatorio hábito:', e); }
+        const evId  = 'hab_' + Date.now();
+        const title = (emoji||'🌿') + ' ' + name;
+        const body  = '¡Es hora de tu hábito!';
+        const list  = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+        const clean = list.filter(r => r.title !== title);
+        clean.push({ evId, fireAt: fireAt.getTime(), title, body });
+        localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
+        // Enviar al SW para disparar cuando la app esté cerrada
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_NOTIFICATIONS',
+                reminders: [{ evId, fireAt: fireAt.getTime(), title, body }]
+            });
+        }
+    } catch(e) { console.warn('scheduleHabitReminder:', e); }
 }
 
 // Re-programar todos los recordatorios al abrir
@@ -16243,16 +16246,34 @@ function rescheduleAllReminders() {
     const now = new Date();
     try {
         const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
-        // Eliminar recordatorios previos de hábitos
-        const clean = list.filter(r => !r.evId.startsWith('hab_'));
-        habits.filter(h => h.reminderOn && h.reminderTime).forEach(h => {
+        // Eliminar recordatorios previos de hábitos (evitan duplicados)
+        const clean = list.filter(r => !String(r.evId).startsWith('hab_'));
+        habits.filter(h => h.reminderOn && h.reminderTime && !h.archived).forEach(h => {
             const [hr, mn] = h.reminderTime.split(':').map(Number);
             const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hr, mn, 0);
             if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
-            clean.push({ evId: h.id, fireAt: fireAt.getTime(), title: `${h.emoji} ${h.name}`, body: '¡Es hora de tu hábito! 🌿' });
+            clean.push({
+                evId: 'hab_' + h.id,
+                fireAt: fireAt.getTime(),
+                title: (h.emoji||'🌿') + ' ' + h.name,
+                body: '¡Es hora de tu hábito!'
+            });
         });
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-    } catch(e) { console.warn('Reschedule recordatorios hábitos:', e); }
+
+        // Enviar al SW para que pueda disparar en segundo plano
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_NOTIFICATIONS',
+                reminders: clean.map(r => ({
+                    evId: r.evId,
+                    fireAt: r.fireAt,
+                    title: r.title,
+                    body: r.body
+                }))
+            });
+        }
+    } catch(e) { console.warn('rescheduleAllReminders:', e); }
 }
 
 // ── Editar / Borrar ───────────────────────────────────────────
@@ -20449,6 +20470,8 @@ window.toggleHabitNoRender = function(id) {
     // Actualizar badge y barra de progreso del fondo sin tocar las cards
     if (typeof updateHabitBadge === 'function') updateHabitBadge();
 };
+
+window.archiveHabitDetail = function(id) {
     if (!confirm('¿Archivar este hábito? Puedes restaurarlo después.')) return;
     var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
     var h = habits.find(function(x){ return x.id === id; });
