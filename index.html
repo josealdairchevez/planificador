@@ -14794,10 +14794,20 @@ try {
 (function(){
 'use strict';
 var VAPID_KEY='BDrIm0lnUTlTVRcjqMGFDA-Hm7TtWLE1gY7Mbvp_Qw_tqty4fprhVfB_5ck20Mq0FYUa66_Iimr9uRj9z1uPZ7g';
-var SK='jch_rem_v4', _loop=null, _fcmReady=false, _fired={}, _sessionStart=Date.now();
-// Mínimo 60 segundos después de abrir la app para que el loop pueda disparar notificaciones
-// Esto evita que notificaciones del pasado reciente se disparen al abrir
-var _loopReadyAt = Date.now() + 60000;
+var SK='jch_rem_v4', _loop=null, _fcmReady=false, _fired={};
+// ── GUARD ANTI-DISPARO INMEDIATO ─────────────────────────────
+// Tomamos un snapshot de los evId+fireAt que ya existían en localStorage
+// AL MOMENTO de cargar la página. Esos NUNCA se disparan en esta sesión.
+// Solo se disparan entradas que sean PROGRAMADAS NUEVAS durante la sesión.
+var _sessionStart = Date.now();
+var _preloadedFireAts = (function(){
+    var set = {};
+    try {
+        var existing = JSON.parse(localStorage.getItem(SK)||'[]');
+        existing.forEach(function(r){ set[r.evId+'_'+r.fireAt]=true; });
+    } catch(e) {}
+    return set;
+}());
 
 function alarm(){try{var c=new(window.AudioContext||window.webkitAudioContext)();var master=c.createGain();master.gain.value=0.75;master.connect(c.destination);var melody=[{f:523.25,t:0.00,d:0.18,v:0.5,type:'sine'},{f:659.25,t:0.20,d:0.18,v:0.6,type:'sine'},{f:783.99,t:0.40,d:0.18,v:0.7,type:'sine'},{f:1046.5,t:0.60,d:0.35,v:0.8,type:'sine'},{f:523.25,t:1.10,d:0.14,v:0.6,type:'triangle'},{f:659.25,t:1.26,d:0.14,v:0.7,type:'triangle'},{f:783.99,t:1.42,d:0.14,v:0.8,type:'triangle'},{f:1046.5,t:1.58,d:0.14,v:0.9,type:'triangle'},{f:1318.5,t:1.74,d:0.40,v:1.0,type:'triangle'}];melody.forEach(function(n){var o=c.createOscillator(),g=c.createGain();o.type=n.type;o.frequency.value=n.f;var t=c.currentTime+n.t;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(n.v*0.7,t+0.015);g.gain.setValueAtTime(n.v*0.7,t+n.d*0.7);g.gain.exponentialRampToValueAtTime(0.001,t+n.d);o.connect(g);g.connect(master);o.start(t);o.stop(t+n.d+0.05);});var echo=c.createOscillator(),eg=c.createGain();echo.type='sine';echo.frequency.value=1046.5;var te=c.currentTime+2.30;eg.gain.setValueAtTime(0,te);eg.gain.linearRampToValueAtTime(0.25,te+0.02);eg.gain.exponentialRampToValueAtTime(0.001,te+0.6);echo.connect(eg);eg.connect(master);echo.start(te);echo.stop(te+0.65);}catch(e){}}
 
@@ -14896,17 +14906,24 @@ window.cancelEventReminders=function(id){
 };
 
 function reschedAll(){
-  try{var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];var list=buildList(evs);save(list);saveToFirestore(list);}catch(e){}
+  try{
+    var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
+    var list=buildList(evs);
+    // Registrar las entradas nuevas como "pre-cargadas" para que no disparen
+    // en el mismo ciclo de check() en que fueron escritas
+    list.forEach(function(r){ _preloadedFireAts[r.evId+'_'+r.fireAt]=true; });
+    save(list);saveToFirestore(list);
+  }catch(e){}
 }
 
 function check(){
-  // No disparar nada durante el primer minuto tras abrir la app
-  if (Date.now() < _loopReadyAt) return;
   var now=Date.now(),s=load();
   var fire=s.filter(function(r){
-    if(_fired[r.evId+'_'+r.fireAt]) return false;
-    if(r.fireAt<_sessionStart) return false;
-    return r.fireAt<=now;
+    var key=r.evId+'_'+r.fireAt;
+    if(_fired[key]) return false;                    // ya disparado en esta sesión
+    if(_preloadedFireAts[key]) return false;         // existía al cargar la app → NUNCA disparar
+    if(r.fireAt > now) return false;                 // aún no es la hora
+    return true;
   });
   var rest=s.filter(function(r){return r.fireAt>now;});
   fire.forEach(function(r){_fired[r.evId+'_'+r.fireAt]=true;showNotif(r.title,r.body,'jch-'+r.evId+'-'+r.fireAt);});
@@ -14917,7 +14934,16 @@ function check(){
   var _o=localStorage.setItem.bind(localStorage);
   localStorage.setItem=function(k,v){
     _o(k,v);
-    if(k==='jch_calendar_v1'){try{var list=buildList(JSON.parse(v)||[]);save(list);saveToFirestore(list);}catch(e){}}
+    if(k==='jch_calendar_v1'){
+      try{
+        var list=buildList(JSON.parse(v)||[]);
+        // Registrar nuevas entradas como pre-cargadas para no disparar inmediatamente
+        if(typeof _preloadedFireAts!=='undefined'){
+          list.forEach(function(r){ _preloadedFireAts[r.evId+'_'+r.fireAt]=true; });
+        }
+        save(list);saveToFirestore(list);
+      }catch(e){}
+    }
   };
 })();
 
@@ -14946,6 +14972,14 @@ if(navigator.serviceWorker){
 }
 
 function init(){
+  // Limpiar entradas vencidas del storage al iniciar (evita acumulación)
+  try {
+    var nowMs = Date.now();
+    var stored = load();
+    var future = stored.filter(function(r){ return r.fireAt > nowMs; });
+    if (future.length !== stored.length) save(future);
+  } catch(e) {}
+
   if(Notification.permission==='granted'){
     registerFCMToken();
     setupFCMForeground();
@@ -16281,7 +16315,12 @@ function scheduleHabitReminder(name, time, emoji) {
         const body  = '¡Es hora de tu hábito!';
         const list  = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
         const clean = list.filter(r => r.title !== title);
-        clean.push({ evId, fireAt: fireAt.getTime(), title, body });
+        const newEntry = { evId, fireAt: fireAt.getTime(), title, body };
+        clean.push(newEntry);
+        // Marcar como pre-cargada para que NO se dispare en esta misma sesión
+        if (typeof _preloadedFireAts !== 'undefined') {
+            _preloadedFireAts[newEntry.evId + '_' + newEntry.fireAt] = true;
+        }
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
         // Enviar al SW para disparar cuando la app esté cerrada
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -16299,9 +16338,10 @@ function rescheduleAllReminders() {
     if (!habits.length) return;
     const SK_REMINDERS = 'jch_rem_v4';
     const now = new Date();
-    // Margen de seguridad: no programar nada que dispare dentro de los próximos 2 minutos
-    // Esto evita que al abrir la app se disparen notificaciones de inmediato
-    const MIN_FUTURE_MS = 2 * 60 * 1000;
+    // Margen de seguridad: 5 minutos. Si el recordatorio hubiera sido
+    // en los próximos 5 min o ya pasó → programar para MAÑANA.
+    // Esto evita COMPLETAMENTE disparos al abrir/reabrir la app.
+    const MIN_FUTURE_MS = 5 * 60 * 1000;
     try {
         const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
         // Eliminar recordatorios previos de hábitos (evitan duplicados)
@@ -16309,14 +16349,20 @@ function rescheduleAllReminders() {
         habits.filter(h => h.reminderOn && h.reminderTime && !h.archived).forEach(h => {
             const [hr, mn] = h.reminderTime.split(':').map(Number);
             const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hr, mn, 0);
-            // Si el tiempo ya pasó O está dentro del margen mínimo → programar para MAÑANA
+            // Si ya pasó el tiempo o está muy cerca → mañana a la misma hora
             if (fireAt.getTime() <= now.getTime() + MIN_FUTURE_MS) fireAt.setDate(fireAt.getDate() + 1);
-            clean.push({
+            const entry = {
                 evId: 'hab_' + h.id,
                 fireAt: fireAt.getTime(),
                 title: (h.emoji||'🌿') + ' ' + h.name,
                 body: '¡Es hora de tu hábito!'
-            });
+            };
+            clean.push(entry);
+            // MUY IMPORTANTE: marcar cada entrada nueva como "pre-cargada"
+            // para que check() no la dispare en la misma sesión en que fue programada
+            if (typeof _preloadedFireAts !== 'undefined') {
+                _preloadedFireAts[entry.evId + '_' + entry.fireAt] = true;
+            }
         });
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
 
