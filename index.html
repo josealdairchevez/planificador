@@ -16001,10 +16001,16 @@ window.habRepInc = function(habitId, target) {
     }
 
     // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
-    if (isDone && !(h.log||[]).includes(today)) {
-        // Marcar en log
+    // FIX: si el hábito es quantity/timer, ignorar si ya estaba en log
+    // por un toggle previo erróneo (check-btn que apareció antes del modal correcto).
+    // Solo otorgamos XP/boss si es la primera vez que se llega al target real.
+    const alreadyInLog = (h.log||[]).includes(today);
+    const wasToggledWrong = alreadyInLog && (h.habitType === 'quantity' || h.habitType === 'timer')
+                            && newVal === tgt; // llegó exactamente al target ahora
+    if (isDone && (!alreadyInLog || wasToggledWrong)) {
+        // Marcar en log (o ya estaba, no duplicar)
         h.log = h.log || [];
-        h.log.push(today);
+        if (!alreadyInLog) h.log.push(today);
         localStorage.setItem('jch_habits_v1', JSON.stringify(hList));
 
         // XP al héroe
@@ -18900,58 +18906,55 @@ window.selectHabHType = function(el) {
 };
 
 // ── Extender saveHabit para guardar routine y habitType ───────
+// CAUSA RAIZ: saveHabits() original (línea ~15418) NO acepta parámetros,
+// opera sobre la variable global 'habits'. Llamar saveHabits(array) ignora
+// el argumento y guarda el global sin habitType. Solución: usar
+// localStorage.setItem directamente para el parche, bypasseando el global.
+const _HABITS_PATCH_KEY = 'jch_habits_v1';
 const _origSaveHabit = window.saveHabit;
 window.saveHabit = function() {
-    // Capturar valores ANTES de que la función original resetee el form
+    // 1. Capturar valores del form ANTES de que _origSaveHabit lo resetee
     const rt       = _selectedRoutine || 'morning';
-    const ht       = _selectedHType   || 'check';
-    const qtyTarget= parseInt(document.getElementById('habQtyTarget')?.value||'1');
-    const qtyUnit  = document.getElementById('habQtyUnit')?.value.trim() || (ht==='timer'?'min':'');
     const editId   = document.getElementById('habEditId')?.value || '';
 
-    // Leer habitType desde el botón activo del DOM (fuente más confiable)
-    var htFromDOM = ht;
-    var activeHTypeBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
-    if (activeHTypeBtn && activeHTypeBtn.dataset.ht) {
-        htFromDOM = activeHTypeBtn.dataset.ht;
-    }
-    const htFinal = htFromDOM || ht;
+    // 2. Leer habitType desde el botón activo en el DOM (fuente más confiable)
+    var htFinal = 'check';
+    var activeBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
+    if (activeBtn && activeBtn.dataset.ht) htFinal = activeBtn.dataset.ht;
+    else if (_selectedHType) htFinal = _selectedHType;
 
-    // Para edición: parchear habitType ANTES de _origSaveHabit
-    if (editId) {
-        const habsPre = loadHabits();
-        const tgtPre  = habsPre.find(x => x.id === editId);
-        if (tgtPre) {
-            tgtPre.routine   = rt;
-            tgtPre.habitType = htFinal;
-            tgtPre.qtyTarget = htFinal !== 'check' ? qtyTarget : undefined;
-            tgtPre.qtyUnit   = htFinal !== 'check' ? qtyUnit   : undefined;
-            saveHabits(habsPre);
-        }
-    }
+    const qtyTarget = parseInt(document.getElementById('habQtyTarget')?.value || '1');
+    const qtyUnit   = (document.getElementById('habQtyUnit')?.value || '').trim()
+                      || (htFinal === 'timer' ? 'min' : '');
 
-    // CLAVE: inhibir el render de _origSaveHabit línea 16240
-    // para que no muestre el hábito SIN habitType aún
+    // 3. Inhibir el render interno de _origSaveHabit para que no pinte
+    //    la tarjeta antes de que habitType quede guardado
     window._habSaveRendering = true;
 
     _origSaveHabit && _origSaveHabit();
 
-    // Parchear el nuevo hábito (ultimo del array) con habitType+routine
-    const habsPost = loadHabits();
-    if (habsPost.length) {
-        const tgtPost = editId
-            ? habsPost.find(x => x.id === editId)
-            : habsPost[habsPost.length - 1];
-        if (tgtPost) {
-            tgtPost.routine   = rt;
-            tgtPost.habitType = htFinal;
-            tgtPost.qtyTarget = htFinal !== 'check' ? qtyTarget : undefined;
-            tgtPost.qtyUnit   = htFinal !== 'check' ? qtyUnit   : undefined;
-            saveHabits(habsPost);
+    // 4. Parchear directamente en localStorage (bypaseando la variable
+    //    global 'habits' que saveHabits() original usa sin parámetros)
+    try {
+        const arr = JSON.parse(localStorage.getItem(_HABITS_PATCH_KEY) || '[]');
+        const tgt = editId
+            ? arr.find(function(x){ return x.id === editId; })
+            : arr[arr.length - 1];
+        if (tgt) {
+            tgt.routine   = rt;
+            tgt.habitType = htFinal;
+            if (htFinal !== 'check') {
+                tgt.qtyTarget = qtyTarget;
+                tgt.qtyUnit   = qtyUnit;
+            } else {
+                delete tgt.qtyTarget;
+                delete tgt.qtyUnit;
+            }
+            localStorage.setItem(_HABITS_PATCH_KEY, JSON.stringify(arr));
         }
-    }
+    } catch(e) { console.warn('habitType patch error:', e); }
 
-    // Liberar bandera y renderizar UNA sola vez con habitType ya correcto
+    // 5. Liberar bandera y renderizar UNA sola vez con habitType ya correcto
     window._habSaveRendering = false;
     setTimeout(function() {
         (window.renderHabToday || renderHabToday)();
