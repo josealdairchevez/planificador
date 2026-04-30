@@ -4688,8 +4688,8 @@
             padding:0;box-sizing:border-box;
         }
         .hab-check-btn.done {
-            background:linear-gradient(135deg,#10b981,#34d399);
-            border-color:#10b981;box-shadow:0 0 15px rgba(16,185,129,0.5);
+            background:linear-gradient(135deg,var(--hab-card-color,#10b981),color-mix(in srgb,var(--hab-card-color,#10b981) 70%,#fff));
+            border-color:var(--hab-card-color,#10b981);box-shadow:0 0 15px color-mix(in srgb,var(--hab-card-color,#10b981) 50%,transparent);
         }
         .hab-check-btn:not(.done):hover { border-color:#10b981;box-shadow:0 0 10px rgba(16,185,129,0.3); }
 
@@ -4708,7 +4708,7 @@
             transition:all 0.18s;line-height:1;padding:0;box-sizing:border-box;flex-shrink:0;
         }
         .hab-rep-btn:hover { border-color:#10b981;background:rgba(16,185,129,0.2); }
-        .hab-rep-btn.plus-done { border-color:#10b981;background:linear-gradient(135deg,#10b981,#34d399);box-shadow:0 0 10px rgba(16,185,129,0.5); }
+        .hab-rep-btn.plus-done { border-color:var(--hab-card-color,#10b981);background:linear-gradient(135deg,var(--hab-card-color,#10b981),color-mix(in srgb,var(--hab-card-color,#10b981) 70%,#fff));box-shadow:0 0 10px color-mix(in srgb,var(--hab-card-color,#10b981) 50%,transparent); }
         .hab-rep-val {
             font-size:0.78rem;font-weight:900;color:#fff;min-width:28px;text-align:center;line-height:1;
         }
@@ -16366,6 +16366,9 @@ window.editHabit = function(id) {
     if(crearTab) switchHabTab('crear',crearTab);
 };
 window.deleteHabit = function(id) {
+    // FIX: cerrar el overlay de detalle ANTES de borrar para evitar pantalla borrosa
+    var detailOv = document.getElementById('habDetailOverlay');
+    if (detailOv) detailOv.classList.remove('open');
     loadHabits();
     habits=habits.filter(x=>x.id!==id);
     saveHabits(); updateHabitBadge();
@@ -20571,13 +20574,30 @@ window.closeHabDetail = function() {
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  FIX FINAL LIMPIO — boss HP texto + modal sin parpadeo
+//  FIX FINAL — panel HOY al crear + boss HP + modal sin parpadeo
+//  Se ejecuta DESPUÉS de todos los scripts para garantizar que
+//  parchea las versiones finales reales de cada función.
 // ═══════════════════════════════════════════════════════════════
 (function(){
 
-// FIX boss HP: _habInstantUIUpdate busca '.hab-boss-hp-text' pero
-// el panel 3D usa '.hab-boss-3d-hp-text'. Parchear para cubrir ambas.
-// Referenciamos la función por nombre para no crear loops.
+// ── FIX 1: switchHabTab — respetar _habSaveRendering ─────────
+// Este patch se aplica AL FINAL, después de los 7 overrides de
+// switchHabTab, asegurando que la cadena completa respete el flag.
+var _finalOrigSwitch = window.switchHabTab;
+window.switchHabTab = function(tab, el) {
+    if (tab === 'hoy' && window._habSaveRendering) {
+        // Solo cambiar el tab visual, SIN disparar renderHabToday
+        document.querySelectorAll('.hab-tab').forEach(function(t){ t.classList.remove('active'); });
+        document.querySelectorAll('.hab-tab-content').forEach(function(t){ t.classList.remove('active'); });
+        if (el) el.classList.add('active');
+        var tc = document.getElementById('habTab-hoy');
+        if (tc) tc.classList.add('active');
+        return; // salir sin llamar a _finalOrigSwitch (que dispararía renderHabToday)
+    }
+    if (typeof _finalOrigSwitch === 'function') _finalOrigSwitch(tab, el);
+};
+
+// ── FIX 2: boss HP — actualizar ambas clases de texto y barra ─
 var _origInstantUI2 = window._habInstantUIUpdate;
 window._habInstantUIUpdate = function(h) {
     if (typeof _origInstantUI2 === 'function') _origInstantUI2(h);
@@ -20585,30 +20605,24 @@ window._habInstantUIUpdate = function(h) {
         var heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
         var BOSSES  = window._HAB_BOSSES || [];
         if (!BOSSES.length) return;
-        var boss    = BOSSES[Math.min(heroRaw.bossIndex||0, BOSSES.length-1)];
-        var bossHp  = Math.max(0, Math.round(heroRaw.bossHp ?? boss.maxHp));
-        var pct     = Math.max(0, Math.min(100, Math.round((bossHp/boss.maxHp)*100)));
-        // Actualizar texto HP en ambas clases (original y panel 3D)
-        document.querySelectorAll('.hab-boss-hp-text, .hab-boss-3d-hp-text').forEach(function(el) {
+        var boss   = BOSSES[Math.min(heroRaw.bossIndex||0, BOSSES.length-1)];
+        var bossHp = Math.max(0, Math.round(heroRaw.bossHp != null ? heroRaw.bossHp : boss.maxHp));
+        var pct    = Math.max(0, Math.min(100, Math.round((bossHp / boss.maxHp) * 100)));
+        document.querySelectorAll('.hab-boss-hp-text,.hab-boss-3d-hp-text').forEach(function(el) {
             el.textContent = bossHp + ' / ' + boss.maxHp + ' HP · ' + pct + '%';
         });
-        // Actualizar barras en ambas clases
-        document.querySelectorAll('.hab-boss-hp-fill, .hab-boss-3d-hp-fill').forEach(function(el) {
+        document.querySelectorAll('.hab-boss-hp-fill,.hab-boss-3d-hp-fill').forEach(function(el) {
             el.style.width = pct + '%';
         });
     } catch(e) {}
 };
 
-// FIX modal sin parpadeo: separar pintado de innerHTML del classList.add('open')
-// usando requestAnimationFrame — sin parchear classList (causaba bugs)
+// ── FIX 3: modal detalle sin parpadeo ────────────────────────
 var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
-    // 1. Ocultar overlay antes de rellenar contenido
     if (ov) ov.classList.remove('open');
-    // 2. Llamar original que rellena innerHTML (overlay oculto = sin parpadeo)
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Mostrar en el siguiente frame de pintura
     if (ov) requestAnimationFrame(function() {
         requestAnimationFrame(function() { ov.classList.add('open'); });
     });
