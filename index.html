@@ -15797,7 +15797,27 @@ window.toggleHabit = function(id) {
 
     saveHabits(); saveHero();
     updateHabitBadge();
-    (window.renderHabToday||renderHabToday)();
+
+    // Actualización quirúrgica del DOM sin re-renderizar la lista completa
+    var cardEl = document.getElementById('habCard-' + id);
+    var key2   = todayKey();
+    var isDoneNow = (h.log||[]).includes(key2);
+    if (cardEl) {
+        if (isDoneNow) cardEl.classList.add('completed-today');
+        else           cardEl.classList.remove('completed-today');
+        // Actualizar el check-btn visual
+        var cbtn = cardEl.querySelector('.hab-check-btn');
+        if (cbtn) {
+            cbtn.textContent = isDoneNow ? '✓' : '';
+            if (isDoneNow) cbtn.classList.add('done');
+            else           cbtn.classList.remove('done');
+        }
+    }
+    // Actualizar stats pills en la tarjeta
+    updateHabCardStats(h);
+    // Actualizar boss HP, XP header, etc.
+    _habInstantUIUpdate(h);
+
     renderHabStats();
     renderHabHero();
     checkAndGrantAchievements();
@@ -15966,6 +15986,58 @@ function _habInstantUIUpdate(h) {
     } catch(e) {}
 }
 
+// ── Actualiza las pills de stats en el DOM sin re-renderizar ──
+function updateHabCardStats(h) {
+    try {
+        var card = document.getElementById('habCard-' + h.id);
+        if (!card) return;
+        var pills = card.querySelectorAll('.hab-stat-pill .hab-stat-val');
+        if (pills.length < 4) return;
+        var today = new Date().toISOString().split('T')[0];
+        // Recalcular streak
+        var streak = 0;
+        var log = (h.log||[]).slice().sort();
+        if (log.length) {
+            var d = new Date(); d.setHours(0,0,0,0);
+            var fmt = function(dt){ return dt.toISOString().split('T')[0]; };
+            if (log.includes(fmt(d))) {
+                streak = 1;
+                d.setDate(d.getDate()-1);
+                while (log.includes(fmt(d))){ streak++; d.setDate(d.getDate()-1); }
+            }
+        }
+        // Mejor racha
+        var best = 0, cur2 = 0;
+        var logSorted = (h.log||[]).slice().sort();
+        for (var i=0; i<logSorted.length; i++) {
+            if (i===0) { cur2=1; }
+            else {
+                var prev = new Date(logSorted[i-1]); prev.setDate(prev.getDate()+1);
+                var prevStr = prev.toISOString().split('T')[0];
+                cur2 = (prevStr === logSorted[i]) ? cur2+1 : 1;
+            }
+            if (cur2 > best) best = cur2;
+        }
+        // Tasa
+        var created = h.createdAt ? new Date(h.createdAt) : new Date();
+        var days = Math.max(1, Math.round((new Date()-created)/(1000*60*60*24))+1);
+        var rate = Math.min(100, Math.round(((h.log||[]).length/days)*100));
+        // Actualizar DOM
+        pills[0].textContent = streak;
+        pills[0].style.color = h.color || '#10b981';
+        pills[1].textContent = best;
+        pills[2].textContent = (h.log||[]).length;
+        pills[3].textContent = rate + '%';
+        // Actualizar también el weekbar dot de hoy
+        var dots = card.querySelectorAll('.hab-day-dot');
+        // El dot central (índice 3 de 7) representa hoy
+        if (dots.length === 7 && dots[3]) {
+            dots[3].classList.remove('today-dot');
+            dots[3].classList.add('done-dot');
+        }
+    } catch(e) {}
+}
+
 window.habRepInc = function(habitId, target) {
     const QTY_KEY = 'jch_qty_v1';
     const today   = new Date().toISOString().split('T')[0];
@@ -16062,6 +16134,9 @@ window.habRepInc = function(habitId, target) {
 
         // FIX: actualizar UI de XP, monedas y boss HP al instante
         _habInstantUIUpdate(h);
+
+        // FIX stats: actualizar pills RACHA/MEJOR/TOTAL/TASA directamente en DOM
+        updateHabCardStats(h);
 
         // Actualizar badge y stats sin tocar la lista
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
@@ -20581,20 +20656,31 @@ window.closeHabDetail = function() {
 (function(){
 
 // ── FIX 1: switchHabTab — respetar _habSaveRendering ─────────
-// Este patch se aplica AL FINAL, después de los 7 overrides de
-// switchHabTab, asegurando que la cadena completa respete el flag.
+// Patch aplicado AL FINAL, después de TODOS los overrides de switchHabTab.
+// Cuando _habSaveRendering=true: solo cambia tab visual, sin renderHabToday.
+// El saveHabit override luego libera el flag y dispara el render limpio.
 var _finalOrigSwitch = window.switchHabTab;
 window.switchHabTab = function(tab, el) {
     if (tab === 'hoy' && window._habSaveRendering) {
-        // Solo cambiar el tab visual, SIN disparar renderHabToday
+        // Cambio visual del tab solamente
         document.querySelectorAll('.hab-tab').forEach(function(t){ t.classList.remove('active'); });
         document.querySelectorAll('.hab-tab-content').forEach(function(t){ t.classList.remove('active'); });
         if (el) el.classList.add('active');
         var tc = document.getElementById('habTab-hoy');
         if (tc) tc.classList.add('active');
-        return; // salir sin llamar a _finalOrigSwitch (que dispararía renderHabToday)
+        return;
     }
     if (typeof _finalOrigSwitch === 'function') _finalOrigSwitch(tab, el);
+};
+
+// Además: parchear renderHabToday para que SIEMPRE respete el flag,
+// incluso cuando se llama directamente (ej. líneas 16372, 16482, 16688)
+// sin pasar por switchHabTab. Se hace aquí al final para capturar
+// la versión real final sin crear referencias circulares.
+var _trueRender = window.renderHabToday;
+window.renderHabToday = function() {
+    if (window._habSaveRendering) return;
+    if (typeof _trueRender === 'function') _trueRender();
 };
 
 // ── FIX 2: boss HP — actualizar ambas clases de texto y barra ─
