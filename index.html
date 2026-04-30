@@ -15948,12 +15948,12 @@ function _habInstantUIUpdate(h) {
             // Barra del panel heroe
             var hpBar   = document.getElementById('habBossHpBar');
             if (hpBar) hpBar.style.width = pct + '%';
-            // Texto HP (todos los que tengan la clase)
-            document.querySelectorAll('.hab-boss-hp-text').forEach(function(el) {
-                el.textContent = bossHp + '/' + boss.maxHp + ' HP';
+            // Texto HP — actualizar AMBAS clases (la original y la del panel 3D)
+            document.querySelectorAll('.hab-boss-hp-text, .hab-boss-3d-hp-text').forEach(function(el) {
+                el.textContent = Math.round(bossHp) + ' / ' + boss.maxHp + ' HP · ' + pct + '%';
             });
-            // Barra del mini-panel en HOY
-            document.querySelectorAll('.hab-boss-hp-fill').forEach(function(el) {
+            // Barra — actualizar AMBAS clases
+            document.querySelectorAll('.hab-boss-hp-fill, .hab-boss-3d-hp-fill').forEach(function(el) {
                 el.style.width = pct + '%';
             });
         }
@@ -20574,4 +20574,145 @@ window.closeHabDetail = function() {
 
 })();
 </script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  FIX FINAL — Carga inmediata de hábito al crear + UI boss HP
+// ═══════════════════════════════════════════════════════════════
+(function(){
+
+// ── FIX 1: Blindar renderHabToday contra _habSaveRendering ──
+// Se ejecuta AL FINAL de todos los scripts, por lo que envuelve
+// la versión final real de renderHabToday sin importar cuántos
+// overrides hubo antes.
+var _realRenderHabToday = window.renderHabToday;
+window.renderHabToday = function() {
+    if (window._habSaveRendering) return;
+    if (typeof _realRenderHabToday === 'function') _realRenderHabToday();
+};
+
+// ── FIX 2: saveHabit — parche ANTES del render ───────────────
+// Reemplaza el override anterior con una versión que garantiza
+// que habitType está en localStorage ANTES de que cualquier
+// renderHabToday se dispare.
+var _lastOrigSaveHabit = window.saveHabit;
+window.saveHabit = function() {
+    // Capturar form ANTES de que _orig lo limpie
+    var editId = (document.getElementById('habEditId')||{}).value || '';
+    var htFinal = 'check';
+    var activeBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
+    if (activeBtn && activeBtn.dataset.ht) htFinal = activeBtn.dataset.ht;
+    else if (window._selectedHType) htFinal = window._selectedHType;
+
+    var qtyTarget = parseInt((document.getElementById('habQtyTarget')||{}).value || '1');
+    var qtyUnit   = ((document.getElementById('habQtyUnit')||{}).value || '').trim()
+                    || (htFinal === 'timer' ? 'min' : '');
+    var rt = window._selectedRoutine || 'morning';
+
+    // Bloquear TODO render mientras parcheamos
+    window._habSaveRendering = true;
+
+    // Llamar saveHabit original (guarda sin habitType, puede llamar render — bloqueado)
+    if (typeof _lastOrigSaveHabit === 'function') _lastOrigSaveHabit();
+
+    // Parchear en localStorage directamente (la variable global 'habits'
+    // del scope original no acepta parámetros en saveHabits())
+    try {
+        var arr = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
+        var tgt = editId
+            ? arr.find(function(x){ return x.id === editId; })
+            : arr[arr.length - 1];
+        if (tgt) {
+            tgt.routine   = rt;
+            tgt.habitType = htFinal;
+            if (htFinal !== 'check') {
+                tgt.qtyTarget = qtyTarget;
+                tgt.qtyUnit   = qtyUnit;
+            } else {
+                delete tgt.qtyTarget;
+                delete tgt.qtyUnit;
+            }
+            localStorage.setItem('jch_habits_v1', JSON.stringify(arr));
+        }
+    } catch(e) { console.warn('[FIX] habitType patch error:', e); }
+
+    // Liberar bloqueo y renderizar UNA VEZ con habitType ya correcto
+    window._habSaveRendering = false;
+    setTimeout(function(){ window.renderHabToday(); }, 0);
+};
+
+// ── FIX 3: boss HP numérico en UI al completar cantidad ──────
+// Parchear _habInstantUIUpdate para que también actualice
+// el span/div con el número de HP del boss.
+var _origInstantUI = window._habInstantUIUpdate;
+window._habInstantUIUpdate = function(h) {
+    if (typeof _origInstantUI === 'function') _origInstantUI(h);
+    // Actualizar número de HP del boss en todos los elementos posibles
+    try {
+        var heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
+        var bossHp  = Math.max(0, Math.round(heroRaw.bossHp || 0));
+        var bossIdx = heroRaw.bossIndex || 0;
+        var BOSSES  = window._HAB_BOSSES || window.BOSSES || [];
+        var boss    = BOSSES[Math.min(bossIdx, BOSSES.length-1)];
+        var maxHp   = boss ? boss.maxHp : 100;
+        var pct     = Math.max(0, Math.min(100, Math.round((bossHp/maxHp)*100)));
+
+        // Actualizar todos los posibles elementos de HP del boss
+        ['habBossHp','habBossHP','habBossHpNum','habBossHpVal',
+         'habBossHpText','habBossHpLabel','bossHpNum'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = bossHp + ' / ' + maxHp + ' HP · ' + pct + '%';
+        });
+        // Actualizar la barra de HP del boss
+        ['habBossBar','habBossHpBar','habBossProgressBar'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.style.width = pct + '%';
+        });
+        // Buscar por texto que contenga el patrón "NNN / NNN HP"
+        document.querySelectorAll('[id*="boss"],[id*="Boss"],[class*="boss-hp"],[class*="boss_hp"]')
+            .forEach(function(el) {
+                if (el.textContent && /\d+\s*\/\s*\d+\s*(HP)?/.test(el.textContent)) {
+                    if (!el.children.length) {
+                        el.textContent = bossHp + ' / ' + maxHp + ' HP · ' + pct + '%';
+                    }
+                }
+            });
+    } catch(e) {}
+};
+
+// ── FIX 4: parpadeo del modal de detalle ─────────────────────
+// openHabDetail puede causar reflow al cambiar innerHTML + classList.
+// Usar requestAnimationFrame para separar el pintado del show.
+var _origOpenHabDetail = window.openHabDetail;
+window.openHabDetail = function(id) {
+    var ov = document.getElementById('habDetailOverlay');
+    if (ov) ov.classList.remove('open'); // asegurar estado limpio
+    if (typeof _origOpenHabDetail === 'function') {
+        // Llenar contenido SIN mostrar el overlay todavía
+        window._habDetailOpenBlocked = true;
+        _origOpenHabDetail(id);
+        window._habDetailOpenBlocked = false;
+        // Mostrar en el siguiente frame para evitar reflow/parpadeo
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                if (ov) ov.classList.add('open');
+            });
+        });
+    }
+};
+
+// Parchear classList.add dentro de openHabDetail para respetar el bloqueo
+var _origOverlayAdd = null;
+var _ov = document.getElementById('habDetailOverlay');
+if (_ov) {
+    var _origClassAdd = _ov.classList.add.bind(_ov.classList);
+    _ov.classList.add = function(cls) {
+        if (cls === 'open' && window._habDetailOpenBlocked) return;
+        _origClassAdd(cls);
+    };
+}
+
+})();
+</script>
+
 </html>
