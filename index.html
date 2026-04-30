@@ -18930,35 +18930,31 @@ window.selectHabHType = function(el) {
 };
 
 // ── Extender saveHabit para guardar routine y habitType ───────
-// CAUSA RAIZ: saveHabits() original (línea ~15418) NO acepta parámetros,
-// opera sobre la variable global 'habits'. Llamar saveHabits(array) ignora
-// el argumento y guarda el global sin habitType. Solución: usar
-// localStorage.setItem directamente para el parche, bypasseando el global.
+// Escribe habitType directo en localStorage (saveHabits() original
+// no acepta parámetros, opera sobre variable global 'habits').
+// Bloquea cualquier renderHabToday durante el proceso con el flag
+// _habSaveRendering, que switchHabTab (línea 16460) ya respeta.
 const _HABITS_PATCH_KEY = 'jch_habits_v1';
 const _origSaveHabit = window.saveHabit;
 window.saveHabit = function() {
     // 1. Capturar valores del form ANTES de que _origSaveHabit lo resetee
-    const rt       = _selectedRoutine || 'morning';
-    const editId   = document.getElementById('habEditId')?.value || '';
-
-    // 2. Leer habitType desde el botón activo en el DOM (fuente más confiable)
-    var htFinal = 'check';
+    const rt      = _selectedRoutine || 'morning';
+    const editId  = document.getElementById('habEditId')?.value || '';
+    var htFinal   = 'check';
     var activeBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
     if (activeBtn && activeBtn.dataset.ht) htFinal = activeBtn.dataset.ht;
     else if (_selectedHType) htFinal = _selectedHType;
-
     const qtyTarget = parseInt(document.getElementById('habQtyTarget')?.value || '1');
     const qtyUnit   = (document.getElementById('habQtyUnit')?.value || '').trim()
                       || (htFinal === 'timer' ? 'min' : '');
 
-    // 3. Inhibir el render interno de _origSaveHabit para que no pinte
-    //    la tarjeta antes de que habitType quede guardado
+    // 2. Bloquear renders mientras guardamos
     window._habSaveRendering = true;
 
+    // 3. Llamar original (guarda sin habitType, sus renders internos quedan bloqueados)
     _origSaveHabit && _origSaveHabit();
 
-    // 4. Parchear directamente en localStorage (bypaseando la variable
-    //    global 'habits' que saveHabits() original usa sin parámetros)
+    // 4. Parchear habitType directamente en localStorage
     try {
         const arr = JSON.parse(localStorage.getItem(_HABITS_PATCH_KEY) || '[]');
         const tgt = editId
@@ -18967,21 +18963,16 @@ window.saveHabit = function() {
         if (tgt) {
             tgt.routine   = rt;
             tgt.habitType = htFinal;
-            if (htFinal !== 'check') {
-                tgt.qtyTarget = qtyTarget;
-                tgt.qtyUnit   = qtyUnit;
-            } else {
-                delete tgt.qtyTarget;
-                delete tgt.qtyUnit;
-            }
+            if (htFinal !== 'check') { tgt.qtyTarget = qtyTarget; tgt.qtyUnit = qtyUnit; }
+            else { delete tgt.qtyTarget; delete tgt.qtyUnit; }
             localStorage.setItem(_HABITS_PATCH_KEY, JSON.stringify(arr));
         }
     } catch(e) { console.warn('habitType patch error:', e); }
 
-    // 5. Liberar bandera y renderizar UNA sola vez con habitType ya correcto
+    // 5. Liberar flag y disparar UN solo render con habitType ya correcto
     window._habSaveRendering = false;
     setTimeout(function() {
-        (window.renderHabToday || renderHabToday)();
+        if (typeof window.renderHabToday === 'function') window.renderHabToday();
     }, 0);
 };
 
@@ -20575,142 +20566,53 @@ window.closeHabDetail = function() {
 })();
 </script>
 
+
+
+
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  FIX FINAL — Carga inmediata de hábito al crear + UI boss HP
+//  FIX FINAL LIMPIO — boss HP texto + modal sin parpadeo
 // ═══════════════════════════════════════════════════════════════
 (function(){
 
-// ── FIX 1: Blindar renderHabToday contra _habSaveRendering ──
-// Se ejecuta AL FINAL de todos los scripts, por lo que envuelve
-// la versión final real de renderHabToday sin importar cuántos
-// overrides hubo antes.
-var _realRenderHabToday = window.renderHabToday;
-window.renderHabToday = function() {
-    if (window._habSaveRendering) return;
-    if (typeof _realRenderHabToday === 'function') _realRenderHabToday();
-};
-
-// ── FIX 2: saveHabit — parche ANTES del render ───────────────
-// Reemplaza el override anterior con una versión que garantiza
-// que habitType está en localStorage ANTES de que cualquier
-// renderHabToday se dispare.
-var _lastOrigSaveHabit = window.saveHabit;
-window.saveHabit = function() {
-    // Capturar form ANTES de que _orig lo limpie
-    var editId = (document.getElementById('habEditId')||{}).value || '';
-    var htFinal = 'check';
-    var activeBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
-    if (activeBtn && activeBtn.dataset.ht) htFinal = activeBtn.dataset.ht;
-    else if (window._selectedHType) htFinal = window._selectedHType;
-
-    var qtyTarget = parseInt((document.getElementById('habQtyTarget')||{}).value || '1');
-    var qtyUnit   = ((document.getElementById('habQtyUnit')||{}).value || '').trim()
-                    || (htFinal === 'timer' ? 'min' : '');
-    var rt = window._selectedRoutine || 'morning';
-
-    // Bloquear TODO render mientras parcheamos
-    window._habSaveRendering = true;
-
-    // Llamar saveHabit original (guarda sin habitType, puede llamar render — bloqueado)
-    if (typeof _lastOrigSaveHabit === 'function') _lastOrigSaveHabit();
-
-    // Parchear en localStorage directamente (la variable global 'habits'
-    // del scope original no acepta parámetros en saveHabits())
-    try {
-        var arr = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
-        var tgt = editId
-            ? arr.find(function(x){ return x.id === editId; })
-            : arr[arr.length - 1];
-        if (tgt) {
-            tgt.routine   = rt;
-            tgt.habitType = htFinal;
-            if (htFinal !== 'check') {
-                tgt.qtyTarget = qtyTarget;
-                tgt.qtyUnit   = qtyUnit;
-            } else {
-                delete tgt.qtyTarget;
-                delete tgt.qtyUnit;
-            }
-            localStorage.setItem('jch_habits_v1', JSON.stringify(arr));
-        }
-    } catch(e) { console.warn('[FIX] habitType patch error:', e); }
-
-    // Liberar bloqueo y renderizar UNA VEZ con habitType ya correcto
-    window._habSaveRendering = false;
-    setTimeout(function(){ window.renderHabToday(); }, 0);
-};
-
-// ── FIX 3: boss HP numérico en UI al completar cantidad ──────
-// Parchear _habInstantUIUpdate para que también actualice
-// el span/div con el número de HP del boss.
-var _origInstantUI = window._habInstantUIUpdate;
+// FIX boss HP: _habInstantUIUpdate busca '.hab-boss-hp-text' pero
+// el panel 3D usa '.hab-boss-3d-hp-text'. Parchear para cubrir ambas.
+// Referenciamos la función por nombre para no crear loops.
+var _origInstantUI2 = window._habInstantUIUpdate;
 window._habInstantUIUpdate = function(h) {
-    if (typeof _origInstantUI === 'function') _origInstantUI(h);
-    // Actualizar número de HP del boss en todos los elementos posibles
+    if (typeof _origInstantUI2 === 'function') _origInstantUI2(h);
     try {
         var heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
-        var bossHp  = Math.max(0, Math.round(heroRaw.bossHp || 0));
-        var bossIdx = heroRaw.bossIndex || 0;
-        var BOSSES  = window._HAB_BOSSES || window.BOSSES || [];
-        var boss    = BOSSES[Math.min(bossIdx, BOSSES.length-1)];
-        var maxHp   = boss ? boss.maxHp : 100;
-        var pct     = Math.max(0, Math.min(100, Math.round((bossHp/maxHp)*100)));
-
-        // Actualizar todos los posibles elementos de HP del boss
-        ['habBossHp','habBossHP','habBossHpNum','habBossHpVal',
-         'habBossHpText','habBossHpLabel','bossHpNum'].forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) el.textContent = bossHp + ' / ' + maxHp + ' HP · ' + pct + '%';
+        var BOSSES  = window._HAB_BOSSES || [];
+        if (!BOSSES.length) return;
+        var boss    = BOSSES[Math.min(heroRaw.bossIndex||0, BOSSES.length-1)];
+        var bossHp  = Math.max(0, Math.round(heroRaw.bossHp ?? boss.maxHp));
+        var pct     = Math.max(0, Math.min(100, Math.round((bossHp/boss.maxHp)*100)));
+        // Actualizar texto HP en ambas clases (original y panel 3D)
+        document.querySelectorAll('.hab-boss-hp-text, .hab-boss-3d-hp-text').forEach(function(el) {
+            el.textContent = bossHp + ' / ' + boss.maxHp + ' HP · ' + pct + '%';
         });
-        // Actualizar la barra de HP del boss
-        ['habBossBar','habBossHpBar','habBossProgressBar'].forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) el.style.width = pct + '%';
+        // Actualizar barras en ambas clases
+        document.querySelectorAll('.hab-boss-hp-fill, .hab-boss-3d-hp-fill').forEach(function(el) {
+            el.style.width = pct + '%';
         });
-        // Buscar por texto que contenga el patrón "NNN / NNN HP"
-        document.querySelectorAll('[id*="boss"],[id*="Boss"],[class*="boss-hp"],[class*="boss_hp"]')
-            .forEach(function(el) {
-                if (el.textContent && /\d+\s*\/\s*\d+\s*(HP)?/.test(el.textContent)) {
-                    if (!el.children.length) {
-                        el.textContent = bossHp + ' / ' + maxHp + ' HP · ' + pct + '%';
-                    }
-                }
-            });
     } catch(e) {}
 };
 
-// ── FIX 4: parpadeo del modal de detalle ─────────────────────
-// openHabDetail puede causar reflow al cambiar innerHTML + classList.
-// Usar requestAnimationFrame para separar el pintado del show.
-var _origOpenHabDetail = window.openHabDetail;
+// FIX modal sin parpadeo: separar pintado de innerHTML del classList.add('open')
+// usando requestAnimationFrame — sin parchear classList (causaba bugs)
+var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
-    if (ov) ov.classList.remove('open'); // asegurar estado limpio
-    if (typeof _origOpenHabDetail === 'function') {
-        // Llenar contenido SIN mostrar el overlay todavía
-        window._habDetailOpenBlocked = true;
-        _origOpenHabDetail(id);
-        window._habDetailOpenBlocked = false;
-        // Mostrar en el siguiente frame para evitar reflow/parpadeo
-        requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-                if (ov) ov.classList.add('open');
-            });
-        });
-    }
+    // 1. Ocultar overlay antes de rellenar contenido
+    if (ov) ov.classList.remove('open');
+    // 2. Llamar original que rellena innerHTML (overlay oculto = sin parpadeo)
+    if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
+    // 3. Mostrar en el siguiente frame de pintura
+    if (ov) requestAnimationFrame(function() {
+        requestAnimationFrame(function() { ov.classList.add('open'); });
+    });
 };
-
-// Parchear classList.add dentro de openHabDetail para respetar el bloqueo
-var _origOverlayAdd = null;
-var _ov = document.getElementById('habDetailOverlay');
-if (_ov) {
-    var _origClassAdd = _ov.classList.add.bind(_ov.classList);
-    _ov.classList.add = function(cls) {
-        if (cls === 'open' && window._habDetailOpenBlocked) return;
-        _origClassAdd(cls);
-    };
-}
 
 })();
 </script>
