@@ -15376,6 +15376,8 @@ const BOSSES = [
     { name:'Demonio Ancestral',  emoji:'😈', maxHp:800,  reward:'💎 Gema del Campeón',     xpReward:400 },
     { name:'Dios de la Sombra',  emoji:'🌑', maxHp:1200, reward:'🌟 Estrella Legendaria',  xpReward:700 },
 ];
+// Exponer BOSSES globalmente para que todos los módulos puedan accederlo
+window._HAB_BOSSES = BOSSES;
 
 const ACHIEVEMENTS = [
     { id:'first',    name:'Primer Paso',       desc:'Completa tu primer hábito',            icon:'👣', cond: h => h.totalDone >= 1 },
@@ -16237,7 +16239,8 @@ window.saveHabit = function() {
     // Ir a tab hoy
     const todayTab=document.querySelector('.hab-tab');
     if(todayTab) switchHabTab('hoy',todayTab);
-    (window.renderHabToday||renderHabToday)(); renderHabStats(); renderHabHero();
+    if (!window._habSaveRendering) { (window.renderHabToday||renderHabToday)(); }
+    renderHabStats(); renderHabHero();
 };
 
 // ── Recordatorio via SW ───────────────────────────────────────
@@ -18593,28 +18596,76 @@ function setQtyValue(habitId, val) {
 }
 
 window.incrementQty = function(habitId, delta, targetVal) {
-    const cur     = getQtyValue(habitId);
-    const newVal  = Math.max(0, cur + delta);
+    const cur    = getQtyValue(habitId);
+    const newVal = Math.max(0, cur + delta);
     setQtyValue(habitId, newVal);
 
-    // Si alcanzó la meta → marcar como completado
     const habits = loadHabits();
     const h = habits.find(x => x.id === habitId);
-    if (h && newVal >= (h.qtyTarget || targetVal || 1)) {
-        if (!(h.log||[]).includes(todayKey())) {
-            if (typeof habitPlus === 'function') habitPlus(habitId, null);
-            launchConfetti();
-        }
-    }
 
     // Actualizar display sin re-render completo
     const valEl  = document.getElementById('habQtyVal_'+habitId);
     const fillEl = document.getElementById('habQtyFill_'+habitId);
     if (valEl) valEl.textContent = newVal;
     if (fillEl && h) {
-        const pct = Math.min(100, Math.round((newVal / (h.qtyTarget||1)) * 100));
+        const pct = Math.min(100, Math.round((newVal / (h.qtyTarget||targetVal||1)) * 100));
         fillEl.style.width = pct + '%';
         fillEl.style.background = pct >= 100 ? '#22c55e' : h.color || '#6366f1';
+    }
+
+    // Si alcanzó la meta y aún no estaba completado → XP + boss + confeti
+    if (h && newVal >= (h.qtyTarget || targetVal || 1)) {
+        const today = new Date().toISOString().split('T')[0];
+        if (!(h.log||[]).includes(today)) {
+            // Marcar como completado en log
+            h.log = h.log || [];
+            h.log.push(today);
+            localStorage.setItem('jch_habits_v1', JSON.stringify(habits));
+
+            // XP al héroe
+            try {
+                const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+                const xpGain  = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
+                const coinGain= Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
+                heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+                heroRaw.coins = (heroRaw.coins||0) + coinGain;
+                // Daño al boss
+                var BOSSES_REF2 = window._HAB_BOSSES || [];
+                if (BOSSES_REF2.length) {
+                    var bossIdx2 = Math.min(heroRaw.bossIndex||0, BOSSES_REF2.length-1);
+                    var dmg2 = Math.max(1, Math.round((h.xp||10)/5));
+                    heroRaw.bossHp = Math.max(0, (heroRaw.bossHp ?? BOSSES_REF2[bossIdx2].maxHp) - dmg2);
+                    if (heroRaw.bossHp <= 0) {
+                        heroRaw.bossIndex = Math.min((heroRaw.bossIndex||0)+1, BOSSES_REF2.length-1);
+                        heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0)+1;
+                        heroRaw.bossHp = BOSSES_REF2[heroRaw.bossIndex]?.maxHp || 100;
+                    }
+                }
+                while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+                    heroRaw.xp -= heroRaw.xpNext;
+                    heroRaw.level = (heroRaw.level||1)+1;
+                    heroRaw.xpNext = Math.round(heroRaw.xpNext*1.5);
+                    if (typeof showLevelUp==='function') showLevelUp(heroRaw.level);
+                }
+                localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+            } catch(err) {}
+
+            // XP sistema global
+            if (typeof addGlobalReward==='function') addGlobalReward(h.xp||10, 1);
+            if (typeof playSparkleSound==='function') playSparkleSound();
+
+            // Marcar card visualmente
+            const cardEl = document.getElementById('habCard-'+habitId);
+            if (cardEl) cardEl.classList.add('completed-today');
+
+            // Actualizar UI al instante (XP bar, boss HP, monedas)
+            if (typeof _habInstantUIUpdate==='function') _habInstantUIUpdate(h);
+
+            if (typeof updateHabitBadge==='function') updateHabitBadge();
+            if (typeof renderHabStats==='function')   renderHabStats();
+            if (typeof renderHabHero==='function')    renderHabHero();
+            if (typeof launchConfetti==='function')   launchConfetti(50);
+        }
     }
 };
 
@@ -18858,63 +18909,53 @@ window.saveHabit = function() {
     const qtyUnit  = document.getElementById('habQtyUnit')?.value.trim() || (ht==='timer'?'min':'');
     const editId   = document.getElementById('habEditId')?.value || '';
 
-    // FIX DEFINITIVO: leer habitType desde el DOM también (por si _selectedHType
-    // no se actualizó correctamente por timing) y parchear ANTES del render.
-    // Buscar el botón activo en el selector de tipo de seguimiento.
+    // Leer habitType desde el botón activo del DOM (fuente más confiable)
     var htFromDOM = ht;
     var activeHTypeBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
     if (activeHTypeBtn && activeHTypeBtn.dataset.ht) {
         htFromDOM = activeHTypeBtn.dataset.ht;
     }
-    // Si el DOM dice algo distinto, usar el del DOM (más confiable)
-    const htFinal = (htFromDOM !== 'check') ? htFromDOM : ht;
+    const htFinal = htFromDOM || ht;
 
-    // Para edición: parchear ANTES de _origSaveHabit para que el render interno ya lo vea
-    if (htFinal !== 'check' && editId) {
-        const habsPrePatch = loadHabits();
-        const tgt = habsPrePatch.find(x => x.id === editId);
-        if (tgt) {
-            tgt.habitType = htFinal;
-            tgt.qtyTarget = qtyTarget;
-            tgt.qtyUnit   = qtyUnit;
-            saveHabits(habsPrePatch);
+    // Para edición: parchear habitType ANTES de _origSaveHabit
+    if (editId) {
+        const habsPre = loadHabits();
+        const tgtPre  = habsPre.find(x => x.id === editId);
+        if (tgtPre) {
+            tgtPre.routine   = rt;
+            tgtPre.habitType = htFinal;
+            tgtPre.qtyTarget = htFinal !== 'check' ? qtyTarget : undefined;
+            tgtPre.qtyUnit   = htFinal !== 'check' ? qtyUnit   : undefined;
+            saveHabits(habsPre);
         }
     }
+
+    // CLAVE: inhibir el render de _origSaveHabit línea 16240
+    // para que no muestre el hábito SIN habitType aún
+    window._habSaveRendering = true;
 
     _origSaveHabit && _origSaveHabit();
 
-    // Parchear routine en el hábito (nuevo = último, edición = por id)
-    const habits = loadHabits();
-    if (habits.length) {
-        const target = editId
-            ? habits.find(x => x.id === editId)
-            : habits[habits.length - 1];
-        if (target) {
-            target.routine = rt;
-            saveHabits(habits);
+    // Parchear el nuevo hábito (ultimo del array) con habitType+routine
+    const habsPost = loadHabits();
+    if (habsPost.length) {
+        const tgtPost = editId
+            ? habsPost.find(x => x.id === editId)
+            : habsPost[habsPost.length - 1];
+        if (tgtPost) {
+            tgtPost.routine   = rt;
+            tgtPost.habitType = htFinal;
+            tgtPost.qtyTarget = htFinal !== 'check' ? qtyTarget : undefined;
+            tgtPost.qtyUnit   = htFinal !== 'check' ? qtyUnit   : undefined;
+            saveHabits(habsPost);
         }
     }
 
-    // Parche final con htFinal (puede diferir de ht si el DOM tenía otro valor)
-    const habsFinal = loadHabits();
-    if (habsFinal.length) {
-        const tgtFinal = editId
-            ? habsFinal.find(x => x.id === editId)
-            : habsFinal[habsFinal.length - 1];
-        if (tgtFinal) {
-            tgtFinal.habitType = htFinal;
-            tgtFinal.qtyTarget = htFinal !== 'check' ? qtyTarget : undefined;
-            tgtFinal.qtyUnit   = htFinal !== 'check' ? qtyUnit   : undefined;
-            saveHabits(habsFinal);
-        }
-    }
-
-    // Re-render siempre después del parche para garantizar control correcto
-    if (htFinal !== 'check') {
-        setTimeout(function() {
-            (window.renderHabToday || renderHabToday)();
-        }, 0);
-    }
+    // Liberar bandera y renderizar UNA sola vez con habitType ya correcto
+    window._habSaveRendering = false;
+    setTimeout(function() {
+        (window.renderHabToday || renderHabToday)();
+    }, 0);
 };
 
 // ── Extender switchHabTab ─────────────────────────────────────
