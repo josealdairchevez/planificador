@@ -16013,13 +16013,36 @@ window.habRepInc = function(habitId, target) {
         if (!alreadyInLog) h.log.push(today);
         localStorage.setItem('jch_habits_v1', JSON.stringify(hList));
 
-        // XP al héroe
+        // XP + boss damage al héroe (misma lógica que toggleHabit)
         try {
-            const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-            const xpGain  = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
-            const coinGain= Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
-            heroRaw.xp    = (heroRaw.xp||0) + xpGain;
-            heroRaw.coins = (heroRaw.coins||0) + coinGain;
+            const heroRaw  = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+            const xpGain   = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
+            const coinGain = Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
+            heroRaw.xp     = (heroRaw.xp||0) + xpGain;
+            heroRaw.coins  = (heroRaw.coins||0) + coinGain;
+
+            // Daño al boss (igual que toggleHabit)
+            const BOSSES_Q = window._HAB_BOSSES || window.BOSSES || [];
+            const bossIdx  = heroRaw.bossIndex || 0;
+            const bossQ    = BOSSES_Q[Math.min(bossIdx, BOSSES_Q.length-1)];
+            if (bossQ) {
+                const dmg = Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4) * (heroRaw.class==='warrior'?1.3:1));
+                heroRaw.bossHp = Math.max(0, (heroRaw.bossHp ?? bossQ.maxHp) - dmg);
+                // Animación de daño en el panel del boss
+                const dmgEl = document.getElementById('habBossDmg');
+                if (dmgEl) { dmgEl.textContent = '-'+dmg; dmgEl.classList.add('show'); setTimeout(function(){ dmgEl.classList.remove('show'); }, 900); }
+                // Boss derrotado
+                if (heroRaw.bossHp <= 0) {
+                    heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0) + 1;
+                    heroRaw.xp += bossQ.xpReward || 0;
+                    heroRaw.inventory = heroRaw.inventory || [];
+                    heroRaw.inventory.push(bossQ.reward);
+                    heroRaw.bossIndex = Math.min(bossIdx+1, BOSSES_Q.length-1);
+                    heroRaw.bossHp = BOSSES_Q[heroRaw.bossIndex]?.maxHp || 100;
+                    if (typeof showBossDefeated === 'function') showBossDefeated(bossQ);
+                }
+            }
+
             // Level up
             while (heroRaw.xp >= (heroRaw.xpNext||100)) {
                 heroRaw.xp -= heroRaw.xpNext;
@@ -16028,7 +16051,7 @@ window.habRepInc = function(habitId, target) {
                 if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
             }
             localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
-        } catch(e) {}
+        } catch(e) { console.warn('habRepInc XP/boss error:', e); }
 
         // XP sistema global
         if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
@@ -16432,8 +16455,9 @@ window.switchHabTab = function(tab,el) {
     if(el) el.classList.add('active');
     const tc=document.getElementById('habTab-'+tab);
     if(tc) tc.classList.add('active');
-    // FIX: usar window.renderHabToday para garantizar que se llama el override con data-habid y event delegation
-    if(tab==='hoy')    (window.renderHabToday || renderHabToday)();
+    // FIX: respetar _habSaveRendering para no renderizar antes de que
+    // habitType quede guardado en localStorage (evita que aparezca check-btn en lugar de quantity/timer)
+    if(tab==='hoy' && !window._habSaveRendering) (window.renderHabToday || renderHabToday)();
     if(tab==='heroe')  renderHabHero();
     if(tab==='stats')  renderHabStats();
     if(tab==='logros') renderHabAchievements();
