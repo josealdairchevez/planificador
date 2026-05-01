@@ -6417,7 +6417,7 @@
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transition: opacity 0.18s ease, visibility 0.18s ease;
+            transition: opacity 0.14s ease, visibility 0.14s ease;
         }
         .hab-detail-overlay.open {
             opacity: 1;
@@ -6435,9 +6435,10 @@
             padding: 0 0 24px 0;
             box-shadow: 0 -20px 60px rgba(0,0,0,0.9);
             opacity: 1;
-            transform: translateY(100%);
+            /* Recorrido corto (30px) + duración rápida = sensación ágil y nativa */
+            transform: translateY(30px);
             will-change: transform;
-            transition: transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94);
+            transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1);
         }
         .hab-detail-overlay.open .hab-detail-modal {
             transform: translateY(0);
@@ -20594,26 +20595,23 @@ window._habInstantUIUpdate = function(h) {
     } catch(e) {}
 };
 
-// ── FIX 3: modal detalle SIN PARPADEO — solución definitiva móviles ──────────
+// ── FIX 3: modal detalle — ágil, sin parpadeo, sin lentitud ──────────────────
 var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
     if (!ov) return;
     var modal = document.getElementById('habDetailModal');
 
-    // 1. Ocultar overlay y resetear modal fuera de pantalla instantáneamente
+    // 1. Cerrar overlay instantáneamente
     ov.classList.remove('open');
 
     // 2. Inyectar contenido mientras está oculto
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
 
-    // 3. Forzar reflow del DOM para que el browser calcule el layout
-    //    del contenido recién inyectado ANTES de iniciar cualquier transición.
-    //    void offsetHeight es la técnica estándar para forzar layout sync.
+    // 3. Forzar reflow síncrono — el browser calcula layout antes de animar
     if (modal) void modal.offsetHeight;
 
-    // 4. Doble rAF: primer frame = layout calculado,
-    //    segundo frame = compositing listo → activar transición sin flash
+    // 4. Doble rAF — compositing listo antes de activar transición
     requestAnimationFrame(function() {
         requestAnimationFrame(function() {
             ov.classList.add('open');
