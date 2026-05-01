@@ -15797,27 +15797,7 @@ window.toggleHabit = function(id) {
 
     saveHabits(); saveHero();
     updateHabitBadge();
-
-    // Actualización quirúrgica del DOM sin re-renderizar la lista completa
-    var cardEl = document.getElementById('habCard-' + id);
-    var key2   = todayKey();
-    var isDoneNow = (h.log||[]).includes(key2);
-    if (cardEl) {
-        if (isDoneNow) cardEl.classList.add('completed-today');
-        else           cardEl.classList.remove('completed-today');
-        // Actualizar el check-btn visual
-        var cbtn = cardEl.querySelector('.hab-check-btn');
-        if (cbtn) {
-            cbtn.textContent = isDoneNow ? '✓' : '';
-            if (isDoneNow) cbtn.classList.add('done');
-            else           cbtn.classList.remove('done');
-        }
-    }
-    // Actualizar stats pills en la tarjeta
-    updateHabCardStats(h);
-    // Actualizar boss HP, XP header, etc.
-    _habInstantUIUpdate(h);
-
+    (window.renderHabToday||renderHabToday)();
     renderHabStats();
     renderHabHero();
     checkAndGrantAchievements();
@@ -15986,58 +15966,6 @@ function _habInstantUIUpdate(h) {
     } catch(e) {}
 }
 
-// ── Actualiza las pills de stats en el DOM sin re-renderizar ──
-function updateHabCardStats(h) {
-    try {
-        var card = document.getElementById('habCard-' + h.id);
-        if (!card) return;
-        var pills = card.querySelectorAll('.hab-stat-pill .hab-stat-val');
-        if (pills.length < 4) return;
-        var today = new Date().toISOString().split('T')[0];
-        // Recalcular streak
-        var streak = 0;
-        var log = (h.log||[]).slice().sort();
-        if (log.length) {
-            var d = new Date(); d.setHours(0,0,0,0);
-            var fmt = function(dt){ return dt.toISOString().split('T')[0]; };
-            if (log.includes(fmt(d))) {
-                streak = 1;
-                d.setDate(d.getDate()-1);
-                while (log.includes(fmt(d))){ streak++; d.setDate(d.getDate()-1); }
-            }
-        }
-        // Mejor racha
-        var best = 0, cur2 = 0;
-        var logSorted = (h.log||[]).slice().sort();
-        for (var i=0; i<logSorted.length; i++) {
-            if (i===0) { cur2=1; }
-            else {
-                var prev = new Date(logSorted[i-1]); prev.setDate(prev.getDate()+1);
-                var prevStr = prev.toISOString().split('T')[0];
-                cur2 = (prevStr === logSorted[i]) ? cur2+1 : 1;
-            }
-            if (cur2 > best) best = cur2;
-        }
-        // Tasa
-        var created = h.createdAt ? new Date(h.createdAt) : new Date();
-        var days = Math.max(1, Math.round((new Date()-created)/(1000*60*60*24))+1);
-        var rate = Math.min(100, Math.round(((h.log||[]).length/days)*100));
-        // Actualizar DOM
-        pills[0].textContent = streak;
-        pills[0].style.color = h.color || '#10b981';
-        pills[1].textContent = best;
-        pills[2].textContent = (h.log||[]).length;
-        pills[3].textContent = rate + '%';
-        // Actualizar también el weekbar dot de hoy
-        var dots = card.querySelectorAll('.hab-day-dot');
-        // El dot central (índice 3 de 7) representa hoy
-        if (dots.length === 7 && dots[3]) {
-            dots[3].classList.remove('today-dot');
-            dots[3].classList.add('done-dot');
-        }
-    } catch(e) {}
-}
-
 window.habRepInc = function(habitId, target) {
     const QTY_KEY = 'jch_qty_v1';
     const today   = new Date().toISOString().split('T')[0];
@@ -16134,9 +16062,6 @@ window.habRepInc = function(habitId, target) {
 
         // FIX: actualizar UI de XP, monedas y boss HP al instante
         _habInstantUIUpdate(h);
-
-        // FIX stats: actualizar pills RACHA/MEJOR/TOTAL/TASA directamente en DOM
-        updateHabCardStats(h);
 
         // Actualizar badge y stats sin tocar la lista
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
@@ -19008,10 +18933,10 @@ window.selectHabHType = function(el) {
 };
 
 // ── Extender saveHabit para guardar routine y habitType ───────
-// ESTRATEGIA DEFINITIVA: parchear localStorage ANTES de llamar
-// _origSaveHabit, para que cuando el render interno ocurra,
-// habitType ya esté guardado y buildHabControl muestre el control correcto.
-// NO se bloquea renderHabToday (causaba panel vacío).
+// Escribe habitType directo en localStorage (saveHabits() original
+// no acepta parámetros, opera sobre variable global 'habits').
+// Bloquea cualquier renderHabToday durante el proceso con el flag
+// _habSaveRendering, que switchHabTab (línea 16460) ya respeta.
 const _HABITS_PATCH_KEY = 'jch_habits_v1';
 const _origSaveHabit = window.saveHabit;
 window.saveHabit = function() {
@@ -19021,47 +18946,37 @@ window.saveHabit = function() {
     var htFinal   = 'check';
     var activeBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
     if (activeBtn && activeBtn.dataset.ht) htFinal = activeBtn.dataset.ht;
-    else if (window._selectedHType) htFinal = window._selectedHType;
+    else if (_selectedHType) htFinal = _selectedHType;
     const qtyTarget = parseInt(document.getElementById('habQtyTarget')?.value || '1');
     const qtyUnit   = (document.getElementById('habQtyUnit')?.value || '').trim()
                       || (htFinal === 'timer' ? 'min' : '');
 
-    // 2. Para EDICIÓN: parchear habitType ANTES del render (el id ya existe)
-    if (editId && htFinal !== 'check') {
-        try {
-            const arr = JSON.parse(localStorage.getItem(_HABITS_PATCH_KEY) || '[]');
-            const tgt = arr.find(function(x){ return x.id === editId; });
-            if (tgt) {
-                tgt.routine = rt; tgt.habitType = htFinal;
-                tgt.qtyTarget = qtyTarget; tgt.qtyUnit = qtyUnit;
-                localStorage.setItem(_HABITS_PATCH_KEY, JSON.stringify(arr));
-            }
-        } catch(e) {}
-    }
+    // 2. Bloquear renders mientras guardamos
+    window._habSaveRendering = true;
 
-    // 3. Llamar original — guarda el hábito y dispara el render
+    // 3. Llamar original (guarda sin habitType, sus renders internos quedan bloqueados)
     _origSaveHabit && _origSaveHabit();
 
-    // 4. Para NUEVO hábito: parchear DESPUÉS (el id se genera dentro de _origSaveHabit)
-    //    y forzar un segundo render limpio con habitType correcto
-    if (!editId) {
-        try {
-            const arr = JSON.parse(localStorage.getItem(_HABITS_PATCH_KEY) || '[]');
-            const tgt = arr[arr.length - 1]; // el último es el recién creado
-            if (tgt) {
-                tgt.routine = rt; tgt.habitType = htFinal;
-                if (htFinal !== 'check') { tgt.qtyTarget = qtyTarget; tgt.qtyUnit = qtyUnit; }
-                else { delete tgt.qtyTarget; delete tgt.qtyUnit; }
-                localStorage.setItem(_HABITS_PATCH_KEY, JSON.stringify(arr));
-            }
-        } catch(e) { console.warn('habitType patch error:', e); }
-        // Re-render limpio SOLO si el tipo no es check (para mostrar el control correcto)
-        if (htFinal !== 'check') {
-            setTimeout(function() {
-                if (typeof window.renderHabToday === 'function') window.renderHabToday();
-            }, 0);
+    // 4. Parchear habitType directamente en localStorage
+    try {
+        const arr = JSON.parse(localStorage.getItem(_HABITS_PATCH_KEY) || '[]');
+        const tgt = editId
+            ? arr.find(function(x){ return x.id === editId; })
+            : arr[arr.length - 1];
+        if (tgt) {
+            tgt.routine   = rt;
+            tgt.habitType = htFinal;
+            if (htFinal !== 'check') { tgt.qtyTarget = qtyTarget; tgt.qtyUnit = qtyUnit; }
+            else { delete tgt.qtyTarget; delete tgt.qtyUnit; }
+            localStorage.setItem(_HABITS_PATCH_KEY, JSON.stringify(arr));
         }
-    }
+    } catch(e) { console.warn('habitType patch error:', e); }
+
+    // 5. Liberar flag y disparar UN solo render con habitType ya correcto
+    window._habSaveRendering = false;
+    setTimeout(function() {
+        if (typeof window.renderHabToday === 'function') window.renderHabToday();
+    }, 0);
 };
 
 // ── Extender switchHabTab ─────────────────────────────────────
@@ -19077,11 +18992,6 @@ window.openHabitModal = function() {
     _origOpenHabit && _origOpenHabit();
     _selectedRoutine = 'morning';
     _selectedHType   = 'check';
-    // Forzar render del panel HOY con delay para garantizar
-    // que el DOM del modal es visible en móvil
-    setTimeout(function() {
-        if (typeof window.renderHabToday === 'function') window.renderHabToday();
-    }, 50);
     document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b =>
         b.classList.toggle('selected', b.dataset.rt==='morning'));
     document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b =>
@@ -20669,6 +20579,23 @@ window.closeHabDetail = function() {
 //  parchea las versiones finales reales de cada función.
 // ═══════════════════════════════════════════════════════════════
 (function(){
+
+// ── FIX 1: switchHabTab — respetar _habSaveRendering ─────────
+// Este patch se aplica AL FINAL, después de los 7 overrides de
+// switchHabTab, asegurando que la cadena completa respete el flag.
+var _finalOrigSwitch = window.switchHabTab;
+window.switchHabTab = function(tab, el) {
+    if (tab === 'hoy' && window._habSaveRendering) {
+        // Solo cambiar el tab visual, SIN disparar renderHabToday
+        document.querySelectorAll('.hab-tab').forEach(function(t){ t.classList.remove('active'); });
+        document.querySelectorAll('.hab-tab-content').forEach(function(t){ t.classList.remove('active'); });
+        if (el) el.classList.add('active');
+        var tc = document.getElementById('habTab-hoy');
+        if (tc) tc.classList.add('active');
+        return; // salir sin llamar a _finalOrigSwitch (que dispararía renderHabToday)
+    }
+    if (typeof _finalOrigSwitch === 'function') _finalOrigSwitch(tab, el);
+};
 
 // ── FIX 2: boss HP — actualizar ambas clases de texto y barra ─
 var _origInstantUI2 = window._habInstantUIUpdate;
