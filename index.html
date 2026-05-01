@@ -6408,21 +6408,23 @@
             display: flex;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.82);
+            background: rgba(0,0,0,0.80);
             z-index: 9999;
             align-items: flex-end;
             justify-content: center;
+            /* SIN backdrop-filter: es el principal causante de jank en móviles */
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transition: opacity 0.14s ease, visibility 0.14s ease;
+            transition: opacity 0.12s ease, visibility 0.12s ease;
         }
         .hab-detail-overlay.open {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
+            /* SIN backdrop-filter en .open tampoco — elimina recálculo de GPU */
         }
         .hab-detail-modal {
             background: linear-gradient(180deg, #0d0025, #0a0018 80%, #06000f);
@@ -6434,11 +6436,14 @@
             overflow-y: auto;
             padding: 0 0 24px 0;
             box-shadow: 0 -20px 60px rgba(0,0,0,0.9);
+            /* opacity siempre 1: el modal NUNCA es transparente */
             opacity: 1;
-            /* Recorrido corto (30px) + duración rápida = sensación ágil y nativa */
-            transform: translateY(30px);
+            /* translateY pequeño (20px) = recorrido corto, sensación instantánea */
+            transform: translateY(20px);
+            /* will-change avisa al GPU con anticipación — evita recálculo de layer */
             will-change: transform;
-            transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1);
+            /* 0.13s + curva que arranca rápido = abre en un flash, sin trabarse */
+            transition: transform 0.13s cubic-bezier(0.0, 0.0, 0.2, 1);
         }
         .hab-detail-overlay.open .hab-detail-modal {
             transform: translateY(0);
@@ -6453,8 +6458,8 @@
             padding: 20px 18px 14px 18px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             position: sticky; top: 0;
-            background: rgba(13,0,37,0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(13,0,37,0.98);
+            /* SIN backdrop-filter: causaba jank al animarse dentro del modal */
             border-radius: 24px 24px 0 0;
             z-index: 10;
         }
@@ -20595,23 +20600,26 @@ window._habInstantUIUpdate = function(h) {
     } catch(e) {}
 };
 
-// ── FIX 3: modal detalle — ágil, sin parpadeo, sin lentitud ──────────────────
+// ── FIX 3: modal detalle — fluido, sin jank, sin parpadeo ────────────────────
 var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
     if (!ov) return;
     var modal = document.getElementById('habDetailModal');
 
-    // 1. Cerrar overlay instantáneamente
+    // 1. Cerrar overlay instantáneamente (sin transición visible)
     ov.classList.remove('open');
 
     // 2. Inyectar contenido mientras está oculto
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
 
-    // 3. Forzar reflow síncrono — el browser calcula layout antes de animar
+    // 3. Forzar reflow síncrono: el browser calcula el layout del contenido
+    //    recién inyectado ANTES de iniciar la animación. Sin esto, el primer
+    //    frame de la transición puede causar un recálculo que traba la animación.
     if (modal) void modal.offsetHeight;
 
-    // 4. Doble rAF — compositing listo antes de activar transición
+    // 4. Doble rAF: garantiza que el compositing del GPU está listo
+    //    antes de activar la clase .open y su transición CSS
     requestAnimationFrame(function() {
         requestAnimationFrame(function() {
             ov.classList.add('open');
