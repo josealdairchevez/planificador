@@ -20598,7 +20598,7 @@ window._habInstantUIUpdate = function(h) {
     } catch(e) {}
 };
 
-// ── FIX 3: modal detalle sin parpadeo ────────────────────────
+// ── FIX 3: modal detalle sin parpadeo (doble rAF para móviles) ──────────────
 var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
@@ -20607,9 +20607,14 @@ window.openHabDetail = function(id) {
     ov.classList.remove('open');
     // 2. Rellenar el contenido con el overlay oculto (evita parpadeo)
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Mostrar en el siguiente frame — el CSS transition hace el slide-up suave
+    // 3. Doble requestAnimationFrame: el primer frame deja que el browser
+    //    calcule el layout del contenido recién inyectado; el segundo frame
+    //    confirma que el pintado está completo antes de activar la transición.
+    //    Esto elimina el parpadeo transparente en dispositivos móviles.
     requestAnimationFrame(function() {
-        ov.classList.add('open');
+        requestAnimationFrame(function() {
+            ov.classList.add('open');
+        });
     });
 };
 
