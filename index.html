@@ -5820,12 +5820,16 @@
             background:rgba(255,255,255,0.04);border-radius:10px;
             padding:6px 10px;margin-top:4px;
         }
-        .hab-qty-btn {\n            width:28px;height:28px;border-radius:8px;border:none;\n            display:flex;align-items:center;justify-content:center;\n            font-size:1rem;font-weight:900;cursor:pointer;flex-shrink:0;\n            transition:all 0.15s;\n        }
+        .hab-qty-btn {
+            width:28px;height:28px;border-radius:8px;border:none;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1rem;font-weight:900;cursor:pointer;flex-shrink:0;
+            transition:all 0.15s;
+        }
         .hab-qty-minus { background:rgba(239,68,68,0.15);color:#ef4444; }
         .hab-qty-minus:hover { background:rgba(239,68,68,0.3);transform:scale(1.1); }
         .hab-qty-plus  { background:rgba(16,185,129,0.15);color:#10b981; }
         .hab-qty-plus:hover { background:rgba(16,185,129,0.3);transform:scale(1.1); }
-        .hab-qty-plus.qty-plus-done { background:linear-gradient(135deg,var(--hab-card-color,#10b981),color-mix(in srgb,var(--hab-card-color,#10b981) 70%,#fff));color:#fff;box-shadow:0 0 10px color-mix(in srgb,var(--hab-card-color,#10b981) 50%,transparent); }
         .hab-qty-display {
             flex:1;text-align:center;font-size:0.88rem;font-weight:900;color:#fff;
         }
@@ -15881,8 +15885,8 @@ window.buildHabControl = function(h, done) {
             <div class="hab-rep-row">
                 <button class="hab-rep-btn" onclick="event.stopPropagation();habRepDec('${h.id}',${target})">−</button>
                 <div class="hab-rep-val" id="habRepVal_${h.id}" style="color:${isDone?'#22c55e':'#fff'}">${cur}</div>
-                <button class="hab-rep-btn ${isDone?'plus-done':''}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
-                    style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
+                <button class="hab-rep-btn ${isDone?'plus-done':''}" id="habRepPlus_${h.id}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
+                    style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};box-shadow:0 0 10px ${color}66;`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
             </div>
             <div class="hab-rep-target" id="habRepTarget_${h.id}">/${target} ${unit}</div>
             <div class="hab-rep-bar"><div class="hab-rep-bar-fill" id="habRepFill_${h.id}" style="width:${pct}%;background:${isDone?'#22c55e':color};"></div></div>
@@ -15988,19 +15992,15 @@ window.habRepInc = function(habitId, target) {
     // ── Actualizar DOM del control sin re-renderizar la tarjeta ──
     const valEl  = document.getElementById('habRepVal_'  + habitId);
     const fillEl = document.getElementById('habRepFill_' + habitId);
-    // Buscar el botón + por atributo data o por selector más robusto
-    const card   = document.getElementById('habCard-' + habitId);
-    const btnEl  = card ? card.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
+    // Selector directo por id — robusto en todos los dispositivos
+    const btnEl  = document.getElementById('habRepPlus_' + habitId);
 
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
-    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? color : color; }
     if (btnEl && isDone) {
         btnEl.textContent = '✓';
         btnEl.classList.add('plus-done');
-        // FIX: usar el color del hábito en el inline style
-        // (el CSS de .plus-done usa --hab-card-color pero el inline
-        //  style tiene mayor especificidad y lo sobreescribía con verde)
-        btnEl.style.background = 'linear-gradient(135deg,' + color + ',' + color + 'aa)';
+        btnEl.style.background  = 'linear-gradient(135deg,' + color + ',' + color + 'aa)';
         btnEl.style.borderColor = color;
         btnEl.style.boxShadow   = '0 0 10px ' + color + '66';
     }
@@ -16097,12 +16097,11 @@ window.habRepDec = function(habitId, target) {
 
     const valEl   = document.getElementById('habRepVal_'  + habitId);
     const fillEl  = document.getElementById('habRepFill_' + habitId);
-    const card2   = document.getElementById('habCard-' + habitId);
-    const btnEl   = card2 ? card2.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
+    const btnEl   = document.getElementById('habRepPlus_' + habitId);
 
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = '#fff'; }
     if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = color; }
-    if (btnEl)  { btnEl.textContent = '+'; btnEl.classList.remove('plus-done'); btnEl.style.background=''; btnEl.style.borderColor=''; }
+    if (btnEl)  { btnEl.textContent = '+'; btnEl.classList.remove('plus-done'); btnEl.style.background=''; btnEl.style.borderColor=''; btnEl.style.boxShadow=''; }
 };
 
 // ── SONIDO AL COMPLETAR TIMER ─────────────────────────────────
@@ -18655,25 +18654,7 @@ window.incrementQty = function(habitId, delta, targetVal) {
     if (fillEl && h) {
         const pct = Math.min(100, Math.round((newVal / (h.qtyTarget||targetVal||1)) * 100));
         fillEl.style.width = pct + '%';
-        fillEl.style.background = pct >= 100 ? (h.color || '#10b981') : h.color || '#6366f1';
-        // Actualizar botón + con el color del hábito al completarse
-        const card = document.getElementById('habCard-'+habitId);
-        const plusBtn = card ? card.querySelector('.hab-qty-plus') : null;
-        if (plusBtn) {
-            if (pct >= 100) {
-                plusBtn.textContent = '✓';
-                plusBtn.classList.add('qty-plus-done');
-                plusBtn.style.background = 'linear-gradient(135deg,'+(h.color||'#10b981')+','+(h.color||'#10b981')+'aa)';
-                plusBtn.style.boxShadow = '0 0 10px '+(h.color||'#10b981')+'66';
-                plusBtn.style.color = '#fff';
-            } else {
-                plusBtn.textContent = '+';
-                plusBtn.classList.remove('qty-plus-done');
-                plusBtn.style.background = '';
-                plusBtn.style.boxShadow = '';
-                plusBtn.style.color = '';
-            }
-        }
+        fillEl.style.background = pct >= 100 ? '#22c55e' : h.color || '#6366f1';
     }
 
     // Si alcanzó la meta y aún no estaba completado → XP + boss + confeti
@@ -18847,7 +18828,7 @@ function renderStrengthList() {
                     '<div class="hab-qty-display"><span id="habQtyVal_'+h.id+'">'+curQty+'</span>/'+target+'</div>' +
                     '<div class="hab-qty-unit">'+unit+'</div>' +
                   '</div>' +
-                  '<button class="hab-qty-btn hab-qty-plus'+(qtyPct>=100?' qty-plus-done':'')+'" onclick="incrementQty(\''+h.id+'\',1,'+target+')"+(qtyPct>=100?' style="background:linear-gradient(135deg,'+(h.color||'#10b981')+','+(h.color||'#10b981')+'aa);box-shadow:0 0 10px '+(h.color||'#10b981')+'66;color:#fff;"':'')+'>'+(qtyPct>=100?'✓':'+')+'</button>' +
+                  '<button class="hab-qty-btn hab-qty-plus" onclick="incrementQty(\''+h.id+'\',1,'+target+')">+</button>' +
                 '</div>' +
                 '<div class="hab-qty-progress">' +
                   '<div class="hab-qty-fill" id="habQtyFill_'+h.id+'" style="width:'+qtyPct+'%;background:'+(qtyPct>=100?'#22c55e':h.color||'#6366f1')+'"></div>' +
