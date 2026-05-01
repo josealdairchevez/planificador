@@ -16255,11 +16255,20 @@ window.saveHabit = function() {
     const editId=document.getElementById('habEditId').value;
     const reminderTime=document.getElementById('habReminderTime').value;
 
+    // Leer habitType y qtyTarget del formulario en el momento de guardar
+    var _htNow = 'check';
+    var _htBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
+    if (_htBtn && _htBtn.dataset.ht) _htNow = _htBtn.dataset.ht;
+    else if (window._selectedHType) _htNow = window._selectedHType;
+    var _qtyNow = parseInt((document.getElementById('habQtyTarget')||{}).value||'1');
+    var _unitNow = ((document.getElementById('habQtyUnit')||{}).value||'').trim() || (_htNow==='timer'?'min':'');
+    var _rtNow = window._selectedRoutine || 'morning';
+
     if(editId){
         const h=habits.find(x=>x.id===editId);
-        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime}); }
+        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined}); }
     } else {
-        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString()});
+        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined});
     }
     saveHabits();
 
@@ -18941,69 +18950,18 @@ window.selectHabHType = function(el) {
     else if (unitInput && _selectedHType === 'quantity') { unitInput.value = ''; unitInput.placeholder = 'vasos, págs, veces...'; }
 };
 
-// ── Extender saveHabit para guardar routine y habitType ───────
-// Escribe habitType directo en localStorage (saveHabits() original
-// no acepta parámetros, opera sobre variable global 'habits').
-// Bloquea cualquier renderHabToday durante el proceso con el flag
-// _habSaveRendering, que switchHabTab (línea 16460) ya respeta.
+// ── saveHabit: el original ya incluye habitType directamente ──
+// Este override solo asegura que _selectedHType y _selectedRoutine
+// estén disponibles en window antes de que el original los lea.
+// No necesita parchear ni bloquear nada.
 const _HABITS_PATCH_KEY = 'jch_habits_v1';
 const _origSaveHabit = window.saveHabit;
 window.saveHabit = function() {
-    // FIX DEFINITIVO: capturar habitType y guardarlo en localStorage
-    // ANTES de que _origSaveHabit lo guarde sin él — así el render
-    // interno ya ve el tipo correcto sin necesitar ningún bloqueo.
-
-    const editId    = (document.getElementById('habEditId') || {}).value || '';
-    const rt        = window._selectedRoutine || 'morning';
-    var htFinal     = 'check';
-    var activeBtn   = document.querySelector('.hab-htype-btn[data-ht].selected');
-    if (activeBtn && activeBtn.dataset.ht) htFinal = activeBtn.dataset.ht;
-    else if (window._selectedHType) htFinal = window._selectedHType;
-    const qtyTarget = parseInt((document.getElementById('habQtyTarget') || {}).value || '1');
-    const qtyUnit   = ((document.getElementById('habQtyUnit') || {}).value || '').trim()
-                      || (htFinal === 'timer' ? 'min' : '');
-
-    if (editId) {
-        // EDICIÓN: el id ya existe → parchear ANTES del render
-        try {
-            var arrE = JSON.parse(localStorage.getItem(_HABITS_PATCH_KEY) || '[]');
-            var tgtE = arrE.find(function(x) { return x.id === editId; });
-            if (tgtE) {
-                tgtE.routine = rt; tgtE.habitType = htFinal;
-                if (htFinal !== 'check') { tgtE.qtyTarget = qtyTarget; tgtE.qtyUnit = qtyUnit; }
-                else { delete tgtE.qtyTarget; delete tgtE.qtyUnit; }
-                localStorage.setItem(_HABITS_PATCH_KEY, JSON.stringify(arrE));
-            }
-        } catch(e) {}
-        // Llamar original — el render interno ya ve habitType correcto
-        _origSaveHabit && _origSaveHabit();
-    } else {
-        // NUEVO HÁBITO: el id se genera dentro de _origSaveHabit con Date.now().
-        // Registrar el timestamp justo antes para identificar el nuevo registro.
-        var tsAntes = Date.now();
-        _origSaveHabit && _origSaveHabit();
-        // Parchear el hábito recién creado (id = 'hab_' + timestamp >= tsAntes)
-        try {
-            var arrN = JSON.parse(localStorage.getItem(_HABITS_PATCH_KEY) || '[]');
-            // Buscar el último hábito creado en este instante
-            var tgtN = null;
-            for (var i = arrN.length - 1; i >= 0; i--) {
-                var idNum = parseInt((arrN[i].id || '').replace('hab_', ''));
-                if (idNum >= tsAntes) { tgtN = arrN[i]; break; }
-            }
-            if (!tgtN) tgtN = arrN[arrN.length - 1]; // fallback: el último
-            if (tgtN) {
-                tgtN.routine = rt; tgtN.habitType = htFinal;
-                if (htFinal !== 'check') { tgtN.qtyTarget = qtyTarget; tgtN.qtyUnit = qtyUnit; }
-                else { delete tgtN.qtyTarget; delete tgtN.qtyUnit; }
-                localStorage.setItem(_HABITS_PATCH_KEY, JSON.stringify(arrN));
-            }
-        } catch(e) { console.warn('[saveHabit] patch error:', e); }
-        // Re-render para mostrar el control correcto (después del parche)
-        setTimeout(function() {
-            if (typeof window.renderHabToday === 'function') window.renderHabToday();
-        }, 30);
-    }
+    // Exponer al scope global para que el saveHabit original los lea
+    window._selectedHType    = window._selectedHType    || 'check';
+    window._selectedRoutine  = window._selectedRoutine  || 'morning';
+    // Llamar el original — ya guarda habitType, qtyTarget, qtyUnit y routine
+    if (typeof _origSaveHabit === 'function') _origSaveHabit();
 };
 
 // ── Extender switchHabTab ─────────────────────────────────────
