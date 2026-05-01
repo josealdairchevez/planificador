@@ -16286,7 +16286,7 @@ window.saveHabit = function() {
     // Ir a tab hoy
     const todayTab=document.querySelector('.hab-tab');
     if(todayTab) switchHabTab('hoy',todayTab);
-    if (!window._habSaveRendering) { (window.renderHabToday||renderHabToday)(); }
+    (window.renderHabToday||renderHabToday)();
     renderHabStats(); renderHabHero();
 };
 
@@ -16476,9 +16476,7 @@ window.switchHabTab = function(tab,el) {
     if(el) el.classList.add('active');
     const tc=document.getElementById('habTab-'+tab);
     if(tc) tc.classList.add('active');
-    // FIX: respetar _habSaveRendering para no renderizar antes de que
-    // habitType quede guardado en localStorage (evita que aparezca check-btn en lugar de quantity/timer)
-    if(tab==='hoy' && !window._habSaveRendering) (window.renderHabToday || renderHabToday)();
+    if(tab==='hoy') (window.renderHabToday || renderHabToday)();
     if(tab==='heroe')  renderHabHero();
     if(tab==='stats')  renderHabStats();
     if(tab==='logros') renderHabAchievements();
@@ -18957,6 +18955,8 @@ window.selectHabHType = function(el) {
 const _HABITS_PATCH_KEY = 'jch_habits_v1';
 const _origSaveHabit = window.saveHabit;
 window.saveHabit = function() {
+    // Limpiar el flag por si quedó activo de versiones anteriores
+    window._habSaveRendering = false;
     // Exponer al scope global para que el saveHabit original los lea
     window._selectedHType    = window._selectedHType    || 'check';
     window._selectedRoutine  = window._selectedRoutine  || 'morning';
