@@ -15514,8 +15514,8 @@ function renderHabitCard(h, showEdit) {
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
                 ${(window.buildHabControl||buildHabControl)(h, done)}
-                ${showEdit?`<span style="font-size:0.7rem;cursor:pointer;" onclick="editHabit('${h.id}')">✏️</span>`:''}
-                <span style="font-size:0.7rem;cursor:pointer;" onclick="deleteHabit('${h.id}')">🗑️</span>
+                ${showEdit?`<span style="font-size:0.7rem;cursor:pointer;" onclick="event.stopPropagation();editHabit('${h.id}')">✏️</span>`:''}
+                <span style="font-size:0.7rem;cursor:pointer;" onclick="event.stopPropagation();deleteHabit('${h.id}')">🗑️</span>
             </div>
         </div>
         <div class="hab-week-bar">${weekBar}</div>
@@ -16626,8 +16626,8 @@ window.renderHabitCardHabitica = function(h, showEdit) {
                   (showPlus  ? `<button class="hab-btn-plus"  onclick="habitPlus('${h.id}',event)">+</button>`  : '') +
                   (showMinus ? `<button class="hab-btn-minus" onclick="habitMinus('${h.id}',event)">−</button>` : '')
                 }
-                ${showEdit  ? `<span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="editHabit('${h.id}')">✏️</span>` : ''}
-                <span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="deleteHabit('${h.id}')">🗑️</span>
+                ${showEdit  ? `<span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="event.stopPropagation();editHabit('${h.id}')">✏️</span>` : ''}
+                <span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="event.stopPropagation();deleteHabit('${h.id}')">🗑️</span>
             </div>
         </div>
         <div class="hab-week-bar">${weekBar}</div>
@@ -18855,7 +18855,7 @@ function renderStrengthList() {
               '</div>' +
               '<div style="display:flex;flex-direction:column;gap:6px;align-items:center;">' +
                 actionArea +
-                '<span style="font-size:0.6rem;cursor:pointer;color:#555;" onclick="deleteHabit(\''+h.id+'\')">🗑️</span>' +
+                '<span style="font-size:0.6rem;cursor:pointer;color:#555;" onclick="event.stopPropagation();deleteHabit(\''+h.id+'\')">🗑️</span>' +
               '</div>' +
             '</div>' +
             '<div class="hab-perf-bar perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'"></div>' +
@@ -20548,7 +20548,7 @@ window.openHabDetail = function(id) {
             '<button class="hab-detail-action-btn danger" onclick="if(confirm(\'¿Eliminar este hábito?\')){ deleteHabit(\'' + h.id + '\');closeHabDetail();}">🗑️ Delete</button>' +
         '</div>';
 
-    document.getElementById('habDetailOverlay').classList.add('open');
+    // El overlay lo abre el wrapper con requestAnimationFrame para evitar parpadeo
 };
 
 window.closeHabDetail = function() {
@@ -20602,10 +20602,14 @@ window._habInstantUIUpdate = function(h) {
 var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
-    if (ov) ov.classList.remove('open');
+    if (!ov) return;
+    // 1. Asegurar que el overlay está cerrado (sin transición visible)
+    ov.classList.remove('open');
+    // 2. Rellenar el contenido con el overlay oculto (evita parpadeo)
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    if (ov) requestAnimationFrame(function() {
-        requestAnimationFrame(function() { ov.classList.add('open'); });
+    // 3. Mostrar en el siguiente frame — el CSS transition hace el slide-up suave
+    requestAnimationFrame(function() {
+        ov.classList.add('open');
     });
 };
 
