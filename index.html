@@ -5024,7 +5024,7 @@
         .hab-boss-name { font-size:0.82rem;font-weight:900;color:#fca5a5; }
         .hab-boss-sub  { font-size:0.58rem;color:#888;margin-top:1px; }
         .hab-boss-hp-track { height:10px;border-radius:5px;background:rgba(255,255,255,0.07);overflow:hidden;margin-top:6px; }
-        .hab-boss-hp-fill  { height:100%;border-radius:5px;transition:width 0.8s ease;
+        .hab-boss-hp-fill  { height:100%;border-radius:5px;transition:width 0.35s cubic-bezier(0.4,0,0.2,1);
             background:linear-gradient(90deg,#7f1d1d,#ef4444,#fca5a5); }
         .hab-boss-hp-text  { font-size:0.58rem;color:#888;text-align:right;margin-top:2px; }
         .hab-boss-dmg-flash {
@@ -6287,7 +6287,7 @@
         .hab-boss-3d-hp-fill {
             height: 100%; border-radius: 6px;
             background: linear-gradient(90deg, #7f1d1d 0%, #dc2626 40%, #ef4444 70%, #fca5a5 100%);
-            transition: width 0.8s ease;
+            transition: width 0.35s cubic-bezier(0.4,0,0.2,1);
             box-shadow: 0 0 10px rgba(239,68,68,0.6), 0 0 20px rgba(239,68,68,0.3);
             position: relative;
         }
@@ -15890,29 +15890,81 @@ window.toggleHabit = function(id) {
 
 // ── ANIMACIÓN FLOTANTE DE RECOMPENSA ─────────────────────────
 window.showHabitReward = function(xp, coins, dmg, hpBonus, originEl) {
-    // Calcular posición de origen (centro de la tarjeta o botón tocado)
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight / 2;
-    if (originEl) {
-        const r = originEl.getBoundingClientRect();
-        x = r.left + r.width / 2;
-        y = r.top + r.height / 2;
-    }
+    // Construir lista de pastillas
+    var items = [];
+    if (xp > 0)      items.push({ cls:'xp-row',   icon:'⚡', text:'+'+xp+' XP' });
+    if (coins > 0)   items.push({ cls:'coin-row', icon:'🪙', text:'+'+coins+' Monedas' });
+    if (dmg > 0)     items.push({ cls:'dmg-row',  icon:'⚔️', text:'-'+dmg+' al Boss' });
+    if (hpBonus > 0) items.push({ cls:'hp-row',   icon:'❤️', text:'+'+hpBonus+' HP' });
+    if (!items.length) return;
 
-    const el = document.createElement('div');
-    el.className = 'hab-reward-float';
-    el.style.left = (x - 60) + 'px';
-    el.style.top  = y + 'px';
+    // Posición: centro de la pantalla, ajustada al tercio superior
+    var cx = window.innerWidth / 2;
+    var cy = window.innerHeight * 0.42;
 
-    const rows = [];
-    if (xp > 0)     rows.push(`<div class="hab-reward-row xp-row"><span class="hab-reward-icon">⚡</span>+${xp} XP</div>`);
-    if (coins > 0)  rows.push(`<div class="hab-reward-row coin-row"><span class="hab-reward-icon">🪙</span>+${coins} Monedas</div>`);
-    if (dmg > 0)    rows.push(`<div class="hab-reward-row dmg-row"><span class="hab-reward-icon">⚔️</span>-${dmg} HP Boss</div>`);
-    if (hpBonus > 0)rows.push(`<div class="hab-reward-row hp-row"><span class="hab-reward-icon">❤️</span>+${hpBonus} HP</div>`);
+    // Lanzar cada pastilla con un leve retraso escalonado
+    items.forEach(function(item, i) {
+        setTimeout(function() {
+            var pill = document.createElement('div');
+            pill.style.cssText = [
+                'position:fixed',
+                'left:' + (cx - 70) + 'px',
+                'top:' + cy + 'px',
+                'z-index:2147483647',
+                'pointer-events:none',
+                'display:flex',
+                'align-items:center',
+                'gap:6px',
+                'padding:5px 14px',
+                'border-radius:22px',
+                'font-size:0.85rem',
+                'font-weight:900',
+                'white-space:nowrap',
+                'color:#fff',
+                'opacity:0',
+                'transform:translateY(0px) scale(0.5)',
+                'transition:none',
+                'will-change:transform,opacity'
+            ].join(';');
 
-    el.innerHTML = rows.join('');
-    document.body.appendChild(el);
-    setTimeout(function() { el.remove(); }, 2400);
+            // Color por tipo
+            var bg = {
+                'xp-row':   'linear-gradient(135deg,#7c3aed,#a78bfa)',
+                'coin-row': 'linear-gradient(135deg,#d97706,#fbbf24)',
+                'dmg-row':  'linear-gradient(135deg,#dc2626,#f87171)',
+                'hp-row':   'linear-gradient(135deg,#059669,#34d399)'
+            }[item.cls] || 'rgba(30,30,60,0.9)';
+            var shadow = {
+                'xp-row':   '0 4px 20px rgba(124,58,237,0.7)',
+                'coin-row': '0 4px 20px rgba(217,119,6,0.6)',
+                'dmg-row':  '0 4px 20px rgba(220,38,38,0.6)',
+                'hp-row':   '0 4px 20px rgba(5,150,105,0.6)'
+            }[item.cls] || '';
+
+            pill.style.background = bg;
+            pill.style.boxShadow = shadow;
+            pill.innerHTML = '<span style="font-size:1rem;line-height:1">' + item.icon + '</span>' +
+                             '<span>' + item.text + '</span>';
+            document.body.appendChild(pill);
+
+            // Fase 1: aparece y sube
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    pill.style.transition = 'opacity 0.25s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+                    pill.style.opacity = '1';
+                    pill.style.transform = 'translateY(-' + (30 + i * 28) + 'px) scale(1)';
+
+                    // Fase 2: sigue subiendo y desaparece
+                    setTimeout(function() {
+                        pill.style.transition = 'opacity 0.5s ease, transform 0.8s ease';
+                        pill.style.opacity = '0';
+                        pill.style.transform = 'translateY(-' + (110 + i * 28) + 'px) scale(0.85)';
+                        setTimeout(function() { pill.remove(); }, 550);
+                    }, 900);
+                });
+            });
+        }, i * 90); // escalonado: 0ms, 90ms, 180ms, 270ms
+    });
 };
 
 function showBossDefeated(boss) {
