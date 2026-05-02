@@ -15886,7 +15886,7 @@ window.buildHabControl = function(h, done) {
                 <button class="hab-rep-btn" onclick="event.stopPropagation();habRepDec('${h.id}',${target})">−</button>
                 <div class="hab-rep-val" id="habRepVal_${h.id}" style="color:${isDone?'#22c55e':'#fff'}">${cur}</div>
                 <button class="hab-rep-btn ${isDone?'plus-done':''}" id="habRepPlus_${h.id}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
-                    style="${isDone?`border-color:${color};`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
+                    style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
             </div>
             <div class="hab-rep-target" id="habRepTarget_${h.id}">/${target} ${unit}</div>
             <div class="hab-rep-bar"><div class="hab-rep-bar-fill" id="habRepFill_${h.id}" style="width:${pct}%;background:${isDone?'#22c55e':color};"></div></div>
@@ -15989,26 +15989,26 @@ window.habRepInc = function(habitId, target) {
     const isDone = newVal >= tgt;
     const color  = h.color || '#10b981';
 
-    // ── Actualizar DOM del control ──
+    // ── Actualizar DOM del control sin re-renderizar la tarjeta ──
     const valEl  = document.getElementById('habRepVal_'  + habitId);
     const fillEl = document.getElementById('habRepFill_' + habitId);
-    if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
-    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? color : color; }
+    const card   = document.getElementById('habCard-' + habitId);
 
-    // Función para aplicar clase plus-done al botón.
-    // Solo clase — el CSS .hab-rep-btn.plus-done con !important maneja el color.
-    // Se llama dos veces: ahora y después de los re-renders que destruyen el DOM.
+    if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
+
+    // Solo agrega/quita clase — el CSS .plus-done con !important maneja el color
     var applyPlusClass = function() {
         var btn = document.getElementById('habRepPlus_' + habitId);
         if (!btn) return;
         if (isDone) {
             btn.classList.add('plus-done');
             btn.textContent = '✓';
-            // Forzar el color del hábito via CSS variable del ancestro
             btn.style.setProperty('--hab-card-color', color);
         } else {
             btn.classList.remove('plus-done');
             btn.textContent = '+';
+            btn.style.removeProperty('--hab-card-color');
         }
     };
     applyPlusClass();
@@ -16085,10 +16085,10 @@ window.habRepInc = function(habitId, target) {
         if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
     }
 
-    // Aplicar DESPUÉS de todos los re-renders (destruyen el DOM con innerHTML)
+    // Aplicar clase del botón DESPUÉS de todos los re-renders
+    // (renderHabStats/renderHabHero destruyen el DOM con innerHTML)
     requestAnimationFrame(function() {
         applyPlusClass();
-        // También tras el setTimeout interno de renderHabToday (50ms)
         setTimeout(function() { applyPlusClass(); }, 80);
     });
 };
@@ -16220,13 +16220,34 @@ window.startHabTimer = function(habitId, totalSec) {
                 hh.log.push(today);
                 localStorage.setItem('jch_habits_v1', JSON.stringify(hList2));
 
-                // XP al héroe
+                // XP al héroe + daño al boss
                 try {
                     const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
                     const xpGain  = Math.round((hh.xp||10) * (heroRaw.class==='mage'?1.25:1));
                     const coinGain= Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
                     heroRaw.xp    = (heroRaw.xp||0) + xpGain;
                     heroRaw.coins = (heroRaw.coins||0) + coinGain;
+
+                    // Daño al boss (igual que habRepInc)
+                    var BOSSES_T = window._HAB_BOSSES || window.BOSSES || [];
+                    var bossIdxT = heroRaw.bossIndex || 0;
+                    var bossT    = BOSSES_T[Math.min(bossIdxT, BOSSES_T.length-1)];
+                    if (bossT) {
+                        var dmgT = Math.round((hh.diff==='hard'?15:hh.diff==='medium'?8:4) * (heroRaw.class==='warrior'?1.3:1));
+                        heroRaw.bossHp = Math.max(0, (heroRaw.bossHp != null ? heroRaw.bossHp : bossT.maxHp) - dmgT);
+                        var dmgElT = document.getElementById('habBossDmg');
+                        if (dmgElT) { dmgElT.textContent = '-'+dmgT; dmgElT.classList.add('show'); setTimeout(function(){ dmgElT.classList.remove('show'); }, 900); }
+                        if (heroRaw.bossHp <= 0) {
+                            heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0) + 1;
+                            heroRaw.xp += bossT.xpReward || 0;
+                            heroRaw.inventory = heroRaw.inventory || [];
+                            heroRaw.inventory.push(bossT.reward);
+                            heroRaw.bossIndex = Math.min(bossIdxT+1, BOSSES_T.length-1);
+                            heroRaw.bossHp = (BOSSES_T[heroRaw.bossIndex] && BOSSES_T[heroRaw.bossIndex].maxHp) || 100;
+                            if (typeof showBossDefeated === 'function') showBossDefeated(bossT);
+                        }
+                    }
+
                     while (heroRaw.xp >= (heroRaw.xpNext||100)) {
                         heroRaw.xp -= heroRaw.xpNext;
                         heroRaw.level = (heroRaw.level||1) + 1;
