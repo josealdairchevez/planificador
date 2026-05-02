@@ -4708,7 +4708,7 @@
             transition:all 0.18s;line-height:1;padding:0;box-sizing:border-box;flex-shrink:0;
         }
         .hab-rep-btn:hover { border-color:#10b981;background:rgba(16,185,129,0.2); }
-        .hab-rep-btn.plus-done { border-color:var(--hab-card-color,#10b981);background:linear-gradient(135deg,var(--hab-card-color,#10b981),color-mix(in srgb,var(--hab-card-color,#10b981) 70%,#fff));box-shadow:0 0 10px color-mix(in srgb,var(--hab-card-color,#10b981) 50%,transparent); }
+        .hab-rep-btn.plus-done { border-color:var(--hab-card-color,#10b981) !important;background:linear-gradient(135deg,var(--hab-card-color,#10b981),var(--hab-card-color,#10b981)) !important;box-shadow:0 0 12px var(--hab-card-color,#10b981) !important;color:#fff !important;opacity:1 !important; }
         .hab-rep-val {
             font-size:0.78rem;font-weight:900;color:#fff;min-width:28px;text-align:center;line-height:1;
         }
@@ -15886,10 +15886,10 @@ window.buildHabControl = function(h, done) {
                 <button class="hab-rep-btn" onclick="event.stopPropagation();habRepDec('${h.id}',${target})">−</button>
                 <div class="hab-rep-val" id="habRepVal_${h.id}" style="color:${isDone?'#22c55e':'#fff'}">${cur}</div>
                 <button class="hab-rep-btn ${isDone?'plus-done':''}" id="habRepPlus_${h.id}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
-                    style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};box-shadow:0 0 10px ${color}66;color:#fff;`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
+                    style="${isDone?`border-color:${color};`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
             </div>
             <div class="hab-rep-target" id="habRepTarget_${h.id}">/${target} ${unit}</div>
-            <div class="hab-rep-bar"><div class="hab-rep-bar-fill" id="habRepFill_${h.id}" style="width:${pct}%;background:${isDone?color:color};"></div></div>
+            <div class="hab-rep-bar"><div class="hab-rep-bar-fill" id="habRepFill_${h.id}" style="width:${pct}%;background:${isDone?'#22c55e':color};"></div></div>
         </div>`;
     }
 
@@ -15993,30 +15993,25 @@ window.habRepInc = function(habitId, target) {
     const valEl  = document.getElementById('habRepVal_'  + habitId);
     const fillEl = document.getElementById('habRepFill_' + habitId);
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
-    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = color; }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? color : color; }
 
-    // Función reutilizable para aplicar el estilo del botón + tras cualquier re-render
-    var applyPlusStyle = function() {
+    // Función para aplicar clase plus-done al botón.
+    // Solo clase — el CSS .hab-rep-btn.plus-done con !important maneja el color.
+    // Se llama dos veces: ahora y después de los re-renders que destruyen el DOM.
+    var applyPlusClass = function() {
         var btn = document.getElementById('habRepPlus_' + habitId);
         if (!btn) return;
         if (isDone) {
-            btn.textContent = '✓';
             btn.classList.add('plus-done');
-            btn.style.background  = 'linear-gradient(135deg,' + color + ',' + color + 'aa)';
-            btn.style.borderColor = color;
-            btn.style.boxShadow   = '0 0 10px ' + color + '66';
-            btn.style.color       = '#fff';
+            btn.textContent = '✓';
+            // Forzar el color del hábito via CSS variable del ancestro
+            btn.style.setProperty('--hab-card-color', color);
         } else {
-            btn.textContent = '+';
             btn.classList.remove('plus-done');
-            btn.style.background  = '';
-            btn.style.borderColor = color + '44';
-            btn.style.boxShadow   = '';
-            btn.style.color       = '';
+            btn.textContent = '+';
         }
     };
-    // Aplicar inmediatamente (antes de re-renders)
-    applyPlusStyle();
+    applyPlusClass();
 
     // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
     // FIX: si el hábito es quantity/timer, ignorar si ya estaba en log
@@ -16090,13 +16085,11 @@ window.habRepInc = function(habitId, target) {
         if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
     }
 
-    // Aplicar estilo del botón DESPUÉS de todos los re-renders.
-    // renderHabToday/renderHabStats destruyen el DOM con innerHTML,
-    // por eso volvemos a aplicar en el siguiente frame pintado.
+    // Aplicar DESPUÉS de todos los re-renders (destruyen el DOM con innerHTML)
     requestAnimationFrame(function() {
-        applyPlusStyle();
-        // Segundo intento tras el setTimeout(50ms) interno de renderHabToday
-        setTimeout(function() { applyPlusStyle(); }, 80);
+        applyPlusClass();
+        // También tras el setTimeout interno de renderHabToday (50ms)
+        setTimeout(function() { applyPlusClass(); }, 80);
     });
 };
 
