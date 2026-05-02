@@ -15886,10 +15886,10 @@ window.buildHabControl = function(h, done) {
                 <button class="hab-rep-btn" onclick="event.stopPropagation();habRepDec('${h.id}',${target})">−</button>
                 <div class="hab-rep-val" id="habRepVal_${h.id}" style="color:${isDone?'#22c55e':'#fff'}">${cur}</div>
                 <button class="hab-rep-btn ${isDone?'plus-done':''}" id="habRepPlus_${h.id}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
-                    style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};box-shadow:0 0 10px ${color}66;`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
+                    style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};box-shadow:0 0 10px ${color}66;color:#fff;`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
             </div>
             <div class="hab-rep-target" id="habRepTarget_${h.id}">/${target} ${unit}</div>
-            <div class="hab-rep-bar"><div class="hab-rep-bar-fill" id="habRepFill_${h.id}" style="width:${pct}%;background:${isDone?'#22c55e':color};"></div></div>
+            <div class="hab-rep-bar"><div class="hab-rep-bar-fill" id="habRepFill_${h.id}" style="width:${pct}%;background:${isDone?color:color};"></div></div>
         </div>`;
     }
 
@@ -15989,16 +15989,34 @@ window.habRepInc = function(habitId, target) {
     const isDone = newVal >= tgt;
     const color  = h.color || '#10b981';
 
-    // ── Actualizar DOM del control sin re-renderizar la tarjeta ──
+    // ── Actualizar DOM del control ──
     const valEl  = document.getElementById('habRepVal_'  + habitId);
     const fillEl = document.getElementById('habRepFill_' + habitId);
-
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
-    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? color : color; }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = color; }
 
-    // NOTA: la actualización visual del botón + se hace AL FINAL de la función,
-    // después de todos los re-renders (renderHabStats, renderHabHero, etc.)
-    // para evitar que éstos sobreescriban el DOM con innerHTML y pierdan el estilo.
+    // Función reutilizable para aplicar el estilo del botón + tras cualquier re-render
+    var applyPlusStyle = function() {
+        var btn = document.getElementById('habRepPlus_' + habitId);
+        if (!btn) return;
+        if (isDone) {
+            btn.textContent = '✓';
+            btn.classList.add('plus-done');
+            btn.style.background  = 'linear-gradient(135deg,' + color + ',' + color + 'aa)';
+            btn.style.borderColor = color;
+            btn.style.boxShadow   = '0 0 10px ' + color + '66';
+            btn.style.color       = '#fff';
+        } else {
+            btn.textContent = '+';
+            btn.classList.remove('plus-done');
+            btn.style.background  = '';
+            btn.style.borderColor = color + '44';
+            btn.style.boxShadow   = '';
+            btn.style.color       = '';
+        }
+    };
+    // Aplicar inmediatamente (antes de re-renders)
+    applyPlusStyle();
 
     // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
     // FIX: si el hábito es quantity/timer, ignorar si ya estaba en log
@@ -16072,28 +16090,14 @@ window.habRepInc = function(habitId, target) {
         if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
     }
 
-    // ── Actualizar botón + AL FINAL — después de todos los re-renders ──
-    // renderHabStats/renderHabHero sobreescriben el DOM con innerHTML,
-    // por eso el update visual debe ir aquí, como última instrucción.
-    if (isDone) {
-        // Usar requestAnimationFrame para garantizar que el DOM ya fue pintado
-        requestAnimationFrame(function() {
-            var btnFinal = document.getElementById('habRepPlus_' + habitId);
-            if (btnFinal) {
-                btnFinal.textContent = '✓';
-                btnFinal.classList.add('plus-done');
-                btnFinal.style.background  = 'linear-gradient(135deg,' + color + ',' + color + 'aa)';
-                btnFinal.style.borderColor = color;
-                btnFinal.style.boxShadow   = '0 0 10px ' + color + '66';
-                btnFinal.style.color       = '#fff';
-            }
-            // También actualizar valEl y fillEl por si el re-render los pisó
-            var vEl = document.getElementById('habRepVal_' + habitId);
-            var fEl = document.getElementById('habRepFill_' + habitId);
-            if (vEl) { vEl.textContent = newVal; vEl.style.color = '#22c55e'; }
-            if (fEl) { fEl.style.width = pct + '%'; fEl.style.background = color; }
-        });
-    }
+    // Aplicar estilo del botón DESPUÉS de todos los re-renders.
+    // renderHabToday/renderHabStats destruyen el DOM con innerHTML,
+    // por eso volvemos a aplicar en el siguiente frame pintado.
+    requestAnimationFrame(function() {
+        applyPlusStyle();
+        // Segundo intento tras el setTimeout(50ms) interno de renderHabToday
+        setTimeout(function() { applyPlusStyle(); }, 80);
+    });
 };
 
 window.habRepDec = function(habitId, target) {
@@ -16115,11 +16119,12 @@ window.habRepDec = function(habitId, target) {
 
     const valEl   = document.getElementById('habRepVal_'  + habitId);
     const fillEl  = document.getElementById('habRepFill_' + habitId);
-    const btnEl   = document.getElementById('habRepPlus_' + habitId);
+    const card2   = document.getElementById('habCard-' + habitId);
+    const btnEl   = card2 ? card2.querySelector('.hab-rep-btn.plus-done, .hab-rep-btn:last-child') : null;
 
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = '#fff'; }
     if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = color; }
-    if (btnEl)  { btnEl.textContent = '+'; btnEl.classList.remove('plus-done'); btnEl.style.background=''; btnEl.style.borderColor=''; btnEl.style.boxShadow=''; btnEl.style.color=''; }
+    if (btnEl)  { btnEl.textContent = '+'; btnEl.classList.remove('plus-done'); btnEl.style.background=''; btnEl.style.borderColor=''; }
 };
 
 // ── SONIDO AL COMPLETAR TIMER ─────────────────────────────────
