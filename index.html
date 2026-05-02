@@ -15944,23 +15944,41 @@ function _habInstantUIUpdate(h) {
         var coinEl = document.getElementById('coinTotalText');
         if (xpEl)   xpEl.textContent   = heroRaw.xp   || 0;
         if (coinEl) coinEl.textContent  = heroRaw.coins || 0;
-        // Actualizar barra y texto de HP del boss en el panel HOY (mini)
+        // Actualizar barra y texto de HP del boss — TODOS los paneles (mini y 3D)
         var BOSSES_UI = window._HAB_BOSSES || [];
         if (BOSSES_UI.length) {
             var boss    = BOSSES_UI[Math.min(heroRaw.bossIndex||0, BOSSES_UI.length-1)];
-            var bossHp  = Math.max(0, heroRaw.bossHp || boss.maxHp);
-            var pct     = Math.round(bossHp / boss.maxHp * 100);
-            // Barra del panel heroe
-            var hpBar   = document.getElementById('habBossHpBar');
-            if (hpBar) hpBar.style.width = pct + '%';
-            // Texto HP — actualizar AMBAS clases (la original y la del panel 3D)
-            document.querySelectorAll('.hab-boss-hp-text, .hab-boss-3d-hp-text').forEach(function(el) {
-                el.textContent = Math.round(bossHp) + ' / ' + boss.maxHp + ' HP · ' + pct + '%';
-            });
-            // Barra — actualizar AMBAS clases
+            var bossHp  = Math.max(0, heroRaw.bossHp != null ? heroRaw.bossHp : boss.maxHp);
+            var pct     = Math.max(0, Math.min(100, Math.round(bossHp / boss.maxHp * 100)));
+            var hpText  = Math.round(bossHp) + ' / ' + boss.maxHp + ' HP · ' + pct + '%';
+            // Actualizar TODAS las barras y textos (panel mini + panel 3D)
             document.querySelectorAll('.hab-boss-hp-fill, .hab-boss-3d-hp-fill').forEach(function(el) {
                 el.style.width = pct + '%';
             });
+            document.querySelectorAll('.hab-boss-hp-text, .hab-boss-3d-hp-text').forEach(function(el) {
+                el.textContent = hpText;
+            });
+            // Shake en el panel 3D para feedback visual de daño
+            var panel3d = document.querySelector('.hab-boss-3d-panel');
+            if (panel3d) {
+                panel3d.classList.remove('shake');
+                void panel3d.offsetWidth; // forzar reflow para reiniciar animación
+                panel3d.classList.add('shake');
+            }
+            // Flash de daño en panel 3D (habBossDmgFloat) Y panel mini (habBossDmg)
+            if (h) {
+                var dmg = Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4));
+                ['habBossDmgFloat','habBossDmg'].forEach(function(elId) {
+                    var dmgEl = document.getElementById(elId);
+                    if (dmgEl) {
+                        dmgEl.textContent = '-' + dmg;
+                        dmgEl.classList.remove('show');
+                        void dmgEl.offsetWidth;
+                        dmgEl.classList.add('show');
+                        setTimeout(function(){ dmgEl.classList.remove('show'); }, 900);
+                    }
+                });
+            }
         }
         // Flash animación en las vault-cards (XP visual)
         document.querySelectorAll('.vault-card').forEach(function(v) {
@@ -15997,7 +16015,6 @@ window.habRepInc = function(habitId, target) {
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
     if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
 
-    // Solo agrega/quita clase — el CSS .plus-done con !important maneja el color
     var applyPlusClass = function() {
         var btn = document.getElementById('habRepPlus_' + habitId);
         if (!btn) return;
@@ -16085,8 +16102,6 @@ window.habRepInc = function(habitId, target) {
         if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
     }
 
-    // Aplicar clase del botón DESPUÉS de todos los re-renders
-    // (renderHabStats/renderHabHero destruyen el DOM con innerHTML)
     requestAnimationFrame(function() {
         applyPlusClass();
         setTimeout(function() { applyPlusClass(); }, 80);
@@ -16227,16 +16242,12 @@ window.startHabTimer = function(habitId, totalSec) {
                     const coinGain= Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
                     heroRaw.xp    = (heroRaw.xp||0) + xpGain;
                     heroRaw.coins = (heroRaw.coins||0) + coinGain;
-
-                    // Daño al boss (igual que habRepInc)
                     var BOSSES_T = window._HAB_BOSSES || window.BOSSES || [];
                     var bossIdxT = heroRaw.bossIndex || 0;
                     var bossT    = BOSSES_T[Math.min(bossIdxT, BOSSES_T.length-1)];
                     if (bossT) {
                         var dmgT = Math.round((hh.diff==='hard'?15:hh.diff==='medium'?8:4) * (heroRaw.class==='warrior'?1.3:1));
                         heroRaw.bossHp = Math.max(0, (heroRaw.bossHp != null ? heroRaw.bossHp : bossT.maxHp) - dmgT);
-                        var dmgElT = document.getElementById('habBossDmg');
-                        if (dmgElT) { dmgElT.textContent = '-'+dmgT; dmgElT.classList.add('show'); setTimeout(function(){ dmgElT.classList.remove('show'); }, 900); }
                         if (heroRaw.bossHp <= 0) {
                             heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0) + 1;
                             heroRaw.xp += bossT.xpReward || 0;
@@ -16247,7 +16258,6 @@ window.startHabTimer = function(habitId, totalSec) {
                             if (typeof showBossDefeated === 'function') showBossDefeated(bossT);
                         }
                     }
-
                     while (heroRaw.xp >= (heroRaw.xpNext||100)) {
                         heroRaw.xp -= heroRaw.xpNext;
                         heroRaw.level = (heroRaw.level||1) + 1;
