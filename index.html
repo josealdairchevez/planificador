@@ -15685,6 +15685,7 @@ function renderHabHero() {
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
             ${(hero.inventory||[]).length?hero.inventory.map(it=>`<span style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:4px 10px;font-size:0.68rem;color:#fbbf24;">${it}</span>`).join(''):'<span style="font-size:0.72rem;color:#444;">Sin objetos aún. ¡Derrota un boss!</span>'}
         </div>
+        <div style="margin-top:14px;" id="habAttrPanel"></div>
     `;
 }
 
@@ -15769,7 +15770,7 @@ window.toggleHabit = function(id) {
 
         // Daño al boss (depende de dificultad y clase)
         const dmg = (h.diff==='hard'?15:h.diff==='medium'?8:4) * (hero.class==='warrior'?1.3:1);
-        hero.bossHp = (hero.bossHp ?? BOSSES[hero.bossIndex||0].maxHp) - dmg;
+        hero.bossHp = Math.round(((hero.bossHp != null) ? hero.bossHp : boss.maxHp) - dmg);
 
         // HP del héroe: sanador no baja
         const hpBonus = hero.class==='healer' ? 3 : 0;
@@ -19134,49 +19135,117 @@ let _classFilter = 'warrior';
 
 // ── BASE DE DATOS DEL MERCADO ─────────────────────────────────
 const EQUIP_DB = {
-    warrior: [
-        {id:'w_sword1',name:'Espada Corta',   icon:'🗡️', cost:30,  type:'weapon', stat:'ATK+5'},
-        {id:'w_axe',   name:'Hacha de Hierro',icon:'🪓', cost:45,  type:'weapon', stat:'ATK+8'},
-        {id:'w_sword2',name:'Espada Larga',   icon:'⚔️', cost:90,  type:'weapon', stat:'ATK+15'},
-        {id:'w_armor1',name:'Armadura Bronce',icon:'🦺', cost:60,  type:'armor',  stat:'DEF+10'},
-        {id:'w_armor2',name:'Armadura Hierro',icon:'🛡️', cost:90,  type:'armor',  stat:'DEF+18'},
-        {id:'w_helm1', name:'Yelmo Bronce',   icon:'⛑️', cost:30,  type:'helm',   stat:'HP+10'},
-        {id:'w_helm2', name:'Yelmo de Acero', icon:'🪖', cost:65,  type:'helm',   stat:'HP+20'},
-        {id:'w_boots1',name:'Botas de Guerra',icon:'👢', cost:40,  type:'boots',  stat:'SPD+8'},
-        {id:'w_shield1',name:'Escudo Madera', icon:'🛡️', cost:25, type:'shield', stat:'DEF+6'},
-        {id:'w_shield2',name:'Escudo Acero',  icon:'🔰', cost:120, type:'shield', stat:'DEF+25'},
+    // ── WEAPONS ────────────────────────────────────────────────
+    weapon: [
+        // Tier 1 — básico (monedas bajas)
+        {id:'wp_stick',    name:'Palo',              img:'🪵', cost:12,  currency:'gold', type:'weapon', atk:2,  def:0,  desc:'Un simple palo. Algo es algo.'},
+        {id:'wp_dagger1',  name:'Daga de Piedra',    img:'🗡️', cost:12,  currency:'gold', type:'weapon', atk:3,  def:0,  desc:'Bordes afilados en pedernal.'},
+        {id:'wp_bow1',     name:'Arco Rústico',      img:'🏹', cost:36,  currency:'gold', type:'weapon', atk:5,  def:0,  desc:'Madera flexible y cuerda.'},
+        // Tier 2
+        {id:'wp_sword1',   name:'Espada Corta',      img:'🗡️', cost:36,  currency:'gold', type:'weapon', atk:6,  def:0,  desc:'Acero templado básico.'},
+        {id:'wp_knife1',   name:'Cuchillo de Caza',  img:'🔪', cost:84,  currency:'gold', type:'weapon', atk:9,  def:0,  desc:'Hoja curva, ligera y afilada.'},
+        {id:'wp_shield_s', name:'Escudo Pequeño',    img:'🛡️', cost:70,  currency:'gold', type:'weapon', atk:0,  def:10, desc:'Protección básica de madera.'},
+        // Tier 3
+        {id:'wp_staff1',   name:'Bastón de Madera',  img:'🪄', cost:225, currency:'gold', type:'weapon', atk:12, def:0,  desc:'Canal de energía arcana.'},
+        {id:'wp_sword2',   name:'Espada de Acero',   img:'⚔️', cost:120, currency:'gold', type:'weapon', atk:13, def:0,  desc:'Forja de alta calidad.'},
+        // Tier 4 — gemas
+        {id:'wp_dagger2',  name:'Daga Encantada',    img:'💎', cost:12,  currency:'gem',  type:'weapon', atk:14, def:0,  desc:'Brilla con magia rúnica.'},
+        {id:'wp_axe1',     name:'Hacha de Hierro',   img:'🪓', cost:204, currency:'gold', type:'weapon', atk:15, def:2,  desc:'Golpes poderosos y certeros.'},
+        {id:'wp_crossbow', name:'Ballesta',           img:'🏹', cost:360, currency:'gold', type:'weapon', atk:16, def:0,  desc:'Precisión letal a distancia.'},
+        {id:'wp_saber1',   name:'Sable Ágil',         img:'🗡️', cost:360, currency:'gold', type:'weapon', atk:17, def:0,  desc:'Velocidad antes que fuerza.'},
+        // Tier 5
+        {id:'wp_staff2',   name:'Bastón Arcano',      img:'🪄', cost:18,  currency:'gem',  type:'weapon', atk:18, def:0,  desc:'Dominio arcano avanzado.'},
+        {id:'wp_sword3',   name:'Espadón',            img:'⚔️', cost:360, currency:'gold', type:'weapon', atk:19, def:0,  desc:'Hoja ancha de dos manos.'},
+        {id:'wp_shield_m', name:'Escudo Redondo',     img:'🛡️', cost:150, currency:'gold', type:'weapon', atk:0,  def:15, desc:'Madera reforzada con metal.'},
+        {id:'wp_axe2',     name:'Hacha de Batalla',   img:'🪓', cost:204, currency:'gold', type:'weapon', atk:20, def:0,  desc:'Hacha doble de combate.'},
+        // Tier 6 — raras
+        {id:'wp_dagger3',  name:'Daga de Sombra',     img:'🗡️', cost:360, currency:'gold', type:'weapon', atk:21, def:0,  desc:'Se funde con la oscuridad.'},
+        {id:'wp_sword4',   name:'Espada Larga',        img:'⚔️', cost:360, currency:'gold', type:'weapon', atk:22, def:0,  desc:'Equilibrio perfecto de hoja.'},
+        {id:'wp_staff3',   name:'Cetro Lunar',         img:'🌙', cost:24,  currency:'gem',  type:'weapon', atk:23, def:0,  desc:'Energia lunar concentrada.'},
+        {id:'wp_axe3',     name:'Hacha de Doble Filo', img:'🪓', cost:360, currency:'gold', type:'weapon', atk:24, def:0,  desc:'Corte en ambas direcciones.'},
+        // Tier 7
+        {id:'wp_lance1',   name:'Lanza de Acero',     img:'🔱', cost:360, currency:'gold', type:'weapon', atk:25, def:0,  desc:'Alcance y penetración.'},
+        {id:'wp_sword5',   name:'Espada de Fuego',    img:'🔥', cost:360, currency:'gold', type:'weapon', atk:26, def:0,  desc:'La hoja arde eternamente.'},
+        {id:'wp_shield_l', name:'Escudo Vikingo',     img:'🛡️', cost:300, currency:'gold', type:'weapon', atk:0,  def:20, desc:'Madera y metal, épico.'},
+        {id:'wp_sword6',   name:'Espada Rúnica',      img:'⚔️', cost:360, currency:'gold', type:'weapon', atk:27, def:2,  desc:'Runas grabadas dan poder.'},
+        // Tier 8 — élite (gemas)
+        {id:'wp_axe4',     name:'Hacha Legendaria',   img:'🪓', cost:2000,currency:'gold', type:'weapon', atk:30, def:0,  desc:'Solo los más fuertes la alzan.'},
+        {id:'wp_scythe',   name:'Guadaña Oscura',     img:'⚔️', cost:2000,currency:'gold', type:'weapon', atk:32, def:0,  desc:'Siega el alma del enemigo.'},
+        {id:'wp_shield_g', name:'Escudo de Plata',    img:'🛡️', cost:600, currency:'gold', type:'weapon', atk:0,  def:28, desc:'Plata pura fundida a mano.'},
+        {id:'wp_lance2',   name:'Lanza Sagrada',      img:'🔱', cost:2000,currency:'gold', type:'weapon', atk:33, def:0,  desc:'Bendecida por los dioses.'},
+        {id:'wp_sword7',   name:'Espadón del Caos',  img:'⚔️', cost:2000,currency:'gold', type:'weapon', atk:35, def:0,  desc:'El caos encarnado en acero.'},
+        // Tier 9 — legendaria
+        {id:'wp_flame_bow',name:'Arco de Llamas',     img:'🏹', cost:4500,currency:'gold', type:'weapon', atk:38, def:0,  desc:'Flechas de fuego puro.'},
+        {id:'wp_saber2',   name:'Sable Bendito',      img:'🗡️', cost:36,  currency:'gem',  type:'weapon', atk:40, def:5,  desc:'Luz divina hecha hoja.'},
+        {id:'wp_axe5',     name:'Hacha de Fuego',     img:'🪓', cost:36,  currency:'gem',  type:'weapon', atk:42, def:0,  desc:'Ardiente e imparable.'},
+        {id:'wp_shield_r', name:'Escudo del Guerrero',img:'🛡️', cost:4500,currency:'gold', type:'weapon', atk:0,  def:35, desc:'El mejor defensor.'},
+        // Tier 10 — épica
+        {id:'wp_glaive',   name:'Glaive Épico',       img:'⚔️', cost:5250,currency:'gold', type:'weapon', atk:45, def:0,  desc:'El arma final del guerrero.'},
+        {id:'wp_staff4',   name:'Báculo del Origen',  img:'🪄', cost:42,  currency:'gem',  type:'weapon', atk:40, def:0,  desc:'Fuente de toda magia.'},
+        {id:'wp_katana',   name:'Katana Divina',      img:'🗡️', cost:5250,currency:'gold', type:'weapon', atk:48, def:0,  desc:'Filo que corta la realidad.'},
+        {id:'wp_shield_u', name:'Escudo Último',      img:'🛡️', cost:4500,currency:'gold', type:'weapon', atk:0,  def:42, desc:'Indestructible.'},
     ],
-    mage: [
-        {id:'m_staff1', name:'Báculo Arcano', icon:'🪄', cost:40,  type:'weapon', stat:'XP+15%'},
-        {id:'m_staff2', name:'Bastón Lunar',  icon:'🌙', cost:90,  type:'weapon', stat:'XP+28%'},
-        {id:'m_robe1',  name:'Túnica Mágica', icon:'👘', cost:55,  type:'armor',  stat:'DEF+8'},
-        {id:'m_robe2',  name:'Manto Arcano',  icon:'🧥', cost:100, type:'armor',  stat:'DEF+18'},
-        {id:'m_hat1',   name:'Sombrero Brujo',icon:'🎩', cost:35,  type:'helm',   stat:'XP+10%'},
-        {id:'m_hat2',   name:'Corona Arcana', icon:'👑', cost:80,  type:'helm',   stat:'XP+20%'},
-        {id:'m_wand',   name:'Varita de Luz', icon:'✨', cost:60,  type:'weapon', stat:'XP+22%'},
-        {id:'m_book',   name:'Grimorio',      icon:'📖', cost:45,  type:'shield', stat:'XP+12%'},
-        {id:'m_orb',    name:'Orbe Mágico',   icon:'🔮', cost:70,  type:'amulet', stat:'XP+18%'},
-        {id:'m_ring',   name:'Anillo Arcano', icon:'💍', cost:50,  type:'amulet', stat:'XP+14%'},
+
+    // ── ARMOR ──────────────────────────────────────────────────
+    armor: [
+        // Tier 1
+        {id:'ar_cloth1',   name:'Túnica de Tela',      img:'👕', cost:10,  currency:'gold', type:'armor', atk:0,  def:5,  desc:'Tela básica, algo de protección.'},
+        {id:'ar_leather1', name:'Cuero Ligero',        img:'🥋', cost:25,  currency:'gold', type:'armor', atk:0,  def:8,  desc:'Cuero curtido flexible.'},
+        {id:'ar_hide1',    name:'Piel de Bestia',      img:'🦺', cost:50,  currency:'gold', type:'armor', atk:0,  def:12, desc:'Piel curtida de monstruo.'},
+        // Tier 2
+        {id:'ar_chain1',   name:'Cota de Malla',       img:'🛡️', cost:100, currency:'gold', type:'armor', atk:0,  def:18, desc:'Anillas de hierro entrelazadas.'},
+        {id:'ar_studded',  name:'Cuero Tachado',       img:'🥋', cost:100, currency:'gold', type:'armor', atk:1,  def:15, desc:'Remaches metálicos en cuero.'},
+        // Tier 3
+        {id:'ar_scale1',   name:'Armadura Escamas',    img:'🦺', cost:144, currency:'gold', type:'armor', atk:0,  def:22, desc:'Escamas de dragón menor.'},
+        {id:'ar_bronze1',  name:'Armadura de Bronce',  img:'🛡️', cost:156, currency:'gold', type:'armor', atk:0,  def:25, desc:'Metal cobrizo resistente.'},
+        // Tier 4
+        {id:'ar_iron1',    name:'Armadura de Hierro',  img:'🦺', cost:180, currency:'gold', type:'armor', atk:0,  def:30, desc:'Planchas sólidas de hierro.'},
+        {id:'ar_ninja1',   name:'Traje Ninja',         img:'🥷', cost:180, currency:'gold', type:'armor', atk:3,  def:20, desc:'Agilidad y sigilo.'},
+        {id:'ar_cloak1',   name:'Capa de Sombra',      img:'🧣', cost:18,  currency:'gem',  type:'armor', atk:2,  def:22, desc:'Se funde con la oscuridad.'},
+        // Tier 5
+        {id:'ar_chain2',   name:'Malla Reforzada',     img:'🛡️', cost:300, currency:'gold', type:'armor', atk:0,  def:35, desc:'Doble capa de anillas.'},
+        {id:'ar_plate1',   name:'Armadura de Placas',  img:'🦺', cost:300, currency:'gold', type:'armor', atk:0,  def:40, desc:'Planchas completas de acero.'},
+        // Tier 6
+        {id:'ar_rune1',    name:'Armadura Rúnica',     img:'🛡️', cost:360, currency:'gold', type:'armor', atk:2,  def:45, desc:'Runas de protección grabadas.'},
+        {id:'ar_mage1',    name:'Manto Arcano',        img:'🧥', cost:360, currency:'gold', type:'armor', atk:0,  def:38, desc:'Tejido con hilos mágicos.'},
+        {id:'ar_scale2',   name:'Escamas de Dragón',   img:'🦺', cost:24,  currency:'gem',  type:'armor', atk:3,  def:48, desc:'Casi tan duro como el dragón.'},
+        // Tier 7
+        {id:'ar_knight1',  name:'Armadura de Caballero',img:'🛡️',cost:600, currency:'gold', type:'armor', atk:0,  def:55, desc:'El orgullo del caballero.'},
+        {id:'ar_dark1',    name:'Armadura Oscura',     img:'🦺', cost:600, currency:'gold', type:'armor', atk:5,  def:50, desc:'Acero negro infernal.'},
+        // Tier 8 — élite
+        {id:'ar_golden1',  name:'Armadura Dorada',     img:'🛡️', cost:36,  currency:'gem',  type:'armor', atk:0,  def:65, desc:'Oro puro forjado en llama.'},
+        {id:'ar_royal1',   name:'Manto Real',          img:'🧥', cost:2000,currency:'gold', type:'armor', atk:5,  def:60, desc:'Reservada para los reyes.'},
+        // Tier 9
+        {id:'ar_dragon1',  name:'Armadura Dracónica',  img:'🦺', cost:2500,currency:'gold', type:'armor', atk:8,  def:75, desc:'Forjada en el aliento del dragón.'},
+        {id:'ar_holy1',    name:'Armadura Sagrada',    img:'🛡️', cost:42,  currency:'gem',  type:'armor', atk:5,  def:80, desc:'Bendecida por los dioses.'},
+        // Tier 10
+        {id:'ar_titan1',   name:'Armadura del Titán',  img:'🦺', cost:4500,currency:'gold', type:'armor', atk:10, def:95, desc:'Solo los titanes la visten.'},
+        {id:'ar_divine1',  name:'Coraza Divina',       img:'🛡️', cost:48,  currency:'gem',  type:'armor', atk:8,  def:100,desc:'La máxima protección posible.'},
     ],
-    rogue: [
-        {id:'r_dagger1',name:'Daga Corta',    icon:'🗡️', cost:25,  type:'weapon', stat:'ORO+12%'},
-        {id:'r_dagger2',name:'Daga Envenenada',icon:'💉',cost:70,  type:'weapon', stat:'ORO+25%'},
-        {id:'r_cloak1', name:'Capa Sigilosa', icon:'🧣', cost:45,  type:'armor',  stat:'DEF+7'},
-        {id:'r_cloak2', name:'Manto de Sombra',icon:'🧤',cost:85,  type:'armor',  stat:'DEF+15'},
-        {id:'r_mask1',  name:'Máscara Pícaro',icon:'🎭', cost:30,  type:'helm',   stat:'ORO+10%'},
-        {id:'r_boots1', name:'Botas Ágiles',  icon:'👟', cost:35,  type:'boots',  stat:'SPD+15'},
-        {id:'r_bow',    name:'Arco Largo',    icon:'🏹', cost:60,  type:'weapon', stat:'ORO+20%'},
-        {id:'r_shuriken',name:'Shurikens',    icon:'⭐', cost:40,  type:'amulet', stat:'ATK+8'},
+
+    // ── OTHER (cascos, botas, amuletos) ───────────────────────
+    other: [
+        {id:'ot_helm1',    name:'Yelmo de Cuero',     img:'⛑️', cost:20,  currency:'gold', type:'helm',   atk:0,  def:3,  desc:'Protege la cabeza básicamente.'},
+        {id:'ot_helm2',    name:'Yelmo de Bronce',    img:'⛑️', cost:50,  currency:'gold', type:'helm',   atk:0,  def:8,  desc:'Bronce templado resistente.'},
+        {id:'ot_helm3',    name:'Yelmo de Acero',     img:'🪖', cost:120, currency:'gold', type:'helm',   atk:0,  def:15, desc:'Acero sólido.'},
+        {id:'ot_helm4',    name:'Casco Rúnico',       img:'⛑️', cost:300, currency:'gold', type:'helm',   atk:2,  def:22, desc:'Runas graban poder.'},
+        {id:'ot_helm5',    name:'Corona del Guerrero',img:'👑', cost:24,  currency:'gem',  type:'helm',   atk:5,  def:30, desc:'El liderazgo en metal.'},
+        {id:'ot_boots1',   name:'Botas de Cuero',     img:'👢', cost:15,  currency:'gold', type:'boots',  atk:0,  def:2,  desc:'Cuero curtido, durables.'},
+        {id:'ot_boots2',   name:'Botas de Hierro',    img:'👢', cost:60,  currency:'gold', type:'boots',  atk:0,  def:8,  desc:'Pesadas pero resistentes.'},
+        {id:'ot_boots3',   name:'Botas de Velocidad', img:'👟', cost:180, currency:'gold', type:'boots',  atk:2,  def:5,  spd:10, desc:'Ligeras como el viento.'},
+        {id:'ot_amulet1',  name:'Amuleto de Vida',    img:'📿', cost:40,  currency:'gold', type:'amulet', atk:0,  def:0,  hp:20,  desc:'Aumenta HP máximo.'},
+        {id:'ot_amulet2',  name:'Amuleto Arcano',     img:'🔮', cost:80,  currency:'gold', type:'amulet', atk:0,  def:0,  xpm:15, desc:'Más XP por hábito.'},
+        {id:'ot_amulet3',  name:'Amuleto de Oro',     img:'📿', cost:100, currency:'gold', type:'amulet', atk:0,  def:0,  gld:20, desc:'Más monedas por hábito.'},
+        {id:'ot_ring1',    name:'Anillo de Poder',    img:'💍', cost:150, currency:'gold', type:'ring',   atk:8,  def:0,  desc:'Fuerza concentrada.'},
+        {id:'ot_ring2',    name:'Anillo Sello',       img:'💍', cost:200, currency:'gold', type:'ring',   atk:5,  def:5,  desc:'Ataque y defensa.'},
+        {id:'ot_gem_shield',name:'Escudo de Gema',    img:'💎', cost:30,  currency:'gem',  type:'shield', atk:0,  def:30, desc:'Cristal mágico puro.'},
     ],
-    healer: [
-        {id:'h_staff1', name:'Báculo Sagrado',icon:'🌿', cost:45,  type:'weapon', stat:'HP+20'},
-        {id:'h_staff2', name:'Cetro Divino',  icon:'⚕️', cost:90,  type:'weapon', stat:'HP+40'},
-        {id:'h_robe1',  name:'Vestido Blanco',icon:'👗', cost:50,  type:'armor',  stat:'HP+15'},
-        {id:'h_shield1',name:'Aegis Sagrado', icon:'🔰', cost:65,  type:'shield', stat:'HP+25'},
-        {id:'h_halo',   name:'Aureola',       icon:'😇', cost:40,  type:'helm',   stat:'HP+12'},
-        {id:'h_ring',   name:'Anillo Cura',   icon:'💍', cost:35,  type:'amulet', stat:'HP+10'},
-        {id:'h_book',   name:'Libro Sagrado', icon:'📿', cost:55,  type:'shield', stat:'HP+18'},
-    ],
+
+    // Compat con el código anterior (clase-based)
+    warrior: [{id:'_w',name:'',icon:'',cost:0,type:'',stat:''}],
+    mage:    [{id:'_m',name:'',icon:'',cost:0,type:'',stat:''}],
+    rogue:   [{id:'_r',name:'',icon:'',cost:0,type:'',stat:''}],
+    healer:  [{id:'_h',name:'',icon:'',cost:0,type:'',stat:''}],
 };
 
 const EGGS_DB = [
@@ -19270,57 +19339,291 @@ window.switchMarketTab = function(tab, el) {
 };
 
 // ── EQUIPAMIENTO ──────────────────────────────────────────────
+let _equipTab = 'weapon';
+
 function renderEquipment() {
-    const cfEl  = document.getElementById('habClassFilter');
-    const listEl= document.getElementById('habEquipList');
-    if (!cfEl || !listEl) return;
+    const listEl = document.getElementById('habEquipList');
+    const cfEl   = document.getElementById('habClassFilter');
+    if (!listEl) return;
     const hero  = loadHero();
+    const equip = hero.equipment || {};
 
-    const classes = [{id:'warrior',icon:'⚔️',name:'Guerrero'},{id:'mage',icon:'🔮',name:'Mago'},{id:'rogue',icon:'🗡️',name:'Pícaro'},{id:'healer',icon:'💚',name:'Sanador'}];
-    cfEl.innerHTML = classes.map(c =>
-        '<div class="hab-class-filter-btn '+(_classFilter===c.id?'active':'')+'" onclick="filterEquipClass(\''+c.id+'\')">'+c.icon+' '+c.name+'</div>'
-    ).join('');
+    // Tabs Weapon / Armor / Other
+    if (cfEl) {
+        cfEl.innerHTML = [
+            {id:'weapon', label:'⚔️ Armas'},
+            {id:'armor',  label:'🛡️ Armadura'},
+            {id:'other',  label:'💍 Otros'},
+        ].map(t =>
+            '<button class="hab-equip-tab-btn' + (_equipTab === t.id ? ' active' : '') + '" ' +
+            'onclick="window._setEquipTab(\'' + t.id + '\')" ' +
+            'style="flex:1;padding:7px 4px;border-radius:10px;border:1.5px solid ' +
+            (_equipTab === t.id ? '#a78bfa' : 'rgba(255,255,255,0.1)') + ';' +
+            'background:' + (_equipTab === t.id ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.04)') + ';' +
+            'color:#fff;font-size:0.68rem;font-weight:900;cursor:pointer;">' +
+            t.label + '</button>'
+        ).join('');
+    }
 
-    const items  = EQUIP_DB[_classFilter] || [];
-    const equip  = hero.equipment || {};
-    const inv    = loadInv();
+    const items = EQUIP_DB[_equipTab] || [];
+    const inv   = loadInv ? loadInv() : {};
 
-    listEl.innerHTML = '<div class="hab-item-grid">' + items.map(item => {
-        const owned  = equip[item.type] === item.id || (inv.equipment||[]).includes(item.id);
-        const afford = (hero.coins||0) >= item.cost;
-        return '<div class="hab-item-card '+(owned?'owned':!afford?'locked':'')+'" onclick="buyEquipItem(\''+item.id+'\')">' +
-            (owned?'<span class="hab-item-owned-badge">✓</span>':'') +
-            (!afford&&!owned?'<span class="hab-item-lock-icon">🔒</span>':'') +
-            '<span class="hab-item-emoji">'+item.icon+'</span>' +
-            '<div style="font-size:0.48rem;color:#888;text-align:center;line-height:1.2;margin-bottom:2px;">'+item.name+'</div>' +
-            '<div class="hab-item-price gold">🪙'+item.cost+'</div>' +
-            '<div style="font-size:0.45rem;color:#a78bfa;">'+item.stat+'</div>' +
-            '</div>';
-    }).join('') + '</div>';
+    // Stats totales del equipo equipado (para mostrar en header)
+    let totalAtk = 0, totalDef = 0;
+    Object.values(equip).forEach(function(itemId) {
+        ['weapon','armor','other'].forEach(function(cat) {
+            const found = (EQUIP_DB[cat]||[]).find(function(i){ return i.id === itemId; });
+            if (found) { totalAtk += (found.atk||0); totalDef += (found.def||0); }
+        });
+    });
+
+    // Header con stats actuales
+    const statsBar = '<div style="display:flex;gap:8px;margin-bottom:10px;padding:8px 10px;' +
+        'background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">' +
+        '<span style="font-size:0.65rem;color:#f87171;font-weight:900;">⚔️ ATK: ' + totalAtk + '</span>' +
+        '<span style="font-size:0.65rem;color:#60a5fa;font-weight:900;">🛡️ DEF: ' + totalDef + '</span>' +
+        '<span style="font-size:0.65rem;color:#fbbf24;font-weight:900;margin-left:auto;">🪙 ' + (hero.coins||0) + '  💎 ' + (hero.gems||0) + '</span>' +
+        '</div>';
+
+    // Grid de ítems estilo Habit Hunter
+    const grid = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
+        items.filter(function(item){ return item.id && item.id !== '_w' && item.id !== '_m' && item.id !== '_r' && item.id !== '_h'; })
+        .map(function(item) {
+            const isEquipped = Object.values(equip).includes(item.id);
+            const canAfford  = item.currency === 'gem'
+                ? (hero.gems||0) >= item.cost
+                : (hero.coins||0) >= item.cost;
+            const currIcon   = item.currency === 'gem' ? '💎' : '🪙';
+
+            // Build stat label
+            var statParts = [];
+            if (item.atk > 0) statParts.push('ATK +' + item.atk);
+            if (item.def > 0) statParts.push('DEF +' + item.def);
+            if (item.hp  > 0) statParts.push('HP +'  + item.hp);
+            if (item.spd > 0) statParts.push('SPD +' + item.spd);
+            if (item.xpm > 0) statParts.push('XP +'  + item.xpm + '%');
+            if (item.gld > 0) statParts.push('ORO +' + item.gld + '%');
+            const statLabel = statParts.join(' · ') || '—';
+
+            return '<div onclick="window.buyEquipItemV2(\'' + item.id + '\',\'' + _equipTab + '\')" ' +
+                'style="position:relative;background:' + (isEquipped ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.04)') + ';' +
+                'border:1.5px solid ' + (isEquipped ? '#a78bfa' : (!canAfford ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)')) + ';' +
+                'border-radius:14px;padding:10px 6px 8px;text-align:center;cursor:pointer;' +
+                'transition:transform 0.15s,border-color 0.2s;min-height:110px;' +
+                'display:flex;flex-direction:column;align-items:center;justify-content:space-between;">' +
+
+                // Badge equipado
+                (isEquipped ? '<span style="position:absolute;top:4px;right:5px;font-size:0.55rem;' +
+                    'background:#a78bfa;color:#fff;border-radius:6px;padding:1px 4px;font-weight:900;">✓</span>' : '') +
+
+                // Lock si no puede pagar
+                (!canAfford && !isEquipped ? '<span style="position:absolute;top:4px;left:5px;font-size:0.7rem;opacity:0.5;">🔒</span>' : '') +
+
+                // Icono grande
+                '<div style="font-size:1.8rem;line-height:1;margin-bottom:4px;">' + item.img + '</div>' +
+
+                // Nombre
+                '<div style="font-size:0.48rem;color:' + (isEquipped ? '#c4b5fd' : '#aaa') + ';' +
+                'font-weight:800;line-height:1.2;margin-bottom:3px;">' + item.name + '</div>' +
+
+                // Stat
+                '<div style="font-size:0.44rem;color:#a78bfa;font-weight:700;margin-bottom:4px;">' + statLabel + '</div>' +
+
+                // Precio
+                '<div style="font-size:0.58rem;font-weight:900;color:' + (!canAfford && !isEquipped ? '#666' : (item.currency === 'gem' ? '#67e8f9' : '#fbbf24')) + ';">' +
+                currIcon + item.cost + '</div>' +
+
+                '</div>';
+        }).join('') +
+        '</div>';
+
+    listEl.innerHTML = statsBar + grid;
 }
 
-window.filterEquipClass = function(cls) {
-    _classFilter = cls;
+window._setEquipTab = function(tab) {
+    _equipTab = tab;
     renderEquipment();
 };
 
-window.buyEquipItem = function(itemId) {
-    const hero = loadHero();
-    const items= EQUIP_DB[_classFilter]||[];
-    const item = items.find(i=>i.id===itemId);
+window.buyEquipItemV2 = function(itemId, category) {
+    const hero  = loadHero();
+    const items = EQUIP_DB[category] || [];
+    const item  = items.find(function(i){ return i.id === itemId; });
     if (!item) return;
-    const equip = hero.equipment||{};
-    if (equip[item.type]===itemId) { showBuyToast('✅ Ya lo tienes equipado'); return; }
-    if ((hero.coins||0) < item.cost) { showBuyToast('🔒 Necesitas '+item.cost+'🪙'); return; }
-    hero.coins -= item.cost;
-    hero.equipment = hero.equipment||{};
+
+    const equip = hero.equipment || {};
+    if (Object.values(equip).includes(itemId)) {
+        showBuyToast('✅ Ya equipado — toca otro para cambiar');
+        return;
+    }
+
+    const cost     = item.cost;
+    const isGem    = item.currency === 'gem';
+    const balance  = isGem ? (hero.gems||0) : (hero.coins||0);
+    if (balance < cost) {
+        showBuyToast('🔒 Necesitas ' + cost + (isGem ? '💎' : '🪙'));
+        return;
+    }
+
+    if (isGem) hero.gems = (hero.gems||0) - cost;
+    else        hero.coins -= cost;
+
+    // Desequipar el anterior del mismo slot si lo hay
+    hero.equipment = hero.equipment || {};
     hero.equipment[item.type] = itemId;
-    hero.stats = hero.stats||{};
+
+    // Recalcular stats del héroe según equipo
+    var newAtk = 5, newDef = 3;
+    Object.values(hero.equipment).forEach(function(eid) {
+        ['weapon','armor','other'].forEach(function(cat) {
+            const found = (EQUIP_DB[cat]||[]).find(function(i){ return i.id === eid; });
+            if (found) { newAtk += (found.atk||0); newDef += (found.def||0); }
+        });
+    });
+    hero.stats = hero.stats || {};
+    hero.stats.atk = newAtk;
+    hero.stats.def = newDef;
+
     saveHero(hero);
-    showBuyToast('⚔️ '+item.name+' equipado!');
-    if(typeof playSparkleSound==='function') playSparkleSound();
+    showBuyToast('⚔️ ' + item.name + ' equipado! ATK:' + newAtk + ' DEF:' + newDef);
+    if (typeof playSparkleSound === 'function') playSparkleSound();
     renderEquipment();
-    updateGoldDisplays && updateGoldDisplays(hero);
+    if (typeof renderHabHero === 'function') renderHabHero();
+};
+
+// ── SISTEMA DE ATRIBUTOS (Fuerza, Int, Con, Per) ─────────────
+const ATTRS_DEF = [
+    { id:'str', name:'Fuerza',        color:'#ef4444', icon:'💪',
+      desc:'Aumenta el daño al Boss y chance de golpe crítico (+1 ATK por punto).' },
+    { id:'int', name:'Inteligencia',  color:'#38bdf8', icon:'🧠',
+      desc:'Aumenta XP ganada por hábitos (+1% XP por punto) y regenera maná.' },
+    { id:'con', name:'Constitución',  color:'#f97316', icon:'🛡️',
+      desc:'Reduce el daño recibido al fallar hábitos (+5 HP por punto).' },
+    { id:'per', name:'Percepción',    color:'#a855f7', icon:'👁️',
+      desc:'Aumenta monedas y probabilidad de recompensas extra (+1% ORO por punto).' },
+];
+
+window.renderHabAttributes = function() {
+    const el = document.getElementById('habAttrPanel');
+    if (!el) return;
+    const hero  = loadHero();
+    const level = hero.level || 1;
+    const attrs = hero.attributes || { str:1, int:1, con:1, per:1 };
+    const spent = (attrs.str-1) + (attrs.int-1) + (attrs.con-1) + (attrs.per-1);
+    // Puntos: 1 por nivel, desbloqueado desde nivel 10; antes nivel no se asignan
+    const totalPts = Math.max(0, level - 1);
+    const freePts  = Math.max(0, totalPts - spent);
+    const unlocked = level >= 10;
+
+    let html = '<div style="padding:0 2px;">';
+
+    // Header
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+        '<span style="font-size:0.75rem;font-weight:900;color:#c4b5fd;">⚡ ATRIBUTOS</span>' +
+        (unlocked
+            ? '<span style="font-size:0.7rem;font-weight:900;color:#fbbf24;">Puntos libres: ' + freePts + '</span>'
+            : '<span style="font-size:0.6rem;color:#666;">Se desbloquea en Nivel 10</span>'
+        ) +
+        '</div>';
+
+    if (!unlocked) {
+        html += '<div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px;text-align:center;color:#555;font-size:0.65rem;">' +
+            '🔒 La distribución de Atributos se desbloquea en el Nivel 10.<br>' +
+            '<span style="color:#a78bfa;">Nivel actual: ' + level + '</span>' +
+            '</div>';
+    }
+
+    // Atributos
+    ATTRS_DEF.forEach(function(a) {
+        const val    = attrs[a.id] || 1;
+        const canAdd = unlocked && freePts > 0;
+        const canSub = unlocked && val > 1;
+
+        html += '<div style="margin-bottom:8px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">' +
+            // Header del atributo
+            '<div style="background:' + a.color + ';padding:7px 12px;display:flex;align-items:center;justify-content:space-between;">' +
+                '<span style="font-size:0.75rem;font-weight:900;color:#fff;">' + a.icon + ' ' + a.name + '</span>' +
+                '<span style="font-size:0.9rem;font-weight:900;color:#fff;">' + val + '</span>' +
+            '</div>' +
+            // Sub-row
+            '<div style="background:rgba(10,5,30,0.7);padding:8px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">' +
+                '<div style="text-align:center;">' +
+                    '<div style="font-size:0.75rem;font-weight:900;color:#fff;">' + val + '</div>' +
+                    '<div style="font-size:0.48rem;color:#666;">Nivel</div>' +
+                '</div>' +
+                '<div style="text-align:center;">' +
+                    '<div style="font-size:0.75rem;font-weight:900;color:#fff;">0</div>' +
+                    '<div style="font-size:0.48rem;color:#666;">Equipo</div>' +
+                '</div>' +
+                '<div style="text-align:center;">' +
+                    '<div style="font-size:0.75rem;font-weight:900;color:#fff;">0</div>' +
+                    '<div style="font-size:0.48rem;color:#666;">Apoyos</div>' +
+                '</div>' +
+                '<div style="text-align:center;">' +
+                    '<div style="font-size:0.75rem;font-weight:900;color:#fff;">' + (val - 1) + '</div>' +
+                    '<div style="font-size:0.48rem;color:#666;">Asignado</div>' +
+                '</div>' +
+            '</div>' +
+            // Controles
+            (unlocked ? '<div style="background:rgba(10,5,30,0.5);padding:6px 12px;display:flex;gap:8px;justify-content:flex-end;">' +
+                (canSub ? '<button onclick="window.adjustAttr(\'' + a.id + '\',-1)" style="background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#f87171;border-radius:8px;padding:3px 10px;font-weight:900;cursor:pointer;font-size:0.7rem;">−</button>' : '') +
+                (canAdd ? '<button onclick="window.adjustAttr(\'' + a.id + '\',1)" style="background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#4ade80;border-radius:8px;padding:3px 10px;font-weight:900;cursor:pointer;font-size:0.7rem;">+</button>' : '') +
+            '</div>' : '') +
+        '</div>';
+    });
+
+    // Guía
+    html += '<div style="margin-top:12px;">' +
+        '<div style="font-size:0.68rem;font-weight:900;color:#888;margin-bottom:6px;">GUÍA DE ATRIBUTOS</div>' +
+        ATTRS_DEF.map(function(a) {
+            return '<div style="margin-bottom:6px;">' +
+                '<div style="font-size:0.62rem;font-weight:900;color:' + a.color + ';">' + a.icon + ' ' + a.name + '</div>' +
+                '<div style="font-size:0.58rem;color:#666;line-height:1.4;">' + a.desc + '</div>' +
+            '</div>';
+        }).join('') +
+    '</div>';
+
+    html += '</div>';
+    el.innerHTML = html;
+};
+
+window.adjustAttr = function(attrId, delta) {
+    const hero  = loadHero();
+    const level = hero.level || 1;
+    if (level < 10) return;
+    hero.attributes = hero.attributes || { str:1, int:1, con:1, per:1 };
+    const spent = Object.values(hero.attributes).reduce(function(s,v){ return s + (v-1); }, 0);
+    const totalPts = Math.max(0, level - 1);
+    const freePts  = totalPts - spent;
+
+    if (delta > 0 && freePts <= 0) return;
+    if (delta < 0 && (hero.attributes[attrId]||1) <= 1) return;
+
+    hero.attributes[attrId] = (hero.attributes[attrId]||1) + delta;
+
+    // Aplicar efectos de atributos
+    const str = hero.attributes.str || 1;
+    const int_ = hero.attributes.int || 1;
+    const con  = hero.attributes.con || 1;
+    const per  = hero.attributes.per || 1;
+    hero.stats = hero.stats || {};
+    hero.stats.atk = (hero.stats.atk||5) + (delta > 0 && attrId==='str' ? 1 : (delta < 0 && attrId==='str' ? -1 : 0));
+    hero.maxHp = 100 + (con - 1) * 5;
+    if (hero.hp > hero.maxHp) hero.hp = hero.maxHp;
+
+    saveHero(hero);
+    window.renderHabAttributes();
+    if (typeof renderHabHero === 'function') renderHabHero();
+};
+
+// ── Panel de atributos se inyecta en el tab Héroe ─────────────
+const _origRenderHabHero = window.renderHabHero;
+window.renderHabHero = function() {
+    if (_origRenderHabHero) _origRenderHabHero();
+    // Inyectar panel de atributos si existe el contenedor
+    setTimeout(function() {
+        if (typeof window.renderHabAttributes === 'function') window.renderHabAttributes();
+    }, 50);
 };
 
 // ── HUEVOS ────────────────────────────────────────────────────
