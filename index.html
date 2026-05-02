@@ -15839,20 +15839,21 @@ function showHabitReward(xpVal, coinsVal, dmgVal, hpVal) {
     if (!pills.length) return;
 
     var cx = window.innerWidth / 2;
-    var cy = window.innerHeight * 0.55; // zona central-baja de la pantalla
+    var baseY = window.innerHeight * 0.52;
 
     pills.forEach(function(p, i) {
         setTimeout(function() {
             var el = document.createElement('div');
             el.className = 'hab-reward-pill';
-            el.style.left = (cx - 72 + (i % 2 === 1 ? 30 : -10)) + 'px';
-            el.style.top  = (cy - i * 4) + 'px';
+            // Cada pastilla centrada horizontalmente, separadas 44px verticalmente
+            el.style.left = (cx - 75) + 'px';
+            el.style.top  = (baseY - i * 44) + 'px';
             el.style.background = p.bg;
             el.style.boxShadow  = p.sh;
             el.innerHTML = '<span style="font-size:1rem;line-height:1">' + p.icon + '</span><span>' + p.text + '</span>';
             document.body.appendChild(el);
             setTimeout(function() { el.remove(); }, 1600);
-        }, i * 100);
+        }, i * 120);
     });
 }
 
@@ -16129,6 +16130,12 @@ window.habRepInc = function(habitId, target) {
                 if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
             }
             localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+
+            // Animación flotante de recompensa
+            if (typeof showHabitReward === 'function') {
+                var _hpBonusQ = heroRaw.class === 'healer' ? 3 : 0;
+                showHabitReward(xpGain, coinGain, bossQ ? Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4)*(heroRaw.class==='warrior'?1.3:1)) : 0, _hpBonusQ);
+            }
         } catch(e) { console.warn('habRepInc XP/boss error:', e); }
 
         // XP sistema global
@@ -16313,6 +16320,15 @@ window.startHabTimer = function(habitId, totalSec) {
                         if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
                     }
                     localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+
+                    // Animación flotante de recompensa
+                    if (typeof showHabitReward === 'function') {
+                        var xpGainT   = Math.round((hh.xp||10) * (heroRaw.class==='mage'?1.25:1));
+                        var coinGainT = Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
+                        var dmgGainT  = bossT ? Math.round((hh.diff==='hard'?15:hh.diff==='medium'?8:4)*(heroRaw.class==='warrior'?1.3:1)) : 0;
+                        var hpBonusT  = heroRaw.class === 'healer' ? 3 : 0;
+                        showHabitReward(xpGainT, coinGainT, dmgGainT, hpBonusT);
+                    }
                 } catch(err) {}
 
                 // XP sistema global
