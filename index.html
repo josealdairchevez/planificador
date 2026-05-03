@@ -14396,6 +14396,15 @@
                 await loadFromCloud();
                 setInterval(() => syncToCloud(false), 3 * 60 * 1000);
                 window.addEventListener('beforeunload', () => syncToCloud(false));
+
+                // Subir recordatorios de hábitos a Firestore al iniciar sesión
+                // Así FCM puede entregar notificaciones con la app cerrada
+                setTimeout(function() {
+                    if (typeof rescheduleAllReminders === 'function') {
+                        window._lastHabReschedule = 0;
+                        rescheduleAllReminders();
+                    }
+                }, 2000); // Esperar a que loadFromCloud termine
             }
 
         } else {
@@ -16433,7 +16442,6 @@ function scheduleHabitReminder(name, time, emoji) {
 // Re-programar todos los recordatorios al abrir
 function rescheduleAllReminders() {
     loadHabits();
-    if (!habits.length) return;
     // Solo reprogramar una vez por hora para evitar sobrecarga
     const now = Date.now();
     if (window._lastHabReschedule && (now - window._lastHabReschedule) < 3600000) return;
@@ -16446,26 +16454,39 @@ function rescheduleAllReminders() {
         const list  = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
         const clean = list.filter(r => !String(r.evId).startsWith('hab_'));
 
-        habits.filter(h => h.reminderOn && h.reminderTime && !h.archived).forEach(h => {
-            const [hr, mn] = h.reminderTime.split(':').map(Number);
-            // Calcular próximo disparo (hoy si aún no pasó, mañana si ya pasó)
+        // Leer hábitos directamente de localStorage por si habits[] está vacío
+        const allHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
+        const habsWithReminder = allHabits.filter(h => h.reminderOn && h.reminderTime && !h.archived);
+
+        console.log('[JCH] rescheduleAllReminders: ' + habsWithReminder.length + ' hábitos con recordatorio');
+
+        habsWithReminder.forEach(function(h) {
+            const parts  = (h.reminderTime || '08:00').split(':').map(Number);
+            const hr = parts[0], mn = parts[1] || 0;
             const todayFire = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), hr, mn, 0);
             const fireAt    = todayFire.getTime() > (now + 60000) ? todayFire : new Date(todayFire.getTime() + 86400000);
-            clean.push({
-                evId:   'hab_single_' + (h.name||'').replace(/\s+/g,'_'),
+            const entry = {
+                evId:   'hab_single_' + (h.name||'').replace(/\W+/g,'_'),
                 fireAt: fireAt.getTime(),
-                title:  (h.emoji||'🌿') + ' ' + h.name,
+                title:  (h.emoji||'🌿') + ' ' + (h.name||'Hábito'),
                 body:   '¡Es hora de tu hábito diario!'
-            });
+            };
+            clean.push(entry);
+            console.log('[JCH] Programado: ' + entry.title + ' para ' + new Date(entry.fireAt).toLocaleTimeString());
         });
 
         // 1. Guardar en localStorage (check() cuando app abierta)
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
 
         // 2. Subir a Firestore (FCM entrega cuando app está cerrada)
-        if (typeof saveToFirestore === 'function') saveToFirestore(clean);
+        if (typeof saveToFirestore === 'function') {
+            saveToFirestore(clean);
+            console.log('[JCH] ' + clean.length + ' recordatorios subidos a Firestore');
+        } else {
+            console.warn('[JCH] saveToFirestore no disponible aún');
+        }
 
-    } catch(e) { console.warn('rescheduleAllReminders:', e); }
+    } catch(e) { console.warn('rescheduleAllReminders error:', e); }
 }
 
 // ── Editar / Borrar ───────────────────────────────────────────
@@ -19098,6 +19119,15 @@ window.saveHabit = function() {
     window._selectedRoutine  = window._selectedRoutine  || 'morning';
     // Llamar el original — ya guarda habitType, qtyTarget, qtyUnit y routine
     if (typeof _origSaveHabit === 'function') _origSaveHabit();
+
+    // ── Subir recordatorios a Firestore para FCM background ──
+    // Se ejecuta después de que _origSaveHabit guarda el hábito
+    setTimeout(function() {
+        if (typeof rescheduleAllReminders === 'function') {
+            window._lastHabReschedule = 0; // Forzar ejecución aunque corrió antes
+            rescheduleAllReminders();
+        }
+    }, 800); // Esperar a que _origSaveHabit termine de guardar
 };
 
 // ── Extender switchHabTab ─────────────────────────────────────
