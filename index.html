@@ -14817,12 +14817,21 @@ function showNotif(title,body,tag){
 function saveToFirestore(list){
   var tryCount=0;
   function tryUpdate(){
-    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){if(++tryCount<20)setTimeout(tryUpdate,500);return;}
-    var auth=firebase.auth(),db=firebase.firestore();
-    auth.onAuthStateChanged(function(user){
-      if(!user) return;
-      db.collection('users').doc(user.uid).set({fcm_reminders:list},{merge:true}).catch(function(){});
-    });
+    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
+      if(++tryCount<20) setTimeout(tryUpdate,500);
+      return;
+    }
+    var auth=firebase.auth();
+    var user=auth.currentUser;
+    if(!user){
+      // Usuario no autenticado aún — esperar
+      if(++tryCount<20) setTimeout(tryUpdate,500);
+      return;
+    }
+    var db=firebase.firestore();
+    db.collection('users').doc(user.uid).set({fcm_reminders:list},{merge:true})
+      .then(function(){ console.log('[JCH] Firestore OK: '+list.length+' recordatorios'); })
+      .catch(function(e){ console.warn('[JCH] Firestore error:',e); });
   }
   tryUpdate();
 }
