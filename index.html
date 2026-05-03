@@ -16397,7 +16397,7 @@ window.saveHabit = function() {
     renderHabStats(); renderHabHero();
 };
 
-// ── Recordatorio via SW ───────────────────────────────────────
+// ── Recordatorio via SW + Firestore (FCM background) ─────────
 function scheduleHabitReminder(name, time, emoji) {
     try {
         const [h,m] = time.split(':').map(Number);
@@ -16405,38 +16405,67 @@ function scheduleHabitReminder(name, time, emoji) {
         const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
         if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
 
-        // Usar el mismo sistema de recordatorios del calendario (jch_rem_v4)
-        // para que se dispare exactamente a la hora configurada
         const SK_REMINDERS = 'jch_rem_v4';
-        const evId = 'hab_' + Date.now();
+        const evId  = 'hab_single_' + name.replace(/\s+/g,'_');
+        const title = (emoji||'🌿') + ' ' + name;
+        const body  = '¡Es hora de tu hábito diario!';
+        const entry = { evId, fireAt: fireAt.getTime(), title, body };
+
+        // 1. Guardar en localStorage (para check() cuando app está abierta)
         try {
-            const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
-            // Eliminar recordatorio previo del mismo hábito (por nombre) para evitar duplicados
-            const clean = list.filter(r => r.title !== `${emoji} ${name}`);
-            clean.push({ evId, fireAt: fireAt.getTime(), title: `${emoji} ${name}`, body: '¡Es hora de tu hábito! 🌿' });
+            const list  = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+            const clean = list.filter(r => r.evId !== evId);
+            clean.push(entry);
             localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-        } catch(e) { console.warn('Recordatorio hábito (storage):', e); }
-    } catch(e) { console.warn('Recordatorio hábito:', e); }
+        } catch(e) {}
+
+        // 2. Subir a Firestore para que FCM lo entregue con app cerrada
+        // Usamos el mismo saveToFirestore que usa el calendario
+        if (typeof saveToFirestore === 'function') {
+            try {
+                const allRem = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+                saveToFirestore(allRem);
+            } catch(e) {}
+        }
+    } catch(e) { console.warn('scheduleHabitReminder:', e); }
 }
 
 // Re-programar todos los recordatorios al abrir
 function rescheduleAllReminders() {
     loadHabits();
     if (!habits.length) return;
+    // Solo reprogramar una vez por hora para evitar sobrecarga
+    const now = Date.now();
+    if (window._lastHabReschedule && (now - window._lastHabReschedule) < 3600000) return;
+    window._lastHabReschedule = now;
+
     const SK_REMINDERS = 'jch_rem_v4';
-    const now = new Date();
+    const nowDate = new Date();
     try {
-        const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
-        // Eliminar recordatorios previos de hábitos
-        const clean = list.filter(r => !r.evId.startsWith('hab_'));
-        habits.filter(h => h.reminderOn && h.reminderTime).forEach(h => {
+        // Leer lista actual y eliminar los de hábitos (empiezan con 'hab_')
+        const list  = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+        const clean = list.filter(r => !String(r.evId).startsWith('hab_'));
+
+        habits.filter(h => h.reminderOn && h.reminderTime && !h.archived).forEach(h => {
             const [hr, mn] = h.reminderTime.split(':').map(Number);
-            const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hr, mn, 0);
-            if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
-            clean.push({ evId: h.id, fireAt: fireAt.getTime(), title: `${h.emoji} ${h.name}`, body: '¡Es hora de tu hábito! 🌿' });
+            // Calcular próximo disparo (hoy si aún no pasó, mañana si ya pasó)
+            const todayFire = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), hr, mn, 0);
+            const fireAt    = todayFire.getTime() > (now + 60000) ? todayFire : new Date(todayFire.getTime() + 86400000);
+            clean.push({
+                evId:   'hab_single_' + (h.name||'').replace(/\s+/g,'_'),
+                fireAt: fireAt.getTime(),
+                title:  (h.emoji||'🌿') + ' ' + h.name,
+                body:   '¡Es hora de tu hábito diario!'
+            });
         });
+
+        // 1. Guardar en localStorage (check() cuando app abierta)
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-    } catch(e) { console.warn('Reschedule recordatorios hábitos:', e); }
+
+        // 2. Subir a Firestore (FCM entrega cuando app está cerrada)
+        if (typeof saveToFirestore === 'function') saveToFirestore(clean);
+
+    } catch(e) { console.warn('rescheduleAllReminders:', e); }
 }
 
 // ── Editar / Borrar ───────────────────────────────────────────
