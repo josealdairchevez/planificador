@@ -14851,12 +14851,35 @@ function fmt(s){var d=parseLocal(s);if(!d||isNaN(d))return '';return d.toLocaleS
 
 function showNotif(title,body,tag){
   alarm();
-  if(!('Notification' in window)||Notification.permission!=='granted') return;
-  var notifTag=tag||('jch-'+btoa(encodeURIComponent(title+body)).slice(0,16));
-  var opts={body:body,icon:'./icon-192.png',badge:'./icon-192.png',vibrate:[400,100,400,100,800],requireInteraction:true,tag:notifTag,renotify:false};
-  if(navigator.serviceWorker&&navigator.serviceWorker.controller){
-    navigator.serviceWorker.ready.then(function(r){r.showNotification(title,opts);}).catch(function(){try{new Notification(title,opts);}catch(e){}});
-  } else {try{new Notification(title,opts);}catch(e){}}
+  if(!('Notification' in window)||Notification.permission!=='granted'){
+    console.warn('[JCH] showNotif: permiso no concedido:', Notification.permission);
+    return;
+  }
+  var notifTag = tag || ('jch-'+Date.now());
+  var opts = {
+    body:    body,
+    icon:    'https://josealdairchevez.github.io/planificador/icon-192.png',
+    badge:   'https://josealdairchevez.github.io/planificador/icon-96.png',
+    vibrate: [400,100,400,100,800],
+    requireInteraction: true,
+    tag:      notifTag,
+    renotify: true,   // FIX: siempre mostrar aunque mismo tag
+    silent:   false
+  };
+  // En móvil Android, new Notification() no funciona — SIEMPRE usar SW
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready
+      .then(function(reg){
+        console.log('[JCH] showNotif via SW:', title);
+        return reg.showNotification(title, opts);
+      })
+      .catch(function(e){
+        console.warn('[JCH] showNotif SW error:', e);
+        try{ new Notification(title, opts); }catch(e2){}
+      });
+  } else {
+    try{ new Notification(title, opts); }catch(e){}
+  }
 }
 
 function saveToFirestore(list){
@@ -15090,14 +15113,17 @@ function init(){
     runReschedWhenReady();
   }
 
-  if(Notification.permission==='granted'){
+  // Arrancar FCM siempre — pedir permiso si hace falta
+  if(Notification.permission === 'granted'){
     startFCM();
-  } else if(Notification.permission==='default'){
-    setTimeout(function(){
-      Notification.requestPermission().then(function(p){
-        if(p==='granted') startFCM();
-      });
-    },1000);
+  } else if(Notification.permission === 'denied'){
+    console.warn('[JCH] Notificaciones bloqueadas por el usuario');
+  } else {
+    // 'default' — pedir permiso y arrancar
+    Notification.requestPermission().then(function(p){
+      console.log('[JCH] Permiso de notificación:', p);
+      if(p === 'granted') startFCM();
+    });
   }
 }
 
