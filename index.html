@@ -14398,13 +14398,15 @@
                 window.addEventListener('beforeunload', () => syncToCloud(false));
 
                 // Subir recordatorios de hábitos a Firestore al iniciar sesión
-                // Así FCM puede entregar notificaciones con la app cerrada
+                // FIX: delay mayor para asegurar que loadFromCloud + reload ya terminaron
+                // y que los hábitos del móvil ya están en localStorage
                 setTimeout(function() {
                     if (typeof rescheduleAllReminders === 'function') {
                         window._lastHabReschedule = 0;
                         rescheduleAllReminders();
+                        console.log('[JCH] rescheduleAllReminders ejecutado tras auth');
                     }
-                }, 2000); // Esperar a que loadFromCloud termine
+                }, 3500); // 3.5s: cubre el reload de 600ms + carga de datos
             }
 
         } else {
@@ -14427,6 +14429,14 @@
         const alreadyLoaded = sessionStorage.getItem('jch_cloud_loaded');
         if (alreadyLoaded === currentUser.uid) {
             setSyncStatus('✅ Sesión activa', 'synced');
+            // FIX: aunque ya cargamos, programar FCM reminders con los datos ya en localStorage
+            setTimeout(function() {
+                if (typeof rescheduleAllReminders === 'function') {
+                    window._lastHabReschedule = 0;
+                    rescheduleAllReminders();
+                    console.log('[JCH] rescheduleAllReminders ejecutado tras reload con datos de nube');
+                }
+            }, 1500);
             return;
         }
 
@@ -14436,10 +14446,17 @@
             if (doc.exists) {
                 const data = doc.data();
                 if (data.localStorage) {
-                    // Restaurar todos los datos jch_ desde la nube
+                    // FIX: Restaurar datos de la nube SOLO si son más recientes o locales están vacíos
+                    // Esto evita que PC (con localStorage vacío) sobreescriba datos del móvil
+                    const cloudLastSync = data.lastSync ? data.lastSync.toMillis() : 0;
+                    const localLastSync = parseInt(localStorage.getItem('jch_last_sync') || '0');
+
+                    // Siempre restaurar desde nube en la primera carga de sesión
                     Object.entries(data.localStorage).forEach(([k, v]) => {
                         try { localStorage.setItem(k, v); } catch(e) {}
                     });
+                    localStorage.setItem('jch_last_sync', String(cloudLastSync || Date.now()));
+
                     // Marcar que ya se cargo para no repetir en esta sesion
                     sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                     setSyncStatus('✅ Datos cargados', 'synced');
@@ -14474,6 +14491,31 @@
                     jchData[k] = localStorage.getItem(k);
                 }
             });
+
+            // FIX: No sobreescribir la nube si no hay datos locales de hábitos
+            // Esto evita que abrir la app en un dispositivo nuevo borre los hábitos del móvil
+            const localHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
+            if (!showFeedback && localHabits.length === 0) {
+                // Sincronización automática sin datos: verificar si la nube tiene datos
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists && doc.data().localStorage && doc.data().localStorage['jch_habits_v1']) {
+                    const cloudHabits = JSON.parse(doc.data().localStorage['jch_habits_v1'] || '[]');
+                    if (cloudHabits.length > 0) {
+                        // La nube tiene hábitos y local no — restaurar sin sobreescribir
+                        console.log('[JCH] syncToCloud: nube tiene hábitos, local vacío — restaurando sin sobreescribir');
+                        Object.entries(doc.data().localStorage).forEach(([k, v]) => {
+                            try { localStorage.setItem(k, v); } catch(e) {}
+                        });
+                        setSyncStatus('✅ Datos restaurados', 'synced');
+                        setTimeout(() => { location.reload(); }, 800);
+                        return;
+                    }
+                }
+            }
+
+            const now = Date.now();
+            localStorage.setItem('jch_last_sync', String(now));
+            jchData['jch_last_sync'] = String(now);
 
             await db.collection('users').doc(currentUser.uid).set({
                 localStorage: jchData,
@@ -14891,33 +14933,7 @@ window.cancelEventReminders=function(id){
 };
 
 function reschedAll(){
-  try{
-    // ── Eventos del calendario ──────────────────────────────
-    var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
-    var list=buildList(evs);
-    // ── Hábitos con recordatorio activo ────────────────────
-    // Se fusionan para que Firestore siempre tenga AMBOS juntos
-    var now=Date.now(), nowDate=new Date();
-    var allH=[];
-    try{ allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(ex){}
-    allH.filter(function(h){ return h.reminderOn && h.reminderTime && !h.archived; })
-      .forEach(function(h){
-        var parts=(h.reminderTime||'08:00').split(':').map(Number);
-        var hr=parts[0]||8, mn=parts[1]||0;
-        var todayFire=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
-        var fireAt=todayFire.getTime()>(now+60000)?todayFire.getTime():todayFire.getTime()+86400000;
-        list.push({
-          evId: 'hab_single_'+(h.name||'').replace(/\W+/g,'_'),
-          fireAt: fireAt,
-          title: (h.emoji||'🌿')+' '+(h.name||'Hábito'),
-          body:  '¡Es hora de tu hábito diario!'
-        });
-        console.log('[JCH] reschedAll hábito: '+(h.emoji||'🌿')+' '+(h.name||'Hábito')+' → '+new Date(fireAt).toLocaleString());
-      });
-    save(list);
-    saveToFirestore(list);
-    console.log('[JCH] reschedAll: '+list.length+' recordatorios subidos a Firestore');
-  }catch(e){ console.warn('[JCH] reschedAll error:',e); }
+  try{var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];var list=buildList(evs);save(list);saveToFirestore(list);}catch(e){}
 }
 
 function check(){
@@ -14936,26 +14952,7 @@ function check(){
   var _o=localStorage.setItem.bind(localStorage);
   localStorage.setItem=function(k,v){
     _o(k,v);
-    // Solo reaccionar al calendario (jch_rem_v4 es el key de save() — no interceptar para evitar loop)
-    if(k==='jch_calendar_v1'){
-      try{
-        var list=buildList(JSON.parse(v)||[]);
-        // Fusionar hábitos activos para que Firestore siempre tenga ambos
-        var now=Date.now(), nowDate=new Date();
-        var allH=[];
-        try{ allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(ex){}
-        allH.filter(function(h){ return h.reminderOn && h.reminderTime && !h.archived; })
-          .forEach(function(h){
-            var parts=(h.reminderTime||'08:00').split(':').map(Number);
-            var hr=parts[0]||8, mn=parts[1]||0;
-            var todayFire=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
-            var fireAt=todayFire.getTime()>(now+60000)?todayFire.getTime():todayFire.getTime()+86400000;
-            list.push({evId:'hab_single_'+(h.name||'').replace(/\W+/g,'_'),fireAt:fireAt,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
-          });
-        save(list);
-        saveToFirestore(list);
-      }catch(e){}
-    }
+    if(k==='jch_calendar_v1'){try{var list=buildList(JSON.parse(v)||[]);save(list);saveToFirestore(list);}catch(e){}}
   };
 })();
 
@@ -16476,44 +16473,21 @@ function scheduleHabitReminder(name, time, emoji) {
         var title = (emoji || '🌿') + ' ' + (name || 'Hábito');
         var body  = '¡Es hora de tu hábito diario!';
 
-        // ── Leer lista completa (jch_rem_v4) y eliminar entrada anterior de este hábito ──
+        // Leer lista compartida (misma que calendario: jch_rem_v4)
         var list = [];
         try { list = JSON.parse(localStorage.getItem('jch_rem_v4') || '[]'); } catch(e) {}
-        list = list.filter(function(r) { return r.evId !== evId; });
 
-        // ── Agregar TODOS los hábitos activos (no solo este) para mantener Firestore completo ──
-        var allHabits = [];
-        try { allHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]'); } catch(e) {}
-        allHabits
-            .filter(function(hab) { return hab.reminderOn && hab.reminderTime && !hab.archived; })
-            .forEach(function(hab) {
-                var habEvId = 'hab_single_' + (hab.name || '').replace(/\W+/g, '_');
-                if (habEvId === evId) return; // este lo añadimos abajo con fireAt ya calculado
-                var p = (hab.reminderTime || '08:00').split(':').map(Number);
-                var hr = p[0] || 8, mn = p[1] || 0;
-                var tf = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), hr, mn, 0);
-                var fa = tf.getTime() > (now + 60000) ? tf.getTime() : tf.getTime() + 86400000;
-                // Solo agregar si no está ya en la lista (del calendario)
-                if (!list.some(function(r){ return r.evId === habEvId; })) {
-                    list.push({ evId: habEvId, fireAt: fa, title: (hab.emoji||'🌿')+' '+(hab.name||'Hábito'), body: '¡Es hora de tu hábito diario!' });
-                }
-            });
+        // Eliminar entrada anterior del mismo hábito
+        var clean = list.filter(function(r) { return r.evId !== evId; });
+        clean.push({ evId: evId, fireAt: fireAt, title: title, body: body });
 
-        // ── Agregar el hábito actual (recién creado/editado) ──
-        list.push({ evId: evId, fireAt: fireAt, title: title, body: body });
+        // Guardar en localStorage
+        localStorage.setItem('jch_rem_v4', JSON.stringify(clean));
 
-        // ── Guardar en localStorage (key del módulo FCM) ──
-        localStorage.setItem('jch_rem_v4', JSON.stringify(list));
-
-        // ── Subir lista completa a Firestore (FCM background) ──
+        // Subir a Firestore (FCM background)
         if (typeof saveToFirestore === 'function') {
-            saveToFirestore(list);
-            console.log('[JCH] scheduleHabitReminder OK: ' + title + ' → ' + new Date(fireAt).toLocaleString() + ' | Total Firestore: ' + list.length);
-        } else {
-            console.warn('[JCH] saveToFirestore no disponible aún, reintentando en 3s');
-            setTimeout(function() {
-                if (typeof saveToFirestore === 'function') saveToFirestore(list);
-            }, 3000);
+            saveToFirestore(clean);
+            console.log('[JCH] scheduleHabitReminder: ' + title + ' → ' + new Date(fireAt).toLocaleString());
         }
     } catch(e) { console.warn('[JCH] scheduleHabitReminder error:', e); }
 }
