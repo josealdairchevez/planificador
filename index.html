@@ -14933,7 +14933,30 @@ window.cancelEventReminders=function(id){
 };
 
 function reschedAll(){
-  try{var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];var list=buildList(evs);save(list);saveToFirestore(list);}catch(e){}
+  try{
+    var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
+    var list=buildList(evs);
+    var now=Date.now(), nowDate=new Date();
+    var allH=[];
+    try{ allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(ex){}
+    allH.filter(function(h){ return h.reminderOn && h.reminderTime && !h.archived; })
+      .forEach(function(h){
+        var parts=(h.reminderTime||'08:00').split(':').map(Number);
+        var hr=parts[0]||8, mn=parts[1]||0;
+        var todayFire=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
+        var fireAt=todayFire.getTime()>(now+60000)?todayFire.getTime():todayFire.getTime()+86400000;
+        list.push({
+          evId:'hab_single_'+(h.name||'').replace(/\W+/g,'_'),
+          fireAt:fireAt,
+          title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),
+          body:'¡Es hora de tu hábito diario!'
+        });
+        console.log('[JCH] reschedAll hab: '+(h.name||'?')+' -> '+new Date(fireAt).toLocaleString());
+      });
+    save(list);
+    saveToFirestore(list);
+    console.log('[JCH] reschedAll total: '+list.length+' en Firestore');
+  }catch(e){ console.warn('[JCH] reschedAll error:',e); }
 }
 
 function check(){
@@ -14952,7 +14975,23 @@ function check(){
   var _o=localStorage.setItem.bind(localStorage);
   localStorage.setItem=function(k,v){
     _o(k,v);
-    if(k==='jch_calendar_v1'){try{var list=buildList(JSON.parse(v)||[]);save(list);saveToFirestore(list);}catch(e){}}
+    // Solo reaccionar al calendario — jch_rem_v4 lo escribe save() y causaría loop
+    if(k==='jch_calendar_v1'){
+      try{
+        var list=buildList(JSON.parse(v)||[]);
+        var now=Date.now(), nowDate=new Date(), allH=[];
+        try{ allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(ex){}
+        allH.filter(function(h){ return h.reminderOn&&h.reminderTime&&!h.archived; })
+          .forEach(function(h){
+            var parts=(h.reminderTime||'08:00').split(':').map(Number);
+            var hr=parts[0]||8, mn=parts[1]||0;
+            var tf=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
+            var fa=tf.getTime()>(now+60000)?tf.getTime():tf.getTime()+86400000;
+            list.push({evId:'hab_single_'+(h.name||'').replace(/\W+/g,'_'),fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
+          });
+        save(list); saveToFirestore(list);
+      }catch(e){}
+    }
   };
 })();
 
@@ -16439,10 +16478,24 @@ window.saveHabit = function() {
     }
     saveHabits();
 
+    // ── Subir a la nube inmediatamente después de guardar ────────
+    // Esto asegura que el hábito recién creado en móvil llega a Firestore
+    // sin esperar el sync automático de 3 minutos
+    setTimeout(function() {
+        if (typeof syncToCloud === 'function' && typeof currentUser !== 'undefined' && currentUser) {
+            syncToCloud(false);
+            console.log('[JCH] saveHabit: sync a nube disparado');
+        }
+    }, 500);
+
     // Programar recordatorio via Service Worker
-    if(reminderOn && reminderTime && 'serviceWorker' in navigator) {
-        scheduleHabitReminder(name, reminderTime, selectedEmoji);
-    }
+    // Siempre reprogramar FCM aunque no tenga recordatorio (para limpiar entradas viejas)
+    setTimeout(function() {
+        if (typeof rescheduleAllReminders === 'function') {
+            window._lastHabReschedule = 0;
+            rescheduleAllReminders();
+        }
+    }, 800);
 
     document.getElementById('habNameInput').value='';
     document.getElementById('habEditId').value='';
@@ -16540,17 +16593,23 @@ function rescheduleAllReminders() {
         });
 
         // Guardar en localStorage (mismo key que el calendario)
-        localStorage.setItem('jch_rem_v4', JSON.stringify(clean));
+        // Deduplicar por evId — quedarse con la entrada más reciente de cada hábito
+        var seen = {};
+        var deduped = [];
+        clean.forEach(function(r) {
+            if (!seen[r.evId]) { seen[r.evId] = true; deduped.push(r); }
+        });
+        localStorage.setItem('jch_rem_v4', JSON.stringify(deduped));
 
         // Subir TODO a Firestore (hábitos + eventos calendario juntos)
         // usando la misma saveToFirestore del módulo de recordatorios
         if (typeof saveToFirestore === 'function') {
-            saveToFirestore(clean);
-            console.log('[JCH] ' + clean.length + ' recordatorios totales subidos a Firestore (' + habsWithReminder.length + ' hábitos)');
+            saveToFirestore(deduped);
+            console.log('[JCH] ' + deduped.length + ' recordatorios subidos a Firestore (' + habsWithReminder.length + ' hábitos)');
         } else {
             console.warn('[JCH] saveToFirestore no disponible — reintentando en 3s');
             setTimeout(function() {
-                if (typeof saveToFirestore === 'function') saveToFirestore(clean);
+                if (typeof saveToFirestore === 'function') saveToFirestore(deduped);
             }, 3000);
         }
 
