@@ -14304,6 +14304,7 @@
         const db   = firebase.firestore();
 
     let currentUser = null;
+    window._jchCurrentUser = null; // expuesto globalmente para acceso desde otros módulos
     let authTab = 'login';
     let syncTimeout = null;
     let profilePanelOpen = false;
@@ -14378,6 +14379,7 @@
 
         if (user) {
             currentUser = user;
+            window._jchCurrentUser = user; // sincronizar referencia global
             // Asegurar que el overlay está completamente oculto
             if (overlay) {
                 overlay.classList.remove('visible');
@@ -14411,6 +14413,7 @@
 
         } else {
             currentUser = null;
+            window._jchCurrentUser = null;
             authStateResolved = false;
             if (overlay) {
                 overlay.style.display = 'flex';
@@ -14880,6 +14883,8 @@ function saveToFirestore(list){
   }
   tryUpdate();
 }
+// Exponer globalmente para que otros módulos (hábitos) puedan llamarla
+window._jchSaveToFirestore = saveToFirestore;
 
 function registerFCMToken(){
   var tryCount=0;
@@ -16535,28 +16540,47 @@ window.saveHabit = function() {
     }
     saveHabits();
 
-    // ── Subir a la nube inmediatamente después de guardar ────────
-    // Esto asegura que el hábito recién creado en móvil llega a Firestore
-    // sin esperar el sync automático de 3 minutos
-    setTimeout(function() {
-        if (typeof syncToCloud === 'function' && typeof currentUser !== 'undefined' && currentUser) {
-            syncToCloud(false);
-            console.log('[JCH] saveHabit: sync a nube disparado');
-        }
-    }, 500);
+    // ── ESCRITURA SINCRÓNICA EN jch_rem_v4 ──────────────────────────────────
+    // NO esperar setTimeout — escribir el recordatorio AHORA MISMO
+    // para que check() lo encuentre en el próximo ciclo (10s)
+    if (reminderOn && reminderTime) {
+        try {
+            var _now = Date.now(), _nowD = new Date();
+            var _parts = reminderTime.split(':').map(Number);
+            var _hr = _parts[0]||8, _mn = _parts[1]||0;
+            var _todayFire = new Date(_nowD.getFullYear(),_nowD.getMonth(),_nowD.getDate(),_hr,_mn,0);
+            var _fireAt = _todayFire.getTime() > (_now + 60000) ? _todayFire.getTime() : _todayFire.getTime() + 86400000;
+            var _evId = 'hab_single_' + name.replace(/\W+/g,'_');
+            var _title = (selectedEmoji||'🌿') + ' ' + name;
+            var _body = '¡Es hora de tu hábito diario!';
+            // Leer lista actual, eliminar entrada anterior de este hábito, agregar nueva
+            var _rem = [];
+            try { _rem = JSON.parse(localStorage.getItem('jch_rem_v4')||'[]'); } catch(e){}
+            _rem = _rem.filter(function(r){ return r.evId !== _evId; });
+            _rem.push({ evId:_evId, fireAt:_fireAt, title:_title, body:_body });
+            localStorage.setItem('jch_rem_v4', JSON.stringify(_rem));
+            console.log('[JCH] saveHabit SYNC: recordatorio guardado → '+_title+' a las '+new Date(_fireAt).toLocaleTimeString());
+            // Subir a Firestore inmediatamente
+            if (typeof window._jchSaveToFirestore === 'function') {
+                window._jchSaveToFirestore(_rem);
+                console.log('[JCH] saveHabit SYNC: Firestore actualizado con '+_rem.length+' recordatorios');
+            }
+        } catch(e) { console.warn('[JCH] saveHabit SYNC error:',e); }
+    }
 
-    // Programar recordatorio via Service Worker
-    // Siempre reprogramar FCM aunque no tenga recordatorio (para limpiar entradas viejas)
+    // ── Sync general a la nube y check inmediato ─────────────────────────────
     setTimeout(function() {
+        if (typeof window.syncToCloud === 'function' && window._jchCurrentUser) {
+            window.syncToCloud(false);
+        }
         if (typeof rescheduleAllReminders === 'function') {
             window._lastHabReschedule = 0;
-            rescheduleAllReminders(true); // force=true: saltarse throttle de 1h
+            rescheduleAllReminders(true);
         }
-        // Verificar inmediatamente si el recordatorio ya debe disparar
         setTimeout(function() {
             if (typeof window._jchCheckNow === 'function') window._jchCheckNow();
-        }, 1000);
-    }, 800);
+        }, 500);
+    }, 400);
 
     document.getElementById('habNameInput').value='';
     document.getElementById('habEditId').value='';
@@ -16662,15 +16686,16 @@ function rescheduleAllReminders(force) {
         });
         localStorage.setItem('jch_rem_v4', JSON.stringify(deduped));
 
-        // Subir TODO a Firestore (hábitos + eventos calendario juntos)
-        // usando la misma saveToFirestore del módulo de recordatorios
-        if (typeof saveToFirestore === 'function') {
-            saveToFirestore(deduped);
-            console.log('[JCH] ' + deduped.length + ' recordatorios subidos a Firestore (' + habsWithReminder.length + ' hábitos)');
+        // Subir fcm_reminders a Firestore usando la función expuesta globalmente
+        var _stf = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
+        if (_stf) {
+            _stf(deduped);
+            console.log('[JCH] rescheduleAllReminders: ' + deduped.length + ' recordatorios → Firestore (' + habsWithReminder.length + ' hábitos)');
         } else {
             console.warn('[JCH] saveToFirestore no disponible — reintentando en 3s');
             setTimeout(function() {
-                if (typeof saveToFirestore === 'function') saveToFirestore(deduped);
+                var _stf2 = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
+                if (_stf2) _stf2(deduped);
             }, 3000);
         }
 
