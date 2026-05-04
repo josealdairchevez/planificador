@@ -14857,23 +14857,26 @@ function showNotif(title,body,tag){
 }
 
 function saveToFirestore(list){
-  var tryCount=0;
+  var snapshot=list.slice();
+  function doSave(user){
+    firebase.firestore().collection('users').doc(user.uid)
+      .set({fcm_reminders:snapshot},{merge:true})
+      .then(function(){ console.log('[JCH] Firestore OK: '+snapshot.length+' recordatorios'); })
+      .catch(function(e){ console.warn('[JCH] Firestore error:',e); });
+  }
   function tryUpdate(){
     if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
-      if(++tryCount<20) setTimeout(tryUpdate,500);
-      return;
+      setTimeout(tryUpdate,500); return;
     }
-    var auth=firebase.auth();
-    var user=auth.currentUser;
-    if(!user){
-      // Usuario no autenticado aún — esperar
-      if(++tryCount<20) setTimeout(tryUpdate,500);
-      return;
+    var user=firebase.auth().currentUser;
+    if(user){ doSave(user); }
+    else{
+      var unsub=firebase.auth().onAuthStateChanged(function(u){
+        unsub();
+        if(u) doSave(u);
+        else console.warn('[JCH] saveToFirestore: sin usuario');
+      });
     }
-    var db=firebase.firestore();
-    db.collection('users').doc(user.uid).set({fcm_reminders:list},{merge:true})
-      .then(function(){ console.log('[JCH] Firestore OK: '+list.length+' recordatorios'); })
-      .catch(function(e){ console.warn('[JCH] Firestore error:',e); });
   }
   tryUpdate();
 }
@@ -15020,20 +15023,35 @@ if(navigator.serviceWorker){
 }
 
 function init(){
-  if(Notification.permission==='granted'){
+  function startFCM(){
     registerFCMToken();
     setupFCMForeground();
-    reschedAll();
     if(!_loop) _loop=setInterval(check,20000);
+    // Ejecutar reschedAll DESPUÉS de que Firebase Auth tenga usuario
+    // para que saveToFirestore pueda escribir en Firestore inmediatamente
+    function runReschedWhenReady(){
+      if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
+        setTimeout(runReschedWhenReady,500); return;
+      }
+      var user=firebase.auth().currentUser;
+      if(user){
+        reschedAll();
+      } else {
+        var unsub=firebase.auth().onAuthStateChanged(function(u){
+          unsub();
+          if(u){ reschedAll(); }
+        });
+      }
+    }
+    runReschedWhenReady();
+  }
+
+  if(Notification.permission==='granted'){
+    startFCM();
   } else if(Notification.permission==='default'){
     setTimeout(function(){
       Notification.requestPermission().then(function(p){
-        if(p==='granted'){
-          registerFCMToken();
-          setupFCMForeground();
-          reschedAll();
-          if(!_loop) _loop=setInterval(check,20000);
-        }
+        if(p==='granted') startFCM();
       });
     },1000);
   }
