@@ -14884,24 +14884,57 @@ function saveToFirestore(list){
 function registerFCMToken(){
   var tryCount=0;
   function tryReg(){
-    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){if(++tryCount<20)setTimeout(tryReg,500);return;}
+    if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
+      if(++tryCount<20) setTimeout(tryReg,500); return;
+    }
     var messaging;
-    try{messaging=firebase.messaging();}catch(e){return;}
+    try{ messaging=firebase.messaging(); }catch(e){
+      console.warn('[JCH] FCM messaging no disponible:',e.message); return;
+    }
     var swUrl='https://josealdairchevez.github.io/planificador/firebase-messaging-sw.js';
     navigator.serviceWorker.register(swUrl)
-      .then(function(reg){return reg.update().then(function(){return reg;});})
-      .then(function(reg){return messaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});})
-      .then(function(token){
-        if(!token) return;
-        _fcmReady=true;
-        var auth=firebase.auth();
-        auth.onAuthStateChanged(function(user){
-          if(!user) return;
-          firebase.firestore().collection('users').doc(user.uid)
-            .set({fcm_token:token,fcm_token_updated:Date.now()},{merge:true});
-        });
+      .then(function(reg){ return reg.update().then(function(){ return reg; }); })
+      .then(function(reg){
+        return messaging.deleteToken()
+          .catch(function(){ return null; })
+          .then(function(){ return messaging.getToken({vapidKey:VAPID_KEY, serviceWorkerRegistration:reg}); });
       })
-      .catch(function(err){if(tryCount<3){tryCount++;setTimeout(tryReg,5000);}});
+      .then(function(token){
+        if(!token){
+          console.warn('[JCH] FCM: no se obtuvo token'); return;
+        }
+        _fcmReady=true;
+        console.log('[JCH] FCM token:',token.substring(0,20)+'...');
+        var auth=firebase.auth();
+        var saveToken=function(user){
+          if(!user) return;
+          var userRef=firebase.firestore().collection('users').doc(user.uid);
+          // Guardar token en ARRAY para soportar múltiples dispositivos
+          // El token antiguo de este campo se conserva + se agrega el nuevo
+          userRef.get().then(function(doc){
+            var existing=[];
+            if(doc.exists && doc.data().fcm_tokens) existing=doc.data().fcm_tokens;
+            // Agregar token si no existe ya en la lista
+            if(existing.indexOf(token)===-1) existing.push(token);
+            // Mantener máximo 5 tokens (evitar acumulación infinita)
+            if(existing.length>5) existing=existing.slice(-5);
+            return userRef.set({
+              fcm_token: token,          // compatibilidad con Cloud Function actual
+              fcm_tokens: existing,      // nuevo: array multi-dispositivo
+              fcm_token_updated: Date.now()
+            },{merge:true});
+          })
+          .then(function(){ console.log('[JCH] FCM token guardado (multi-device)'); })
+          .catch(function(e){ console.warn('[JCH] Error guardando token:',e); });
+        };
+        var currentUser=auth.currentUser;
+        if(currentUser){ saveToken(currentUser); }
+        else{ var unsub=auth.onAuthStateChanged(function(u){ unsub(); saveToken(u); }); }
+      })
+      .catch(function(err){
+        console.warn('[JCH] registerFCMToken error:',err.message);
+        if(tryCount<3){ tryCount++; setTimeout(tryReg,5000); }
+      });
   }
   tryReg();
 }
