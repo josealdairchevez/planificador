@@ -16660,15 +16660,30 @@ function rescheduleAllReminders(force) {
         });
 
         const nowDate = new Date();
+        const todayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), 0, 0, 0).getTime();
+        const todayEnd   = todayStart + 86400000;
+
         habsWithReminder.forEach(function(h) {
             var parts    = (h.reminderTime || '08:00').split(':').map(Number);
             var hr = parts[0] || 8, mn = parts[1] || 0;
             var todayFire = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), hr, mn, 0);
             var fireAt    = todayFire.getTime() > (now + 60000)
                 ? todayFire.getTime()
-                : todayFire.getTime() + 86400000; // mañana si ya pasó
+                : todayFire.getTime() + 86400000;
+            var evId = 'hab_single_' + (h.name || '').replace(/\W+/g, '_');
+
+            // Si ya existe una entrada para HOY de este hábito (puesta por saveHabit),
+            // conservarla — no pisar con cálculo de mañana
+            var existing = clean.find(function(r){ return r.evId === evId; });
+            if (existing && existing.fireAt >= todayStart && existing.fireAt < todayEnd) {
+                // Ya tiene entrada para hoy — conservar
+                clean.push(existing);
+                console.log('[JCH] reschedAll: conservando fireAt de HOY para '+h.name+' → '+new Date(existing.fireAt).toLocaleTimeString());
+                return;
+            }
+
             var entry = {
-                evId:   'hab_single_' + (h.name || '').replace(/\W+/g, '_'),
+                evId:   evId,
                 fireAt: fireAt,
                 title:  (h.emoji || '🌿') + ' ' + (h.name || 'Hábito'),
                 body:   '¡Es hora de tu hábito diario!'
