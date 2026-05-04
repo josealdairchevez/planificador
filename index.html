@@ -14996,15 +14996,20 @@ function reschedAll(){
 }
 
 function check(){
-  var now=Date.now(),s=load();
+  var now=Date.now(), s=load();
   var fire=s.filter(function(r){
     if(_fired[r.evId+'_'+r.fireAt]) return false;
-    if(r.fireAt<_sessionStart) return false;
-    return r.fireAt<=now;
+    // Disparar si el fireAt ya pasó pero hace menos de 5 minutos (tolerancia)
+    // Eliminado el filtro _sessionStart que bloqueaba recordatorios creados en esta sesión
+    return r.fireAt <= now && r.fireAt >= (now - 300000);
   });
-  var rest=s.filter(function(r){return r.fireAt>now;});
-  fire.forEach(function(r){_fired[r.evId+'_'+r.fireAt]=true;showNotif(r.title,r.body,'jch-'+r.evId+'-'+r.fireAt);});
-  if(fire.length){save(rest);saveToFirestore(rest);}
+  var rest=s.filter(function(r){ return r.fireAt > now; });
+  fire.forEach(function(r){
+    _fired[r.evId+'_'+r.fireAt]=true;
+    showNotif(r.title, r.body, 'jch-'+r.evId+'-'+r.fireAt);
+    console.log('[JCH] check() disparó: '+r.title+' fireAt:'+new Date(r.fireAt).toLocaleTimeString());
+  });
+  if(fire.length){ save(rest); saveToFirestore(rest); }
 }
 
 (function(){
@@ -15059,7 +15064,8 @@ function init(){
   function startFCM(){
     registerFCMToken();
     setupFCMForeground();
-    if(!_loop) _loop=setInterval(check,20000);
+    window._jchCheckNow = check; // exponer para llamado inmediato desde saveHabit
+    if(!_loop) _loop=setInterval(check, 10000); // cada 10s en lugar de 20s
     // Ejecutar reschedAll DESPUÉS de que Firebase Auth tenga usuario
     // para que saveToFirestore pueda escribir en Firestore inmediatamente
     function runReschedWhenReady(){
@@ -16544,8 +16550,12 @@ window.saveHabit = function() {
     setTimeout(function() {
         if (typeof rescheduleAllReminders === 'function') {
             window._lastHabReschedule = 0;
-            rescheduleAllReminders();
+            rescheduleAllReminders(true); // force=true: saltarse throttle de 1h
         }
+        // Verificar inmediatamente si el recordatorio ya debe disparar
+        setTimeout(function() {
+            if (typeof window._jchCheckNow === 'function') window._jchCheckNow();
+        }, 1000);
     }, 800);
 
     document.getElementById('habNameInput').value='';
@@ -16597,10 +16607,10 @@ function scheduleHabitReminder(name, time, emoji) {
 }
 
 // Re-programar todos los recordatorios al abrir
-function rescheduleAllReminders() {
-    // Throttle: máximo una vez por hora
+function rescheduleAllReminders(force) {
+    // Throttle: máximo una vez por hora (salvo force=true desde saveHabit)
     const now = Date.now();
-    if (window._lastHabReschedule && (now - window._lastHabReschedule) < 3600000) return;
+    if (!force && window._lastHabReschedule && (now - window._lastHabReschedule) < 3600000) return;
     window._lastHabReschedule = now;
 
     try {
