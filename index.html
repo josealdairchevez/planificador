@@ -14891,9 +14891,36 @@ window.cancelEventReminders=function(id){
 };
 
 function reschedAll(){
-  try{var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];var list=buildList(evs);save(list);saveToFirestore(list);}catch(e){}
-}
+  try{
+    // ── Eventos del calendario ──────────────────────────────────
+    var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
+    var list=buildList(evs);
 
+    // ── Hábitos con recordatorio activo ────────────────────────
+    // Se fusionan para que Firestore siempre tenga AMBOS juntos
+    var now=Date.now();
+    var nowDate=new Date();
+    var allHabits=[];
+    try{ allHabits=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(e){}
+    allHabits.filter(function(h){ return h.reminderOn && h.reminderTime && !h.archived; })
+      .forEach(function(h){
+        var parts=(h.reminderTime||'08:00').split(':').map(Number);
+        var hr=parts[0]||8, mn=parts[1]||0;
+        var todayFire=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
+        var fireAt=todayFire.getTime()>(now+60000)?todayFire.getTime():todayFire.getTime()+86400000;
+        list.push({
+          evId:'hab_single_'+(h.name||'').replace(/\W+/g,'_'),
+          fireAt:fireAt,
+          title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),
+          body:'¡Es hora de tu hábito diario!'
+        });
+      });
+
+    save(list);
+    saveToFirestore(list);
+  }catch(e){}
+}
+    
 function check(){
   var now=Date.now(),s=load();
   var fire=s.filter(function(r){
@@ -14910,7 +14937,24 @@ function check(){
   var _o=localStorage.setItem.bind(localStorage);
   localStorage.setItem=function(k,v){
     _o(k,v);
-    if(k==='jch_calendar_v1'){try{var list=buildList(JSON.parse(v)||[]);save(list);saveToFirestore(list);}catch(e){}}
+    if(k==='jch_calendar_v1'||k==='jch_habits_v1'){
+      try{
+        // Reconstruir lista completa: calendario + hábitos juntos
+        var calEvs=JSON.parse(localStorage.getItem('jch_calendar_v1')||'[]');
+        var list=buildList(calEvs);
+        var now=Date.now(), nowDate=new Date();
+        var allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+        allH.filter(function(h){return h.reminderOn&&h.reminderTime&&!h.archived;})
+          .forEach(function(h){
+            var parts=(h.reminderTime||'08:00').split(':').map(Number);
+            var hr=parts[0]||8,mn=parts[1]||0;
+            var todayFire=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
+            var fireAt=todayFire.getTime()>(now+60000)?todayFire.getTime():todayFire.getTime()+86400000;
+            list.push({evId:'hab_single_'+(h.name||'').replace(/\W+/g,'_'),fireAt:fireAt,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
+          });
+        save(list);saveToFirestore(list);
+      }catch(e){}
+    }
   };
 })();
 
