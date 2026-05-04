@@ -16818,7 +16818,7 @@ window.renderHabitCardHabitica = function(h, showEdit) {
             <div class="hab-stat-pill"><div class="hab-stat-val" style="color:${h.color};">${streak}</div><div class="hab-stat-lbl">Racha</div></div>
             <div class="hab-stat-pill"><div class="hab-stat-val">${(h.log||[]).length}</div><div class="hab-stat-lbl">Total</div></div>
             <div class="hab-stat-pill"><div class="hab-stat-val">${rate}%</div><div class="hab-stat-lbl">Tasa</div></div>
-            <div class="hab-stat-pill"><div class="hab-stat-val" style="color:${perf==='perf-great'?'#22c55e':perf==='perf-good'?'#eab308':perf==='perf-bad'?'#f97316':'#ef4444'};">${{perf-great:'🟢',perf-good:'🟡',perf-bad:'🟠','perf-danger':'🔴'}[perf]||'🟡'}</div><div class="hab-stat-lbl">Salud</div></div>
+            <div class="hab-stat-pill"><div class="hab-stat-val" style="color:${perf==='perf-great'?'#22c55e':perf==='perf-good'?'#eab308':perf==='perf-bad'?'#f97316':'#ef4444'};">${{'perf-great':'🟢','perf-good':'🟡','perf-bad':'🟠','perf-danger':'🔴'}[perf]||'🟡'}</div><div class="hab-stat-lbl">Salud</div></div>
         </div>
         <div class="hab-perf-bar ${perf}"></div>
     </div>`;
@@ -18179,7 +18179,7 @@ function renderIndividualStats() {
             const dd=new Date(today); dd.setDate(dd.getDate()-i);
             const k=dateKey(dd);
             const done=log.includes(k);
-            heatCells.push('<div style="width:10px;height:10px;border-radius:2px;background:'+(done?h.color+'cc':'rgba(255,255,255,0.05)'+');display:inline-block;margin:1px;"></div>');
+            heatCells.push('<div style="width:10px;height:10px;border-radius:2px;background:'+(done?h.color+'cc':'rgba(255,255,255,0.05)')+'  ;display:inline-block;margin:1px;"></div>');
         }
 
         return '<div class="hab-individual-stat">' +
