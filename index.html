@@ -21558,28 +21558,18 @@ window._habInstantUIUpdate = function(h) {
 // ── FIX 3: modal detalle sin parpadeo ────────────────────────
 var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
-    var ov    = document.getElementById('habDetailOverlay');
-    var modal = document.getElementById('habDetailModal');
-    if (!ov || !modal) return;
-
-    // 1. Cerrar overlay y deshabilitar TODA transición antes de tocar el HTML
+    var ov = document.getElementById('habDetailOverlay');
+    if (!ov) return;
+    // 1. Quitar .open — CSS pone overlay en opacity:0 + visibility:hidden
+    //    NO tocar estilos inline del modal — el CSS .open .hab-detail-modal los controla
     ov.classList.remove('open');
-    modal.style.transition = 'none';
-    modal.style.opacity    = '0';
-    modal.style.transform  = 'translateY(60px)';
-
-    // 2. Inyectar HTML con el modal fijo en estado invisible
+    // 2. Inyectar HTML mientras overlay es invisible
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-
-    // 3. Forzar reflow para que el browser registre el estado opacity:0
-    //    antes de activar la transición (evita el flash de contenido)
-    void modal.offsetHeight;
-
-    // 4. Restaurar transición y abrir — el CSS hace el slide-up suave
-    modal.style.transition = '';
-    modal.style.opacity    = '';
-    modal.style.transform  = '';
-    ov.classList.add('open');
+    // 3. Dar 30ms reales para que el browser móvil complete el reflow del nuevo HTML
+    //    antes de activar la transición — evita el flash transparente en Android
+    setTimeout(function() {
+        ov.classList.add('open');
+    }, 30);
 };
 
 })();
