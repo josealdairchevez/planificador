@@ -19079,9 +19079,15 @@ window.incrementQty = function(habitId, delta, targetVal) {
             if (typeof addGlobalReward==='function') addGlobalReward(h.xp||10, 1);
             if (typeof playSparkleSound==='function') playSparkleSound();
 
-            // Marcar card visualmente
+            // Marcar card visualmente con color del hábito
             const cardEl = document.getElementById('habCard-'+habitId);
-            if (cardEl) cardEl.classList.add('completed-today');
+            if (cardEl) {
+                cardEl.classList.add('completed-today');
+                var hColor = h.color || '#10b981';
+                cardEl.style.backgroundImage = 'linear-gradient(135deg,' + hColor + '18 0%,transparent 60%)';
+                cardEl.style.borderColor = hColor;
+                cardEl.style.boxShadow = '0 0 18px ' + hColor + '40';
+            }
 
             // Actualizar UI al instante (XP bar, boss HP, monedas)
             if (typeof _habInstantUIUpdate==='function') _habInstantUIUpdate(h);
@@ -21566,19 +21572,17 @@ var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
     if (!ov) return;
-    // 1. Ocultar con visibility para que no parpadee durante el llenado
-    ov.style.visibility = 'hidden';
-    ov.style.transition = 'none';
-    ov.classList.remove('open');
-    // 2. Rellenar contenido con overlay invisible
+    // Ocultar SOLO el modal interior (no el overlay) mientras se rellena el HTML
+    var modal = ov.querySelector('.hab-detail-modal');
+    if (modal) { modal.style.opacity = '0'; modal.style.transition = 'none'; }
+    // Rellenar contenido
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Mostrar suavemente en el siguiente frame (doble rAF elimina el flash)
+    // Abrir overlay (fade-in del CSS)
+    ov.classList.add('open');
+    // Restaurar modal en el siguiente frame — la transición CSS hace el slide-up
     requestAnimationFrame(function() {
-        requestAnimationFrame(function() {
-            ov.style.visibility = '';
-            ov.style.transition = '';
-            ov.classList.add('open');
-        });
+        var m = ov.querySelector('.hab-detail-modal');
+        if (m) { m.style.opacity = ''; m.style.transition = ''; }
     });
 };
 
