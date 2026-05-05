@@ -16224,7 +16224,28 @@ window.habRepInc = function(habitId, target) {
     const card   = document.getElementById('habCard-' + habitId);
 
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
-    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? color : color; }
+
+    // ── FIX: actualizar barra semanal (today-dot → done-dot) en tiempo real ──
+    if (card) {
+        var todayDot = card.querySelector('.hab-day-dot.today-dot');
+        if (isDone && todayDot) {
+            todayDot.classList.add('done-dot');
+            todayDot.classList.remove('today-dot');
+            todayDot.style.background = color;
+            todayDot.style.boxShadow  = '0 0 6px ' + color;
+            todayDot.style.outline    = 'none';
+        } else if (!isDone && todayDot) {
+            todayDot.style.background = 'rgba(255,255,255,0.12)';
+        }
+        // Aplicar color al fondo de la card al completarse
+        if (isDone) {
+            card.classList.add('completed-today');
+            card.style.backgroundImage = 'linear-gradient(135deg,' + color + '18 0%,transparent 60%)';
+            card.style.borderColor     = color;
+            card.style.boxShadow       = '0 0 18px ' + color + '40';
+        }
+    }
 
     var applyPlusClass = function() {
         var btn = document.getElementById('habRepPlus_' + habitId);
@@ -16305,13 +16326,7 @@ window.habRepInc = function(habitId, target) {
         if (typeof playSparkleSound === 'function') playSparkleSound();
 
         // Marcar card visualmente como completada sin re-renderizar
-        if (card) {
-            card.classList.add('completed-today');
-            // FIX: aplicar fondo de color del hábito al completarse
-            card.style.backgroundImage = 'linear-gradient(135deg, ' + color + '18 0%, transparent 60%)';
-            card.style.borderColor = color;
-            card.style.boxShadow = '0 0 18px ' + color + '40';
-        }
+        if (card) card.classList.add('completed-today');
 
         // FIX: actualizar UI de XP, monedas y boss HP al instante
         _habInstantUIUpdate(h);
@@ -19079,15 +19094,9 @@ window.incrementQty = function(habitId, delta, targetVal) {
             if (typeof addGlobalReward==='function') addGlobalReward(h.xp||10, 1);
             if (typeof playSparkleSound==='function') playSparkleSound();
 
-            // Marcar card visualmente con color del hábito
+            // Marcar card visualmente
             const cardEl = document.getElementById('habCard-'+habitId);
-            if (cardEl) {
-                cardEl.classList.add('completed-today');
-                var hColor = h.color || '#10b981';
-                cardEl.style.backgroundImage = 'linear-gradient(135deg,' + hColor + '18 0%,transparent 60%)';
-                cardEl.style.borderColor = hColor;
-                cardEl.style.boxShadow = '0 0 18px ' + hColor + '40';
-            }
+            if (cardEl) cardEl.classList.add('completed-today');
 
             // Actualizar UI al instante (XP bar, boss HP, monedas)
             if (typeof _habInstantUIUpdate==='function') _habInstantUIUpdate(h);
@@ -21572,17 +21581,33 @@ var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
     if (!ov) return;
-    // Ocultar SOLO el modal interior (no el overlay) mientras se rellena el HTML
+    // 1. Cerrar sin transición
+    ov.classList.remove('open');
+    // 2. Bloquear transición del modal interno mientras se inyecta el HTML
     var modal = ov.querySelector('.hab-detail-modal');
-    if (modal) { modal.style.opacity = '0'; modal.style.transition = 'none'; }
-    // Rellenar contenido
+    if (modal) {
+        modal.style.transition = 'none';
+        modal.style.transform  = 'translateY(60px)';
+        modal.style.opacity    = '0';
+    }
+    // 3. Inyectar HTML con overlay invisible
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // Abrir overlay (fade-in del CSS)
-    ov.classList.add('open');
-    // Restaurar modal en el siguiente frame — la transición CSS hace el slide-up
+    // 4. Re-seleccionar modal (el innerHTML fue reemplazado)
+    modal = ov.querySelector('.hab-detail-modal');
+    if (modal) {
+        modal.style.transition = 'none';
+        modal.style.transform  = 'translateY(60px)';
+        modal.style.opacity    = '0';
+    }
+    // 5. Abrir overlay y animar modal en el frame siguiente
     requestAnimationFrame(function() {
+        ov.classList.add('open');
         var m = ov.querySelector('.hab-detail-modal');
-        if (m) { m.style.opacity = ''; m.style.transition = ''; }
+        if (m) {
+            m.style.transition = '';
+            m.style.transform  = '';
+            m.style.opacity    = '';
+        }
     });
 };
 
