@@ -16224,28 +16224,7 @@ window.habRepInc = function(habitId, target) {
     const card   = document.getElementById('habCard-' + habitId);
 
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
-    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? color : color; }
-
-    // ── FIX: actualizar barra semanal (today-dot → done-dot) en tiempo real ──
-    if (card) {
-        var todayDot = card.querySelector('.hab-day-dot.today-dot');
-        if (isDone && todayDot) {
-            todayDot.classList.add('done-dot');
-            todayDot.classList.remove('today-dot');
-            todayDot.style.background = color;
-            todayDot.style.boxShadow  = '0 0 6px ' + color;
-            todayDot.style.outline    = 'none';
-        } else if (!isDone && todayDot) {
-            todayDot.style.background = 'rgba(255,255,255,0.12)';
-        }
-        // Aplicar color al fondo de la card al completarse
-        if (isDone) {
-            card.classList.add('completed-today');
-            card.style.backgroundImage = 'linear-gradient(135deg,' + color + '18 0%,transparent 60%)';
-            card.style.borderColor     = color;
-            card.style.boxShadow       = '0 0 18px ' + color + '40';
-        }
-    }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
 
     var applyPlusClass = function() {
         var btn = document.getElementById('habRepPlus_' + habitId);
@@ -21579,36 +21558,28 @@ window._habInstantUIUpdate = function(h) {
 // ── FIX 3: modal detalle sin parpadeo ────────────────────────
 var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
-    var ov = document.getElementById('habDetailOverlay');
-    if (!ov) return;
-    // 1. Cerrar sin transición
+    var ov    = document.getElementById('habDetailOverlay');
+    var modal = document.getElementById('habDetailModal');
+    if (!ov || !modal) return;
+
+    // 1. Cerrar overlay y deshabilitar TODA transición antes de tocar el HTML
     ov.classList.remove('open');
-    // 2. Bloquear transición del modal interno mientras se inyecta el HTML
-    var modal = ov.querySelector('.hab-detail-modal');
-    if (modal) {
-        modal.style.transition = 'none';
-        modal.style.transform  = 'translateY(60px)';
-        modal.style.opacity    = '0';
-    }
-    // 3. Inyectar HTML con overlay invisible
+    modal.style.transition = 'none';
+    modal.style.opacity    = '0';
+    modal.style.transform  = 'translateY(60px)';
+
+    // 2. Inyectar HTML con el modal fijo en estado invisible
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 4. Re-seleccionar modal (el innerHTML fue reemplazado)
-    modal = ov.querySelector('.hab-detail-modal');
-    if (modal) {
-        modal.style.transition = 'none';
-        modal.style.transform  = 'translateY(60px)';
-        modal.style.opacity    = '0';
-    }
-    // 5. Abrir overlay y animar modal en el frame siguiente
-    requestAnimationFrame(function() {
-        ov.classList.add('open');
-        var m = ov.querySelector('.hab-detail-modal');
-        if (m) {
-            m.style.transition = '';
-            m.style.transform  = '';
-            m.style.opacity    = '';
-        }
-    });
+
+    // 3. Forzar reflow para que el browser registre el estado opacity:0
+    //    antes de activar la transición (evita el flash de contenido)
+    void modal.offsetHeight;
+
+    // 4. Restaurar transición y abrir — el CSS hace el slide-up suave
+    modal.style.transition = '';
+    modal.style.opacity    = '';
+    modal.style.transform  = '';
+    ov.classList.add('open');
 };
 
 })();
