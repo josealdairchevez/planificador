@@ -14428,70 +14428,56 @@
     async function loadFromCloud() {
         if (!currentUser) return;
 
+        // Si ya se hizo la carga en esta sesión, no volver a recargar
         const alreadyLoaded = sessionStorage.getItem('jch_cloud_loaded');
         if (alreadyLoaded === currentUser.uid) {
             setSyncStatus('✅ Sesión activa', 'synced');
+            // FIX: aunque ya cargamos, programar FCM reminders con los datos ya en localStorage
+            setTimeout(function() {
+                if (typeof rescheduleAllReminders === 'function') {
+                    window._lastHabReschedule = 0;
+                    rescheduleAllReminders();
+                    console.log('[JCH] rescheduleAllReminders ejecutado tras reload con datos de nube');
+                }
+            }, 1500);
             return;
         }
 
         try {
             setSyncStatus('⏳ Cargando datos...', 'syncing');
             const doc = await db.collection('users').doc(currentUser.uid).get();
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.localStorage) {
+                    // FIX: Restaurar datos de la nube SOLO si son más recientes o locales están vacíos
+                    // Esto evita que PC (con localStorage vacío) sobreescriba datos del móvil
+                    const cloudLastSync = data.lastSync ? data.lastSync.toMillis() : 0;
+                    const localLastSync = parseInt(localStorage.getItem('jch_last_sync') || '0');
 
-            if (doc.exists && doc.data().localStorage) {
-                const cloudData = doc.data().localStorage;
+                    // Siempre restaurar desde nube en la primera carga de sesión
+                    Object.entries(data.localStorage).forEach(([k, v]) => {
+                        try { localStorage.setItem(k, v); } catch(e) {}
+                    });
+                    localStorage.setItem('jch_last_sync', String(cloudLastSync || Date.now()));
 
-                // ── FUSIONAR: tomar lo mejor de nube y local ──────────────
-                // Para hábitos: quedarse con la lista que tenga MÁS hábitos
-                // Para eventos: fusionar ambas listas sin duplicados
-                // Para el resto: preferir el valor más reciente
-
-                const localHabits  = JSON.parse(localStorage.getItem('jch_habits_v1')  || '[]');
-                const cloudHabits  = JSON.parse(cloudData['jch_habits_v1']             || '[]');
-                const localEvents  = JSON.parse(localStorage.getItem('jch_calendar_v1')|| '[]');
-                const cloudEvents  = JSON.parse(cloudData['jch_calendar_v1']           || '[]');
-
-                // Primero restaurar todo desde la nube
-                Object.entries(cloudData).forEach(([k, v]) => {
-                    try { localStorage.setItem(k, v); } catch(e) {}
-                });
-
-                // Luego fusionar hábitos: quedarse con la lista mayor
-                if (localHabits.length > cloudHabits.length) {
-                    console.log('[JCH] Local tiene más hábitos ('+localHabits.length+' vs '+cloudHabits.length+') — conservando local');
-                    localStorage.setItem('jch_habits_v1', JSON.stringify(localHabits));
+                    // Marcar que ya se cargo para no repetir en esta sesion
+                    sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                    setSyncStatus('✅ Datos cargados', 'synced');
+                    // Recargar UNA SOLA VEZ para aplicar los datos restaurados
+                    setTimeout(() => { location.reload(); }, 600);
+                } else {
+                    sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                    setSyncStatus('✅ Cuenta nueva lista', 'synced');
                 }
-
-                // Fusionar eventos: unión por id sin duplicados
-                if (localEvents.length > 0) {
-                    const cloudIds = new Set(cloudEvents.map(e => e.id));
-                    const extras   = localEvents.filter(e => !cloudIds.has(e.id));
-                    if (extras.length > 0) {
-                        const merged = cloudEvents.concat(extras);
-                        localStorage.setItem('jch_calendar_v1', JSON.stringify(merged));
-                        console.log('[JCH] Fusión eventos: +'+extras.length+' eventos locales conservados');
-                    }
-                }
-
-                sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
-                setSyncStatus('✅ Datos cargados', 'synced');
-
-                // Guardar la fusión de vuelta a la nube
-                await syncToCloud(false);
-
-                // Recargar para aplicar
-                setTimeout(() => { location.reload(); }, 500);
-
             } else {
-                // Cuenta nueva — subir datos locales
+                // Primera vez: guardar datos iniciales vacios
                 sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                 await syncToCloud(false);
-                setSyncStatus('✅ Cuenta lista', 'synced');
+                setSyncStatus('✅ Cuenta sincronizada', 'synced');
             }
         } catch(e) {
-            console.error('[JCH] Error loadFromCloud:', e);
+            console.error('Error cargando datos:', e);
             setSyncStatus('⚠️ Sin conexión', '');
-            sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
         }
     }
 
@@ -14501,14 +14487,34 @@
         try {
             if (showFeedback) setSyncStatus('⏳ Sincronizando...', 'syncing');
 
+            // Recopilar todas las claves jch_ del localStorage
             const jchData = {};
             Object.keys(localStorage).forEach(k => {
-                if (k.startsWith('jch_')) jchData[k] = localStorage.getItem(k);
+                if (k.startsWith('jch_')) {
+                    jchData[k] = localStorage.getItem(k);
+                }
             });
 
-            // Guardar backup de hábitos en subcampo separado (protección anti-borrado)
-            const habits = localStorage.getItem('jch_habits_v1');
-            if (habits) jchData['jch_habits_backup'] = habits;
+            // FIX: No sobreescribir la nube si no hay datos locales de hábitos
+            // Esto evita que abrir la app en un dispositivo nuevo borre los hábitos del móvil
+            const localHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
+            if (!showFeedback && localHabits.length === 0) {
+                // Sincronización automática sin datos: verificar si la nube tiene datos
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists && doc.data().localStorage && doc.data().localStorage['jch_habits_v1']) {
+                    const cloudHabits = JSON.parse(doc.data().localStorage['jch_habits_v1'] || '[]');
+                    if (cloudHabits.length > 0) {
+                        // La nube tiene hábitos y local no — restaurar sin sobreescribir
+                        console.log('[JCH] syncToCloud: nube tiene hábitos, local vacío — restaurando sin sobreescribir');
+                        Object.entries(doc.data().localStorage).forEach(([k, v]) => {
+                            try { localStorage.setItem(k, v); } catch(e) {}
+                        });
+                        setSyncStatus('✅ Datos restaurados', 'synced');
+                        setTimeout(() => { location.reload(); }, 800);
+                        return;
+                    }
+                }
+            }
 
             const now = Date.now();
             localStorage.setItem('jch_last_sync', String(now));
@@ -14526,9 +14532,8 @@
                 setTimeout(() => setSyncStatus('Listo', ''), 3000);
                 if (typeof playSparkleSound === 'function') playSparkleSound();
             }
-            console.log('[JCH] syncToCloud OK —', Object.keys(jchData).length, 'claves subidas, hábitos:', JSON.parse(habits||'[]').length);
         } catch(e) {
-            console.error('[JCH] Error syncToCloud:', e);
+            console.error('Error sync:', e);
             if (showFeedback) setSyncStatus('⚠️ Error al sincronizar', '');
         }
     };
@@ -14831,24 +14836,7 @@ try {
 (function(){
 'use strict';
 var VAPID_KEY='BDrIm0lnUTlTVRcjqMGFDA-Hm7TtWLE1gY7Mbvp_Qw_tqty4fprhVfB_5ck20Mq0FYUa66_Iimr9uRj9z1uPZ7g';
-var SK='jch_rem_v4', _loop=null, _fcmReady=false, _sessionStart=Date.now();
-
-// _fired persiste en localStorage para no re-disparar al reabrir la app
-// Solo se guarda la clave evId_fireAt con valor = timestamp de cuando disparó
-var _FIRED_SK = 'jch_fired_v1';
-var _fired = {};
-try {
-  var _firedRaw = JSON.parse(localStorage.getItem(_FIRED_SK) || '{}');
-  // Limpiar entradas de hace más de 2 días para no acumular indefinidamente
-  var _cutoff = Date.now() - 172800000;
-  Object.keys(_firedRaw).forEach(function(k) {
-    if (_firedRaw[k] > _cutoff) _fired[k] = _firedRaw[k];
-  });
-} catch(e) { _fired = {}; }
-
-function _saveFired() {
-  try { localStorage.setItem(_FIRED_SK, JSON.stringify(_fired)); } catch(e) {}
-}
+var SK='jch_rem_v4', _loop=null, _fcmReady=false, _fired={}, _sessionStart=Date.now();
 
 function alarm(){try{var c=new(window.AudioContext||window.webkitAudioContext)();var master=c.createGain();master.gain.value=0.75;master.connect(c.destination);var melody=[{f:523.25,t:0.00,d:0.18,v:0.5,type:'sine'},{f:659.25,t:0.20,d:0.18,v:0.6,type:'sine'},{f:783.99,t:0.40,d:0.18,v:0.7,type:'sine'},{f:1046.5,t:0.60,d:0.35,v:0.8,type:'sine'},{f:523.25,t:1.10,d:0.14,v:0.6,type:'triangle'},{f:659.25,t:1.26,d:0.14,v:0.7,type:'triangle'},{f:783.99,t:1.42,d:0.14,v:0.8,type:'triangle'},{f:1046.5,t:1.58,d:0.14,v:0.9,type:'triangle'},{f:1318.5,t:1.74,d:0.40,v:1.0,type:'triangle'}];melody.forEach(function(n){var o=c.createOscillator(),g=c.createGain();o.type=n.type;o.frequency.value=n.f;var t=c.currentTime+n.t;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(n.v*0.7,t+0.015);g.gain.setValueAtTime(n.v*0.7,t+n.d*0.7);g.gain.exponentialRampToValueAtTime(0.001,t+n.d);o.connect(g);g.connect(master);o.start(t);o.stop(t+n.d+0.05);});var echo=c.createOscillator(),eg=c.createGain();echo.type='sine';echo.frequency.value=1046.5;var te=c.currentTime+2.30;eg.gain.setValueAtTime(0,te);eg.gain.linearRampToValueAtTime(0.25,te+0.02);eg.gain.exponentialRampToValueAtTime(0.001,te+0.6);echo.connect(eg);eg.connect(master);echo.start(te);echo.stop(te+0.65);}catch(e){}}
 
@@ -14938,45 +14926,41 @@ function registerFCMToken(){
     navigator.serviceWorker.register(swUrl)
       .then(function(reg){ return reg.update().then(function(){ return reg; }); })
       .then(function(reg){
-        // NO borrar token — solo obtener el actual
-        // deleteToken() causa race conditions con la Cloud Function
-        return messaging.getToken({vapidKey:VAPID_KEY, serviceWorkerRegistration:reg});
+        return messaging.deleteToken()
+          .catch(function(){ return null; })
+          .then(function(){ return messaging.getToken({vapidKey:VAPID_KEY, serviceWorkerRegistration:reg}); });
       })
       .then(function(token){
         if(!token){
-          console.warn('[JCH] FCM: no se obtuvo token — verificar permisos');
-          return;
+          console.warn('[JCH] FCM: no se obtuvo token'); return;
         }
         _fcmReady=true;
         console.log('[JCH] FCM token:',token.substring(0,20)+'...');
+        var auth=firebase.auth();
         var saveToken=function(user){
           if(!user) return;
           var userRef=firebase.firestore().collection('users').doc(user.uid);
+          // Guardar token en ARRAY para soportar múltiples dispositivos
+          // El token antiguo de este campo se conserva + se agrega el nuevo
           userRef.get().then(function(doc){
             var existing=[];
             if(doc.exists && doc.data().fcm_tokens) existing=doc.data().fcm_tokens;
-            var changed = !existing.includes(token);
-            if(changed) existing.push(token);
+            // Agregar token si no existe ya en la lista
+            if(existing.indexOf(token)===-1) existing.push(token);
+            // Mantener máximo 5 tokens (evitar acumulación infinita)
             if(existing.length>5) existing=existing.slice(-5);
-            // Solo actualizar Firestore si el token es nuevo
-            if(changed){
-              return userRef.set({
-                fcm_token: token,
-                fcm_tokens: existing,
-                fcm_token_updated: Date.now()
-              },{merge:true})
-              .then(function(){ console.log('[JCH] FCM token nuevo guardado en Firestore'); });
-            } else {
-              console.log('[JCH] FCM token sin cambios — no se actualiza Firestore');
-            }
-          }).catch(function(e){ console.warn('[JCH] Error guardando token:',e); });
+            return userRef.set({
+              fcm_token: token,          // compatibilidad con Cloud Function actual
+              fcm_tokens: existing,      // nuevo: array multi-dispositivo
+              fcm_token_updated: Date.now()
+            },{merge:true});
+          })
+          .then(function(){ console.log('[JCH] FCM token guardado (multi-device)'); })
+          .catch(function(e){ console.warn('[JCH] Error guardando token:',e); });
         };
-        var auth=firebase.auth();
-        var user=auth.currentUser;
-        if(user){ saveToken(user); }
-        else{
-          var unsub=auth.onAuthStateChanged(function(u){ unsub(); saveToken(u); });
-        }
+        var currentUser=auth.currentUser;
+        if(currentUser){ saveToken(currentUser); }
+        else{ var unsub=auth.onAuthStateChanged(function(u){ unsub(); saveToken(u); }); }
       })
       .catch(function(err){
         console.warn('[JCH] registerFCMToken error:',err.message);
@@ -15042,26 +15026,21 @@ function reschedAll(){
   }catch(e){ console.warn('[JCH] reschedAll error:',e); }
 }
 
-function sendRemindersToSW(list) {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'SET_REMINDERS', reminders: list });
-  }
-}
-
 function check(){
   var now=Date.now(), s=load();
   var fire=s.filter(function(r){
     if(_fired[r.evId+'_'+r.fireAt]) return false;
+    // Disparar si el fireAt ya pasó pero hace menos de 5 minutos (tolerancia)
+    // Eliminado el filtro _sessionStart que bloqueaba recordatorios creados en esta sesión
     return r.fireAt <= now && r.fireAt >= (now - 300000);
   });
   var rest=s.filter(function(r){ return r.fireAt > now; });
   fire.forEach(function(r){
-    _fired[r.evId+'_'+r.fireAt]=Date.now();
-    _saveFired();
+    _fired[r.evId+'_'+r.fireAt]=true;
     showNotif(r.title, r.body, 'jch-'+r.evId+'-'+r.fireAt);
     console.log('[JCH] check() disparó: '+r.title+' fireAt:'+new Date(r.fireAt).toLocaleTimeString());
   });
-  if(fire.length){ save(rest); saveToFirestore(rest); sendRemindersToSW(rest); }
+  if(fire.length){ save(rest); saveToFirestore(rest); }
 }
 
 (function(){
@@ -15116,15 +15095,8 @@ function init(){
   function startFCM(){
     registerFCMToken();
     setupFCMForeground();
-    window._jchCheckNow = check;
-    if(!_loop) _loop=setInterval(check, 10000);
-    // Enviar recordatorios actuales al SW al iniciar
-    navigator.serviceWorker.ready.then(function(reg) {
-      if (reg.active) {
-        reg.active.postMessage({ type: 'SET_REMINDERS', reminders: load() });
-        console.log('[JCH] Recordatorios enviados al SW al iniciar');
-      }
-    });
+    window._jchCheckNow = check; // exponer para llamado inmediato desde saveHabit
+    if(!_loop) _loop=setInterval(check, 10000); // cada 10s en lugar de 20s
     // Ejecutar reschedAll DESPUÉS de que Firebase Auth tenga usuario
     // para que saveToFirestore pueda escribir en Firestore inmediatamente
     function runReschedWhenReady(){
@@ -16620,16 +16592,7 @@ window.saveHabit = function() {
             _list2.push({ evId:_evId2, fireAt:_fireAt2, title:_title2, body:_body2 });
             _saveFn(_list2);
 
-            // Enviar lista al Service Worker para que pueda disparar localmente
-            // (funciona aunque la Cloud Function falle o el token sea inválido)
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                    type: 'SET_REMINDERS',
-                    reminders: _list2
-                });
-            }
-
-            // Subir a Firestore (para Cloud Function y sync entre dispositivos)
+            // Subir a Firestore
             var _stfOk = false;
             if(typeof window._jchSaveToFirestore === 'function'){
                 window._jchSaveToFirestore(_list2);
