@@ -16585,21 +16585,47 @@ window.saveHabit = function() {
             var _title2  = (selectedEmoji||'🌿') + ' ' + name;
             var _body2   = '¡Es hora de tu hábito diario!';
 
-            // Leer lista actual, quitar entrada vieja de este hábito, agregar nueva
-            // Usar las mismas funciones load()/save() que usan los eventos
             var _loadFn = window._jchLoadReminders || function(){ try{return JSON.parse(localStorage.getItem('jch_rem_v4'))||[];}catch(e){return[];} };
             var _saveFn = window._jchSaveReminders || function(a){ localStorage.setItem('jch_rem_v4', JSON.stringify(a)); };
             var _list2 = _loadFn();
             _list2 = _list2.filter(function(r){ return r.evId !== _evId2; });
             _list2.push({ evId:_evId2, fireAt:_fireAt2, title:_title2, body:_body2 });
-
-            // Guardar igual que eventos: save() + saveToFirestore() — sin delays
             _saveFn(_list2);
+
+            // Subir a Firestore
+            var _stfOk = false;
             if(typeof window._jchSaveToFirestore === 'function'){
                 window._jchSaveToFirestore(_list2);
+                _stfOk = true;
             }
-            console.log('[JCH] Hábito programado: '+_title2+' → '+new Date(_fireAt2).toLocaleString());
-        } catch(e) { console.warn('[JCH] Error programando hábito:', e); }
+
+            // Toast diagnóstico visible en pantalla
+            var _msg = '🔔 Recordatorio: ' + new Date(_fireAt2).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+                + ' | FCM:' + (_stfOk?'✓':'✗ NO DISPONIBLE')
+                + ' | ' + _list2.length + ' en cola';
+            var _toast = document.createElement('div');
+            _toast.textContent = _msg;
+            _toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a3a1a;color:#4ade80;padding:10px 16px;border-radius:10px;font-size:12px;z-index:99999;border:1px solid #4ade80;max-width:90vw;text-align:center;';
+            document.body.appendChild(_toast);
+            setTimeout(function(){ _toast.remove(); }, 6000);
+
+            console.log('[JCH] Hábito programado: '+_title2+' → '+new Date(_fireAt2).toLocaleString()+' | Firestore:'+_stfOk);
+        } catch(e) {
+            console.warn('[JCH] Error programando hábito:', e);
+            // Toast de error
+            var _toastErr = document.createElement('div');
+            _toastErr.textContent = '❌ Error recordatorio: ' + e.message;
+            _toastErr.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#3a1a1a;color:#f87171;padding:10px 16px;border-radius:10px;font-size:12px;z-index:99999;border:1px solid #f87171;max-width:90vw;';
+            document.body.appendChild(_toastErr);
+            setTimeout(function(){ _toastErr.remove(); }, 6000);
+        }
+    } else {
+        // Toast si no hay recordatorio activo
+        var _toastNone = document.createElement('div');
+        _toastNone.textContent = '⚠️ Sin recordatorio — reminderOn:'+reminderOn+' reminderTime:'+reminderTime;
+        _toastNone.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a2a1a;color:#fbbf24;padding:10px 16px;border-radius:10px;font-size:12px;z-index:99999;border:1px solid #fbbf24;max-width:90vw;';
+        document.body.appendChild(_toastNone);
+        setTimeout(function(){ _toastNone.remove(); }, 5000);
     }
 
     // Sync general a la nube (hábitos + resto del localStorage)
