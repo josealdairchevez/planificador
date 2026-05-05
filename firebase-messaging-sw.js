@@ -39,24 +39,24 @@ messaging.onBackgroundMessage(function(payload) {
     const title = payload.notification?.title || payload.data?.title || 'Planificador JCH';
     const body  = payload.notification?.body  || payload.data?.body  || 'Recordatorio';
     
-    // Tag SIEMPRE único con timestamp para que SIEMPRE suene aunque ya haya sonado antes
+    // Tag único basado en datos del evento para evitar duplicados
     const evId   = payload.data?.evId   || '';
     const fireAt = payload.data?.fireAt || '';
-    const tag    = 'jch-' + (evId || 'fcm') + '-' + (fireAt || Date.now());
+    const tag    = evId && fireAt ? 'jch-'+evId+'-'+fireAt : 'jch-fcm-'+Date.now();
 
     return self.registration.showNotification(title, {
         body:    body,
-        icon:    'https://josealdairchevez.github.io/planificador/icon-192.png',
-        badge:   'https://josealdairchevez.github.io/planificador/icon-96.png',
+        icon:    './icon-192.png',
+        badge:   './icon-192.png',
         vibrate: [500, 200, 500, 200, 500, 200, 800],
         requireInteraction: true,
-        tag:      tag,
-        renotify: true,   // FIX: siempre mostrar aunque el tag sea el mismo
-        silent:   false,
-        data:    { url: 'https://josealdairchevez.github.io/planificador/', evId: evId, fireAt: fireAt },
+        tag:     tag,
+        renotify: false,
+        silent:  false,
+        data:    { url: './index.html', evId: evId, fireAt: fireAt },
         actions: [
-            { action: 'open',    title: '📋 Ver hábitos' },
-            { action: 'dismiss', title: 'Cerrar'         }
+            { action: 'open',    title: 'Ver tarea' },
+            { action: 'dismiss', title: 'Cerrar'    }
         ]
     });
 });
@@ -65,15 +65,12 @@ messaging.onBackgroundMessage(function(payload) {
 self.addEventListener('notificationclick', function(e) {
     e.notification.close();
     if (e.action === 'dismiss') return;
-    const targetUrl = (e.notification.data && e.notification.data.url)
-        ? e.notification.data.url
-        : 'https://josealdairchevez.github.io/planificador/';
     e.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(cs) {
             for (var c of cs) {
                 if (c.url.includes('planificador') && 'focus' in c) return c.focus();
             }
-            if (clients.openWindow) return clients.openWindow(targetUrl);
+            if (clients.openWindow) return clients.openWindow('./index.html');
         })
     );
 });
