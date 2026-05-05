@@ -5053,30 +5053,13 @@
         .hab-achievement {
             display:flex;align-items:center;gap:10px;
             background:rgba(251,191,36,0.08);border:1.5px solid rgba(251,191,36,0.2);
-            border-radius:12px;padding:10px;margin-bottom:8px;transition:opacity 0.3s;
+            border-radius:12px;padding:10px;margin-bottom:8px;
         }
         .hab-achievement-icon { font-size:1.5rem;flex-shrink:0; }
         .hab-achievement-info { flex:1; }
         .hab-achievement-name { font-size:0.78rem;font-weight:900;color:#fbbf24; }
         .hab-achievement-desc { font-size:0.6rem;color:#888;margin-top:1px; }
-        .hab-achievement.locked { opacity:0.3;filter:grayscale(1); }
-        .hab-ach-category {
-            font-size:0.62rem;font-weight:900;color:#a78bfa;text-transform:uppercase;
-            letter-spacing:1.5px;margin:14px 0 6px 2px;display:flex;align-items:center;gap:8px;
-        }
-        .hab-ach-category-count {
-            background:rgba(167,139,250,0.18);border-radius:20px;
-            padding:1px 8px;font-size:0.6rem;color:#c4b5fd;
-        }
-        .hab-ach-summary {
-            display:flex;gap:10px;margin-bottom:14px;
-        }
-        .hab-ach-summary-item {
-            flex:1;background:rgba(255,255,255,0.04);border-radius:10px;
-            padding:8px 6px;text-align:center;
-        }
-        .hab-ach-summary-num { font-size:1.2rem;font-weight:900;color:#fbbf24; }
-        .hab-ach-summary-label { font-size:0.55rem;color:#888;margin-top:2px; }
+        .hab-achievement.locked { opacity:0.35;filter:grayscale(1); }
 
         /* Tab Héroe */
         .hab-tab-content#habTab-heroe { }
@@ -5450,19 +5433,151 @@
         /* ═══ HABIT RADAR FEATURES: Vistas, Gráfico Radar, Calendario, Notas ══ */
 
         /* ── SELECTOR DE VISTA ──────────────────────────────── */
+        /* ── SELECTOR DE VISTA ──────────────────────────────── */
         .hab-view-selector {
-            display:flex;gap:4px;background:rgba(255,255,255,0.04);
-            border-radius:12px;padding:4px;margin-bottom:12px;
+            display:flex;gap:3px;background:rgba(0,0,0,0.4);
+            border:1px solid rgba(255,255,255,0.06);
+            border-radius:14px;padding:4px;margin-bottom:16px;
         }
         .hab-view-btn {
-            flex:1;padding:6px 4px;border-radius:8px;text-align:center;
-            font-size:0.6rem;font-weight:900;color:#666;cursor:pointer;
-            text-transform:uppercase;letter-spacing:0.8px;transition:all 0.2s;
+            flex:1;padding:7px 2px;border-radius:10px;text-align:center;
+            font-size:0.58rem;font-weight:900;color:#555;cursor:pointer;
+            text-transform:uppercase;letter-spacing:0.6px;transition:all 0.25s;
         }
         .hab-view-btn.active {
-            background:linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.2));
-            color:#a78bfa;box-shadow:0 0 10px rgba(99,102,241,0.2);
+            background:linear-gradient(135deg,#6366f1,#a78bfa);
+            color:#fff;box-shadow:0 4px 15px rgba(99,102,241,0.4);
+            transform:scale(1.02);
         }
+        /* ── TARJETAS KPI ───────────────────────────────────── */
+        .radar-kpi-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px; }
+        .radar-kpi-card {
+            background:linear-gradient(135deg,rgba(15,5,40,0.95),rgba(8,3,25,0.9));
+            border:1px solid rgba(255,255,255,0.07);border-radius:14px;
+            padding:12px 8px;text-align:center;position:relative;overflow:hidden;
+            transition:transform 0.2s,box-shadow 0.2s;cursor:default;
+        }
+        .radar-kpi-card::before {
+            content:'';position:absolute;inset:0;border-radius:14px;
+            background:radial-gradient(circle at 50% 0%,var(--kpi-color,#6366f1)15 0%,transparent 70%);
+            opacity:0.15;
+        }
+        .radar-kpi-card:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+        .radar-kpi-icon { font-size:1.3rem;margin-bottom:4px; }
+        .radar-kpi-val {
+            font-size:1.35rem;font-weight:900;line-height:1;margin-bottom:3px;
+            background:linear-gradient(135deg,#fff,var(--kpi-color,#a78bfa));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+        }
+        .radar-kpi-label { font-size:0.5rem;color:#555;text-transform:uppercase;letter-spacing:0.8px; }
+        /* ── SECCIÓN TITLE ──────────────────────────────────── */
+        .radar-section-title {
+            font-size:0.58rem;font-weight:900;color:#555;text-transform:uppercase;
+            letter-spacing:1.5px;margin:12px 0 8px;display:flex;align-items:center;gap:6px;
+        }
+        .radar-section-title::after { content:'';flex:1;height:1px;background:rgba(255,255,255,0.05); }
+        /* ── BARRAS DE DÍAS ─────────────────────────────────── */
+        .radar-day-bars {
+            display:flex;gap:6px;align-items:flex-end;height:70px;
+            background:rgba(0,0,0,0.3);border-radius:12px;padding:10px 10px 0;margin-bottom:4px;
+        }
+        .radar-day-col { flex:1;display:flex;flex-direction:column;align-items:center;gap:4px; }
+        .radar-day-bar-wrap { flex:1;width:100%;display:flex;align-items:flex-end;min-height:4px; }
+        .radar-day-bar {
+            width:100%;border-radius:4px 4px 0 0;
+            transition:height 0.6s cubic-bezier(0.34,1.56,0.64,1);min-height:3px;cursor:pointer;
+        }
+        .radar-day-bar:hover { filter:brightness(1.3); }
+        .radar-day-label { font-size:0.5rem;font-weight:900;color:#555;text-transform:uppercase; }
+        .radar-day-pct { font-size:0.48rem;color:#666;margin-bottom:2px; }
+        /* ── RESUMEN MENSUAL ────────────────────────────────── */
+        .radar-month-summary { display:flex;gap:8px;margin-bottom:12px; }
+        .radar-month-stat { flex:1;background:rgba(0,0,0,0.3);border-radius:10px;padding:8px;text-align:center; }
+        .radar-month-stat-val { font-size:1rem;font-weight:900;color:#a78bfa; }
+        .radar-month-stat-lbl { font-size:0.48rem;color:#555;text-transform:uppercase;margin-top:2px; }
+        /* ── LEYENDA ANUAL ──────────────────────────────────── */
+        .radar-year-legend {
+            display:flex;align-items:center;gap:5px;margin-top:10px;justify-content:flex-end;
+        }
+        .radar-year-legend span { font-size:0.5rem;color:#555; }
+        .radar-year-legend div { width:9px;height:9px;border-radius:2px; }
+        /* ── STATS POR HÁBITO ───────────────────────────────── */
+        .hab-individual-stat {
+            background:linear-gradient(135deg,rgba(10,5,30,0.98),rgba(5,3,15,0.95));
+            border-radius:16px;border:1px solid rgba(255,255,255,0.07);
+            padding:14px;margin-bottom:10px;position:relative;
+            transition:transform 0.2s,box-shadow 0.2s;
+        }
+        .hab-individual-stat:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.5); }
+        .hab-individual-stat::before {
+            content:'';position:absolute;top:0;left:0;right:0;height:2px;
+            background:var(--hab-color,#6366f1);border-radius:16px 16px 0 0;
+        }
+        .hab-ind-header { display:flex;align-items:center;gap:10px;margin-bottom:10px; }
+        .hab-ind-emoji {
+            font-size:1.4rem;width:42px;height:42px;border-radius:12px;
+            display:flex;align-items:center;justify-content:center;
+            background:rgba(255,255,255,0.06);flex-shrink:0;
+        }
+        .hab-ind-name { font-size:0.85rem;font-weight:900;color:#fff; }
+        .hab-ind-freq { font-size:0.55rem;color:#666;margin-top:2px; }
+        .hab-ind-stats-row {
+            display:grid;grid-template-columns:repeat(4,1fr);
+            background:rgba(0,0,0,0.3);border-radius:10px;overflow:hidden;margin-top:10px;
+        }
+        .hab-ind-stat { padding:8px 4px;text-align:center;border-right:1px solid rgba(255,255,255,0.04); }
+        .hab-ind-stat:last-child { border-right:none; }
+        .hab-ind-val { font-size:0.95rem;font-weight:900;color:#fff; }
+        .hab-ind-lbl { font-size:0.48rem;color:#555;text-transform:uppercase;letter-spacing:0.6px;margin-top:2px; }
+        .hab-ind-minibar { height:3px;border-radius:2px;background:rgba(255,255,255,0.06);margin-top:10px;overflow:hidden; }
+        .hab-ind-minibar-fill { height:100%;border-radius:2px;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1); }
+        /* ── MODAL DETALLE DÍA ──────────────────────────────── */
+        .hab-day-detail-backdrop {
+            position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,0.75);
+            backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+            opacity:0;visibility:hidden;transition:all 0.25s;
+        }
+        .hab-day-detail-backdrop.show { opacity:1;visibility:visible; }
+        .hab-day-detail-modal {
+            position:fixed;bottom:0;left:0;right:0;z-index:8501;
+            background:linear-gradient(180deg,#0d0025,#080018);
+            border-radius:24px 24px 0 0;border-top:1.5px solid rgba(99,102,241,0.4);
+            padding:0 0 20px;transform:translateY(100%);
+            transition:transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
+            max-height:75vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+        }
+        .hab-day-detail-modal.show { transform:translateY(0); }
+        .hab-day-detail-drag { width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);margin:12px auto 16px; }
+        .hab-day-detail-date { font-size:0.92rem;font-weight:900;color:#fff;padding:0 20px;margin-bottom:14px; }
+        .hab-day-detail-date span { color:#a78bfa; }
+        .hab-day-habit-row {
+            display:flex;align-items:center;gap:12px;
+            background:rgba(255,255,255,0.04);border-radius:12px;
+            padding:12px 16px;margin:0 16px 8px;cursor:pointer;
+            transition:all 0.2s;border:1px solid transparent;
+        }
+        .hab-day-habit-row.done { background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25); }
+        .hab-day-habit-row:hover { background:rgba(255,255,255,0.08); }
+        .hab-day-check {
+            width:28px;height:28px;border-radius:50%;flex-shrink:0;
+            border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;
+            justify-content:center;font-size:0.85rem;transition:all 0.2s;
+        }
+        .hab-day-check.done { background:#10b981;border-color:#10b981; }
+        .hab-note-input {
+            width:100%;padding:10px 14px;border-radius:12px;margin-top:14px;
+            background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.08);
+            color:#fff;font-size:0.8rem;resize:none;outline:none;
+            transition:border-color 0.2s;box-sizing:border-box;
+        }
+        .hab-note-input:focus { border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.05); }
+        .hab-note-save-btn {
+            margin-top:8px;padding:10px 24px;border-radius:12px;
+            background:linear-gradient(135deg,#6366f1,#a78bfa);border:none;
+            color:#fff;font-size:0.75rem;font-weight:900;cursor:pointer;
+            box-shadow:0 4px 15px rgba(99,102,241,0.35);transition:all 0.2s;
+        }
+        .hab-note-save-btn:hover { transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,0.5); }
 
         /* ── CALENDARIO INTERACTIVO ─────────────────────────── */
         .hab-calendar-header {
@@ -5548,64 +5663,7 @@
             font-size:0.5rem;color:#444;text-transform:uppercase;margin-bottom:4px;
         }
 
-        /* ── MODAL DETALLE DEL DÍA ──────────────────────────── */
-        .hab-day-detail-backdrop {
-            position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,0.7);
-            opacity:0;visibility:hidden;transition:all 0.25s;
-        }
-        .hab-day-detail-backdrop.show { opacity:1;visibility:visible; }
-        .hab-day-detail-modal {
-            position:fixed;bottom:0;left:0;right:0;z-index:8501;
-            background:linear-gradient(180deg,#0d1b4b,#020e1f);
-            border-radius:20px 20px 0 0;border-top:2px solid rgba(99,102,241,0.4);
-            padding:20px;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
-            max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
-        }
-        .hab-day-detail-modal.show { transform:translateY(0); }
-        .hab-day-detail-date { font-size:0.88rem;font-weight:900;color:#fff;margin-bottom:12px; }
-        .hab-day-habit-row {
-            display:flex;align-items:center;gap:10px;
-            background:rgba(255,255,255,0.04);border-radius:10px;
-            padding:10px;margin-bottom:6px;cursor:pointer;transition:background 0.2s;
-        }
-        .hab-day-habit-row.done { background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3); }
-        .hab-day-habit-row:hover { background:rgba(255,255,255,0.08); }
-        .hab-day-check { width:28px;height:28px;border-radius:50%;flex-shrink:0;
-            border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;
-            justify-content:center;font-size:0.9rem;transition:all 0.2s; }
-        .hab-day-check.done { background:#10b981;border-color:#10b981; }
-        .hab-note-input {
-            width:100%;padding:8px 12px;border-radius:10px;margin-top:12px;
-            background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);
-            color:#fff;font-size:0.8rem;resize:none;outline:none;
-            transition:border-color 0.2s;box-sizing:border-box;
-        }
-        .hab-note-input:focus { border-color:rgba(99,102,241,0.5); }
-        .hab-note-save-btn {
-            margin-top:8px;padding:8px 20px;border-radius:10px;
-            background:linear-gradient(135deg,#6366f1,#a78bfa);border:none;
-            color:#fff;font-size:0.75rem;font-weight:900;cursor:pointer;
-        }
 
-        /* ── STATS POR HÁBITO ───────────────────────────────── */
-        .hab-individual-stat {
-            background:rgba(8,20,40,0.9);border-radius:14px;
-            border:1.5px solid rgba(255,255,255,0.06);
-            padding:12px;margin-bottom:8px;
-        }
-        .hab-ind-header { display:flex;align-items:center;gap:8px;margin-bottom:8px; }
-        .hab-ind-emoji { font-size:1.2rem; }
-        .hab-ind-name { font-size:0.82rem;font-weight:900;color:#fff; }
-        .hab-ind-stats-row { display:flex;gap:0; }
-        .hab-ind-stat { flex:1;text-align:center;border-right:1px solid rgba(255,255,255,0.05); }
-        .hab-ind-stat:last-child { border-right:none; }
-        .hab-ind-val { font-size:0.9rem;font-weight:900;color:#fff; }
-        .hab-ind-lbl { font-size:0.5rem;color:#555;text-transform:uppercase;letter-spacing:0.8px; }
-
-        @media (max-width:768px) {
-            .hab-radar-svg { width:160px;height:160px; }
-            .hab-year-grid { grid-template-columns:repeat(53,1fr);gap:1px; }
-        }
 
         /* ═══ LIFE RESET FEATURES: 66 Días, Pilares, Cartas, Modo Difícil, Diario ══ */
 
@@ -15243,30 +15301,29 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                 <div id="habJournalHistory"></div>
             </div>
 
-            <!-- TAB RADAR — Habit Radar Features -->
+            <!-- TAB RADAR — Ultra Premium Analytics -->
             <div class="hab-tab-content" id="habTab-radar">
-                <!-- Selector de vista -->
                 <div class="hab-view-selector">
-                    <div class="hab-view-btn active" data-view="semanal" onclick="selectRadarView('semanal',this)">Semana</div>
-                    <div class="hab-view-btn" data-view="mensual"  onclick="selectRadarView('mensual',this)">Mes</div>
-                    <div class="hab-view-btn" data-view="anual"    onclick="selectRadarView('anual',this)">Año</div>
-                    <div class="hab-view-btn" data-view="habitos"  onclick="selectRadarView('habitos',this)">Hábitos</div>
+                    <div class="hab-view-btn active" data-view="semanal" onclick="selectRadarView('semanal',this)">📡 Semana</div>
+                    <div class="hab-view-btn" data-view="mensual"  onclick="selectRadarView('mensual',this)">📅 Mes</div>
+                    <div class="hab-view-btn" data-view="anual"    onclick="selectRadarView('anual',this)">🗓️ Año</div>
+                    <div class="hab-view-btn" data-view="habitos"  onclick="selectRadarView('habitos',this)">📊 Hábitos</div>
                 </div>
-
-                <!-- Vista Semanal -->
+                <div class="radar-kpi-grid" id="radarKPIs"></div>
                 <div id="habRadarSemana">
-                    <div class="hab-radar-title">🕸️ Rendimiento por Día de Semana</div>
+                    <div class="radar-section-title">🕸️ Rendimiento por día</div>
                     <div class="hab-radar-container">
-                        <svg class="hab-radar-svg" id="habRadarSVG" viewBox="0 0 200 200"></svg>
+                        <svg class="hab-radar-svg" id="habRadarSVG" viewBox="0 0 220 220"></svg>
                     </div>
-                    <div class="hab-line-chart-container">
+                    <div class="radar-section-title">📊 Actividad por día</div>
+                    <div class="radar-day-bars" id="radarDayBars"></div>
+                    <div class="hab-line-chart-container" style="margin-top:12px;">
                         <div class="hab-line-chart-title">📈 Tendencia últimas 8 semanas</div>
-                        <svg class="hab-line-svg" id="habLineSVG" viewBox="0 0 300 80"></svg>
+                        <svg class="hab-line-svg" id="habLineSVG" viewBox="0 0 300 70"></svg>
                     </div>
                 </div>
-
-                <!-- Vista Mensual -->
                 <div id="habRadarMes" style="display:none;">
+                    <div id="radarMonthSummary" class="radar-month-summary"></div>
                     <div class="hab-calendar-header">
                         <button class="hab-cal-nav" onclick="changeCalMonth(-1)">‹</button>
                         <div class="hab-cal-month" id="habCalMonthLabel"></div>
@@ -15275,30 +15332,27 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                     <div class="hab-cal-grid" id="habCalDows"></div>
                     <div class="hab-cal-grid" id="habCalDays"></div>
                 </div>
-
-                <!-- Vista Anual -->
                 <div id="habRadarAnual" style="display:none;">
-                    <div class="hab-line-chart-title">📅 Vista Anual <span id="habYearLabel"></span></div>
+                    <div class="hab-line-chart-title">🌿 Actividad <span id="habYearLabel"></span></div>
                     <div class="hab-year-months" id="habYearMonths"></div>
                     <div class="hab-year-grid" id="habYearGrid"></div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;justify-content:flex-end;">
-                        <span style="font-size:0.55rem;color:#555;">Menos</span>
-                        <div style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.04);"></div>
-                        <div style="width:10px;height:10px;border-radius:2px;background:rgba(16,185,129,0.2);"></div>
-                        <div style="width:10px;height:10px;border-radius:2px;background:rgba(16,185,129,0.45);"></div>
-                        <div style="width:10px;height:10px;border-radius:2px;background:rgba(16,185,129,0.7);"></div>
-                        <div style="width:10px;height:10px;border-radius:2px;background:#10b981;"></div>
-                        <span style="font-size:0.55rem;color:#555;">Más</span>
+                    <div class="radar-year-legend">
+                        <span>Menos</span>
+                        <div style="background:rgba(255,255,255,0.04)"></div>
+                        <div style="background:rgba(16,185,129,0.2)"></div>
+                        <div style="background:rgba(16,185,129,0.45)"></div>
+                        <div style="background:rgba(16,185,129,0.7)"></div>
+                        <div style="background:#10b981"></div>
+                        <span>Más</span>
                     </div>
                 </div>
-
-                <!-- Vista por Hábito -->
                 <div id="habRadarHabitos" style="display:none;">
                     <div id="habIndividualStats"></div>
                 </div>
             </div>
 
             <!-- TAB STATS -->
+
             <div class="hab-tab-content" id="habTab-stats">
                 <div class="hab-stats-overview" id="habStatsOverview"></div>
                 <div class="hab-heatmap-title">📅 Actividad últimas 13 semanas</div>
@@ -15581,90 +15635,16 @@ const BOSSES = [
 window._HAB_BOSSES = BOSSES;
 
 const ACHIEVEMENTS = [
-    // ── ONBOARDING ─────────────────────────────────────────────
-    { id:'first_task',   cat:'onboarding', name:'Crea tu primera tarea',    desc:'Creó su primera tarea.',                    icon:'✏️',  cond: h => h.totalHabits >= 1 },
-    { id:'done_task',    cat:'onboarding', name:'Completa una tarea',        desc:'Ha completado su primera tarea.',           icon:'✅',  cond: h => h.totalDone >= 1 },
-
-    // ── PROGRESO PERSONAL ─────────────────────────────────────
-    { id:'streak7',      cat:'progreso',   name:'Una Semana de Fuego',       desc:'Mantén una racha de 7 días seguidos.',      icon:'🔥',  cond: h => h.bestStreak >= 7 },
-    { id:'streak21',     cat:'progreso',   name:'Hábito Formado',            desc:'21 días seguidos. ¡El hábito es tuyo!',     icon:'🧠',  cond: h => h.bestStreak >= 21 },
-    { id:'streak30',     cat:'progreso',   name:'El Mes Épico',              desc:'30 días seguidos de constancia.',           icon:'📅',  cond: h => h.bestStreak >= 30 },
-    { id:'streak100',    cat:'progreso',   name:'Centurión de Rachas',       desc:'100 días seguidos. ¡Increíble disciplina!', icon:'👑',  cond: h => h.bestStreak >= 100 },
-    { id:'streak200',    cat:'progreso',   name:'Leyenda Imparable',         desc:'200 días seguidos. ¡Eres una leyenda!',     icon:'⚡',  cond: h => h.bestStreak >= 200 },
-    { id:'streak365',    cat:'progreso',   name:'Un Año Sin Rendirse',       desc:'365 días seguidos. ¡Un año completo!',      icon:'🌟',  cond: h => h.bestStreak >= 365 },
-    { id:'done10',       cat:'progreso',   name:'Primeros Pasos',            desc:'10 completaciones totales.',                icon:'👣',  cond: h => h.totalDone >= 10 },
-    { id:'done50',       cat:'progreso',   name:'Constante',                 desc:'50 completaciones totales.',                icon:'💪',  cond: h => h.totalDone >= 50 },
-    { id:'done100',      cat:'progreso',   name:'Centurión',                 desc:'100 completaciones totales.',               icon:'💯',  cond: h => h.totalDone >= 100 },
-    { id:'done500',      cat:'progreso',   name:'Leyenda Viviente',          desc:'500 completaciones totales.',               icon:'🏆',  cond: h => h.totalDone >= 500 },
-    { id:'done1000',     cat:'progreso',   name:'Maestro Absoluto',          desc:'1000 completaciones totales.',              icon:'💎',  cond: h => h.totalDone >= 1000 },
-    { id:'habits5',      cat:'progreso',   name:'Coleccionista',             desc:'Crea 5 hábitos distintos.',                 icon:'📦',  cond: h => h.totalHabits >= 5 },
-    { id:'habits10',     cat:'progreso',   name:'Arsenal de Hábitos',        desc:'Crea 10 hábitos distintos.',                icon:'📚',  cond: h => h.totalHabits >= 10 },
-
-    // ── MISIONES & BOSSES ─────────────────────────────────────
-    { id:'boss1',        cat:'misiones',   name:'Cazador de Monstruos',      desc:'Derrota tu primer boss.',                   icon:'⚔️',  cond: h => h.bossesDefeated >= 1 },
-    { id:'boss3',        cat:'misiones',   name:'Veterano de Batalla',       desc:'Derrota 3 bosses.',                         icon:'🗡️',  cond: h => h.bossesDefeated >= 3 },
-    { id:'boss5',        cat:'misiones',   name:'Exterminador',              desc:'Derrota 5 bosses.',                         icon:'💀',  cond: h => h.bossesDefeated >= 5 },
-    { id:'boss10',       cat:'misiones',   name:'Señor de la Guerra',        desc:'Derrota 10 bosses. ¡Imparable!',            icon:'👹',  cond: h => h.bossesDefeated >= 10 },
-    { id:'quest_slime',  cat:'misiones',   name:'Domador de Limo',           desc:'Completaste la misión del Monstruo de Limo: derrota al jefe acumulando 50 hábitos.', icon:'🟢', cond: h => h.totalDone >= 50 },
-    { id:'quest_rock',   cat:'misiones',   name:'Roca Sólida',               desc:'Completaste la misión de la Roca: mantén una racha de 14 días seguidos.',           icon:'🪨', cond: h => h.bestStreak >= 14 },
-    { id:'quest_thread', cat:'misiones',   name:'Hilo de Oro',               desc:'Completaste la misión del Hilo: completa 30 hábitos en un solo mes.',               icon:'🧵', cond: h => h.monthDone >= 30 },
-    { id:'quest_bug',    cat:'misiones',   name:'Bonanza Insectil',          desc:'Misiones de mascotas Escarabajo, Mariposa, Caracol y Araña: 200 completaciones.',    icon:'🦋', cond: h => h.totalDone >= 200 },
-    { id:'quest_basic',  cat:'misiones',   name:'Necesidades Básicas',       desc:'Misiones de Mono, Perezoso y Brote: mantén 3 hábitos activos por 21 días.',         icon:'🐒', cond: h => h.bestStreak >= 21 && h.totalHabits >= 3 },
-    { id:'quest_water',  cat:'misiones',   name:'Amigos de Agua Dulce',      desc:'Misiones de Ajolote, Rana e Hipopótamo: 100 hábitos completados.',                  icon:'🦎', cond: h => h.totalDone >= 100 },
-
-    // ── COLECCIONES (inspiradas en Habitica) ──────────────────
-    { id:'col_basic_pet',  cat:'coleccion', name:'Volver a lo Básico',       desc:'Has conseguido todas las Mascotas Básicas: completa 25 hábitos.',                  icon:'🐾', cond: h => h.totalDone >= 25 },
-    { id:'col_basic_mount',cat:'coleccion', name:'Toda tu Base',             desc:'Has domado todas las Monturas Básicas: mantén racha de 10 días.',                  icon:'🐴', cond: h => h.bestStreak >= 10 },
-    { id:'col_desert_pet', cat:'coleccion', name:'Demonio de Polvo',         desc:'Has conseguido todas las Mascotas Desérticas: 75 completaciones.',                 icon:'🦂', cond: h => h.totalDone >= 75 },
-    { id:'col_desert_mount',cat:'coleccion',name:'Autoridad Árida',          desc:'Has domado todas las Monturas Desérticas: racha de 20 días.',                      icon:'🐪', cond: h => h.bestStreak >= 20 },
-    { id:'col_zombie_pet', cat:'coleccion', name:'Monstruo Magus',           desc:'Has conseguido todas las Mascotas Zombi: 150 completaciones.',                     icon:'🧟', cond: h => h.totalDone >= 150 },
-    { id:'col_zombie_mount',cat:'coleccion',name:'Sepulturero de Muertos',   desc:'Has domado todas las Monturas Zombi: racha de 40 días.',                           icon:'⚰️', cond: h => h.bestStreak >= 40 },
-    { id:'col_white_pet',  cat:'coleccion', name:'Preparado para Pintar',    desc:'Has conseguido todas las Mascotas Blancas: 200 completaciones.',                   icon:'🤍', cond: h => h.totalDone >= 200 },
-    { id:'col_white_mount',cat:'coleccion', name:'Coleccionista de Perlas',  desc:'Has domado todas las Monturas Blancas: racha de 50 días.',                         icon:'🦢', cond: h => h.bestStreak >= 50 },
-    { id:'col_candy_pet',  cat:'coleccion', name:'Cosquillas Rosa',          desc:'Has conseguido las mascotas de Algodón de Azúcar Rosa: 250 completaciones.',       icon:'🩷', cond: h => h.totalDone >= 250 },
-    { id:'col_candy_mount',cat:'coleccion', name:'Perspectiva Optimista',    desc:'Has domado las Monturas de Algodón de Azúcar Rosa: racha de 60 días.',             icon:'🌸', cond: h => h.bestStreak >= 60 },
-    { id:'col_gold_pet',   cat:'coleccion', name:'Corazón de Oro',           desc:'Has conseguido todas las Mascotas Doradas: 300 completaciones.',                   icon:'💛', cond: h => h.totalDone >= 300 },
-    { id:'col_gold_mount', cat:'coleccion', name:'Todo lo que Brilla',       desc:'Has domado todas las Monturas Doradas: racha de 70 días.',                         icon:'✨', cond: h => h.bestStreak >= 70 },
-    { id:'col_skel_pet',   cat:'coleccion', name:'Coleccionista de Huesos',  desc:'Has conseguido todas las Mascotas Esqueleto: 350 completaciones.',                 icon:'💀', cond: h => h.totalDone >= 350 },
-    { id:'col_skel_mount', cat:'coleccion', name:'Ejército Huesudo',         desc:'Has domado todas las Monturas Esqueleto: racha de 80 días.',                       icon:'🦴', cond: h => h.bestStreak >= 80 },
-    { id:'col_red_pet',    cat:'coleccion', name:'Rojo de Ira',              desc:'Has conseguido todas las Mascotas Rojas: 400 completaciones.',                     icon:'❤️', cond: h => h.totalDone >= 400 },
-    { id:'col_red_mount',  cat:'coleccion', name:'Día Señalado',             desc:'Has domado todas las Monturas Rojas: racha de 90 días.',                           icon:'🌹', cond: h => h.bestStreak >= 90 },
-    { id:'col_blue_pet',   cat:'coleccion', name:'Las Violetas son Azules',  desc:'Has conseguido las mascotas de Algodón de Azúcar Azul: 450 completaciones.',      icon:'💙', cond: h => h.totalDone >= 450 },
-    { id:'col_blue_mount', cat:'coleccion', name:'La Salvaje Azul Lejanía',  desc:'Has domado las Monturas de Algodón de Azúcar Azul: racha de 100 días.',           icon:'🫐', cond: h => h.bestStreak >= 100 },
-    { id:'col_shadow_pet', cat:'coleccion', name:'Cliente Sombrío',          desc:'Has conseguido todas las Mascotas Sombrías: 500 completaciones.',                  icon:'🖤', cond: h => h.totalDone >= 500 },
-    { id:'col_shadow_mount',cat:'coleccion',name:'A la Sombra de Todo',      desc:'Has domado todas las Monturas Sombrías: racha de 110 días.',                      icon:'🌑', cond: h => h.bestStreak >= 110 },
-
-    // ── CRIANZA ÉPICA ─────────────────────────────────────────
-    { id:'breed_legend',   cat:'crianza',  name:'Bestiario Legendario',      desc:'Ha eclosionado todos los colores de mascotas míticas: Dragón, Grifo, Unicornio, Serpiente Marina y Cerdo Volador. Completa 600 hábitos.', icon:'🐉', cond: h => h.totalDone >= 600 },
-    { id:'breed_farm',     cat:'crianza',  name:'I-A-I-A-O',                 desc:'Ha eclosionado todos los colores de mascotas domésticas: Hurón, Cobaya, Gallo, Cerdo, Rata, Conejito, Caballo y Vaca. Completa 400 hábitos.', icon:'🐄', cond: h => h.totalDone >= 400 },
-    { id:'breed_reptile',  cat:'crianza',  name:'Rumble Reptacular',         desc:'Ha eclosionado todos los colores de mascotas reptiles: Caimán, Pterodáctilo, Serpiente, Triceratops, Tortuga, T-Rex y Velociraptor. Racha de 55 días.', icon:'🦎', cond: h => h.bestStreak >= 55 },
-    { id:'breed_forest',   cat:'crianza',  name:'Mago del Bosque',           desc:'Ha eclosionado todos los colores de criaturas del bosque: Tejón, Oso, Ciervo, Zorro, Rana, Erizo, Búho, Caracol, Ardilla y Brote. Racha de 65 días.', icon:'🦊', cond: h => h.bestStreak >= 65 },
-    { id:'breed_zodiac',   cat:'crianza',  name:'Cuidador del Zodiaco',      desc:'Ha eclosionado todas las mascotas del zodiaco: Rata, Vaca, Conejo, Serpiente, Caballo, Oveja, Mono, Gallo, Lobo, Tigre, Cerdo y Dragón. Racha de 75 días.', icon:'♈', cond: h => h.bestStreak >= 75 },
-    { id:'breed_flying',   cat:'crianza',  name:'Aves de Pluma',             desc:'Ha eclosionado todas las mascotas voladoras: Cerdo Volador, Búho, Loro, Pterodáctilo, Grifo, Halcón, Pavo Real y Gallo. 350 completaciones.', icon:'🦅', cond: h => h.totalDone >= 350 },
-    { id:'breed_polar',    cat:'crianza',  name:'Experto Polar',             desc:'Ha eclosionado todos los colores de mascotas Polares: Osos, Zorros, Pingüinos, Ballenas y Lobos. Racha de 45 días.', icon:'🐧', cond: h => h.bestStreak >= 45 },
-    { id:'breed_plant',    cat:'crianza',  name:'Cuidador de Plantas',       desc:'Ha eclosionado todos los colores de mascotas vegetales: Cactus y Brote. Completa 80 hábitos.', icon:'🌵', cond: h => h.totalDone >= 80 },
-    { id:'breed_dino',     cat:'crianza',  name:'Dinastía de Dinosaurios',   desc:'Ha eclosionado todos los colores de mascotas ave y dinosaurio: Halcón, Búho, Loro, Pavo Real, Pingüino, Gallo, Pterodáctilo, T-Rex, Triceratops y Velociraptor. Racha de 85 días.', icon:'🦕', cond: h => h.bestStreak >= 85 },
-    { id:'breed_invert',   cat:'crianza',  name:'Jefe Deshuesado',           desc:'Ha eclosionado todos los colores de mascotas invertebradas: Escarabajo, Mariposa, Calamar, Nudibranquio, Pulpo, Caracol y Araña. 450 completaciones.', icon:'🐙', cond: h => h.totalDone >= 450 },
-    { id:'breed_desert',   cat:'crianza',  name:'Amigo de Médano',           desc:'Ha eclosionado todos los colores de mascotas de clima desértico: Armadillo, Cactus, Zorro, Rana, Serpiente y Araña. Racha de 35 días.', icon:'🏜️', cond: h => h.bestStreak >= 35 },
-    { id:'breed_prickly',  cat:'crianza',  name:'Jinete Tosco',              desc:'Ha eclosionado todos los colores de mascotas y monturas incómodas: Cactus, Erizo y Piedra. Completa 120 hábitos.', icon:'🦔', cond: h => h.totalDone >= 120 },
-    { id:'breed_rodent',   cat:'crianza',  name:'Rey Roedor',                desc:'Ha eclosionado todos los colores de mascotas roedoras: Conejillo de Indias, Rata y Ardilla. Completa 160 hábitos.', icon:'🐹', cond: h => h.totalDone >= 160 },
-    { id:'breed_feline',   cat:'crianza',  name:'Señora de los Gatos',       desc:'Ha eclosionado todos los colores de mascotas felinas: Guepardo, León, Tigre Dientes de Sable y Tigre. Racha de 30 días.', icon:'🐆', cond: h => h.bestStreak >= 30 },
-
-    // ── LOGROS ÉPICOS ─────────────────────────────────────────
-    { id:'epic_tamer',     cat:'epicos',   name:'Domador de Bestias',        desc:'Ha encontrado las 90 mascotas. (Increíblemente difícil). Completa 700 hábitos.', icon:'🦁', cond: h => h.totalDone >= 700 },
-    { id:'epic_mounts',    cat:'epicos',   name:'Maestro de Monturas',       desc:'Ha domado las 90 monturas. (Aún más difícil). Racha de 150 días.',               icon:'🏇', cond: h => h.bestStreak >= 150 },
-    { id:'epic_triple',    cat:'epicos',   name:'Triple Bingo',              desc:'Ha encontrado las 90 mascotas, domado las 90 monturas, ¡y más! 1000 hábitos.',  icon:'🎰', cond: h => h.totalDone >= 1000 },
-    { id:'epic_gear_heal', cat:'epicos',   name:'Equipamiento Máximo - Sanador', desc:'Consiguió el conjunto completo de armas y armadura para la clase Sanador. Derrota 5 bosses.', icon:'💚', cond: h => h.bossesDefeated >= 5 },
-    { id:'epic_gear_rogue',cat:'epicos',   name:'Equipamiento Máximo - Pícaro', desc:'Consiguió el conjunto completo para la clase Pícaro. Derrota 7 bosses.',      icon:'🗡️', cond: h => h.bossesDefeated >= 7 },
-    { id:'epic_gear_war',  cat:'epicos',   name:'Equipamiento Máximo - Guerrero', desc:'Consiguió el conjunto completo para la clase Guerrero. Derrota 9 bosses.',  icon:'⚔️', cond: h => h.bossesDefeated >= 9 },
-    { id:'epic_gear_mage', cat:'epicos',   name:'Equipamiento Máximo - Mago', desc:'Consiguió el conjunto completo para la clase Mago. Derrota 12 bosses.',        icon:'🔮', cond: h => h.bossesDefeated >= 12 },
-    { id:'epic_season',    cat:'epicos',   name:'Especialista Estacional',   desc:'Ha completado todas las misiones estacionales: Búsqueda de Huevos, Santa Trampero y Encuentra al Cachorro. Racha de 120 días.', icon:'🌸', cond: h => h.bestStreak >= 120 },
-    { id:'epic_legend',    cat:'epicos',   name:'Bestiario Legendario',      desc:'Ha eclosionado todos los colores estándar de todas las mascotas míticas. 800 hábitos.', icon:'🐲', cond: h => h.totalDone >= 800 },
-
-    // ── ESPECIALES ────────────────────────────────────────────
-    { id:'sp_contributor', cat:'especiales', name:'Colaborador',             desc:'Has contribuido al planificador mejorando, sugiriendo o reportando. ¡Gracias!', icon:'🛠️', cond: h => h.totalDone >= 1 },
-    { id:'sp_new_life',    cat:'especiales', name:'Comienza una Nueva Aventura', desc:'Usaste un Orbe de Renacimiento para empezar de nuevo con más sabiduría.',   icon:'🔮', cond: h => h.reborn >= 1 },
-    { id:'sp_seasonal2',   cat:'especiales', name:'Bautizo del Planificador', desc:'¡Participaste en el primer gran evento del Planificador JCH! 30 días de uso.', icon:'🎉', cond: h => h.bestStreak >= 30 },
+    { id:'first',    name:'Primer Paso',       desc:'Completa tu primer hábito',            icon:'👣', cond: h => h.totalDone >= 1 },
+    { id:'week7',    name:'Una Semana',         desc:'Mantén una racha de 7 días',           icon:'🔥', cond: h => h.bestStreak >= 7 },
+    { id:'month30',  name:'El Mes',             desc:'Mantén una racha de 30 días',          icon:'🏆', cond: h => h.bestStreak >= 30 },
+    { id:'hundred',  name:'Centurión',          desc:'100 completaciones totales',           icon:'💯', cond: h => h.totalDone >= 100 },
+    { id:'five',     name:'Coleccionista',      desc:'Crea 5 hábitos distintos',             icon:'📦', cond: h => h.totalHabits >= 5 },
+    { id:'streak21', name:'Hábito Formado',     desc:'21 días seguidos',                     icon:'🧠', cond: h => h.bestStreak >= 21 },
+    { id:'boss1',    name:'Cazador de Monstruos',desc:'Derrota tu primer boss',              icon:'⚔️', cond: h => h.bossesDefeated >= 1 },
+    { id:'boss5',    name:'Exterminador',        desc:'Derrota 5 bosses',                    icon:'💀', cond: h => h.bossesDefeated >= 5 },
+    { id:'done500',  name:'Leyenda Viviente',   desc:'500 completaciones totales',           icon:'🌟', cond: h => h.totalDone >= 500 },
+    { id:'streak100',name:'Centurión de Rachas','desc':'100 días seguidos',                 icon:'👑', cond: h => h.bestStreak >= 100 },
 ];
 
 const CLASSES = [
@@ -15986,67 +15966,21 @@ function renderBossFull(boss) {
 function renderHabAchievements() {
     const el=document.getElementById('habAchievements');
     if(!el) return;
-    const totalDone  = habits.reduce((s,h)=>s+(h.log||[]).length, 0);
-    const bestStreak = habits.reduce((m,h)=>Math.max(m,getBestStreak(h)), 0);
+    const totalDone=habits.reduce((s,h)=>s+(h.log||[]).length,0);
+    const bestStreak=habits.reduce((m,h)=>Math.max(m,getBestStreak(h)),0);
+    const hStats={ totalDone, bestStreak, totalHabits:habits.length, bossesDefeated:hero.bossesDefeated||0 };
 
-    // Calcular hábitos completados este mes
-    const now = new Date();
-    const monthKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-    const monthDone = habits.reduce((s,h)=> s+((h.log||[]).filter(k=>k.startsWith(monthKey)).length), 0);
-
-    const hStats = {
-        totalDone, bestStreak,
-        totalHabits: habits.length,
-        bossesDefeated: hero.bossesDefeated || 0,
-        monthDone,
-        reborn: hero.reborn || 0
-    };
-
-    const cats = [
-        { id:'onboarding', label:'Onboarding',        icon:'🚀' },
-        { id:'progreso',   label:'Progreso Personal', icon:'📈' },
-        { id:'misiones',   label:'Misiones & Bosses', icon:'⚔️' },
-        { id:'coleccion',  label:'Colecciones',       icon:'🎖️' },
-        { id:'crianza',    label:'Crianza de Mascotas',icon:'🐾' },
-        { id:'epicos',     label:'Logros Épicos',     icon:'🌟' },
-        { id:'especiales', label:'Especiales',        icon:'✨' },
-    ];
-
-    const totalUnlocked = ACHIEVEMENTS.filter(a=>a.cond(hStats)).length;
-    const total = ACHIEVEMENTS.length;
-
-    let html = `<div class="hab-ach-summary">
-        <div class="hab-ach-summary-item">
-            <div class="hab-ach-summary-num">${totalUnlocked}</div>
-            <div class="hab-ach-summary-label">Desbloqueados</div>
-        </div>
-        <div class="hab-ach-summary-item">
-            <div class="hab-ach-summary-num">${total - totalUnlocked}</div>
-            <div class="hab-ach-summary-label">Bloqueados</div>
-        </div>
-        <div class="hab-ach-summary-item">
-            <div class="hab-ach-summary-num">${Math.round(totalUnlocked/total*100)}%</div>
-            <div class="hab-ach-summary-label">Completado</div>
-        </div>
-    </div>`;
-
-    cats.forEach(cat => {
-        const list = ACHIEVEMENTS.filter(a => a.cat === cat.id);
-        const unlockedCount = list.filter(a => a.cond(hStats)).length;
-        html += `<div class="hab-ach-category">${cat.icon} ${cat.label}<span class="hab-ach-category-count">${unlockedCount}/${list.length}</span></div>`;
-        html += list.map(a => {
-            const unlocked = a.cond(hStats);
-            return `<div class="hab-achievement ${unlocked?'':'locked'}">
-                <div class="hab-achievement-icon">${a.icon}</div>
-                <div class="hab-achievement-info">
-                    <div class="hab-achievement-name">${a.name}${unlocked?' ✅':''}</div>
-                    <div class="hab-achievement-desc">${a.desc}</div>
-                </div>
-            </div>`;
-        }).join('');
-    });
-
-    el.innerHTML = html;
+    el.innerHTML=`<div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;">Logros Desbloqueados</div>`+
+    ACHIEVEMENTS.map(a=>{
+        const unlocked=a.cond(hStats);
+        return `<div class="hab-achievement ${unlocked?'':'locked'}">
+            <div class="hab-achievement-icon">${a.icon}</div>
+            <div class="hab-achievement-info">
+                <div class="hab-achievement-name">${a.name} ${unlocked?'✅':''}</div>
+                <div class="hab-achievement-desc">${a.desc}</div>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 // ── Toggle hábito ─────────────────────────────────────────────
@@ -18207,8 +18141,7 @@ window._HAB_CHESTS = CHESTS;
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  HABIT RADAR FEATURES — Vistas, Spider Chart, Calendario,
-//  Retroactive Logging, Notas, Vista Anual, Line Chart
+//  HABIT RADAR FEATURES — Ultra Premium Analytics
 // ═══════════════════════════════════════════════════════════════
 (function() {
 
@@ -18218,439 +18151,348 @@ const NOTES_KEY  = 'jch_notes_v1';
 function loadHabits() { return JSON.parse(localStorage.getItem(HABITS_KEY)||'[]'); }
 function loadNotes()  { return JSON.parse(localStorage.getItem(NOTES_KEY)||'{}'); }
 function saveNotes(n) { localStorage.setItem(NOTES_KEY, JSON.stringify(n)); }
+function dateKey(d)   { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayKey()   { return dateKey(new Date()); }
 
-function dateKey(d) {
-    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function todayKey() { return dateKey(new Date()); }
-
-// Estado local del tab
-let _radarView   = 'semanal';
-let _calYear     = new Date().getFullYear();
-let _calMonth    = new Date().getMonth();
+let _radarView = 'semanal';
+let _calYear   = new Date().getFullYear();
+let _calMonth  = new Date().getMonth();
 let _selectedDay = null;
+
+// ── KPIs ─────────────────────────────────────────────────────
+function renderRadarKPIs() {
+    const el = document.getElementById('radarKPIs');
+    if (!el) return;
+    const habits = loadHabits();
+    const today  = new Date(), todayK = dateKey(today);
+    const totalDone  = habits.reduce((s,h)=>s+(h.log||[]).length, 0);
+    const doneToday  = habits.filter(h=>(h.log||[]).includes(todayK)).length;
+    const bestStreak = habits.reduce((m,h)=>{
+        const log=new Set(h.log||[]);let s=0,d=new Date();
+        if(!log.has(todayK))d.setDate(d.getDate()-1);
+        while(true){const k=dateKey(d);if(!log.has(k))break;s++;d.setDate(d.getDate()-1);if(s>3650)break;}
+        return Math.max(m,s);
+    }, 0);
+    const weekDone = habits.reduce((s,h)=>{
+        let c=0;for(let i=0;i<7;i++){const d=new Date(today);d.setDate(d.getDate()-i);if((h.log||[]).includes(dateKey(d)))c++;}
+        return s+c;
+    }, 0);
+    el.innerHTML=[
+        {icon:'⚡',val:doneToday,label:'Hoy',color:'#fbbf24'},
+        {icon:'🔥',val:bestStreak,label:'Racha',color:'#f97316'},
+        {icon:'💯',val:totalDone,label:'Total',color:'#a78bfa'},
+        {icon:'📅',val:weekDone,label:'Esta semana',color:'#22c55e'},
+        {icon:'🏋️',val:habits.length,label:'Hábitos',color:'#3b82f6'},
+        {icon:'🎯',val:habits.length?Math.round(doneToday/habits.length*100)+'%':'0%',label:'Tasa hoy',color:'#10b981'},
+    ].map(k=>`<div class="radar-kpi-card" style="--kpi-color:${k.color}">
+        <div class="radar-kpi-icon">${k.icon}</div>
+        <div class="radar-kpi-val" style="background:linear-gradient(135deg,#fff,${k.color});-webkit-background-clip:text;-webkit-text-fill-color:transparent">${k.val}</div>
+        <div class="radar-kpi-label">${k.label}</div>
+    </div>`).join('');
+}
 
 // ── SELECTOR DE VISTA ─────────────────────────────────────────
 window.selectRadarView = function(view, el) {
     _radarView = view;
-    document.querySelectorAll('.hab-view-btn').forEach(b => b.classList.remove('active'));
-    if (el) el.classList.add('active');
-
-    document.getElementById('habRadarSemana').style.display  = view==='semanal'  ? '' : 'none';
-    document.getElementById('habRadarMes').style.display     = view==='mensual'  ? '' : 'none';
-    document.getElementById('habRadarAnual').style.display   = view==='anual'    ? '' : 'none';
-    document.getElementById('habRadarHabitos').style.display = view==='habitos'  ? '' : 'none';
-
-    if (view==='semanal')  { drawRadarChart(); drawLineChart(); }
-    if (view==='mensual')  { renderCalendar(_calYear, _calMonth); }
-    if (view==='anual')    { renderYearView(); }
-    if (view==='habitos')  { renderIndividualStats(); }
+    document.querySelectorAll('.hab-view-btn').forEach(b=>b.classList.remove('active'));
+    if(el) el.classList.add('active');
+    document.getElementById('habRadarSemana').style.display  = view==='semanal'?'':'none';
+    document.getElementById('habRadarMes').style.display     = view==='mensual'?'':'none';
+    document.getElementById('habRadarAnual').style.display   = view==='anual'?'':'none';
+    document.getElementById('habRadarHabitos').style.display = view==='habitos'?'':'none';
+    renderRadarKPIs();
+    if(view==='semanal')  { drawRadarChart(); drawDayBars(); drawLineChart(); }
+    if(view==='mensual')  { renderCalendar(_calYear,_calMonth); }
+    if(view==='anual')    { renderYearView(); }
+    if(view==='habitos')  { renderIndividualStats(); }
 };
 
-// ── GRÁFICO RADAR (SPIDER WEB) ───────────────────────────────
+// ── GRÁFICO RADAR ─────────────────────────────────────────────
 function drawRadarChart() {
-    const svg = document.getElementById('habRadarSVG');
-    if (!svg) return;
-    const habits = loadHabits();
-    const days   = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const cx=100, cy=100, r=75;
-
-    // Calcular tasa por día de la semana (0=Lun…6=Dom)
-    const counts = [0,0,0,0,0,0,0];
-    const totals = [0,0,0,0,0,0,0];
-    const now = new Date();
-    for (let w=0; w<12; w++) {
-        for (let d2=0; d2<7; d2++) {
-            const dd = new Date(now);
-            dd.setDate(dd.getDate() - (w*7) - ((now.getDay()+6)%7) + d2);
-            if (dd > now) continue;
-            const k = dateKey(dd);
-            habits.forEach(h => {
-                totals[d2]++;
-                if ((h.log||[]).includes(k)) counts[d2]++;
-            });
-        }
-    }
-    const rates = days.map((_,i) => totals[i]>0 ? counts[i]/totals[i] : 0);
-
-    // Construir SVG
-    let html = '';
-    const N = 7;
-    const step = (2*Math.PI)/N;
-
-    // Anillos de fondo (20%,40%,60%,80%,100%)
-    [0.2,0.4,0.6,0.8,1].forEach(pct => {
-        const pts = Array.from({length:N},(_,i) => {
-            const a = i*step - Math.PI/2;
-            return (cx+r*pct*Math.cos(a)).toFixed(1)+','+(cy+r*pct*Math.sin(a)).toFixed(1);
-        }).join(' ');
-        html += '<polygon points="'+pts+'" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>';
+    const svg=document.getElementById('habRadarSVG');
+    if(!svg) return;
+    const habits=loadHabits();
+    const days=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const cx=110,cy=110,r=80;
+    const counts=[0,0,0,0,0,0,0],totals=[0,0,0,0,0,0,0];
+    const now=new Date();
+    for(let w=0;w<12;w++){for(let d=0;d<7;d++){
+        const dd=new Date(now);dd.setDate(dd.getDate()-(w*7)-((now.getDay()+6)%7)+d);
+        if(dd>now)continue;const k=dateKey(dd);
+        habits.forEach(h=>{totals[d]++;if((h.log||[]).includes(k))counts[d]++;});
+    }}
+    const rates=days.map((_,i)=>totals[i]>0?counts[i]/totals[i]:0);
+    const N=7,step=(2*Math.PI)/N;
+    let html='<defs>'+
+        '<radialGradient id="radarBg" cx="50%" cy="50%" r="50%">'+
+        '<stop offset="0%" stop-color="rgba(99,102,241,0.08)"/><stop offset="100%" stop-color="rgba(0,0,0,0)"/></radialGradient>'+
+        '<linearGradient id="radarFill" x1="0%" y1="0%" x2="100%" y2="100%">'+
+        '<stop offset="0%" stop-color="rgba(99,102,241,0.4)"/><stop offset="100%" stop-color="rgba(167,139,250,0.2)"/></linearGradient></defs>';
+    html+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="url(#radarBg)"/>';
+    [0.2,0.4,0.6,0.8,1].forEach((pct,idx)=>{
+        const pts=Array.from({length:N},(_,i)=>{const a=i*step-Math.PI/2;return (cx+r*pct*Math.cos(a)).toFixed(1)+','+(cy+r*pct*Math.sin(a)).toFixed(1);}).join(' ');
+        const op=idx===4?0.15:0.07;
+        html+='<polygon points="'+pts+'" fill="none" stroke="rgba(255,255,255,'+op+')" stroke-width="'+(idx===4?1.5:1)+'"/>';
+        if(idx<4){const lx=(cx+r*pct*Math.cos(-Math.PI/2)-4).toFixed(1),ly=(cy+r*pct*Math.sin(-Math.PI/2)+3).toFixed(1);
+            html+='<text x="'+lx+'" y="'+ly+'" font-size="6" fill="rgba(255,255,255,0.25)" text-anchor="middle">'+(pct*100)+'%</text>';}
     });
-
-    // Ejes
-    for (let i=0;i<N;i++) {
-        const a = i*step - Math.PI/2;
-        const x2=(cx+r*Math.cos(a)).toFixed(1), y2=(cy+r*Math.sin(a)).toFixed(1);
-        html += '<line x1="'+cx+'" y1="'+cy+'" x2="'+x2+'" y2="'+y2+'" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>';
-    }
-
-    // Área de datos
-    const dataPoints = rates.map((v,i) => {
-        const a=i*step-Math.PI/2;
-        return [(cx+r*v*Math.cos(a)).toFixed(1),(cy+r*v*Math.sin(a)).toFixed(1)];
-    });
-    const dataPoly = dataPoints.map(p=>p[0]+','+p[1]).join(' ');
-    html += '<polygon points="'+dataPoly+'" fill="rgba(99,102,241,0.25)" stroke="#6366f1" stroke-width="2"/>';
-    dataPoints.forEach(([x,y],i) => {
-        const clr = rates[i]>=0.7?'#22c55e':rates[i]>=0.4?'#fbbf24':'#ef4444';
-        html += '<circle cx="'+x+'" cy="'+y+'" r="5" fill="'+clr+'" stroke="#0d1b4b" stroke-width="2"/>';
-    });
-
-    // Etiquetas de días
-    days.forEach((d,i) => {
-        const a=i*step-Math.PI/2;
-        const lx=(cx+(r+18)*Math.cos(a)).toFixed(1), ly=(cy+(r+18)*Math.sin(a)).toFixed(1);
-        const pct=Math.round(rates[i]*100);
-        const clr=rates[i]>=0.7?'#22c55e':rates[i]>=0.4?'#fbbf24':'#ef4444';
-        html += '<text x="'+lx+'" y="'+ly+'" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="900" fill="'+clr+'">'+d+'</text>';
-        html += '<text x="'+lx+'" y="'+(parseFloat(ly)+11)+'" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.4)">'+pct+'%</text>';
-    });
-
-    svg.innerHTML = html;
+    for(let i=0;i<N;i++){const a=i*step-Math.PI/2,x2=(cx+r*Math.cos(a)).toFixed(1),y2=(cy+r*Math.sin(a)).toFixed(1);
+        html+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x2+'" y2="'+y2+'" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>';}
+    const dp=rates.map((v,i)=>{const a=i*step-Math.PI/2;return [(cx+r*v*Math.cos(a)).toFixed(1),(cy+r*v*Math.sin(a)).toFixed(1)];});
+    html+='<polygon points="'+dp.map(p=>p[0]+','+p[1]).join(' ')+'" fill="url(#radarFill)" stroke="rgba(167,139,250,0.9)" stroke-width="2" stroke-linejoin="round"/>';
+    dp.forEach(([x,y],i)=>{const clr=rates[i]>=0.7?'#22c55e':rates[i]>=0.4?'#fbbf24':'#ef4444';
+        html+='<circle cx="'+x+'" cy="'+y+'" r="8" fill="'+clr+'22"/>';
+        html+='<circle cx="'+x+'" cy="'+y+'" r="5" fill="'+clr+'" stroke="#0d0025" stroke-width="2"/>';
+        html+='<circle cx="'+x+'" cy="'+y+'" r="2.5" fill="#fff"/>';});
+    days.forEach((d,i)=>{const a=i*step-Math.PI/2,lx=(cx+(r+24)*Math.cos(a)).toFixed(1),ly=(cy+(r+24)*Math.sin(a)).toFixed(1);
+        const pct=Math.round(rates[i]*100),clr=rates[i]>=0.7?'#22c55e':rates[i]>=0.4?'#fbbf24':'#ef4444';
+        html+='<text x="'+lx+'" y="'+parseFloat(ly).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="900" fill="'+clr+'">'+d+'</text>';
+        html+='<text x="'+lx+'" y="'+(parseFloat(ly)+12)+'" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.35)">'+pct+'%</text>';});
+    svg.innerHTML=html;
 }
 
-// ── GRÁFICO DE LÍNEA (8 semanas) ─────────────────────────────
+// ── BARRAS POR DÍA ────────────────────────────────────────────
+function drawDayBars() {
+    const el=document.getElementById('radarDayBars');
+    if(!el)return;
+    const habits=loadHabits(),days=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],now=new Date();
+    const counts=[0,0,0,0,0,0,0],totals=[0,0,0,0,0,0,0];
+    for(let w=0;w<12;w++){for(let d=0;d<7;d++){
+        const dd=new Date(now);dd.setDate(dd.getDate()-(w*7)-((now.getDay()+6)%7)+d);
+        if(dd>now)continue;const k=dateKey(dd);
+        habits.forEach(h=>{totals[d]++;if((h.log||[]).includes(k))counts[d]++;});
+    }}
+    const rates=days.map((_,i)=>totals[i]>0?counts[i]/totals[i]:0);
+    const todayDow=(now.getDay()+6)%7;
+    el.innerHTML=days.map((d,i)=>{
+        const pct=Math.round(rates[i]*100),clr=rates[i]>=0.7?'#22c55e':rates[i]>=0.4?'#fbbf24':'#ef4444';
+        const isToday=i===todayDow;
+        return `<div class="radar-day-col">
+            <div class="radar-day-pct" style="color:${clr}">${pct}%</div>
+            <div class="radar-day-bar-wrap"><div class="radar-day-bar" style="height:${Math.max(3,pct*0.46)}px;background:linear-gradient(to top,${clr},${clr}88);${isToday?'box-shadow:0 0 8px '+clr+'66;':''}" title="${d}: ${pct}%"></div></div>
+            <div class="radar-day-label" style="${isToday?'color:'+clr:''}">${d}</div>
+        </div>`;
+    }).join('');
+}
+
+// ── GRÁFICO DE LÍNEA ──────────────────────────────────────────
 function drawLineChart() {
-    const svg = document.getElementById('habLineSVG');
-    if (!svg) return;
-    const habits = loadHabits();
-    if (!habits.length) { svg.innerHTML='<text x="150" y="40" text-anchor="middle" fill="#444" font-size="10">Sin datos aún</text>'; return; }
-
-    const now = new Date();
-    const weeks = 8;
-    const rates = [];
-
-    for (let w=weeks-1; w>=0; w--) {
-        let done=0, total=0;
-        for (let d=0;d<7;d++) {
-            const dd = new Date(now);
-            dd.setDate(dd.getDate() - w*7 - ((now.getDay()+6)%7) + d);
-            if (dd>now) continue;
-            const k = dateKey(dd);
-            habits.forEach(h => {
-                total++;
-                if ((h.log||[]).includes(k)) done++;
-            });
-        }
-        rates.push(total>0 ? done/total : null);
+    const svg=document.getElementById('habLineSVG');
+    if(!svg)return;
+    const habits=loadHabits();
+    if(!habits.length){svg.innerHTML='<text x="150" y="35" text-anchor="middle" fill="#444" font-size="10">Sin datos aún</text>';return;}
+    const now=new Date(),weeks=8,rates=[];
+    for(let w=weeks-1;w>=0;w--){
+        let done=0,total=0;
+        for(let d=0;d<7;d++){const dd=new Date(now);dd.setDate(dd.getDate()-w*7-((now.getDay()+6)%7)+d);
+            if(dd>now)continue;const k=dateKey(dd);habits.forEach(h=>{total++;if((h.log||[]).includes(k))done++;});}
+        rates.push(total>0?done/total:null);
     }
-
-    const W=300, H=70, padX=10, padY=8;
-    const xStep = (W-2*padX)/(weeks-1);
-    const validRates = rates.filter(r=>r!==null);
-    const maxR = validRates.length ? Math.max(...validRates) : 1;
-
-    let html = '';
-    // Grid lines
-    [0,0.5,1].forEach(v => {
-        const y=(padY+(H-2*padY)*(1-v/Math.max(maxR,0.01))).toFixed(1);
-        html += '<line x1="'+padX+'" y1="'+y+'" x2="'+(W-padX)+'" y2="'+y+'" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>';
-        html += '<text x="'+(padX-2)+'" y="'+y+'" text-anchor="end" dominant-baseline="middle" font-size="7" fill="#444">'+Math.round(v*100)+'%</text>';
-    });
-
-    // Área bajo la línea
-    const pts = rates.map((r,i) => {
-        const x=(padX+i*xStep).toFixed(1);
-        const y=r!==null?(padY+(H-2*padY)*(1-r/Math.max(maxR,0.01))).toFixed(1):null;
-        return y!==null?{x,y}:null;
-    }).filter(Boolean);
-
-    if (pts.length>1) {
-        const area = 'M'+pts[0].x+','+H+' '+pts.map(p=>'L'+p.x+','+p.y).join(' ')+' L'+pts[pts.length-1].x+','+H+' Z';
-        html += '<path d="'+area+'" fill="rgba(99,102,241,0.15)"/>';
-        const line = 'M'+pts.map(p=>p.x+','+p.y).join(' L');
-        html += '<path d="'+line+'" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-        pts.forEach(p => html += '<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="#a78bfa" stroke="#0d1b4b" stroke-width="1.5"/>');
-    }
-
-    // Etiquetas semanas
-    rates.forEach((_,i) => {
-        const x=(padX+i*xStep).toFixed(1);
-        html += '<text x="'+x+'" y="'+(H+2)+'" text-anchor="middle" font-size="7" fill="#444">S'+(i+1)+'</text>';
-    });
-
-    svg.innerHTML = html;
+    const W=300,H=60,padX=14,padY=6;
+    const xStep=(W-2*padX)/(weeks-1);
+    const maxR=Math.max(...rates.filter(r=>r!==null),0.01);
+    let html='<defs><linearGradient id="lgArea" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="rgba(99,102,241,0.35)"/><stop offset="100%" stop-color="rgba(99,102,241,0)"/></linearGradient></defs>';
+    [0,0.5,1].forEach(v=>{const y=(padY+(H-2*padY)*(1-v/maxR)).toFixed(1);
+        html+='<line x1="'+padX+'" y1="'+y+'" x2="\'+(W-padX)+'" y2="'+y+'" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>';
+        html+='<text x="\'+(padX-2)+'" y="'+y+'" text-anchor="end" dominant-baseline="middle" font-size="6.5" fill="#444">'+Math.round(v*100)+'%</text>';});
+    const pts=rates.map((r,i)=>{if(r===null)return null;const x=(padX+i*xStep).toFixed(1),y=(padY+(H-2*padY)*(1-r/maxR)).toFixed(1);return {x,y,r};}).filter(Boolean);
+    if(pts.length>1){
+        html+='<path d="M'+pts[0].x+',\'+(H-padY)+' '+pts.map(p=>'L'+p.x+','+p.y).join(' ')+' L'+pts[pts.length-1].x+',\'+(H-padY)+' Z" fill="url(#lgArea)"/>';
+        html+='<path d="M'+pts.map(p=>p.x+','+p.y).join(' L')+'" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+        pts.forEach(p=>{const clr=p.r>=0.7?'#22c55e':p.r>=0.4?'#fbbf24':'#ef4444';
+            html+='<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="'+clr+'" stroke="#0d0025" stroke-width="1.5"/>';});}
+    rates.forEach((_,i)=>{html+='<text x="\'+(padX+i*xStep).toFixed(1)+'" y="\'+(H+1)+'" text-anchor="middle" font-size="6.5" fill="#555">S\'+(i+1)+'</text>';});
+    svg.innerHTML=html;
 }
 
-// ── CALENDARIO MENSUAL INTERACTIVO ───────────────────────────
+// ── CALENDARIO MENSUAL ────────────────────────────────────────
 window.changeCalMonth = function(delta) {
-    _calMonth += delta;
-    if (_calMonth > 11) { _calMonth=0; _calYear++; }
-    if (_calMonth < 0)  { _calMonth=11; _calYear--; }
-    renderCalendar(_calYear, _calMonth);
+    _calMonth+=delta;
+    if(_calMonth>11){_calMonth=0;_calYear++;}
+    if(_calMonth<0){_calMonth=11;_calYear--;}
+    renderCalendar(_calYear,_calMonth);
 };
 
-function renderCalendar(year, month) {
-    const habits   = loadHabits();
-    const labelEl  = document.getElementById('habCalMonthLabel');
-    const dowEl    = document.getElementById('habCalDows');
-    const daysEl   = document.getElementById('habCalDays');
-    if (!labelEl||!daysEl) return;
-
-    const monthNames=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    labelEl.textContent = monthNames[month]+' '+year;
-
-    // Días de la semana
-    dowEl.innerHTML = ['L','M','X','J','V','S','D'].map(d=>'<div class="hab-cal-dow">'+d+'</div>').join('');
-
-    const firstDay = new Date(year,month,1);
-    const lastDay  = new Date(year,month+1,0);
-    const startDow = (firstDay.getDay()+6)%7; // 0=Lun
-    const totalDays= lastDay.getDate();
-    const today    = new Date();
-    const todayStr = dateKey(today);
-
-    // Construir mapa de completitud por día
-    const dayMap = {};
-    for (let d=1;d<=totalDays;d++) {
-        const k = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-        const due = habits.filter(h => {
-            const dow=(new Date(year,month,d).getDay()+6)%7;
-            if(h.freq==='daily') return true;
-            if(h.freq==='weekly') return dow===0;
-            if(h.freq==='custom') return (h.days||[0,1,2,3,4]).includes(dow);
-            return true;
-        });
-        const done = due.filter(h=>(h.log||[]).includes(k)).length;
-        dayMap[d] = due.length>0 ? done/due.length : 0;
+function renderCalendar(year,month) {
+    const habits=loadHabits();
+    const labelEl=document.getElementById('habCalMonthLabel');
+    const dowEl=document.getElementById('habCalDows');
+    const daysEl=document.getElementById('habCalDays');
+    const sumEl=document.getElementById('radarMonthSummary');
+    if(!labelEl||!daysEl)return;
+    const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    labelEl.textContent=MONTHS[month]+' '+year;
+    dowEl.innerHTML=['L','M','X','J','V','S','D'].map(d=>'<div class="hab-cal-dow">'+d+'</div>').join('');
+    const firstDay=new Date(year,month,1),lastDay=new Date(year,month+1,0);
+    const startDow=(firstDay.getDay()+6)%7,totalDays=lastDay.getDate();
+    const today=new Date(),todayStr=dateKey(today);
+    let monthDone=0,monthPossible=0,perfectDays=0;
+    const dayMap={};
+    for(let d=1;d<=totalDays;d++){
+        const k=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+        const dt=new Date(year,month,d);
+        const due=habits.filter(h=>{const dow=(dt.getDay()+6)%7;
+            if(h.freq==='daily')return true;if(h.freq==='weekly')return dow===0;
+            if(h.freq==='custom')return(h.days||[0,1,2,3,4]).includes(dow);return true;});
+        const done=due.filter(h=>(h.log||[]).includes(k)).length;
+        dayMap[d]=due.length>0?done/due.length:0;
+        if(dt<=today){monthDone+=done;monthPossible+=due.length;if(due.length>0&&done===due.length)perfectDays++;}
     }
-
-    // Celdas vacías al inicio
-    let cells = Array(startDow).fill('<div class="hab-cal-day empty"></div>');
-
-    for (let d=1;d<=totalDays;d++) {
-        const k   = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-        const dt  = new Date(year,month,d);
-        const isFuture = dt > today;
-        const isToday  = k===todayStr;
-        const rate = dayMap[d];
-        const lv   = rate===0?'lv0':rate<0.34?'lv1':rate<0.67?'lv2':rate<1?'lv3':'lv4';
-
-        cells.push('<div class="hab-cal-day has-data '+lv+(isToday?' today':'')+(isFuture?' future':'')+'" onclick="openDayDetail(\''+k+'\')" title="'+k+'">'+d+'</div>');
+    const monthRate=monthPossible>0?Math.round(monthDone/monthPossible*100):0;
+    if(sumEl)sumEl.innerHTML=[{val:monthDone,lbl:'Completadas'},{val:monthRate+'%',lbl:'Tasa del mes'},{val:perfectDays,lbl:'Días perfectos'}]
+        .map(s=>`<div class="radar-month-stat"><div class="radar-month-stat-val">${s.val}</div><div class="radar-month-stat-lbl">${s.lbl}</div></div>`).join('');
+    let cells=Array(startDow).fill('<div class="hab-cal-day empty"></div>');
+    for(let d=1;d<=totalDays;d++){
+        const k=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+        const dt=new Date(year,month,d),isFuture=dt>today,isToday=k===todayStr;
+        const rate=dayMap[d],lv=rate===0?'lv0':rate<0.34?'lv1':rate<0.67?'lv2':rate<1?'lv3':'lv4';
+        cells.push('<div class="hab-cal-day has-data '+lv+(isToday?' today':'')+(isFuture?' future':'')+'" onclick="openDayDetail(''+k+'')" title="'+Math.round(rate*100)+'%">'+d+'</div>');
     }
-
-    daysEl.innerHTML = cells.join('');
+    daysEl.innerHTML=cells.join('');
 }
 
 // ── VISTA ANUAL ───────────────────────────────────────────────
 function renderYearView() {
-    const gridEl   = document.getElementById('habYearGrid');
-    const monthsEl = document.getElementById('habYearMonths');
-    const labelEl  = document.getElementById('habYearLabel');
-    if (!gridEl) return;
-
-    const year    = new Date().getFullYear();
-    const habits  = loadHabits();
-    if (labelEl) labelEl.textContent = year;
-
-    const MONTHS_SHORT=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    if (monthsEl) monthsEl.innerHTML = MONTHS_SHORT.map(m=>'<span>'+m+'</span>').join('');
-
-    // Construir 52 semanas × 7 días
-    const jan1  = new Date(year,0,1);
-    const start = new Date(jan1);
-    start.setDate(start.getDate() - (start.getDay()+6)%7); // Lunes anterior
-
-    let cells = '';
-    for (let w=0;w<53;w++) {
-        for (let d=0;d<7;d++) {
-            const dt = new Date(start);
-            dt.setDate(dt.getDate()+w*7+d);
-            if (dt.getFullYear()!==year || dt>new Date()) {
-                cells += '<div class="hab-year-cell" style="background:rgba(0,0,0,0)"></div>';
-                continue;
-            }
-            const k = dateKey(dt);
-            const cnt=habits.filter(h=>(h.log||[]).includes(k)).length;
-            const lv=cnt===0?'':(cnt===1?'y-lv1':cnt===2?'y-lv2':cnt===3?'y-lv3':'y-lv4');
-            cells += '<div class="hab-year-cell '+lv+'" title="'+k+': '+cnt+' hábitos" onclick="openDayDetail(\''+k+'\')"></div>';
-        }
-    }
-    gridEl.innerHTML = cells;
+    const gridEl=document.getElementById('habYearGrid'),monthsEl=document.getElementById('habYearMonths'),labelEl=document.getElementById('habYearLabel');
+    if(!gridEl)return;
+    const year=new Date().getFullYear(),habits=loadHabits();
+    if(labelEl)labelEl.textContent=year;
+    const MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    if(monthsEl)monthsEl.innerHTML=MONTHS.map(m=>'<span>'+m+'</span>').join('');
+    const jan1=new Date(year,0,1),start=new Date(jan1);
+    start.setDate(start.getDate()-(start.getDay()+6)%7);
+    let cells='';
+    for(let w=0;w<53;w++){for(let d=0;d<7;d++){
+        const dt=new Date(start);dt.setDate(dt.getDate()+w*7+d);
+        if(dt.getFullYear()!==year||dt>new Date()){cells+='<div class="hab-year-cell"></div>';continue;}
+        const k=dateKey(dt),cnt=habits.filter(h=>(h.log||[]).includes(k)).length;
+        const lv=cnt===0?'':(cnt===1?'y-lv1':cnt===2?'y-lv2':cnt===3?'y-lv3':'y-lv4');
+        cells+='<div class="hab-year-cell '+lv+'" title="'+k+': '+cnt+' hábitos" onclick="openDayDetail(''+k+'')"></div>';
+    }}
+    gridEl.innerHTML=cells;
 }
 
-// ── STATS INDIVIDUALES POR HÁBITO ─────────────────────────────
+// ── STATS INDIVIDUALES ────────────────────────────────────────
 function renderIndividualStats() {
-    const el = document.getElementById('habIndividualStats');
-    if (!el) return;
-    const habits = loadHabits();
-    if (!habits.length) { el.innerHTML='<div class="hab-empty"><div class="hab-empty-icon">📊</div><div class="hab-empty-text">Crea hábitos para ver estadísticas</div></div>'; return; }
-
-    const today  = new Date();
-
-    el.innerHTML = habits.map(h => {
-        const log       = h.log || [];
-        const streak    = window._calcHabStreak ? window._calcHabStreak(h) : 0;
-        const bestStr   = window._calcHabBestStreak ? window._calcHabBestStreak(h) : 0;
-        const total     = log.length;
-        const created   = new Date(h.createdAt||today);
-        const daysSince = Math.max(1,Math.round((today-created)/86400000));
-        const rate      = Math.round((total/daysSince)*100);
-
-        // Mini heatmap (últimas 28 celdas = 4 semanas × 7)
-        const heatCells = [];
-        for (let i=27;i>=0;i--) {
-            const dd=new Date(today); dd.setDate(dd.getDate()-i);
-            const k=dateKey(dd);
-            const done=log.includes(k);
-            heatCells.push('<div style="width:10px;height:10px;border-radius:2px;background:'+(done?h.color+'cc':'rgba(255,255,255,0.05)'+');display:inline-block;margin:1px;"></div>');
-        }
-
-        return '<div class="hab-individual-stat">' +
-            '<div class="hab-ind-header"><span class="hab-ind-emoji">'+h.emoji+'</span><span class="hab-ind-name">'+h.name+'</span></div>' +
-            '<div style="display:flex;flex-wrap:wrap;margin-bottom:8px;">'+heatCells.join('')+'</div>' +
-            '<div class="hab-ind-stats-row">' +
-              '<div class="hab-ind-stat"><div class="hab-ind-val" style="color:'+h.color+';">'+streak+'🔥</div><div class="hab-ind-lbl">Racha</div></div>' +
-              '<div class="hab-ind-stat"><div class="hab-ind-val">'+bestStr+'</div><div class="hab-ind-lbl">Mejor</div></div>' +
-              '<div class="hab-ind-stat"><div class="hab-ind-val">'+total+'</div><div class="hab-ind-lbl">Total</div></div>' +
-              '<div class="hab-ind-stat"><div class="hab-ind-val">'+rate+'%</div><div class="hab-ind-lbl">Tasa</div></div>' +
-            '</div>' +
-            '</div>';
+    const el=document.getElementById('habIndividualStats');
+    if(!el)return;
+    const habits=loadHabits();
+    if(!habits.length){el.innerHTML='<div class="hab-empty"><div class="hab-empty-icon">📊</div><div class="hab-empty-text">Crea hábitos para ver estadísticas</div></div>';return;}
+    const today=new Date(),todayK=todayKey();
+    el.innerHTML=habits.map(h=>{
+        const log=h.log||[],logSet=new Set(log);
+        let streak=0,d=new Date();if(!logSet.has(todayK))d.setDate(d.getDate()-1);
+        while(true){const k=dateKey(d);if(!logSet.has(k))break;streak++;d.setDate(d.getDate()-1);if(streak>3650)break;}
+        const bestStr=window._calcHabBestStreak?window._calcHabBestStreak(h):0;
+        const total=log.length,created=new Date(h.createdAt||today);
+        const daysSince=Math.max(1,Math.round((today-created)/86400000));
+        const rate=Math.round((total/daysSince)*100);
+        let heatCells='';
+        for(let i=27;i>=0;i--){const dd=new Date(today);dd.setDate(dd.getDate()-i);const k=dateKey(dd);
+            const done=log.includes(k);heatCells+='<div style="width:9px;height:9px;border-radius:2px;background:'+( done?h.color+'cc':'rgba(255,255,255,0.05)')+';display:inline-block;margin:1px"></div>';}
+        return `<div class="hab-individual-stat" style="--hab-color:${h.color}">
+            <div class="hab-ind-header">
+                <div class="hab-ind-emoji">${h.emoji}</div>
+                <div style="flex:1"><div class="hab-ind-name">${h.name}</div>
+                <div class="hab-ind-freq">${{daily:'Diario',weekly:'Semanal',custom:'Personalizado'}[h.freq||'daily']} · +${h.xp||10} XP</div></div>
+                <div style="font-size:1.4rem;font-weight:900;color:${h.color}">${streak}🔥</div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;padding:6px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:8px">${heatCells}</div>
+            <div class="hab-ind-stats-row">
+                <div class="hab-ind-stat"><div class="hab-ind-val" style="color:${h.color}">${streak}</div><div class="hab-ind-lbl">Racha</div></div>
+                <div class="hab-ind-stat"><div class="hab-ind-val">${bestStr}</div><div class="hab-ind-lbl">Mejor</div></div>
+                <div class="hab-ind-stat"><div class="hab-ind-val">${total}</div><div class="hab-ind-lbl">Total</div></div>
+                <div class="hab-ind-stat"><div class="hab-ind-val" style="color:${rate>=70?'#22c55e':rate>=40?'#fbbf24':'#ef4444'}">${rate}%</div><div class="hab-ind-lbl">Tasa</div></div>
+            </div>
+            <div class="hab-ind-minibar"><div class="hab-ind-minibar-fill" style="width:${Math.min(rate,100)}%;background:${h.color}"></div></div>
+        </div>`;
     }).join('');
 }
 
-// ── DETALLE DEL DÍA — Retroactive Logging ────────────────────
+// ── DETALLE DEL DÍA ───────────────────────────────────────────
 window.openDayDetail = function(dayKey) {
-    _selectedDay = dayKey;
-    const habits  = loadHabits();
-    const notes   = loadNotes();
-    const backdropEl = document.getElementById('habDayBackdrop');
-    const modalEl    = document.getElementById('habDayModal');
-    const dateEl     = document.getElementById('habDayModalDate');
-    const listEl     = document.getElementById('habDayHabitList');
-    const noteEl     = document.getElementById('habDayNote');
-    if (!modalEl) return;
-
-    // Formatear fecha bonita
-    const [y,m,d] = dayKey.split('-').map(Number);
-    const dt = new Date(y,m-1,d);
+    _selectedDay=dayKey;
+    const habits=loadHabits(),notes=loadNotes();
+    const backdropEl=document.getElementById('habDayBackdrop');
+    const modalEl=document.getElementById('habDayModal');
+    const dateEl=document.getElementById('habDayModalDate');
+    const listEl=document.getElementById('habDayHabitList');
+    const noteEl=document.getElementById('habDayNote');
+    if(!modalEl)return;
+    const [y,m,d]=dayKey.split('-').map(Number),dt=new Date(y,m-1,d);
     const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    if (dateEl) dateEl.textContent = DIAS[dt.getDay()]+', '+d+' de '+MESES[m-1]+' '+y;
-
-    // Nota del día
-    if (noteEl) noteEl.value = notes[dayKey]||'';
-
-    // Lista de hábitos
+    if(dateEl)dateEl.innerHTML='<span style="color:#a78bfa">'+DIAS[dt.getDay()]+'</span>, '+d+' de '+MESES[m-1]+' '+y;
+    if(noteEl)noteEl.value=notes[dayKey]||'';
     const dow=(dt.getDay()+6)%7;
     const dueHabits=habits.filter(h=>{
-        if(h.freq==='daily') return true;
-        if(h.freq==='weekly') return dow===0;
-        if(h.freq==='custom') return (h.days||[0,1,2,3,4]).includes(dow);
-        return true;
-    });
-
-    if (!dueHabits.length) {
-        listEl.innerHTML='<div style="color:#555;font-size:0.75rem;text-align:center;padding:10px;">Sin hábitos programados para este día</div>';
-    } else {
-        listEl.innerHTML=dueHabits.map(h=>{
-            const done=(h.log||[]).includes(dayKey);
-            return '<div class="hab-day-habit-row '+(done?'done':'')+'" onclick="toggleDayHabit(\''+h.id+'\',\''+dayKey+'\')">' +
-                '<div class="hab-day-check '+(done?'done':'')+'" style="'+(done?'background:'+h.color+';border-color:'+h.color+';':'border-color:'+h.color+'44;')+'">'+(done?'✓':'')+'</div>' +
-                '<span style="font-size:1rem;">'+h.emoji+'</span>' +
-                '<div style="flex:1;">' +
-                  '<div style="font-size:0.8rem;font-weight:900;color:#fff;">'+h.name+'</div>' +
-                  '<div style="font-size:0.58rem;color:#666;">+'+h.xp+' XP · '+{daily:'Diario',weekly:'Semanal',custom:'Custom'}[h.freq||'daily']+'</div>' +
-                '</div>' +
-                (done?'<span style="font-size:0.7rem;color:#10b981;">✅</span>':'') +
-                '</div>';
-        }).join('');
-    }
-
-    backdropEl && backdropEl.classList.add('show');
+        if(h.freq==='daily')return true;if(h.freq==='weekly')return dow===0;
+        if(h.freq==='custom')return(h.days||[0,1,2,3,4]).includes(dow);return true;});
+    const done=dueHabits.filter(h=>(h.log||[]).includes(dayKey)).length;
+    if(!dueHabits.length){listEl.innerHTML='<div style="color:#555;font-size:0.75rem;text-align:center;padding:20px;">Sin hábitos programados</div>';}
+    else{listEl.innerHTML=`<div style="font-size:0.65rem;color:#888;margin:0 16px 10px;display:flex;justify-content:space-between">
+        <span>${done}/${dueHabits.length} completados</span>
+        <span style="color:${done===dueHabits.length?'#22c55e':'#666'}">${dueHabits.length?Math.round(done/dueHabits.length*100):0}%</span>
+    </div>`+dueHabits.map(h=>{const isDone=(h.log||[]).includes(dayKey);
+        return `<div class="hab-day-habit-row ${isDone?'done':''}" onclick="toggleDayHabit('${h.id}','${dayKey}')">
+            <div class="hab-day-check ${isDone?'done':''}" style="${isDone?'background:'+h.color+';border-color:'+h.color+';':'border-color:'+h.color+'44;'}">${isDone?'✓':''}</div>
+            <span style="font-size:1.1rem">${h.emoji}</span>
+            <div style="flex:1"><div style="font-size:0.82rem;font-weight:900;color:#fff">${h.name}</div>
+            <div style="font-size:0.58rem;color:#666">+${h.xp||10} XP</div></div>
+            ${isDone?'<span style="font-size:1rem">✅</span>':''}
+        </div>`; }).join('');}
+    if(backdropEl)backdropEl.classList.add('show');
     modalEl.classList.add('show');
 };
 
 window.closeDayDetail = function() {
     document.getElementById('habDayBackdrop')?.classList.remove('show');
     document.getElementById('habDayModal')?.classList.remove('show');
-    _selectedDay = null;
+    _selectedDay=null;
 };
 
-// Retroactive logging
-window.toggleDayHabit = function(habitId, dayKey) {
-    const habits = loadHabits();
-    const h = habits.find(x=>x.id===habitId);
-    if (!h) return;
-
-    const today  = todayKey();
-    const isPast = dayKey < today;
-    h.log = h.log || [];
-    const idx = h.log.indexOf(dayKey);
-
-    if (idx===-1) {
-        h.log.push(dayKey);
-        // Solo dar XP si es hoy
-        if (dayKey===today) {
-            if (typeof addGlobalReward==='function') addGlobalReward(h.xp||10,1);
-            if (typeof playSparkleSound==='function') playSparkleSound();
-        }
-    } else {
-        h.log.splice(idx,1);
-    }
-
-    localStorage.setItem(HABITS_KEY, JSON.stringify(habits));
-    if (typeof updateHabitBadge==='function') updateHabitBadge();
-    // Re-render modal
+window.toggleDayHabit = function(habitId,dayKey) {
+    const habits=loadHabits(),h=habits.find(x=>x.id===habitId);if(!h)return;
+    h.log=h.log||[];const idx=h.log.indexOf(dayKey);
+    if(idx===-1){h.log.push(dayKey);if(dayKey===todayKey()){if(typeof addGlobalReward==='function')addGlobalReward(h.xp||10,1);if(typeof playSparkleSound==='function')playSparkleSound();}}
+    else{h.log.splice(idx,1);}
+    localStorage.setItem(HABITS_KEY,JSON.stringify(habits));
+    if(typeof updateHabitBadge==='function')updateHabitBadge();
     openDayDetail(dayKey);
-    // Re-render vista activa
-    if (_radarView==='mensual') renderCalendar(_calYear,_calMonth);
-    if (_radarView==='anual')   renderYearView();
-    if (_radarView==='habitos') renderIndividualStats();
+    if(_radarView==='mensual')renderCalendar(_calYear,_calMonth);
+    if(_radarView==='anual')renderYearView();
+    if(_radarView==='habitos')renderIndividualStats();
 };
 
 window.saveDayNote = function() {
-    if (!_selectedDay) return;
-    const noteEl = document.getElementById('habDayNote');
-    const notes = loadNotes();
-    notes[_selectedDay] = noteEl ? noteEl.value.trim() : '';
-    saveNotes(notes);
+    if(!_selectedDay)return;
+    const noteEl=document.getElementById('habDayNote'),notes=loadNotes();
+    notes[_selectedDay]=noteEl?noteEl.value.trim():'';saveNotes(notes);
     const t=document.getElementById('habStreakToast');
     if(t){t.textContent='📝 Nota guardada';t.style.background='linear-gradient(135deg,#6366f1,#a78bfa)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
 };
 
-// Exponer helpers que necesita renderIndividualStats
 window._calcHabBestStreak = function(h) {
-    const log=[...(h.log||[])].sort();
-    if(!log.length) return 0;
+    const log=[...(h.log||[])].sort();if(!log.length)return 0;
     let best=0,cur=0,prev=null;
-    for(const k of log){
-        if(!prev){cur=1;}
-        else{const d1=new Date(prev),d2=new Date(k);cur=(Math.round((d2-d1)/86400000)===1)?cur+1:1;}
-        if(cur>best)best=cur;prev=k;
-    }
+    for(const k of log){if(!prev){cur=1;}else{const d1=new Date(prev),d2=new Date(k);cur=(Math.round((d2-d1)/86400000)===1)?cur+1:1;}if(cur>best)best=cur;prev=k;}
     return best;
 };
 
-// ── Extender switchHabTab ─────────────────────────────────────
-const _origSwitchR = window.switchHabTab;
+// ── INIT ──────────────────────────────────────────────────────
+const _origSwitchRadar = window.switchHabTab;
 window.switchHabTab = function(tab, el) {
-    _origSwitchR && _origSwitchR(tab, el);
-    if (tab==='radar') {
+    _origSwitchRadar && _origSwitchRadar(tab, el);
+    if(tab==='radar'){
         _radarView='semanal';
         document.querySelectorAll('.hab-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='semanal'));
-        document.getElementById('habRadarSemana') && (document.getElementById('habRadarSemana').style.display='');
-        document.getElementById('habRadarMes')    && (document.getElementById('habRadarMes').style.display='none');
-        document.getElementById('habRadarAnual')  && (document.getElementById('habRadarAnual').style.display='none');
-        document.getElementById('habRadarHabitos')&& (document.getElementById('habRadarHabitos').style.display='none');
-        setTimeout(()=>{ drawRadarChart(); drawLineChart(); },50);
+        ['habRadarSemana','habRadarMes','habRadarAnual','habRadarHabitos'].forEach((id,i)=>{const e=document.getElementById(id);if(e)e.style.display=i===0?'':'none';});
+        setTimeout(()=>{renderRadarKPIs();drawRadarChart();drawDayBars();drawLineChart();},50);
     }
 };
 
 })();
-</script>
 
-<script>
 // ═══════════════════════════════════════════════════════════════
 //  LIFE RESET FEATURES — 66 Días, Pilares, Cartas, Hard Mode,
 //  Rating de Vida, Diario Emocional
