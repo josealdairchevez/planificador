@@ -14831,7 +14831,24 @@ try {
 (function(){
 'use strict';
 var VAPID_KEY='BDrIm0lnUTlTVRcjqMGFDA-Hm7TtWLE1gY7Mbvp_Qw_tqty4fprhVfB_5ck20Mq0FYUa66_Iimr9uRj9z1uPZ7g';
-var SK='jch_rem_v4', _loop=null, _fcmReady=false, _fired={}, _sessionStart=Date.now();
+var SK='jch_rem_v4', _loop=null, _fcmReady=false, _sessionStart=Date.now();
+
+// _fired persiste en localStorage para no re-disparar al reabrir la app
+// Solo se guarda la clave evId_fireAt con valor = timestamp de cuando disparó
+var _FIRED_SK = 'jch_fired_v1';
+var _fired = {};
+try {
+  var _firedRaw = JSON.parse(localStorage.getItem(_FIRED_SK) || '{}');
+  // Limpiar entradas de hace más de 2 días para no acumular indefinidamente
+  var _cutoff = Date.now() - 172800000;
+  Object.keys(_firedRaw).forEach(function(k) {
+    if (_firedRaw[k] > _cutoff) _fired[k] = _firedRaw[k];
+  });
+} catch(e) { _fired = {}; }
+
+function _saveFired() {
+  try { localStorage.setItem(_FIRED_SK, JSON.stringify(_fired)); } catch(e) {}
+}
 
 function alarm(){try{var c=new(window.AudioContext||window.webkitAudioContext)();var master=c.createGain();master.gain.value=0.75;master.connect(c.destination);var melody=[{f:523.25,t:0.00,d:0.18,v:0.5,type:'sine'},{f:659.25,t:0.20,d:0.18,v:0.6,type:'sine'},{f:783.99,t:0.40,d:0.18,v:0.7,type:'sine'},{f:1046.5,t:0.60,d:0.35,v:0.8,type:'sine'},{f:523.25,t:1.10,d:0.14,v:0.6,type:'triangle'},{f:659.25,t:1.26,d:0.14,v:0.7,type:'triangle'},{f:783.99,t:1.42,d:0.14,v:0.8,type:'triangle'},{f:1046.5,t:1.58,d:0.14,v:0.9,type:'triangle'},{f:1318.5,t:1.74,d:0.40,v:1.0,type:'triangle'}];melody.forEach(function(n){var o=c.createOscillator(),g=c.createGain();o.type=n.type;o.frequency.value=n.f;var t=c.currentTime+n.t;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(n.v*0.7,t+0.015);g.gain.setValueAtTime(n.v*0.7,t+n.d*0.7);g.gain.exponentialRampToValueAtTime(0.001,t+n.d);o.connect(g);g.connect(master);o.start(t);o.stop(t+n.d+0.05);});var echo=c.createOscillator(),eg=c.createGain();echo.type='sine';echo.frequency.value=1046.5;var te=c.currentTime+2.30;eg.gain.setValueAtTime(0,te);eg.gain.linearRampToValueAtTime(0.25,te+0.02);eg.gain.exponentialRampToValueAtTime(0.001,te+0.6);echo.connect(eg);eg.connect(master);echo.start(te);echo.stop(te+0.65);}catch(e){}}
 
@@ -15039,7 +15056,8 @@ function check(){
   });
   var rest=s.filter(function(r){ return r.fireAt > now; });
   fire.forEach(function(r){
-    _fired[r.evId+'_'+r.fireAt]=true;
+    _fired[r.evId+'_'+r.fireAt]=Date.now();
+    _saveFired();
     showNotif(r.title, r.body, 'jch-'+r.evId+'-'+r.fireAt);
     console.log('[JCH] check() disparó: '+r.title+' fireAt:'+new Date(r.fireAt).toLocaleTimeString());
   });
