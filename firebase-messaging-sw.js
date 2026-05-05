@@ -43,56 +43,20 @@ messaging.onBackgroundMessage(function(payload) {
     });
 });
 
-// ── CHECK LOCAL — disparar recordatorios desde el SW ─────
-// Funciona aunque la Cloud Function falle
-// Se ejecuta cada vez que el SW recibe un push vacío o mensaje interno
-function checkLocalReminders() {
-    try {
-        var reminders = JSON.parse(self.__jchReminders || '[]');
-        var now = Date.now();
-        var toFire = reminders.filter(function(r) {
-            return r.fireAt <= now && r.fireAt >= (now - 300000);
-        });
-        var rest = reminders.filter(function(r) { return r.fireAt > now; });
-
-        toFire.forEach(function(r) {
-            var tag = 'jch-local-' + r.evId + '-' + r.fireAt;
-            self.registration.showNotification(r.title || 'Recordatorio', {
-                body:    r.body || '¡Es hora de tu hábito!',
-                icon:    'https://josealdairchevez.github.io/planificador/icon-192.png',
-                badge:   'https://josealdairchevez.github.io/planificador/icon-96.png',
-                vibrate: [500, 200, 500, 200, 800],
-                requireInteraction: true,
-                tag:      tag,
-                renotify: true,
-                silent:   false,
-                data:    { url: 'https://josealdairchevez.github.io/planificador/' }
-            });
-            console.log('[SW] Local reminder fired:', r.title);
-        });
-
-        if (toFire.length > 0) {
-            self.__jchReminders = JSON.stringify(rest);
-        }
-    } catch(e) {
-        console.warn('[SW] checkLocalReminders error:', e);
-    }
-}
-
 // ── Recibir lista de recordatorios desde la app ──────────
 self.addEventListener('message', function(e) {
     if (!e.data) return;
     if (e.data.type === 'SET_REMINDERS') {
+        // Solo almacenar — NO disparar aquí
+        // El disparo lo hace check() en la app cuando está abierta,
+        // y la Cloud Function cuando está cerrada
         self.__jchReminders = JSON.stringify(e.data.reminders || []);
-        console.log('[SW] Reminders actualizados:', (e.data.reminders||[]).length);
-        // Verificar inmediatamente
-        checkLocalReminders();
+        console.log('[SW] Reminders almacenados:', (e.data.reminders||[]).length);
     }
     if (e.data.type === 'CHECK_NOW') {
-        checkLocalReminders();
-    }
-    if (e.data.type === 'REGISTER_NOTIFICATION_CHANNEL') {
-        console.log('[SW] REGISTER_NOTIFICATION_CHANNEL recibido');
+        // Este mensaje lo envía la app cuando quiere forzar un check
+        // Solo se usa internamente, no al recibir la lista
+        console.log('[SW] CHECK_NOW recibido');
     }
 });
 
