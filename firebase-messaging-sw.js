@@ -2,17 +2,13 @@
 //  FIREBASE MESSAGING SERVICE WORKER
 //  Archivo: firebase-messaging-sw.js
 // ═══════════════════════════════════════════════════════════
-
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 // ── REGISTRAR CANAL DE NOTIFICACIÓN EN ANDROID ───────────
-// Esto crea la categoría "Recordatorios JCH" visible en
-// Ajustes → Aplicaciones → Planificador JCH → Notificaciones
 self.addEventListener('activate', function(e) {
     e.waitUntil(
         self.clients.claim().then(function() {
-            // Notificar a todos los clientes para que registren el canal
             return self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
                 .then(function(clients) {
                     clients.forEach(function(client) {
@@ -34,15 +30,24 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Notificaciones en BACKGROUND o CERRADA
+// ── Notificaciones en BACKGROUND o APP CERRADA ───────────
 messaging.onBackgroundMessage(function(payload) {
-    const title = payload.notification?.title || payload.data?.title || 'Planificador JCH';
-    const body  = payload.notification?.body  || payload.data?.body  || 'Recordatorio';
-    
-    // Tag único basado en datos del evento para evitar duplicados
-    const evId   = payload.data?.evId   || '';
-    const fireAt = payload.data?.fireAt || '';
-    const tag    = evId && fireAt ? 'jch-'+evId+'-'+fireAt : 'jch-fcm-'+Date.now();
+    console.log('[SW] onBackgroundMessage recibido:', JSON.stringify(payload));
+
+    const title = (payload.data && payload.data.title) || 'Planificador JCH';
+    const body  = (payload.data && payload.data.body)  || 'Tienes un recordatorio';
+
+    const evId   = (payload.data && payload.data.evId)   || '';
+    const fireAt = (payload.data && payload.data.fireAt) || '';
+
+    // ── Tag único por hábito + día ──────────────────────────
+    const tag = evId && fireAt
+        ? 'jch-' + evId + '-' + fireAt
+        : 'jch-fcm-' + Date.now();
+
+    // ── Detectar si es hábito para personalizar el botón ───
+    const isHabit = evId.startsWith('hab_');
+    const actionLabel = isHabit ? '✅ Marcar hecho' : '📋 Ver tarea';
 
     return self.registration.showNotification(title, {
         body:    body,
@@ -51,17 +56,17 @@ messaging.onBackgroundMessage(function(payload) {
         vibrate: [500, 200, 500, 200, 500, 200, 800],
         requireInteraction: true,
         tag:     tag,
-        renotify: false,
+        renotify: true,   // ← CAMBIO CLAVE: forzar mostrar aunque el tag exista
         silent:  false,
         data:    { url: './index.html', evId: evId, fireAt: fireAt },
         actions: [
-            { action: 'open',    title: 'Ver tarea' },
-            { action: 'dismiss', title: 'Cerrar'    }
+            { action: 'open',    title: actionLabel },
+            { action: 'dismiss', title: '✕ Cerrar'  }
         ]
     });
 });
 
-// Clic en notificación → abrir app
+// ── Clic en notificación → abrir app ─────────────────────
 self.addEventListener('notificationclick', function(e) {
     e.notification.close();
     if (e.action === 'dismiss') return;
@@ -73,4 +78,10 @@ self.addEventListener('notificationclick', function(e) {
             if (clients.openWindow) return clients.openWindow('./index.html');
         })
     );
+});
+
+// ── CRÍTICO: mantener SW activo para mensajes data-only ──
+// Necesario para que Android procese notificaciones con app cerrada
+self.addEventListener('fetch', function(e) {
+    // No interceptar fetches — solo mantener el SW vivo
 });
