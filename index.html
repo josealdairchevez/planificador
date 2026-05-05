@@ -1758,7 +1758,9 @@
             /* Quitar tap-highlight de CUALQUIER elemento interactivo */
             button, a, [onclick], .store-gift-wrapper, .archive-vault-trigger-btn,
             .cal-trigger-btn, .btn-create-base, .btn-create-magenta,
-            .btn-create-emerald, .btn-create-amber {
+            .btn-create-emerald, .btn-create-amber,
+            .hab-card, .hab-card *, .hab-check-btn, .hab-rep-btn,
+            .hab-timer-ctrl, .hab-rep-ctrl {
                 -webkit-tap-highlight-color: transparent !important;
                 outline: none !important;
             }
@@ -4629,27 +4631,51 @@
         .hab-empty-text { font-size:0.8rem;font-weight:700;color:#444;line-height:1.6; }
 
         .hab-card {
-            background:rgba(8,20,40,0.9);border-radius:16px;margin-bottom:10px;
-            border:1.5px solid rgba(255,255,255,0.06);
-            border-left:4px solid var(--hab-card-color, rgba(255,255,255,0.1));
-            overflow:hidden;
-            transition:border-color 0.3s,box-shadow 0.3s,background 0.3s;
-            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 8%, transparent) 0%, transparent 60%);
+            background:rgba(8,20,40,0.92);
+            border-radius:18px;margin-bottom:12px;
+            border:1.5px solid rgba(255,255,255,0.07);
+            overflow:hidden;position:relative;
+            transition:border-color 0.3s,box-shadow 0.3s,transform 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            tap-highlight-color: transparent;
         }
-        .hab-card:hover { border-color:rgba(255,255,255,0.15); border-left-color:var(--hab-card-color, rgba(255,255,255,0.15)); }
+        /* Franja izquierda del color del hábito */
+        .hab-card::before {
+            content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+            background:var(--hab-c,#10b981);
+            border-radius:18px 0 0 18px;
+            box-shadow:0 0 10px var(--hab-c,#10b981);
+            opacity:0.9;pointer-events:none;z-index:1;
+        }
+        /* Brillo de fondo usando pseudo con opacity */
+        .hab-card::after {
+            content:'';position:absolute;inset:0;pointer-events:none;
+            background:var(--hab-c,#10b981);
+            opacity:0.04;border-radius:18px;
+        }
+        .hab-card, .hab-card * {
+            -webkit-tap-highlight-color: transparent !important;
+            outline: none !important;
+        }
+        .hab-card:active { background:rgba(8,20,40,0.92) !important; }
+        .hab-card:hover {
+            border-color:var(--hab-c,rgba(255,255,255,0.12));
+            box-shadow:0 4px 24px rgba(0,0,0,0.4);
+            transform:translateY(-1px);
+        }
         .hab-card.completed-today {
-            border-color: color-mix(in srgb, var(--hab-card-color, #10b981) 50%, transparent);
-            border-left-color: var(--hab-card-color, #10b981);
-            box-shadow: 0 0 18px color-mix(in srgb, var(--hab-card-color, #10b981) 25%, transparent);
-            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 18%, transparent) 0%, transparent 60%);
+            border-color:var(--hab-c,rgba(16,185,129,0.4));
         }
+        .hab-card.completed-today::after { opacity:0.08; }
 
         .hab-card-top {
-            display:flex;align-items:center;gap:10px;padding:10px 12px 8px;
+            display:flex;align-items:center;gap:10px;padding:11px 12px 8px 16px;
         }
         .hab-card-emoji {
-            width:40px;height:40px;border-radius:12px;display:flex;align-items:center;
-            justify-content:center;font-size:1.3rem;flex-shrink:0;
+            width:42px;height:42px;border-radius:13px;display:flex;align-items:center;
+            justify-content:center;font-size:1.35rem;flex-shrink:0;
+            background:rgba(255,255,255,0.07);
+            border:1px solid rgba(255,255,255,0.12);
         }
         .hab-card-info { flex:1;min-width:0; }
         .hab-card-name {
@@ -4670,28 +4696,24 @@
             font-size:0.58rem;font-weight:900;color:#a78bfa;
         }
 
-        /* FIX: quitar highlight celeste al hacer tap en tarjetas de hábito en móvil */
-        .hab-card, .hab-card * {
-            -webkit-tap-highlight-color: transparent !important;
-        }
-        .hab-card:active {
-            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 12%, transparent) 0%, transparent 60%);
-        }
-
-        /* Botón check */
+        /* ── Botón CHECK — círculo perfecto ── */
         .hab-check-btn {
-            width:38px;height:38px;min-width:38px;min-height:38px;
+            width:40px;height:40px;min-width:40px;min-height:40px;
             aspect-ratio:1/1;border-radius:50%;flex-shrink:0;
-            border:2.5px solid rgba(255,255,255,0.2);background:transparent;
+            border:2.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.04);
             display:flex;align-items:center;justify-content:center;
             cursor:pointer;transition:all 0.25s;font-size:1.1rem;
-            padding:0;box-sizing:border-box;
+            box-sizing:border-box;padding:0;
         }
         .hab-check-btn.done {
-            background:linear-gradient(135deg,var(--hab-card-color,#10b981),color-mix(in srgb,var(--hab-card-color,#10b981) 70%,#fff));
-            border-color:var(--hab-card-color,#10b981);box-shadow:0 0 15px color-mix(in srgb,var(--hab-card-color,#10b981) 50%,transparent);
+            background:var(--hab-c,#10b981);
+            border-color:var(--hab-c,#10b981);
+            box-shadow:0 0 16px var(--hab-c,#10b981);
         }
-        .hab-check-btn:not(.done):hover { border-color:#10b981;box-shadow:0 0 10px rgba(16,185,129,0.3); }
+        .hab-check-btn:not(.done):hover {
+            border-color:var(--hab-c,#10b981);
+            box-shadow:0 0 10px var(--hab-c,#10b981);
+        }
 
         /* ── CONTROL CANTIDAD (repeticiones) ── */
         .hab-rep-ctrl {
@@ -4701,14 +4723,20 @@
             display:flex;align-items:center;gap:5px;
         }
         .hab-rep-btn {
-            width:30px;height:30px;min-width:30px;min-height:30px;
-            aspect-ratio:1/1;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);
+            width:28px;height:28px;min-width:28px;min-height:28px;
+            aspect-ratio:1/1;border-radius:50%;
+            border:1.5px solid rgba(255,255,255,0.2);
             background:rgba(255,255,255,0.06);color:#fff;font-size:1rem;font-weight:900;
             cursor:pointer;display:flex;align-items:center;justify-content:center;
-            transition:all 0.18s;line-height:1;padding:0;box-sizing:border-box;flex-shrink:0;
+            transition:all 0.18s;line-height:1;padding:0;box-sizing:border-box;
+            flex-shrink:0;
         }
         .hab-rep-btn:hover { border-color:#10b981;background:rgba(16,185,129,0.2); }
-        .hab-rep-btn.plus-done { border-color:var(--hab-card-color,#10b981) !important;background:linear-gradient(135deg,var(--hab-card-color,#10b981),var(--hab-card-color,#10b981)) !important;box-shadow:0 0 12px var(--hab-card-color,#10b981) !important;color:#fff !important;opacity:1 !important; }
+        .hab-rep-btn.plus-done {
+            border-color:#10b981;
+            background:linear-gradient(135deg,#10b981,#34d399);
+            box-shadow:0 0 12px rgba(16,185,129,0.55);
+        }
         .hab-rep-val {
             font-size:0.78rem;font-weight:900;color:#fff;min-width:28px;text-align:center;line-height:1;
         }
@@ -4750,6 +4778,22 @@
         }
         .hab-timer-ctrl.done-timer .hab-timer-arc { stroke:#22c55e!important; }
         .hab-timer-ctrl.done-timer .hab-timer-icon { font-size:1rem; }
+        /* Círculo verde con ✓ cuando el timer termina — mismo tamaño que hab-check-btn */
+        .hab-timer-ctrl.done-timer .hab-timer-ring-wrap {
+            width:40px;height:40px;
+        }
+        .hab-timer-ctrl.done-timer .hab-timer-ring-wrap::after {
+            content:'✓';
+            position:absolute;top:0;left:0;width:100%;height:100%;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.15rem;font-weight:900;color:#fff;
+            background:linear-gradient(135deg,#22c55e,#4ade80);
+            border-radius:50%;
+            box-shadow:0 0 16px rgba(34,197,94,0.6);
+            pointer-events:none;
+        }
+        .hab-timer-ctrl.done-timer .hab-timer-svg { display:none; }
+        .hab-timer-ctrl.done-timer .hab-timer-inner { display:none; }
 
         @keyframes habTimerPulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
         .hab-timer-ctrl.running .hab-timer-ring-wrap { animation: habTimerPulse 1.5s ease-in-out infinite; }
@@ -4766,7 +4810,7 @@
             background:rgba(255,255,255,0.08);transition:background 0.3s;
         }
         .hab-day-dot.done-dot { background:var(--hab-color,#10b981); }
-        .hab-day-dot.today-dot { background:rgba(255,255,255,0.12);outline:2px solid var(--hab-color,#10b981);box-shadow:0 0 6px var(--hab-color,#10b981); }
+        .hab-day-dot.today-dot { background:rgba(255,255,255,0.2);outline:1px solid var(--hab-color,#10b981); }
 
         /* Stats strip */
         .hab-stats-strip {
@@ -4990,24 +5034,6 @@
         }
         .hab-boss-dmg-flash.show { opacity:1; }
 
-        /* ── Animación flotante de recompensa al completar hábito ── */
-        @keyframes habPillRise {
-            0%   { opacity:0; transform:translateY(0)   scale(0.5); }
-            18%  { opacity:1; transform:translateY(-16px) scale(1.12); }
-            55%  { opacity:1; transform:translateY(-52px) scale(1); }
-            100% { opacity:0; transform:translateY(-90px) scale(0.88); }
-        }
-        .hab-reward-pill {
-            position:fixed;
-            pointer-events:none;
-            display:flex;align-items:center;gap:5px;
-            padding:5px 13px;border-radius:22px;
-            font-size:0.82rem;font-weight:900;color:#fff;
-            white-space:nowrap;
-            animation:habPillRise 1.5s cubic-bezier(0.22,1,0.36,1) forwards;
-            z-index:2147483647;
-        }
-
         /* Tipo de hábito: positivo / negativo */
         .hab-type-grid { display:flex;gap:8px;margin-top:0.4rem; }
         .hab-type-btn {
@@ -5080,7 +5106,7 @@
         /* ═══ HABITICA FEATURES: Color dinámico, +/-, Avatar, Tienda, Recompensas ═══ */
 
         /* Hábito con color dinámico según rendimiento */
-        .hab-card.perf-great  { border-color:rgba(34,197,94,0.5);  box-shadow:0 0 12px rgba(34,197,94,0.15); }
+        .hab-card.perf-great  { border-color:var(--hab-c,rgba(34,197,94,0.5)); box-shadow:0 0 14px var(--hab-c,rgba(34,197,94,0.18)); }
         .hab-card.perf-good   { border-color:rgba(234,179,8,0.5);  box-shadow:0 0 12px rgba(234,179,8,0.12); }
         .hab-card.perf-bad    { border-color:rgba(249,115,22,0.5); box-shadow:0 0 12px rgba(249,115,22,0.12);}
         .hab-card.perf-danger { border-color:rgba(239,68,68,0.6);  box-shadow:0 0 12px rgba(239,68,68,0.2); }
@@ -6290,6 +6316,49 @@
             transition: none;
             z-index: 10;
         }
+        /* ── ANIMACIÓN FLOTANTE DE RECOMPENSA POR HÁBITO ── */
+        .hab-reward-float {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            animation: habRewardRise 2.2s cubic-bezier(0.22,1,0.36,1) forwards;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
+        }
+        @keyframes habRewardRise {
+            0%   { opacity:0; transform:translateY(0px) scale(0.6); }
+            12%  { opacity:1; transform:translateY(-14px) scale(1.18); }
+            30%  { opacity:1; transform:translateY(-38px) scale(1); }
+            75%  { opacity:1; transform:translateY(-80px) scale(1); }
+            100% { opacity:0; transform:translateY(-115px) scale(0.85); }
+        }
+        .hab-reward-row {
+            display:flex;align-items:center;gap:5px;
+            padding:4px 11px;border-radius:20px;
+            font-size:0.8rem;font-weight:900;letter-spacing:0.3px;
+            white-space:nowrap;backdrop-filter:blur(8px);
+        }
+        .hab-reward-row.xp-row {
+            background:linear-gradient(135deg,rgba(139,92,246,0.92),rgba(167,139,250,0.85));
+            color:#fff;box-shadow:0 2px 12px rgba(139,92,246,0.6);
+        }
+        .hab-reward-row.coin-row {
+            background:linear-gradient(135deg,rgba(245,158,11,0.92),rgba(251,191,36,0.85));
+            color:#fff;box-shadow:0 2px 12px rgba(245,158,11,0.5);
+        }
+        .hab-reward-row.dmg-row {
+            background:linear-gradient(135deg,rgba(239,68,68,0.92),rgba(248,113,113,0.85));
+            color:#fff;box-shadow:0 2px 12px rgba(239,68,68,0.5);
+        }
+        .hab-reward-row.hp-row {
+            background:linear-gradient(135deg,rgba(16,185,129,0.92),rgba(52,211,153,0.85));
+            color:#fff;box-shadow:0 2px 12px rgba(16,185,129,0.5);
+        }
+        .hab-reward-icon { font-size:0.95rem;line-height:1; }
+
         .hab-boss-dmg-float.show {
             animation: dmgFloat 1.2s ease-out forwards;
         }
@@ -6423,30 +6492,16 @@
            Estilo HabitRix — heatmap + stats + acciones
            ═══════════════════════════════════════════════════════ */
         .hab-detail-overlay {
-            /* FIX parpadeo: visibility+opacity — sin display:none/flex */
-            display: flex;
+            display: none;
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.75);
             z-index: 9999;
             align-items: flex-end;
             justify-content: center;
-            /* FIX blur: mover backdrop-filter solo a .open para que
-               no afecte el fondo cuando el overlay está oculto */
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: opacity 0.15s ease, visibility 0.15s ease;
-        }
-        .hab-detail-overlay.open {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
             backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
         }
+        .hab-detail-overlay.open { display: flex; }
         .hab-detail-modal {
             background: linear-gradient(180deg, #0d0025, #0a0018 80%, #06000f);
             border: 1.5px solid rgba(167,139,250,0.25);
@@ -6457,13 +6512,13 @@
             overflow-y: auto;
             padding: 0 0 24px 0;
             box-shadow: 0 -20px 60px rgba(0,0,0,0.9);
-            transform: translateY(60px);
-            opacity: 0;
-            transition: transform 0.22s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.18s ease;
+            animation: none;
         }
         .hab-detail-overlay.open .hab-detail-modal {
-            transform: translateY(0);
-            opacity: 1;
+            animation: slideUpModal 0.3s cubic-bezier(0.34,1.26,0.64,1);
+        }
+        .hab-detail-overlay.open .hab-detail-modal.updating {
+            animation: none !important;
         }
         @keyframes slideUpModal {
             from { transform: translateY(100%); opacity: 0; }
@@ -15399,8 +15454,6 @@ const BOSSES = [
     { name:'Demonio Ancestral',  emoji:'😈', maxHp:800,  reward:'💎 Gema del Campeón',     xpReward:400 },
     { name:'Dios de la Sombra',  emoji:'🌑', maxHp:1200, reward:'🌟 Estrella Legendaria',  xpReward:700 },
 ];
-// Exponer BOSSES globalmente para que todos los módulos puedan accederlo
-window._HAB_BOSSES = BOSSES;
 
 const ACHIEVEMENTS = [
     { id:'first',    name:'Primer Paso',       desc:'Completa tu primer hábito',            icon:'👣', cond: h => h.totalDone >= 1 },
@@ -15517,8 +15570,9 @@ function renderHabitCard(h, showEdit) {
     const isNeg = h.type==='negative';
     const weekBar=dots.map(d=>`<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`).join('');
     const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.58rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
+    const habColor = h.color && h.color !== 'undefined' ? h.color : '#6366f1';
     return `
-    <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-card-color:${h.color||'#10b981'};">
+    <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-c:${habColor};border-color:${habColor}33;" data-habid="${h.id}">
         <div class="hab-card-top">
             <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
@@ -15532,8 +15586,8 @@ function renderHabitCard(h, showEdit) {
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
                 ${(window.buildHabControl||buildHabControl)(h, done)}
-                ${showEdit?`<span style="font-size:0.7rem;cursor:pointer;" onclick="event.stopPropagation();editHabit('${h.id}')">✏️</span>`:''}
-                <span style="font-size:0.7rem;cursor:pointer;" onclick="event.stopPropagation();deleteHabit('${h.id}')">🗑️</span>
+                ${showEdit?`<span style="font-size:0.7rem;cursor:pointer;" onclick="editHabit('${h.id}')">✏️</span>`:''}
+                <span style="font-size:0.7rem;cursor:pointer;" onclick="deleteHabit('${h.id}')">🗑️</span>
             </div>
         </div>
         <div class="hab-week-bar">${weekBar}</div>
@@ -15561,7 +15615,7 @@ function renderHabToday() {
 
     const el=document.getElementById('habTodayList');
     if(!el) return;
-    const due=habits.filter(h=>isHabitDueToday(h));
+    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
     if(!due.length){
         el.innerHTML=`<div class="hab-empty"><div class="hab-empty-icon">🌱</div><div class="hab-empty-text">No hay hábitos para hoy.<br>¡Crea tu primer hábito en ➕!</div></div>`;
         return;
@@ -15571,12 +15625,8 @@ function renderHabToday() {
     // Inyectar data-habid en el div raíz de cada card para el modal HabitRix
     const cardsHtml = due.map(h => {
         let card = (window.renderHabitCardHabitica || renderHabitCard)(h, false);
-        // FIX: preservar el style con --hab-card-color al inyectar data-habid
-        const colorVal = h.color || '#10b981';
-        card = card.replace(
-            'id="habCard-' + h.id + '" style="--hab-card-color:' + colorVal + ';"',
-            'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="--hab-card-color:' + colorVal + ';cursor:pointer;"'
-        );
+        card = card.replace('id="habCard-' + h.id + '"',
+            'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="cursor:pointer;"');
         return card;
     }).join('');
     el.innerHTML=`
@@ -15611,7 +15661,7 @@ function renderHabStats() {
 
     const totalDone=habits.reduce((s,h)=>s+(h.log||[]).length,0);
     const topStreak=habits.reduce((m,h)=>Math.max(m,calcStreak(h)),0);
-    const due=habits.filter(h=>isHabitDueToday(h));
+    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
     const todayDone=due.filter(h=>isCompletedToday(h)).length;
 
     ovEl.innerHTML=`
@@ -15633,7 +15683,7 @@ function renderHabStats() {
     }
     hmEl.innerHTML=cells.join('');
 
-    if(allEl) allEl.innerHTML=`<div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Todos los hábitos</div>`+habits.map(h=>renderHabitCard(h,true)).join('');
+    if(allEl) allEl.innerHTML=`<div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Todos los hábitos</div>`+habits.filter(h=>!h.archived).map(h=>renderHabitCard(h,true)).join('');
 }
 
 // ── Tab HÉROE ─────────────────────────────────────────────────
@@ -15685,7 +15735,6 @@ function renderHabHero() {
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
             ${(hero.inventory||[]).length?hero.inventory.map(it=>`<span style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:4px 10px;font-size:0.68rem;color:#fbbf24;">${it}</span>`).join(''):'<span style="font-size:0.72rem;color:#444;">Sin objetos aún. ¡Derrota un boss!</span>'}
         </div>
-        <div style="margin-top:14px;" id="habAttrPanel"></div>
     `;
 }
 
@@ -15770,18 +15819,27 @@ window.toggleHabit = function(id) {
 
         // Daño al boss (depende de dificultad y clase)
         const dmg = (h.diff==='hard'?15:h.diff==='medium'?8:4) * (hero.class==='warrior'?1.3:1);
-        hero.bossHp = Math.round(((hero.bossHp != null) ? hero.bossHp : boss.maxHp) - dmg);
+        hero.bossHp = (hero.bossHp ?? BOSSES[hero.bossIndex||0].maxHp) - dmg;
 
         // HP del héroe: sanador no baja
         const hpBonus = hero.class==='healer' ? 3 : 0;
         hero.hp = Math.min(hero.maxHp, hero.hp + hpBonus);
 
-        // Mostrar animación flotante de recompensa
-        showHabitReward(Math.round(xpGain), Math.round(coinGain), Math.round(dmg), hpBonus);
-
         // Mostrar daño en boss mini panel
         const dmgEl=document.getElementById('habBossDmg');
         if(dmgEl){ dmgEl.textContent=`-${Math.round(dmg)}`; dmgEl.classList.add('show'); setTimeout(()=>dmgEl.classList.remove('show'),900); }
+
+        // ── Animación flotante de recompensa ──
+        const _originEl = document.getElementById('habCard-' + id);
+        if (typeof window.showHabitReward === 'function') {
+            window.showHabitReward(
+                Math.round(xpGain),
+                Math.round(coinGain),
+                Math.round(dmg),
+                hpBonus,
+                _originEl
+            );
+        }
 
         // Boss derrotado
         const boss=BOSSES[hero.bossIndex||0];
@@ -15830,33 +15888,32 @@ window.toggleHabit = function(id) {
     checkAndGrantAchievements();
 };
 
-// ── Animación flotante XP / Monedas / Daño / HP ──────────────
-function showHabitReward(xpVal, coinsVal, dmgVal, hpVal) {
-    var pills = [];
-    if (xpVal    > 0) pills.push({ icon:'⚡', text:'+'+xpVal+' XP',       bg:'linear-gradient(135deg,#7c3aed,#a78bfa)', sh:'0 3px 16px rgba(124,58,237,0.65)' });
-    if (coinsVal > 0) pills.push({ icon:'🪙', text:'+'+coinsVal+' Monedas',bg:'linear-gradient(135deg,#d97706,#fbbf24)', sh:'0 3px 16px rgba(217,119,6,0.55)' });
-    if (dmgVal   > 0) pills.push({ icon:'⚔️', text:'-'+dmgVal+' Boss',     bg:'linear-gradient(135deg,#dc2626,#f87171)', sh:'0 3px 16px rgba(220,38,38,0.55)' });
-    if (hpVal    > 0) pills.push({ icon:'❤️', text:'+'+hpVal+' HP',        bg:'linear-gradient(135deg,#059669,#34d399)', sh:'0 3px 16px rgba(5,150,105,0.55)' });
-    if (!pills.length) return;
+// ── ANIMACIÓN FLOTANTE DE RECOMPENSA ─────────────────────────
+window.showHabitReward = function(xp, coins, dmg, hpBonus, originEl) {
+    // Calcular posición de origen (centro de la tarjeta o botón tocado)
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    if (originEl) {
+        const r = originEl.getBoundingClientRect();
+        x = r.left + r.width / 2;
+        y = r.top + r.height / 2;
+    }
 
-    var cx = window.innerWidth / 2;
-    var baseY = window.innerHeight * 0.52;
+    const el = document.createElement('div');
+    el.className = 'hab-reward-float';
+    el.style.left = (x - 60) + 'px';
+    el.style.top  = y + 'px';
 
-    pills.forEach(function(p, i) {
-        setTimeout(function() {
-            var el = document.createElement('div');
-            el.className = 'hab-reward-pill';
-            // Cada pastilla centrada horizontalmente, separadas 44px verticalmente
-            el.style.left = (cx - 75) + 'px';
-            el.style.top  = (baseY - i * 44) + 'px';
-            el.style.background = p.bg;
-            el.style.boxShadow  = p.sh;
-            el.innerHTML = '<span style="font-size:1rem;line-height:1">' + p.icon + '</span><span>' + p.text + '</span>';
-            document.body.appendChild(el);
-            setTimeout(function() { el.remove(); }, 1600);
-        }, i * 120);
-    });
-}
+    const rows = [];
+    if (xp > 0)     rows.push(`<div class="hab-reward-row xp-row"><span class="hab-reward-icon">⚡</span>+${xp} XP</div>`);
+    if (coins > 0)  rows.push(`<div class="hab-reward-row coin-row"><span class="hab-reward-icon">🪙</span>+${coins} Monedas</div>`);
+    if (dmg > 0)    rows.push(`<div class="hab-reward-row dmg-row"><span class="hab-reward-icon">⚔️</span>-${dmg} HP Boss</div>`);
+    if (hpBonus > 0)rows.push(`<div class="hab-reward-row hp-row"><span class="hab-reward-icon">❤️</span>+${hpBonus} HP</div>`);
+
+    el.innerHTML = rows.join('');
+    document.body.appendChild(el);
+    setTimeout(function() { el.remove(); }, 2400);
+};
 
 function showBossDefeated(boss) {
     const t=document.getElementById('habStreakToast');
@@ -15935,7 +15992,7 @@ window.buildHabControl = function(h, done) {
             <div class="hab-rep-row">
                 <button class="hab-rep-btn" onclick="event.stopPropagation();habRepDec('${h.id}',${target})">−</button>
                 <div class="hab-rep-val" id="habRepVal_${h.id}" style="color:${isDone?'#22c55e':'#fff'}">${cur}</div>
-                <button class="hab-rep-btn ${isDone?'plus-done':''}" id="habRepPlus_${h.id}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
+                <button class="hab-rep-btn ${isDone?'plus-done':''}" onclick="event.stopPropagation();habRepInc('${h.id}',${target})"
                     style="${isDone?`background:linear-gradient(135deg,${color},${color}aa);border-color:${color};`:`border-color:${color}44;`}">${isDone?'✓':'+'}</button>
             </div>
             <div class="hab-rep-target" id="habRepTarget_${h.id}">/${target} ${unit}</div>
@@ -15983,62 +16040,6 @@ window.buildHabControl = function(h, done) {
 };
 
 // ── INCREMENTO / DECREMENTO DE REPETICIONES ───────────────────
-// ── Helper: actualizar XP/coins/boss HP en el DOM al instante ─
-function _habInstantUIUpdate(h) {
-    try {
-        var heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-        // Actualizar monedas en el header global
-        if (typeof updateGoldDisplays === 'function') updateGoldDisplays(heroRaw);
-        // Actualizar contadores de XP y monedas en el header principal
-        var xpEl   = document.getElementById('xpTotalText');
-        var coinEl = document.getElementById('coinTotalText');
-        if (xpEl)   xpEl.textContent   = heroRaw.xp   || 0;
-        if (coinEl) coinEl.textContent  = heroRaw.coins || 0;
-        // Actualizar barra y texto de HP del boss — TODOS los paneles (mini y 3D)
-        var BOSSES_UI = window._HAB_BOSSES || [];
-        if (BOSSES_UI.length) {
-            var boss    = BOSSES_UI[Math.min(heroRaw.bossIndex||0, BOSSES_UI.length-1)];
-            var bossHp  = Math.max(0, heroRaw.bossHp != null ? heroRaw.bossHp : boss.maxHp);
-            var pct     = Math.max(0, Math.min(100, Math.round(bossHp / boss.maxHp * 100)));
-            var hpText  = Math.round(bossHp) + ' / ' + boss.maxHp + ' HP · ' + pct + '%';
-            // Actualizar TODAS las barras y textos (panel mini + panel 3D)
-            document.querySelectorAll('.hab-boss-hp-fill, .hab-boss-3d-hp-fill').forEach(function(el) {
-                el.style.width = pct + '%';
-            });
-            document.querySelectorAll('.hab-boss-hp-text, .hab-boss-3d-hp-text').forEach(function(el) {
-                el.textContent = hpText;
-            });
-            // Shake en el panel 3D para feedback visual de daño
-            var panel3d = document.querySelector('.hab-boss-3d-panel');
-            if (panel3d) {
-                panel3d.classList.remove('shake');
-                void panel3d.offsetWidth; // forzar reflow para reiniciar animación
-                panel3d.classList.add('shake');
-            }
-            // Flash de daño en panel 3D (habBossDmgFloat) Y panel mini (habBossDmg)
-            if (h) {
-                var dmg = Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4));
-                ['habBossDmgFloat','habBossDmg'].forEach(function(elId) {
-                    var dmgEl = document.getElementById(elId);
-                    if (dmgEl) {
-                        dmgEl.textContent = '-' + dmg;
-                        dmgEl.classList.remove('show');
-                        void dmgEl.offsetWidth;
-                        dmgEl.classList.add('show');
-                        setTimeout(function(){ dmgEl.classList.remove('show'); }, 900);
-                    }
-                });
-            }
-        }
-        // Flash animación en las vault-cards (XP visual)
-        document.querySelectorAll('.vault-card').forEach(function(v) {
-            v.classList.remove('flash-vault');
-            void v.offsetWidth;
-            v.classList.add('flash-vault');
-        });
-    } catch(e) {}
-}
-
 window.habRepInc = function(habitId, target) {
     const QTY_KEY = 'jch_qty_v1';
     const today   = new Date().toISOString().split('T')[0];
@@ -16052,116 +16053,57 @@ window.habRepInc = function(habitId, target) {
     const hList = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
     const h     = hList.find(x => x.id === habitId);
     if (!h) return;
-    const tgt   = h.qtyTarget || target || 1;
-    const pct   = Math.min(100, Math.round((newVal/tgt)*100));
+    const tgt    = h.qtyTarget || target || 1;
+    const pct    = Math.min(100, Math.round((newVal/tgt)*100));
     const isDone = newVal >= tgt;
     const color  = h.color || '#10b981';
-
-    // ── Actualizar DOM del control sin re-renderizar la tarjeta ──
-    const valEl  = document.getElementById('habRepVal_'  + habitId);
-    const fillEl = document.getElementById('habRepFill_' + habitId);
     const card   = document.getElementById('habCard-' + habitId);
 
+    // Actualizar DOM sin re-renderizar
+    const valEl  = document.getElementById('habRepVal_' + habitId);
+    const fillEl = document.getElementById('habRepFill_' + habitId);
     if (valEl)  { valEl.textContent = newVal; valEl.style.color = isDone ? '#22c55e' : '#fff'; }
     if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = isDone ? '#22c55e' : color; }
 
-    var applyPlusClass = function() {
-        var btn = document.getElementById('habRepPlus_' + habitId);
-        if (!btn) return;
-        if (isDone) {
-            btn.classList.add('plus-done');
-            btn.textContent = '✓';
-            btn.style.setProperty('--hab-card-color', color);
-        } else {
-            btn.classList.remove('plus-done');
-            btn.textContent = '+';
-            btn.style.removeProperty('--hab-card-color');
+    if (isDone && !(h.log||[]).includes(today)) {
+        // Reemplazar control por check verde
+        const ctrl = document.getElementById('habRepVal_' + habitId);
+        const repCtrl = ctrl ? ctrl.closest('.hab-rep-ctrl') : null;
+        if (repCtrl) {
+            repCtrl.innerHTML =
+                `<button class="hab-check-btn done" style="background:${color};border-color:${color};box-shadow:0 0 18px ${color}88;">✓</button>` +
+                `<div style="font-size:0.48rem;color:${color};font-weight:900;margin-top:2px;">¡Listo!</div>`;
         }
-    };
-    applyPlusClass();
-
-    // ── Al llegar a la meta: otorgar XP directamente (sin re-render) ──
-    // FIX: si el hábito es quantity/timer, ignorar si ya estaba en log
-    // por un toggle previo erróneo (check-btn que apareció antes del modal correcto).
-    // Solo otorgamos XP/boss si es la primera vez que se llega al target real.
-    const alreadyInLog = (h.log||[]).includes(today);
-    const wasToggledWrong = alreadyInLog && (h.habitType === 'quantity' || h.habitType === 'timer')
-                            && newVal === tgt; // llegó exactamente al target ahora
-    if (isDone && (!alreadyInLog || wasToggledWrong)) {
-        // Marcar en log (o ya estaba, no duplicar)
-        h.log = h.log || [];
-        if (!alreadyInLog) h.log.push(today);
-        localStorage.setItem('jch_habits_v1', JSON.stringify(hList));
-
-        // XP + boss damage al héroe (misma lógica que toggleHabit)
-        try {
-            const heroRaw  = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-            const xpGain   = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
-            const coinGain = Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
-            heroRaw.xp     = (heroRaw.xp||0) + xpGain;
-            heroRaw.coins  = (heroRaw.coins||0) + coinGain;
-
-            // Daño al boss (igual que toggleHabit)
-            const BOSSES_Q = window._HAB_BOSSES || window.BOSSES || [];
-            const bossIdx  = heroRaw.bossIndex || 0;
-            const bossQ    = BOSSES_Q[Math.min(bossIdx, BOSSES_Q.length-1)];
-            if (bossQ) {
-                const dmg = Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4) * (heroRaw.class==='warrior'?1.3:1));
-                heroRaw.bossHp = Math.max(0, (heroRaw.bossHp ?? bossQ.maxHp) - dmg);
-                // Animación de daño en el panel del boss
-                const dmgEl = document.getElementById('habBossDmg');
-                if (dmgEl) { dmgEl.textContent = '-'+dmg; dmgEl.classList.add('show'); setTimeout(function(){ dmgEl.classList.remove('show'); }, 900); }
-                // Boss derrotado
-                if (heroRaw.bossHp <= 0) {
-                    heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0) + 1;
-                    heroRaw.xp += bossQ.xpReward || 0;
-                    heroRaw.inventory = heroRaw.inventory || [];
-                    heroRaw.inventory.push(bossQ.reward);
-                    heroRaw.bossIndex = Math.min(bossIdx+1, BOSSES_Q.length-1);
-                    heroRaw.bossHp = BOSSES_Q[heroRaw.bossIndex]?.maxHp || 100;
-                    if (typeof showBossDefeated === 'function') showBossDefeated(bossQ);
-                }
-            }
-
-            // Level up
-            while (heroRaw.xp >= (heroRaw.xpNext||100)) {
-                heroRaw.xp -= heroRaw.xpNext;
-                heroRaw.level = (heroRaw.level||1) + 1;
-                heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
-                if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
-            }
-            localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
-
-            // Animación flotante de recompensa
-            if (typeof showHabitReward === 'function') {
-                var _hpBonusQ = heroRaw.class === 'healer' ? 3 : 0;
-                showHabitReward(xpGain, coinGain, bossQ ? Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4)*(heroRaw.class==='warrior'?1.3:1)) : 0, _hpBonusQ);
-            }
-        } catch(e) { console.warn('habRepInc XP/boss error:', e); }
-
-        // XP sistema global
-        if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
-        if (typeof playSparkleSound === 'function') playSparkleSound();
-
-        // Marcar card visualmente como completada sin re-renderizar
         if (card) card.classList.add('completed-today');
 
-        // FIX: actualizar UI de XP, monedas y boss HP al instante
-        _habInstantUIUpdate(h);
+        // Bloquear TODOS los renders (window.X y la referencia local via IIFE)
+        const _r1 = window.renderHabToday,
+              _r2 = window.renderHabDisciplined,
+              _r3 = window.renderStrengthList,
+              _r4 = window.renderHabHero,
+              _r5 = window.renderHabStats;
+        window.renderHabToday       = function(){};
+        window.renderHabDisciplined = function(){};
+        window.renderStrengthList   = function(){};
+        window.renderHabHero        = function(){};
+        window.renderHabStats       = function(){};
 
-        // Actualizar badge y stats sin tocar la lista
+        // toggleHabit otorga XP + daño al boss + saveHero
+        if (typeof window.toggleHabit === 'function') window.toggleHabit(habitId);
+
+        window.renderHabToday       = _r1;
+        window.renderHabDisciplined = _r2;
+        window.renderStrengthList   = _r3;
+        window.renderHabHero        = _r4;
+        window.renderHabStats       = _r5;
+
+        // Refrescar hero y stats sin tocar las cards
+        if (typeof _r4 === 'function') _r4();
+        if (typeof _r5 === 'function') _r5();
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
-        if (typeof renderHabStats   === 'function') renderHabStats();
-        if (typeof renderHabHero    === 'function') renderHabHero();
 
-        // Confeti
-        if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
+        if (typeof window.launchConfetti === 'function') window.launchConfetti(60);
     }
-
-    requestAnimationFrame(function() {
-        applyPlusClass();
-        setTimeout(function() { applyPlusClass(); }, 80);
-    });
 };
 
 window.habRepDec = function(habitId, target) {
@@ -16217,6 +16159,48 @@ function playHabTimerComplete() {
         });
     } catch(e) {}
 }
+// ── HELPER: otorgar XP + daño al boss (igual que toggleHabit) ──
+function grantHabitReward(h) {
+    try {
+        const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+        const xpGain   = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
+        const coinGain = Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1) * (heroRaw.class==='rogue'?1.3:1));
+        heroRaw.xp    = (heroRaw.xp||0) + xpGain;
+        heroRaw.coins = (heroRaw.coins||0) + coinGain;
+        const BOSSES_LOCAL = (typeof BOSSES !== 'undefined') ? BOSSES : [];
+        const dmg     = Math.round((h.diff==='hard'?15:h.diff==='medium'?8:4) * (heroRaw.class==='warrior'?1.3:1));
+        const bossIdx = heroRaw.bossIndex || 0;
+        const boss    = BOSSES_LOCAL[bossIdx] || {maxHp:100,xpReward:50,reward:'🎁',name:'Boss'};
+        heroRaw.bossHp = ((heroRaw.bossHp!=null) ? heroRaw.bossHp : boss.maxHp) - dmg;
+        const dmgEl = document.getElementById('habBossDmg');
+        if (dmgEl) { dmgEl.textContent='-'+dmg; dmgEl.classList.add('show'); setTimeout(()=>dmgEl.classList.remove('show'),900); }
+        if (heroRaw.bossHp <= 0) {
+            heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0)+1;
+            heroRaw.xp += boss.xpReward;
+            heroRaw.inventory = heroRaw.inventory||[];
+            heroRaw.inventory.push(boss.reward);
+            heroRaw.bossIndex = Math.min(bossIdx+1, BOSSES_LOCAL.length-1);
+            heroRaw.bossHp = (BOSSES_LOCAL[heroRaw.bossIndex]||boss).maxHp;
+            if (typeof showBossDefeated==='function') showBossDefeated(boss);
+        }
+        while (heroRaw.xp >= (heroRaw.xpNext||100)) {
+            heroRaw.xp -= heroRaw.xpNext;
+            heroRaw.level = (heroRaw.level||1)+1;
+            heroRaw.xpNext = Math.round((heroRaw.xpNext||100)*1.5);
+            heroRaw.maxHp = (heroRaw.maxHp||100)+(heroRaw.class==='warrior'?30:20);
+            heroRaw.hp = heroRaw.maxHp;
+            if (typeof showLevelUp==='function') showLevelUp(heroRaw.level);
+        }
+        if (heroRaw.class==='healer') heroRaw.hp = Math.min(heroRaw.maxHp,(heroRaw.hp||0)+3);
+        localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
+        if (typeof addGlobalReward  ==='function') addGlobalReward(h.xp||10,1);
+        if (typeof playSparkleSound ==='function') playSparkleSound();
+        if (typeof renderHabHero    ==='function') renderHabHero();
+        if (typeof renderHabStats   ==='function') renderHabStats();
+        if (typeof updateHabitBadge ==='function') updateHabitBadge();
+    } catch(e) { console.warn('grantHabitReward:',e); }
+}
+
 const _habTimers = {}; // { habitId: { interval, elapsed, total } }
 
 window.startHabTimer = function(habitId, totalSec) {
@@ -16271,81 +16255,47 @@ window.startHabTimer = function(habitId, totalSec) {
         localStorage.setItem(QTY_KEY, JSON.stringify(q2));
 
         if (e >= totalSec) {
-            // ¡Completado!
+            // ¡Completado! Mostrar círculo verde con ✓ igual al check-btn
             clearInterval(_habTimers[habitId].interval);
             _habTimers[habitId].interval = null;
             const ctrl2 = document.getElementById('habTimerCtrl_' + habitId);
-            if (ctrl2) { ctrl2.classList.remove('running'); ctrl2.classList.add('done-timer'); }
+            if (ctrl2) {
+                ctrl2.classList.remove('running');
+                ctrl2.classList.add('done-timer');
+                // El CSS ::after ya muestra el ✓ verde cuando tiene done-timer
+            }
             const lbl = document.getElementById('habTimerLbl_' + habitId);
             if (lbl) lbl.textContent = '¡Listo!';
-            const icon = ctrl2 ? ctrl2.querySelector('.hab-timer-icon') : null;
-            if (icon) { icon.style.display = ''; icon.textContent = '✅'; }
-            const cd2 = ctrl2 ? ctrl2.querySelector('.hab-timer-countdown') : null;
-            if (cd2) cd2.style.display = 'none';
 
-            // ── Otorgar XP directamente sin re-renderizar la tarjeta ──
+            // ── Otorgar XP + boss + confetti via toggleHabit (sin re-render) ──
             const hList2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
             const hh     = hList2.find(x => x.id === habitId);
             if (hh && !(hh.log||[]).includes(today)) {
-                hh.log = hh.log || [];
-                hh.log.push(today);
-                localStorage.setItem('jch_habits_v1', JSON.stringify(hList2));
-
-                // XP al héroe + daño al boss
-                try {
-                    const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-                    const xpGain  = Math.round((hh.xp||10) * (heroRaw.class==='mage'?1.25:1));
-                    const coinGain= Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
-                    heroRaw.xp    = (heroRaw.xp||0) + xpGain;
-                    heroRaw.coins = (heroRaw.coins||0) + coinGain;
-                    var BOSSES_T = window._HAB_BOSSES || window.BOSSES || [];
-                    var bossIdxT = heroRaw.bossIndex || 0;
-                    var bossT    = BOSSES_T[Math.min(bossIdxT, BOSSES_T.length-1)];
-                    if (bossT) {
-                        var dmgT = Math.round((hh.diff==='hard'?15:hh.diff==='medium'?8:4) * (heroRaw.class==='warrior'?1.3:1));
-                        heroRaw.bossHp = Math.max(0, (heroRaw.bossHp != null ? heroRaw.bossHp : bossT.maxHp) - dmgT);
-                        if (heroRaw.bossHp <= 0) {
-                            heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0) + 1;
-                            heroRaw.xp += bossT.xpReward || 0;
-                            heroRaw.inventory = heroRaw.inventory || [];
-                            heroRaw.inventory.push(bossT.reward);
-                            heroRaw.bossIndex = Math.min(bossIdxT+1, BOSSES_T.length-1);
-                            heroRaw.bossHp = (BOSSES_T[heroRaw.bossIndex] && BOSSES_T[heroRaw.bossIndex].maxHp) || 100;
-                            if (typeof showBossDefeated === 'function') showBossDefeated(bossT);
-                        }
-                    }
-                    while (heroRaw.xp >= (heroRaw.xpNext||100)) {
-                        heroRaw.xp -= heroRaw.xpNext;
-                        heroRaw.level = (heroRaw.level||1) + 1;
-                        heroRaw.xpNext = Math.round(heroRaw.xpNext * 1.5);
-                        if (typeof showLevelUp === 'function') showLevelUp(heroRaw.level);
-                    }
-                    localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
-
-                    // Animación flotante de recompensa
-                    if (typeof showHabitReward === 'function') {
-                        var xpGainT   = Math.round((hh.xp||10) * (heroRaw.class==='mage'?1.25:1));
-                        var coinGainT = Math.round((hh.diff==='hard'?3:hh.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
-                        var dmgGainT  = bossT ? Math.round((hh.diff==='hard'?15:hh.diff==='medium'?8:4)*(heroRaw.class==='warrior'?1.3:1)) : 0;
-                        var hpBonusT  = heroRaw.class === 'healer' ? 3 : 0;
-                        showHabitReward(xpGainT, coinGainT, dmgGainT, hpBonusT);
-                    }
-                } catch(err) {}
-
-                // XP sistema global
-                if (typeof addGlobalReward === 'function') addGlobalReward(hh.xp||10, 1);
-                if (typeof playSparkleSound === 'function') playSparkleSound();
-
-                // Marcar card como completada sin re-render
                 const card2 = document.getElementById('habCard-' + habitId);
                 if (card2) card2.classList.add('completed-today');
 
-                // FIX: actualizar UI de XP, monedas y boss HP al instante
-                _habInstantUIUpdate(hh);
+                const _r1 = window.renderHabToday,
+                      _r2 = window.renderHabDisciplined,
+                      _r3 = window.renderStrengthList,
+                      _r4 = window.renderHabHero,
+                      _r5 = window.renderHabStats;
+                window.renderHabToday       = function(){};
+                window.renderHabDisciplined = function(){};
+                window.renderStrengthList   = function(){};
+                window.renderHabHero        = function(){};
+                window.renderHabStats       = function(){};
 
+                if (typeof window.toggleHabit === 'function') window.toggleHabit(habitId);
+
+                window.renderHabToday       = _r1;
+                window.renderHabDisciplined = _r2;
+                window.renderStrengthList   = _r3;
+                window.renderHabHero        = _r4;
+                window.renderHabStats       = _r5;
+
+                if (typeof _r4 === 'function') _r4();
+                if (typeof _r5 === 'function') _r5();
                 if (typeof updateHabitBadge === 'function') updateHabitBadge();
-                if (typeof renderHabStats   === 'function') renderHabStats();
-                if (typeof renderHabHero    === 'function') renderHabHero();
             }
 
             playHabTimerComplete();
@@ -16362,20 +16312,11 @@ window.saveHabit = function() {
     const editId=document.getElementById('habEditId').value;
     const reminderTime=document.getElementById('habReminderTime').value;
 
-    // Leer habitType y qtyTarget del formulario en el momento de guardar
-    var _htNow = 'check';
-    var _htBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
-    if (_htBtn && _htBtn.dataset.ht) _htNow = _htBtn.dataset.ht;
-    else if (window._selectedHType) _htNow = window._selectedHType;
-    var _qtyNow = parseInt((document.getElementById('habQtyTarget')||{}).value||'1');
-    var _unitNow = ((document.getElementById('habQtyUnit')||{}).value||'').trim() || (_htNow==='timer'?'min':'');
-    var _rtNow = window._selectedRoutine || 'morning';
-
     if(editId){
         const h=habits.find(x=>x.id===editId);
-        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined}); }
+        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime}); }
     } else {
-        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined});
+        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString()});
     }
     saveHabits();
 
@@ -16393,30 +16334,32 @@ window.saveHabit = function() {
     // Ir a tab hoy
     const todayTab=document.querySelector('.hab-tab');
     if(todayTab) switchHabTab('hoy',todayTab);
-    (window.renderHabToday||renderHabToday)();
-    renderHabStats(); renderHabHero();
+    (window.renderHabToday||renderHabToday)(); renderHabStats(); renderHabHero();
 };
 
 // ── Recordatorio via SW ───────────────────────────────────────
 function scheduleHabitReminder(name, time, emoji) {
     try {
         const [h,m] = time.split(':').map(Number);
-        const now   = new Date();
+        const now    = new Date();
         const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
         if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
-
-        // Usar el mismo sistema de recordatorios del calendario (jch_rem_v4)
-        // para que se dispare exactamente a la hora configurada
         const SK_REMINDERS = 'jch_rem_v4';
-        const evId = 'hab_' + Date.now();
-        try {
-            const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
-            // Eliminar recordatorio previo del mismo hábito (por nombre) para evitar duplicados
-            const clean = list.filter(r => r.title !== `${emoji} ${name}`);
-            clean.push({ evId, fireAt: fireAt.getTime(), title: `${emoji} ${name}`, body: '¡Es hora de tu hábito! 🌿' });
-            localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-        } catch(e) { console.warn('Recordatorio hábito (storage):', e); }
-    } catch(e) { console.warn('Recordatorio hábito:', e); }
+        const evId  = 'hab_' + Date.now();
+        const title = (emoji||'🌿') + ' ' + name;
+        const body  = '¡Es hora de tu hábito!';
+        const list  = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
+        const clean = list.filter(r => r.title !== title);
+        clean.push({ evId, fireAt: fireAt.getTime(), title, body });
+        localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
+        // Enviar al SW para disparar cuando la app esté cerrada
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_NOTIFICATIONS',
+                reminders: [{ evId, fireAt: fireAt.getTime(), title, body }]
+            });
+        }
+    } catch(e) { console.warn('scheduleHabitReminder:', e); }
 }
 
 // Re-programar todos los recordatorios al abrir
@@ -16424,19 +16367,38 @@ function rescheduleAllReminders() {
     loadHabits();
     if (!habits.length) return;
     const SK_REMINDERS = 'jch_rem_v4';
-    const now = new Date();
+    const now = Date.now();
+    // Solo reprogramar una vez por sesión para evitar disparos accidentales
+    if (window._remScheduled && (now - window._remScheduled) < 3600000) return;
+    window._remScheduled = now;
     try {
         const list = JSON.parse(localStorage.getItem(SK_REMINDERS) || '[]');
-        // Eliminar recordatorios previos de hábitos
-        const clean = list.filter(r => !r.evId.startsWith('hab_'));
-        habits.filter(h => h.reminderOn && h.reminderTime).forEach(h => {
+        const clean = list.filter(r => !String(r.evId).startsWith('hab_'));
+        const nowDate = new Date();
+        habits.filter(h => h.reminderOn && h.reminderTime && !h.archived).forEach(h => {
             const [hr, mn] = h.reminderTime.split(':').map(Number);
-            const fireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hr, mn, 0);
-            if (fireAt <= now) fireAt.setDate(fireAt.getDate() + 1);
-            clean.push({ evId: h.id, fireAt: fireAt.getTime(), title: `${h.emoji} ${h.name}`, body: '¡Es hora de tu hábito! 🌿' });
+            // Calcular cuándo es el próximo disparo
+            const todayFire = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), hr, mn, 0);
+            // Si la hora de hoy ya pasó (con margen de 2 min), programar para mañana
+            const fireAt = todayFire.getTime() > (now + 120000)
+                ? todayFire
+                : new Date(todayFire.getTime() + 86400000);
+            clean.push({
+                evId: 'hab_' + h.id,
+                fireAt: fireAt.getTime(),
+                title: (h.emoji||'🌿') + ' ' + h.name,
+                body: '¡Es hora de tu hábito!'
+            });
         });
         localStorage.setItem(SK_REMINDERS, JSON.stringify(clean));
-    } catch(e) { console.warn('Reschedule recordatorios hábitos:', e); }
+        // Enviar al SW solo si tiene controller activo
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_NOTIFICATIONS',
+                reminders: clean.filter(r => String(r.evId).startsWith('hab_'))
+            });
+        }
+    } catch(e) { console.warn('rescheduleAllReminders:', e); }
 }
 
 // ── Editar / Borrar ───────────────────────────────────────────
@@ -16491,9 +16453,6 @@ window.editHabit = function(id) {
     if(crearTab) switchHabTab('crear',crearTab);
 };
 window.deleteHabit = function(id) {
-    // FIX: cerrar el overlay de detalle ANTES de borrar para evitar pantalla borrosa
-    var detailOv = document.getElementById('habDetailOverlay');
-    if (detailOv) detailOv.classList.remove('open');
     loadHabits();
     habits=habits.filter(x=>x.id!==id);
     saveHabits(); updateHabitBadge();
@@ -16583,7 +16542,8 @@ window.switchHabTab = function(tab,el) {
     if(el) el.classList.add('active');
     const tc=document.getElementById('habTab-'+tab);
     if(tc) tc.classList.add('active');
-    if(tab==='hoy') (window.renderHabToday || renderHabToday)();
+    // FIX: usar window.renderHabToday para garantizar que se llama el override con data-habid y event delegation
+    if(tab==='hoy')    (window.renderHabToday || renderHabToday)();
     if(tab==='heroe')  renderHabHero();
     if(tab==='stats')  renderHabStats();
     if(tab==='logros') renderHabAchievements();
@@ -16593,7 +16553,7 @@ window.switchHabTab = function(tab,el) {
 // ── Badge ─────────────────────────────────────────────────────
 function updateHabitBadge() {
     loadHabits();
-    const due=habits.filter(h=>isHabitDueToday(h));
+    const due=habits.filter(h=>isHabitDueToday(h) && !h.archived);
     const pending=due.length-due.filter(h=>isCompletedToday(h)).length;
     const badge=document.getElementById('habitBadgeCount');
     if(badge){ badge.textContent=pending; badge.style.display=pending>0?'':'none'; }
@@ -16608,7 +16568,6 @@ window.openHabitModal = function() {
     (window.renderHabToday||renderHabToday)(); updateHabitBadge();
     document.getElementById('habitBackdrop').classList.add('show-hab');
     document.getElementById('habitModal').classList.add('show-hab');
-    rescheduleAllReminders();
 };
 window.closeHabitModal = function() {
     document.getElementById('habitBackdrop').classList.remove('show-hab');
@@ -16714,8 +16673,9 @@ window.renderHabitCardHabitica = function(h, showEdit) {
     const showPlus  = h.type !== 'negative';
     const showMinus = h.type !== 'positive';
 
+    const habColor2 = h.color && h.color !== 'undefined' ? h.color : '#6366f1';
     return `
-    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}" style="--hab-card-color:${h.color||'#10b981'};">
+    <div class="hab-card ${done?'completed-today':''} ${perf}" id="habCard-${h.id}" style="--hab-c:${habColor2};border-color:${habColor2}33;" data-habid="${h.id}">
         <div class="hab-card-top">
             <div class="hab-card-emoji" style="background:${h.color}20;">${h.emoji||'🎯'}</div>
             <div class="hab-card-info">
@@ -16733,8 +16693,8 @@ window.renderHabitCardHabitica = function(h, showEdit) {
                   (showPlus  ? `<button class="hab-btn-plus"  onclick="habitPlus('${h.id}',event)">+</button>`  : '') +
                   (showMinus ? `<button class="hab-btn-minus" onclick="habitMinus('${h.id}',event)">−</button>` : '')
                 }
-                ${showEdit  ? `<span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="event.stopPropagation();editHabit('${h.id}')">✏️</span>` : ''}
-                <span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="event.stopPropagation();deleteHabit('${h.id}')">🗑️</span>
+                ${showEdit  ? `<span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="editHabit('${h.id}')">✏️</span>` : ''}
+                <span style="font-size:0.6rem;cursor:pointer;color:#555;text-align:center;" onclick="deleteHabit('${h.id}')">🗑️</span>
             </div>
         </div>
         <div class="hab-week-bar">${weekBar}</div>
@@ -17311,7 +17271,7 @@ window.renderHabToday = function() {
     };
     window._isHabitDueToday = isHabitDueToday;
 
-    const due  = habits.filter(h => !h.archived && isHabitDueToday(h));
+    const due  = habits.filter(h => isHabitDueToday(h) && !h.archived);
     const done = due.filter(h => (h.log||[]).includes(todayKey())).length;
     const pct  = due.length ? Math.round(done/due.length*100) : 0;
 
@@ -17331,11 +17291,9 @@ window.renderHabToday = function() {
             let card = window.renderHabitCardHabitica(h, false);
             // Inyectar data-habid en el div RAIZ .hab-card para que closest() funcione
             // sin importar en qué elemento hijo haga clic el usuario
-            // FIX: inyectar data-habid sin sobreescribir el style existente
-            // (que ya contiene --hab-card-color del color del hábito)
             card = card.replace(
-                'id="habCard-' + h.id + '" style="--hab-card-color:' + (h.color||'#10b981') + ';"',
-                'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="--hab-card-color:' + (h.color||'#10b981') + ';cursor:pointer;"'
+                'id="habCard-' + h.id + '"',
+                'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="cursor:pointer;"'
             );
             return card;
         }).join('')}
@@ -18752,76 +18710,28 @@ function setQtyValue(habitId, val) {
 }
 
 window.incrementQty = function(habitId, delta, targetVal) {
-    const cur    = getQtyValue(habitId);
-    const newVal = Math.max(0, cur + delta);
+    const cur     = getQtyValue(habitId);
+    const newVal  = Math.max(0, cur + delta);
     setQtyValue(habitId, newVal);
 
+    // Si alcanzó la meta → marcar como completado
     const habits = loadHabits();
     const h = habits.find(x => x.id === habitId);
+    if (h && newVal >= (h.qtyTarget || targetVal || 1)) {
+        if (!(h.log||[]).includes(todayKey())) {
+            if (typeof habitPlus === 'function') habitPlus(habitId, null);
+            launchConfetti();
+        }
+    }
 
     // Actualizar display sin re-render completo
     const valEl  = document.getElementById('habQtyVal_'+habitId);
     const fillEl = document.getElementById('habQtyFill_'+habitId);
     if (valEl) valEl.textContent = newVal;
     if (fillEl && h) {
-        const pct = Math.min(100, Math.round((newVal / (h.qtyTarget||targetVal||1)) * 100));
+        const pct = Math.min(100, Math.round((newVal / (h.qtyTarget||1)) * 100));
         fillEl.style.width = pct + '%';
         fillEl.style.background = pct >= 100 ? '#22c55e' : h.color || '#6366f1';
-    }
-
-    // Si alcanzó la meta y aún no estaba completado → XP + boss + confeti
-    if (h && newVal >= (h.qtyTarget || targetVal || 1)) {
-        const today = new Date().toISOString().split('T')[0];
-        if (!(h.log||[]).includes(today)) {
-            // Marcar como completado en log
-            h.log = h.log || [];
-            h.log.push(today);
-            localStorage.setItem('jch_habits_v1', JSON.stringify(habits));
-
-            // XP al héroe
-            try {
-                const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-                const xpGain  = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
-                const coinGain= Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
-                heroRaw.xp    = (heroRaw.xp||0) + xpGain;
-                heroRaw.coins = (heroRaw.coins||0) + coinGain;
-                // Daño al boss
-                var BOSSES_REF2 = window._HAB_BOSSES || [];
-                if (BOSSES_REF2.length) {
-                    var bossIdx2 = Math.min(heroRaw.bossIndex||0, BOSSES_REF2.length-1);
-                    var dmg2 = Math.max(1, Math.round((h.xp||10)/5));
-                    heroRaw.bossHp = Math.max(0, (heroRaw.bossHp ?? BOSSES_REF2[bossIdx2].maxHp) - dmg2);
-                    if (heroRaw.bossHp <= 0) {
-                        heroRaw.bossIndex = Math.min((heroRaw.bossIndex||0)+1, BOSSES_REF2.length-1);
-                        heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0)+1;
-                        heroRaw.bossHp = BOSSES_REF2[heroRaw.bossIndex]?.maxHp || 100;
-                    }
-                }
-                while (heroRaw.xp >= (heroRaw.xpNext||100)) {
-                    heroRaw.xp -= heroRaw.xpNext;
-                    heroRaw.level = (heroRaw.level||1)+1;
-                    heroRaw.xpNext = Math.round(heroRaw.xpNext*1.5);
-                    if (typeof showLevelUp==='function') showLevelUp(heroRaw.level);
-                }
-                localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
-            } catch(err) {}
-
-            // XP sistema global
-            if (typeof addGlobalReward==='function') addGlobalReward(h.xp||10, 1);
-            if (typeof playSparkleSound==='function') playSparkleSound();
-
-            // Marcar card visualmente
-            const cardEl = document.getElementById('habCard-'+habitId);
-            if (cardEl) cardEl.classList.add('completed-today');
-
-            // Actualizar UI al instante (XP bar, boss HP, monedas)
-            if (typeof _habInstantUIUpdate==='function') _habInstantUIUpdate(h);
-
-            if (typeof updateHabitBadge==='function') updateHabitBadge();
-            if (typeof renderHabStats==='function')   renderHabStats();
-            if (typeof renderHabHero==='function')    renderHabHero();
-            if (typeof launchConfetti==='function')   launchConfetti(50);
-        }
     }
 };
 
@@ -18953,7 +18863,8 @@ function renderStrengthList() {
                 (done?'✓':'') + '</button>';
         }
 
-        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'">' +
+        const habC = (h.color && h.color !== 'undefined') ? h.color : '#6366f1';
+        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" style="--hab-c:'+habC+';border-color:'+habC+'33;" id="habCard-'+h.id+'">' +
             '<div class="hab-card-top">' +
               renderStrengthRing(strength, sColor) +
               '<div class="hab-card-info">' +
@@ -18962,7 +18873,7 @@ function renderStrengthList() {
               '</div>' +
               '<div style="display:flex;flex-direction:column;gap:6px;align-items:center;">' +
                 actionArea +
-                '<span style="font-size:0.6rem;cursor:pointer;color:#555;" onclick="event.stopPropagation();deleteHabit(\''+h.id+'\')">🗑️</span>' +
+                '<span style="font-size:0.6rem;cursor:pointer;color:#555;" onclick="deleteHabit(\''+h.id+'\')">🗑️</span>' +
               '</div>' +
             '</div>' +
             '<div class="hab-perf-bar perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'"></div>' +
@@ -19055,20 +18966,52 @@ window.selectHabHType = function(el) {
     else if (unitInput && _selectedHType === 'quantity') { unitInput.value = ''; unitInput.placeholder = 'vasos, págs, veces...'; }
 };
 
-// ── saveHabit: el original ya incluye habitType directamente ──
-// Este override solo asegura que _selectedHType y _selectedRoutine
-// estén disponibles en window antes de que el original los lea.
-// No necesita parchear ni bloquear nada.
-const _HABITS_PATCH_KEY = 'jch_habits_v1';
+// ── Extender saveHabit para guardar routine y habitType ───────
 const _origSaveHabit = window.saveHabit;
 window.saveHabit = function() {
-    // Limpiar el flag por si quedó activo de versiones anteriores
-    window._habSaveRendering = false;
-    // Exponer al scope global para que el saveHabit original los lea
-    window._selectedHType    = window._selectedHType    || 'check';
-    window._selectedRoutine  = window._selectedRoutine  || 'morning';
-    // Llamar el original — ya guarda habitType, qtyTarget, qtyUnit y routine
-    if (typeof _origSaveHabit === 'function') _origSaveHabit();
+    // Capturar valores ANTES de que la función original resetee el form
+    const rt       = _selectedRoutine || 'morning';
+    const ht       = _selectedHType   || 'check';
+    const qtyTarget= parseInt(document.getElementById('habQtyTarget')?.value||'1');
+    const qtyUnit  = document.getElementById('habQtyUnit')?.value.trim() || (ht==='timer'?'min':'');
+    const editId   = document.getElementById('habEditId')?.value || '';
+
+    // ── Pre-inyectar habitType en el objeto ANTES de que _origSaveHabit renderice ──
+    // Así el primer renderHabToday ya ve el tipo correcto
+    const _preInject = function() {
+        const hList = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+        if (!hList.length) return;
+        const tgt = editId ? hList.find(x => x.id === editId) : hList[hList.length - 1];
+        if (tgt) {
+            tgt.habitType = ht;
+            tgt.routine   = rt;
+            tgt.qtyTarget = ht !== 'check' ? qtyTarget : undefined;
+            tgt.qtyUnit   = ht !== 'check' ? qtyUnit   : undefined;
+            localStorage.setItem('jch_habits_v1', JSON.stringify(hList));
+        }
+    };
+
+    // Hook temporal: después de que _origSaveHabit guarda el hábito y ANTES de su render
+    const _origSaveHabits = window.saveHabits;
+    let _injected = false;
+    if (_origSaveHabits) {
+        window.saveHabits = function() {
+            _origSaveHabits.apply(this, arguments);
+            if (!_injected) { _injected = true; _preInject(); }
+        };
+    }
+
+    _origSaveHabit && _origSaveHabit();
+
+    // Restaurar saveHabits
+    if (_origSaveHabits) window.saveHabits = _origSaveHabits;
+
+    // Parchear por si acaso (por ediciones o casos edge)
+    if (!_injected) _preInject();
+
+    // Re-renderizar HOY inmediatamente con el tipo correcto
+    if (typeof window.renderHabToday === 'function') window.renderHabToday();
+    if (typeof window.renderHabDisciplined === 'function') window.renderHabDisciplined();
 };
 
 // ── Extender switchHabTab ─────────────────────────────────────
@@ -19084,11 +19027,6 @@ window.openHabitModal = function() {
     _origOpenHabit && _origOpenHabit();
     _selectedRoutine = 'morning';
     _selectedHType   = 'check';
-    // Forzar render del panel HOY al abrir el modal
-    // (garantiza visibilidad en móvil tras transición CSS)
-    setTimeout(function() {
-        if (typeof window.renderHabToday === 'function') window.renderHabToday();
-    }, 50);
     document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b =>
         b.classList.toggle('selected', b.dataset.rt==='morning'));
     document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b =>
@@ -19135,117 +19073,49 @@ let _classFilter = 'warrior';
 
 // ── BASE DE DATOS DEL MERCADO ─────────────────────────────────
 const EQUIP_DB = {
-    // ── WEAPONS ────────────────────────────────────────────────
-    weapon: [
-        // Tier 1 — básico (monedas bajas)
-        {id:'wp_stick',    name:'Palo',              img:'🪵', cost:12,  currency:'gold', type:'weapon', atk:2,  def:0,  desc:'Un simple palo. Algo es algo.'},
-        {id:'wp_dagger1',  name:'Daga de Piedra',    img:'🗡️', cost:12,  currency:'gold', type:'weapon', atk:3,  def:0,  desc:'Bordes afilados en pedernal.'},
-        {id:'wp_bow1',     name:'Arco Rústico',      img:'🏹', cost:36,  currency:'gold', type:'weapon', atk:5,  def:0,  desc:'Madera flexible y cuerda.'},
-        // Tier 2
-        {id:'wp_sword1',   name:'Espada Corta',      img:'🗡️', cost:36,  currency:'gold', type:'weapon', atk:6,  def:0,  desc:'Acero templado básico.'},
-        {id:'wp_knife1',   name:'Cuchillo de Caza',  img:'🔪', cost:84,  currency:'gold', type:'weapon', atk:9,  def:0,  desc:'Hoja curva, ligera y afilada.'},
-        {id:'wp_shield_s', name:'Escudo Pequeño',    img:'🛡️', cost:70,  currency:'gold', type:'weapon', atk:0,  def:10, desc:'Protección básica de madera.'},
-        // Tier 3
-        {id:'wp_staff1',   name:'Bastón de Madera',  img:'🪄', cost:225, currency:'gold', type:'weapon', atk:12, def:0,  desc:'Canal de energía arcana.'},
-        {id:'wp_sword2',   name:'Espada de Acero',   img:'⚔️', cost:120, currency:'gold', type:'weapon', atk:13, def:0,  desc:'Forja de alta calidad.'},
-        // Tier 4 — gemas
-        {id:'wp_dagger2',  name:'Daga Encantada',    img:'💎', cost:12,  currency:'gem',  type:'weapon', atk:14, def:0,  desc:'Brilla con magia rúnica.'},
-        {id:'wp_axe1',     name:'Hacha de Hierro',   img:'🪓', cost:204, currency:'gold', type:'weapon', atk:15, def:2,  desc:'Golpes poderosos y certeros.'},
-        {id:'wp_crossbow', name:'Ballesta',           img:'🏹', cost:360, currency:'gold', type:'weapon', atk:16, def:0,  desc:'Precisión letal a distancia.'},
-        {id:'wp_saber1',   name:'Sable Ágil',         img:'🗡️', cost:360, currency:'gold', type:'weapon', atk:17, def:0,  desc:'Velocidad antes que fuerza.'},
-        // Tier 5
-        {id:'wp_staff2',   name:'Bastón Arcano',      img:'🪄', cost:18,  currency:'gem',  type:'weapon', atk:18, def:0,  desc:'Dominio arcano avanzado.'},
-        {id:'wp_sword3',   name:'Espadón',            img:'⚔️', cost:360, currency:'gold', type:'weapon', atk:19, def:0,  desc:'Hoja ancha de dos manos.'},
-        {id:'wp_shield_m', name:'Escudo Redondo',     img:'🛡️', cost:150, currency:'gold', type:'weapon', atk:0,  def:15, desc:'Madera reforzada con metal.'},
-        {id:'wp_axe2',     name:'Hacha de Batalla',   img:'🪓', cost:204, currency:'gold', type:'weapon', atk:20, def:0,  desc:'Hacha doble de combate.'},
-        // Tier 6 — raras
-        {id:'wp_dagger3',  name:'Daga de Sombra',     img:'🗡️', cost:360, currency:'gold', type:'weapon', atk:21, def:0,  desc:'Se funde con la oscuridad.'},
-        {id:'wp_sword4',   name:'Espada Larga',        img:'⚔️', cost:360, currency:'gold', type:'weapon', atk:22, def:0,  desc:'Equilibrio perfecto de hoja.'},
-        {id:'wp_staff3',   name:'Cetro Lunar',         img:'🌙', cost:24,  currency:'gem',  type:'weapon', atk:23, def:0,  desc:'Energia lunar concentrada.'},
-        {id:'wp_axe3',     name:'Hacha de Doble Filo', img:'🪓', cost:360, currency:'gold', type:'weapon', atk:24, def:0,  desc:'Corte en ambas direcciones.'},
-        // Tier 7
-        {id:'wp_lance1',   name:'Lanza de Acero',     img:'🔱', cost:360, currency:'gold', type:'weapon', atk:25, def:0,  desc:'Alcance y penetración.'},
-        {id:'wp_sword5',   name:'Espada de Fuego',    img:'🔥', cost:360, currency:'gold', type:'weapon', atk:26, def:0,  desc:'La hoja arde eternamente.'},
-        {id:'wp_shield_l', name:'Escudo Vikingo',     img:'🛡️', cost:300, currency:'gold', type:'weapon', atk:0,  def:20, desc:'Madera y metal, épico.'},
-        {id:'wp_sword6',   name:'Espada Rúnica',      img:'⚔️', cost:360, currency:'gold', type:'weapon', atk:27, def:2,  desc:'Runas grabadas dan poder.'},
-        // Tier 8 — élite (gemas)
-        {id:'wp_axe4',     name:'Hacha Legendaria',   img:'🪓', cost:2000,currency:'gold', type:'weapon', atk:30, def:0,  desc:'Solo los más fuertes la alzan.'},
-        {id:'wp_scythe',   name:'Guadaña Oscura',     img:'⚔️', cost:2000,currency:'gold', type:'weapon', atk:32, def:0,  desc:'Siega el alma del enemigo.'},
-        {id:'wp_shield_g', name:'Escudo de Plata',    img:'🛡️', cost:600, currency:'gold', type:'weapon', atk:0,  def:28, desc:'Plata pura fundida a mano.'},
-        {id:'wp_lance2',   name:'Lanza Sagrada',      img:'🔱', cost:2000,currency:'gold', type:'weapon', atk:33, def:0,  desc:'Bendecida por los dioses.'},
-        {id:'wp_sword7',   name:'Espadón del Caos',  img:'⚔️', cost:2000,currency:'gold', type:'weapon', atk:35, def:0,  desc:'El caos encarnado en acero.'},
-        // Tier 9 — legendaria
-        {id:'wp_flame_bow',name:'Arco de Llamas',     img:'🏹', cost:4500,currency:'gold', type:'weapon', atk:38, def:0,  desc:'Flechas de fuego puro.'},
-        {id:'wp_saber2',   name:'Sable Bendito',      img:'🗡️', cost:36,  currency:'gem',  type:'weapon', atk:40, def:5,  desc:'Luz divina hecha hoja.'},
-        {id:'wp_axe5',     name:'Hacha de Fuego',     img:'🪓', cost:36,  currency:'gem',  type:'weapon', atk:42, def:0,  desc:'Ardiente e imparable.'},
-        {id:'wp_shield_r', name:'Escudo del Guerrero',img:'🛡️', cost:4500,currency:'gold', type:'weapon', atk:0,  def:35, desc:'El mejor defensor.'},
-        // Tier 10 — épica
-        {id:'wp_glaive',   name:'Glaive Épico',       img:'⚔️', cost:5250,currency:'gold', type:'weapon', atk:45, def:0,  desc:'El arma final del guerrero.'},
-        {id:'wp_staff4',   name:'Báculo del Origen',  img:'🪄', cost:42,  currency:'gem',  type:'weapon', atk:40, def:0,  desc:'Fuente de toda magia.'},
-        {id:'wp_katana',   name:'Katana Divina',      img:'🗡️', cost:5250,currency:'gold', type:'weapon', atk:48, def:0,  desc:'Filo que corta la realidad.'},
-        {id:'wp_shield_u', name:'Escudo Último',      img:'🛡️', cost:4500,currency:'gold', type:'weapon', atk:0,  def:42, desc:'Indestructible.'},
+    warrior: [
+        {id:'w_sword1',name:'Espada Corta',   icon:'🗡️', cost:30,  type:'weapon', stat:'ATK+5'},
+        {id:'w_axe',   name:'Hacha de Hierro',icon:'🪓', cost:45,  type:'weapon', stat:'ATK+8'},
+        {id:'w_sword2',name:'Espada Larga',   icon:'⚔️', cost:90,  type:'weapon', stat:'ATK+15'},
+        {id:'w_armor1',name:'Armadura Bronce',icon:'🦺', cost:60,  type:'armor',  stat:'DEF+10'},
+        {id:'w_armor2',name:'Armadura Hierro',icon:'🛡️', cost:90,  type:'armor',  stat:'DEF+18'},
+        {id:'w_helm1', name:'Yelmo Bronce',   icon:'⛑️', cost:30,  type:'helm',   stat:'HP+10'},
+        {id:'w_helm2', name:'Yelmo de Acero', icon:'🪖', cost:65,  type:'helm',   stat:'HP+20'},
+        {id:'w_boots1',name:'Botas de Guerra',icon:'👢', cost:40,  type:'boots',  stat:'SPD+8'},
+        {id:'w_shield1',name:'Escudo Madera', icon:'🛡️', cost:25, type:'shield', stat:'DEF+6'},
+        {id:'w_shield2',name:'Escudo Acero',  icon:'🔰', cost:120, type:'shield', stat:'DEF+25'},
     ],
-
-    // ── ARMOR ──────────────────────────────────────────────────
-    armor: [
-        // Tier 1
-        {id:'ar_cloth1',   name:'Túnica de Tela',      img:'👕', cost:10,  currency:'gold', type:'armor', atk:0,  def:5,  desc:'Tela básica, algo de protección.'},
-        {id:'ar_leather1', name:'Cuero Ligero',        img:'🥋', cost:25,  currency:'gold', type:'armor', atk:0,  def:8,  desc:'Cuero curtido flexible.'},
-        {id:'ar_hide1',    name:'Piel de Bestia',      img:'🦺', cost:50,  currency:'gold', type:'armor', atk:0,  def:12, desc:'Piel curtida de monstruo.'},
-        // Tier 2
-        {id:'ar_chain1',   name:'Cota de Malla',       img:'🛡️', cost:100, currency:'gold', type:'armor', atk:0,  def:18, desc:'Anillas de hierro entrelazadas.'},
-        {id:'ar_studded',  name:'Cuero Tachado',       img:'🥋', cost:100, currency:'gold', type:'armor', atk:1,  def:15, desc:'Remaches metálicos en cuero.'},
-        // Tier 3
-        {id:'ar_scale1',   name:'Armadura Escamas',    img:'🦺', cost:144, currency:'gold', type:'armor', atk:0,  def:22, desc:'Escamas de dragón menor.'},
-        {id:'ar_bronze1',  name:'Armadura de Bronce',  img:'🛡️', cost:156, currency:'gold', type:'armor', atk:0,  def:25, desc:'Metal cobrizo resistente.'},
-        // Tier 4
-        {id:'ar_iron1',    name:'Armadura de Hierro',  img:'🦺', cost:180, currency:'gold', type:'armor', atk:0,  def:30, desc:'Planchas sólidas de hierro.'},
-        {id:'ar_ninja1',   name:'Traje Ninja',         img:'🥷', cost:180, currency:'gold', type:'armor', atk:3,  def:20, desc:'Agilidad y sigilo.'},
-        {id:'ar_cloak1',   name:'Capa de Sombra',      img:'🧣', cost:18,  currency:'gem',  type:'armor', atk:2,  def:22, desc:'Se funde con la oscuridad.'},
-        // Tier 5
-        {id:'ar_chain2',   name:'Malla Reforzada',     img:'🛡️', cost:300, currency:'gold', type:'armor', atk:0,  def:35, desc:'Doble capa de anillas.'},
-        {id:'ar_plate1',   name:'Armadura de Placas',  img:'🦺', cost:300, currency:'gold', type:'armor', atk:0,  def:40, desc:'Planchas completas de acero.'},
-        // Tier 6
-        {id:'ar_rune1',    name:'Armadura Rúnica',     img:'🛡️', cost:360, currency:'gold', type:'armor', atk:2,  def:45, desc:'Runas de protección grabadas.'},
-        {id:'ar_mage1',    name:'Manto Arcano',        img:'🧥', cost:360, currency:'gold', type:'armor', atk:0,  def:38, desc:'Tejido con hilos mágicos.'},
-        {id:'ar_scale2',   name:'Escamas de Dragón',   img:'🦺', cost:24,  currency:'gem',  type:'armor', atk:3,  def:48, desc:'Casi tan duro como el dragón.'},
-        // Tier 7
-        {id:'ar_knight1',  name:'Armadura de Caballero',img:'🛡️',cost:600, currency:'gold', type:'armor', atk:0,  def:55, desc:'El orgullo del caballero.'},
-        {id:'ar_dark1',    name:'Armadura Oscura',     img:'🦺', cost:600, currency:'gold', type:'armor', atk:5,  def:50, desc:'Acero negro infernal.'},
-        // Tier 8 — élite
-        {id:'ar_golden1',  name:'Armadura Dorada',     img:'🛡️', cost:36,  currency:'gem',  type:'armor', atk:0,  def:65, desc:'Oro puro forjado en llama.'},
-        {id:'ar_royal1',   name:'Manto Real',          img:'🧥', cost:2000,currency:'gold', type:'armor', atk:5,  def:60, desc:'Reservada para los reyes.'},
-        // Tier 9
-        {id:'ar_dragon1',  name:'Armadura Dracónica',  img:'🦺', cost:2500,currency:'gold', type:'armor', atk:8,  def:75, desc:'Forjada en el aliento del dragón.'},
-        {id:'ar_holy1',    name:'Armadura Sagrada',    img:'🛡️', cost:42,  currency:'gem',  type:'armor', atk:5,  def:80, desc:'Bendecida por los dioses.'},
-        // Tier 10
-        {id:'ar_titan1',   name:'Armadura del Titán',  img:'🦺', cost:4500,currency:'gold', type:'armor', atk:10, def:95, desc:'Solo los titanes la visten.'},
-        {id:'ar_divine1',  name:'Coraza Divina',       img:'🛡️', cost:48,  currency:'gem',  type:'armor', atk:8,  def:100,desc:'La máxima protección posible.'},
+    mage: [
+        {id:'m_staff1', name:'Báculo Arcano', icon:'🪄', cost:40,  type:'weapon', stat:'XP+15%'},
+        {id:'m_staff2', name:'Bastón Lunar',  icon:'🌙', cost:90,  type:'weapon', stat:'XP+28%'},
+        {id:'m_robe1',  name:'Túnica Mágica', icon:'👘', cost:55,  type:'armor',  stat:'DEF+8'},
+        {id:'m_robe2',  name:'Manto Arcano',  icon:'🧥', cost:100, type:'armor',  stat:'DEF+18'},
+        {id:'m_hat1',   name:'Sombrero Brujo',icon:'🎩', cost:35,  type:'helm',   stat:'XP+10%'},
+        {id:'m_hat2',   name:'Corona Arcana', icon:'👑', cost:80,  type:'helm',   stat:'XP+20%'},
+        {id:'m_wand',   name:'Varita de Luz', icon:'✨', cost:60,  type:'weapon', stat:'XP+22%'},
+        {id:'m_book',   name:'Grimorio',      icon:'📖', cost:45,  type:'shield', stat:'XP+12%'},
+        {id:'m_orb',    name:'Orbe Mágico',   icon:'🔮', cost:70,  type:'amulet', stat:'XP+18%'},
+        {id:'m_ring',   name:'Anillo Arcano', icon:'💍', cost:50,  type:'amulet', stat:'XP+14%'},
     ],
-
-    // ── OTHER (cascos, botas, amuletos) ───────────────────────
-    other: [
-        {id:'ot_helm1',    name:'Yelmo de Cuero',     img:'⛑️', cost:20,  currency:'gold', type:'helm',   atk:0,  def:3,  desc:'Protege la cabeza básicamente.'},
-        {id:'ot_helm2',    name:'Yelmo de Bronce',    img:'⛑️', cost:50,  currency:'gold', type:'helm',   atk:0,  def:8,  desc:'Bronce templado resistente.'},
-        {id:'ot_helm3',    name:'Yelmo de Acero',     img:'🪖', cost:120, currency:'gold', type:'helm',   atk:0,  def:15, desc:'Acero sólido.'},
-        {id:'ot_helm4',    name:'Casco Rúnico',       img:'⛑️', cost:300, currency:'gold', type:'helm',   atk:2,  def:22, desc:'Runas graban poder.'},
-        {id:'ot_helm5',    name:'Corona del Guerrero',img:'👑', cost:24,  currency:'gem',  type:'helm',   atk:5,  def:30, desc:'El liderazgo en metal.'},
-        {id:'ot_boots1',   name:'Botas de Cuero',     img:'👢', cost:15,  currency:'gold', type:'boots',  atk:0,  def:2,  desc:'Cuero curtido, durables.'},
-        {id:'ot_boots2',   name:'Botas de Hierro',    img:'👢', cost:60,  currency:'gold', type:'boots',  atk:0,  def:8,  desc:'Pesadas pero resistentes.'},
-        {id:'ot_boots3',   name:'Botas de Velocidad', img:'👟', cost:180, currency:'gold', type:'boots',  atk:2,  def:5,  spd:10, desc:'Ligeras como el viento.'},
-        {id:'ot_amulet1',  name:'Amuleto de Vida',    img:'📿', cost:40,  currency:'gold', type:'amulet', atk:0,  def:0,  hp:20,  desc:'Aumenta HP máximo.'},
-        {id:'ot_amulet2',  name:'Amuleto Arcano',     img:'🔮', cost:80,  currency:'gold', type:'amulet', atk:0,  def:0,  xpm:15, desc:'Más XP por hábito.'},
-        {id:'ot_amulet3',  name:'Amuleto de Oro',     img:'📿', cost:100, currency:'gold', type:'amulet', atk:0,  def:0,  gld:20, desc:'Más monedas por hábito.'},
-        {id:'ot_ring1',    name:'Anillo de Poder',    img:'💍', cost:150, currency:'gold', type:'ring',   atk:8,  def:0,  desc:'Fuerza concentrada.'},
-        {id:'ot_ring2',    name:'Anillo Sello',       img:'💍', cost:200, currency:'gold', type:'ring',   atk:5,  def:5,  desc:'Ataque y defensa.'},
-        {id:'ot_gem_shield',name:'Escudo de Gema',    img:'💎', cost:30,  currency:'gem',  type:'shield', atk:0,  def:30, desc:'Cristal mágico puro.'},
+    rogue: [
+        {id:'r_dagger1',name:'Daga Corta',    icon:'🗡️', cost:25,  type:'weapon', stat:'ORO+12%'},
+        {id:'r_dagger2',name:'Daga Envenenada',icon:'💉',cost:70,  type:'weapon', stat:'ORO+25%'},
+        {id:'r_cloak1', name:'Capa Sigilosa', icon:'🧣', cost:45,  type:'armor',  stat:'DEF+7'},
+        {id:'r_cloak2', name:'Manto de Sombra',icon:'🧤',cost:85,  type:'armor',  stat:'DEF+15'},
+        {id:'r_mask1',  name:'Máscara Pícaro',icon:'🎭', cost:30,  type:'helm',   stat:'ORO+10%'},
+        {id:'r_boots1', name:'Botas Ágiles',  icon:'👟', cost:35,  type:'boots',  stat:'SPD+15'},
+        {id:'r_bow',    name:'Arco Largo',    icon:'🏹', cost:60,  type:'weapon', stat:'ORO+20%'},
+        {id:'r_shuriken',name:'Shurikens',    icon:'⭐', cost:40,  type:'amulet', stat:'ATK+8'},
     ],
-
-    // Compat con el código anterior (clase-based)
-    warrior: [{id:'_w',name:'',icon:'',cost:0,type:'',stat:''}],
-    mage:    [{id:'_m',name:'',icon:'',cost:0,type:'',stat:''}],
-    rogue:   [{id:'_r',name:'',icon:'',cost:0,type:'',stat:''}],
-    healer:  [{id:'_h',name:'',icon:'',cost:0,type:'',stat:''}],
+    healer: [
+        {id:'h_staff1', name:'Báculo Sagrado',icon:'🌿', cost:45,  type:'weapon', stat:'HP+20'},
+        {id:'h_staff2', name:'Cetro Divino',  icon:'⚕️', cost:90,  type:'weapon', stat:'HP+40'},
+        {id:'h_robe1',  name:'Vestido Blanco',icon:'👗', cost:50,  type:'armor',  stat:'HP+15'},
+        {id:'h_shield1',name:'Aegis Sagrado', icon:'🔰', cost:65,  type:'shield', stat:'HP+25'},
+        {id:'h_halo',   name:'Aureola',       icon:'😇', cost:40,  type:'helm',   stat:'HP+12'},
+        {id:'h_ring',   name:'Anillo Cura',   icon:'💍', cost:35,  type:'amulet', stat:'HP+10'},
+        {id:'h_book',   name:'Libro Sagrado', icon:'📿', cost:55,  type:'shield', stat:'HP+18'},
+    ],
 };
 
 const EGGS_DB = [
@@ -19339,291 +19209,57 @@ window.switchMarketTab = function(tab, el) {
 };
 
 // ── EQUIPAMIENTO ──────────────────────────────────────────────
-let _equipTab = 'weapon';
-
 function renderEquipment() {
-    const listEl = document.getElementById('habEquipList');
-    const cfEl   = document.getElementById('habClassFilter');
-    if (!listEl) return;
+    const cfEl  = document.getElementById('habClassFilter');
+    const listEl= document.getElementById('habEquipList');
+    if (!cfEl || !listEl) return;
     const hero  = loadHero();
-    const equip = hero.equipment || {};
 
-    // Tabs Weapon / Armor / Other
-    if (cfEl) {
-        cfEl.innerHTML = [
-            {id:'weapon', label:'⚔️ Armas'},
-            {id:'armor',  label:'🛡️ Armadura'},
-            {id:'other',  label:'💍 Otros'},
-        ].map(t =>
-            '<button class="hab-equip-tab-btn' + (_equipTab === t.id ? ' active' : '') + '" ' +
-            'onclick="window._setEquipTab(\'' + t.id + '\')" ' +
-            'style="flex:1;padding:7px 4px;border-radius:10px;border:1.5px solid ' +
-            (_equipTab === t.id ? '#a78bfa' : 'rgba(255,255,255,0.1)') + ';' +
-            'background:' + (_equipTab === t.id ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.04)') + ';' +
-            'color:#fff;font-size:0.68rem;font-weight:900;cursor:pointer;">' +
-            t.label + '</button>'
-        ).join('');
-    }
+    const classes = [{id:'warrior',icon:'⚔️',name:'Guerrero'},{id:'mage',icon:'🔮',name:'Mago'},{id:'rogue',icon:'🗡️',name:'Pícaro'},{id:'healer',icon:'💚',name:'Sanador'}];
+    cfEl.innerHTML = classes.map(c =>
+        '<div class="hab-class-filter-btn '+(_classFilter===c.id?'active':'')+'" onclick="filterEquipClass(\''+c.id+'\')">'+c.icon+' '+c.name+'</div>'
+    ).join('');
 
-    const items = EQUIP_DB[_equipTab] || [];
-    const inv   = loadInv ? loadInv() : {};
+    const items  = EQUIP_DB[_classFilter] || [];
+    const equip  = hero.equipment || {};
+    const inv    = loadInv();
 
-    // Stats totales del equipo equipado (para mostrar en header)
-    let totalAtk = 0, totalDef = 0;
-    Object.values(equip).forEach(function(itemId) {
-        ['weapon','armor','other'].forEach(function(cat) {
-            const found = (EQUIP_DB[cat]||[]).find(function(i){ return i.id === itemId; });
-            if (found) { totalAtk += (found.atk||0); totalDef += (found.def||0); }
-        });
-    });
-
-    // Header con stats actuales
-    const statsBar = '<div style="display:flex;gap:8px;margin-bottom:10px;padding:8px 10px;' +
-        'background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">' +
-        '<span style="font-size:0.65rem;color:#f87171;font-weight:900;">⚔️ ATK: ' + totalAtk + '</span>' +
-        '<span style="font-size:0.65rem;color:#60a5fa;font-weight:900;">🛡️ DEF: ' + totalDef + '</span>' +
-        '<span style="font-size:0.65rem;color:#fbbf24;font-weight:900;margin-left:auto;">🪙 ' + (hero.coins||0) + '  💎 ' + (hero.gems||0) + '</span>' +
-        '</div>';
-
-    // Grid de ítems estilo Habit Hunter
-    const grid = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
-        items.filter(function(item){ return item.id && item.id !== '_w' && item.id !== '_m' && item.id !== '_r' && item.id !== '_h'; })
-        .map(function(item) {
-            const isEquipped = Object.values(equip).includes(item.id);
-            const canAfford  = item.currency === 'gem'
-                ? (hero.gems||0) >= item.cost
-                : (hero.coins||0) >= item.cost;
-            const currIcon   = item.currency === 'gem' ? '💎' : '🪙';
-
-            // Build stat label
-            var statParts = [];
-            if (item.atk > 0) statParts.push('ATK +' + item.atk);
-            if (item.def > 0) statParts.push('DEF +' + item.def);
-            if (item.hp  > 0) statParts.push('HP +'  + item.hp);
-            if (item.spd > 0) statParts.push('SPD +' + item.spd);
-            if (item.xpm > 0) statParts.push('XP +'  + item.xpm + '%');
-            if (item.gld > 0) statParts.push('ORO +' + item.gld + '%');
-            const statLabel = statParts.join(' · ') || '—';
-
-            return '<div onclick="window.buyEquipItemV2(\'' + item.id + '\',\'' + _equipTab + '\')" ' +
-                'style="position:relative;background:' + (isEquipped ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.04)') + ';' +
-                'border:1.5px solid ' + (isEquipped ? '#a78bfa' : (!canAfford ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)')) + ';' +
-                'border-radius:14px;padding:10px 6px 8px;text-align:center;cursor:pointer;' +
-                'transition:transform 0.15s,border-color 0.2s;min-height:110px;' +
-                'display:flex;flex-direction:column;align-items:center;justify-content:space-between;">' +
-
-                // Badge equipado
-                (isEquipped ? '<span style="position:absolute;top:4px;right:5px;font-size:0.55rem;' +
-                    'background:#a78bfa;color:#fff;border-radius:6px;padding:1px 4px;font-weight:900;">✓</span>' : '') +
-
-                // Lock si no puede pagar
-                (!canAfford && !isEquipped ? '<span style="position:absolute;top:4px;left:5px;font-size:0.7rem;opacity:0.5;">🔒</span>' : '') +
-
-                // Icono grande
-                '<div style="font-size:1.8rem;line-height:1;margin-bottom:4px;">' + item.img + '</div>' +
-
-                // Nombre
-                '<div style="font-size:0.48rem;color:' + (isEquipped ? '#c4b5fd' : '#aaa') + ';' +
-                'font-weight:800;line-height:1.2;margin-bottom:3px;">' + item.name + '</div>' +
-
-                // Stat
-                '<div style="font-size:0.44rem;color:#a78bfa;font-weight:700;margin-bottom:4px;">' + statLabel + '</div>' +
-
-                // Precio
-                '<div style="font-size:0.58rem;font-weight:900;color:' + (!canAfford && !isEquipped ? '#666' : (item.currency === 'gem' ? '#67e8f9' : '#fbbf24')) + ';">' +
-                currIcon + item.cost + '</div>' +
-
-                '</div>';
-        }).join('') +
-        '</div>';
-
-    listEl.innerHTML = statsBar + grid;
+    listEl.innerHTML = '<div class="hab-item-grid">' + items.map(item => {
+        const owned  = equip[item.type] === item.id || (inv.equipment||[]).includes(item.id);
+        const afford = (hero.coins||0) >= item.cost;
+        return '<div class="hab-item-card '+(owned?'owned':!afford?'locked':'')+'" onclick="buyEquipItem(\''+item.id+'\')">' +
+            (owned?'<span class="hab-item-owned-badge">✓</span>':'') +
+            (!afford&&!owned?'<span class="hab-item-lock-icon">🔒</span>':'') +
+            '<span class="hab-item-emoji">'+item.icon+'</span>' +
+            '<div style="font-size:0.48rem;color:#888;text-align:center;line-height:1.2;margin-bottom:2px;">'+item.name+'</div>' +
+            '<div class="hab-item-price gold">🪙'+item.cost+'</div>' +
+            '<div style="font-size:0.45rem;color:#a78bfa;">'+item.stat+'</div>' +
+            '</div>';
+    }).join('') + '</div>';
 }
 
-window._setEquipTab = function(tab) {
-    _equipTab = tab;
+window.filterEquipClass = function(cls) {
+    _classFilter = cls;
     renderEquipment();
 };
 
-window.buyEquipItemV2 = function(itemId, category) {
-    const hero  = loadHero();
-    const items = EQUIP_DB[category] || [];
-    const item  = items.find(function(i){ return i.id === itemId; });
+window.buyEquipItem = function(itemId) {
+    const hero = loadHero();
+    const items= EQUIP_DB[_classFilter]||[];
+    const item = items.find(i=>i.id===itemId);
     if (!item) return;
-
-    const equip = hero.equipment || {};
-    if (Object.values(equip).includes(itemId)) {
-        showBuyToast('✅ Ya equipado — toca otro para cambiar');
-        return;
-    }
-
-    const cost     = item.cost;
-    const isGem    = item.currency === 'gem';
-    const balance  = isGem ? (hero.gems||0) : (hero.coins||0);
-    if (balance < cost) {
-        showBuyToast('🔒 Necesitas ' + cost + (isGem ? '💎' : '🪙'));
-        return;
-    }
-
-    if (isGem) hero.gems = (hero.gems||0) - cost;
-    else        hero.coins -= cost;
-
-    // Desequipar el anterior del mismo slot si lo hay
-    hero.equipment = hero.equipment || {};
+    const equip = hero.equipment||{};
+    if (equip[item.type]===itemId) { showBuyToast('✅ Ya lo tienes equipado'); return; }
+    if ((hero.coins||0) < item.cost) { showBuyToast('🔒 Necesitas '+item.cost+'🪙'); return; }
+    hero.coins -= item.cost;
+    hero.equipment = hero.equipment||{};
     hero.equipment[item.type] = itemId;
-
-    // Recalcular stats del héroe según equipo
-    var newAtk = 5, newDef = 3;
-    Object.values(hero.equipment).forEach(function(eid) {
-        ['weapon','armor','other'].forEach(function(cat) {
-            const found = (EQUIP_DB[cat]||[]).find(function(i){ return i.id === eid; });
-            if (found) { newAtk += (found.atk||0); newDef += (found.def||0); }
-        });
-    });
-    hero.stats = hero.stats || {};
-    hero.stats.atk = newAtk;
-    hero.stats.def = newDef;
-
+    hero.stats = hero.stats||{};
     saveHero(hero);
-    showBuyToast('⚔️ ' + item.name + ' equipado! ATK:' + newAtk + ' DEF:' + newDef);
-    if (typeof playSparkleSound === 'function') playSparkleSound();
+    showBuyToast('⚔️ '+item.name+' equipado!');
+    if(typeof playSparkleSound==='function') playSparkleSound();
     renderEquipment();
-    if (typeof renderHabHero === 'function') renderHabHero();
-};
-
-// ── SISTEMA DE ATRIBUTOS (Fuerza, Int, Con, Per) ─────────────
-const ATTRS_DEF = [
-    { id:'str', name:'Fuerza',        color:'#ef4444', icon:'💪',
-      desc:'Aumenta el daño al Boss y chance de golpe crítico (+1 ATK por punto).' },
-    { id:'int', name:'Inteligencia',  color:'#38bdf8', icon:'🧠',
-      desc:'Aumenta XP ganada por hábitos (+1% XP por punto) y regenera maná.' },
-    { id:'con', name:'Constitución',  color:'#f97316', icon:'🛡️',
-      desc:'Reduce el daño recibido al fallar hábitos (+5 HP por punto).' },
-    { id:'per', name:'Percepción',    color:'#a855f7', icon:'👁️',
-      desc:'Aumenta monedas y probabilidad de recompensas extra (+1% ORO por punto).' },
-];
-
-window.renderHabAttributes = function() {
-    const el = document.getElementById('habAttrPanel');
-    if (!el) return;
-    const hero  = loadHero();
-    const level = hero.level || 1;
-    const attrs = hero.attributes || { str:1, int:1, con:1, per:1 };
-    const spent = (attrs.str-1) + (attrs.int-1) + (attrs.con-1) + (attrs.per-1);
-    // Puntos: 1 por nivel, desbloqueado desde nivel 10; antes nivel no se asignan
-    const totalPts = Math.max(0, level - 1);
-    const freePts  = Math.max(0, totalPts - spent);
-    const unlocked = level >= 10;
-
-    let html = '<div style="padding:0 2px;">';
-
-    // Header
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
-        '<span style="font-size:0.75rem;font-weight:900;color:#c4b5fd;">⚡ ATRIBUTOS</span>' +
-        (unlocked
-            ? '<span style="font-size:0.7rem;font-weight:900;color:#fbbf24;">Puntos libres: ' + freePts + '</span>'
-            : '<span style="font-size:0.6rem;color:#666;">Se desbloquea en Nivel 10</span>'
-        ) +
-        '</div>';
-
-    if (!unlocked) {
-        html += '<div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px;text-align:center;color:#555;font-size:0.65rem;">' +
-            '🔒 La distribución de Atributos se desbloquea en el Nivel 10.<br>' +
-            '<span style="color:#a78bfa;">Nivel actual: ' + level + '</span>' +
-            '</div>';
-    }
-
-    // Atributos
-    ATTRS_DEF.forEach(function(a) {
-        const val    = attrs[a.id] || 1;
-        const canAdd = unlocked && freePts > 0;
-        const canSub = unlocked && val > 1;
-
-        html += '<div style="margin-bottom:8px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">' +
-            // Header del atributo
-            '<div style="background:' + a.color + ';padding:7px 12px;display:flex;align-items:center;justify-content:space-between;">' +
-                '<span style="font-size:0.75rem;font-weight:900;color:#fff;">' + a.icon + ' ' + a.name + '</span>' +
-                '<span style="font-size:0.9rem;font-weight:900;color:#fff;">' + val + '</span>' +
-            '</div>' +
-            // Sub-row
-            '<div style="background:rgba(10,5,30,0.7);padding:8px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">' +
-                '<div style="text-align:center;">' +
-                    '<div style="font-size:0.75rem;font-weight:900;color:#fff;">' + val + '</div>' +
-                    '<div style="font-size:0.48rem;color:#666;">Nivel</div>' +
-                '</div>' +
-                '<div style="text-align:center;">' +
-                    '<div style="font-size:0.75rem;font-weight:900;color:#fff;">0</div>' +
-                    '<div style="font-size:0.48rem;color:#666;">Equipo</div>' +
-                '</div>' +
-                '<div style="text-align:center;">' +
-                    '<div style="font-size:0.75rem;font-weight:900;color:#fff;">0</div>' +
-                    '<div style="font-size:0.48rem;color:#666;">Apoyos</div>' +
-                '</div>' +
-                '<div style="text-align:center;">' +
-                    '<div style="font-size:0.75rem;font-weight:900;color:#fff;">' + (val - 1) + '</div>' +
-                    '<div style="font-size:0.48rem;color:#666;">Asignado</div>' +
-                '</div>' +
-            '</div>' +
-            // Controles
-            (unlocked ? '<div style="background:rgba(10,5,30,0.5);padding:6px 12px;display:flex;gap:8px;justify-content:flex-end;">' +
-                (canSub ? '<button onclick="window.adjustAttr(\'' + a.id + '\',-1)" style="background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#f87171;border-radius:8px;padding:3px 10px;font-weight:900;cursor:pointer;font-size:0.7rem;">−</button>' : '') +
-                (canAdd ? '<button onclick="window.adjustAttr(\'' + a.id + '\',1)" style="background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#4ade80;border-radius:8px;padding:3px 10px;font-weight:900;cursor:pointer;font-size:0.7rem;">+</button>' : '') +
-            '</div>' : '') +
-        '</div>';
-    });
-
-    // Guía
-    html += '<div style="margin-top:12px;">' +
-        '<div style="font-size:0.68rem;font-weight:900;color:#888;margin-bottom:6px;">GUÍA DE ATRIBUTOS</div>' +
-        ATTRS_DEF.map(function(a) {
-            return '<div style="margin-bottom:6px;">' +
-                '<div style="font-size:0.62rem;font-weight:900;color:' + a.color + ';">' + a.icon + ' ' + a.name + '</div>' +
-                '<div style="font-size:0.58rem;color:#666;line-height:1.4;">' + a.desc + '</div>' +
-            '</div>';
-        }).join('') +
-    '</div>';
-
-    html += '</div>';
-    el.innerHTML = html;
-};
-
-window.adjustAttr = function(attrId, delta) {
-    const hero  = loadHero();
-    const level = hero.level || 1;
-    if (level < 10) return;
-    hero.attributes = hero.attributes || { str:1, int:1, con:1, per:1 };
-    const spent = Object.values(hero.attributes).reduce(function(s,v){ return s + (v-1); }, 0);
-    const totalPts = Math.max(0, level - 1);
-    const freePts  = totalPts - spent;
-
-    if (delta > 0 && freePts <= 0) return;
-    if (delta < 0 && (hero.attributes[attrId]||1) <= 1) return;
-
-    hero.attributes[attrId] = (hero.attributes[attrId]||1) + delta;
-
-    // Aplicar efectos de atributos
-    const str = hero.attributes.str || 1;
-    const int_ = hero.attributes.int || 1;
-    const con  = hero.attributes.con || 1;
-    const per  = hero.attributes.per || 1;
-    hero.stats = hero.stats || {};
-    hero.stats.atk = (hero.stats.atk||5) + (delta > 0 && attrId==='str' ? 1 : (delta < 0 && attrId==='str' ? -1 : 0));
-    hero.maxHp = 100 + (con - 1) * 5;
-    if (hero.hp > hero.maxHp) hero.hp = hero.maxHp;
-
-    saveHero(hero);
-    window.renderHabAttributes();
-    if (typeof renderHabHero === 'function') renderHabHero();
-};
-
-// ── Panel de atributos se inyecta en el tab Héroe ─────────────
-const _origRenderHabHero = window.renderHabHero;
-window.renderHabHero = function() {
-    if (_origRenderHabHero) _origRenderHabHero();
-    // Inyectar panel de atributos si existe el contenedor
-    setTimeout(function() {
-        if (typeof window.renderHabAttributes === 'function') window.renderHabAttributes();
-    }, 50);
+    updateGoldDisplays && updateGoldDisplays(hero);
 };
 
 // ── HUEVOS ────────────────────────────────────────────────────
@@ -20783,20 +20419,6 @@ window.selectHeroClass = function(cls) {
 //  Features: heatmap coloreado, barra progreso, stats 3-col,
 //  streak badge, botón completar grande, acciones archive/delete
 // ═══════════════════════════════════════════════════════════════
-// ── Archive un hábito (moverlo a archived, fuera de HOY) ────
-window._habArchive = function(id) {
-    var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
-    var h = habits.find(function(x){ return x.id === id; });
-    if (!h) return;
-    if (!confirm('¿Archivar este hábito? Puedes restaurarlo desde el historial.')) return;
-    h.archived = true;
-    h.archivedAt = new Date().toISOString();
-    localStorage.setItem('jch_habits_v1', JSON.stringify(habits));
-    closeHabDetail();
-    if (typeof window.renderHabToday === 'function') window.renderHabToday();
-    if (typeof updateHabitBadge === 'function') updateHabitBadge();
-};
-
 window.openHabDetail = function(id) {
     var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
     var h = habits.find(function(x){ return x.id === id; });
@@ -20857,6 +20479,12 @@ window.openHabDetail = function(id) {
     var progressPct = isDone ? 100 : 0;
 
     var modal = document.getElementById('habDetailModal');
+    var overlay = document.getElementById('habDetailOverlay');
+    var alreadyOpen = overlay && overlay.classList.contains('open');
+
+    // Suprimir animación de entrada si el modal ya está abierto
+    if (alreadyOpen && modal) modal.classList.add('updating');
+
     modal.innerHTML =
         // ── Header ──────────────────────────────────────────────
         '<div class="hab-detail-header">' +
@@ -20874,10 +20502,10 @@ window.openHabDetail = function(id) {
             '<button class="hab-detail-close" onclick="closeHabDetail()" aria-label="Cerrar">✕</button>' +
         '</div>' +
 
-        // ── Botón completar grande (estilo HabitRix) ────────────
+        // ── Botón completar grande (sin parpadeo — actualiza in-place) ─
         '<button class="hab-detail-complete-btn ' + (isDone?'done':'not-done') + '"' +
             (isDone ? ' style="background:linear-gradient(135deg,' + color + 'cc,' + color + ');"' : '') +
-            ' onclick="toggleHabit(\'' + h.id + '\');setTimeout(function(){closeHabDetail();setTimeout(function(){openHabDetail(\'' + h.id + '\')},80);},120);">' +
+            ' onclick="toggleHabitNoRender(\'' + h.id + '\');">' +
             (isDone ? '✅ Completado Hoy' : '⬜ Marcar como Completado') +
             '<span style="margin-left:auto;font-size:0.8rem;opacity:0.7;">' + (isDone?'✓':'+') + '</span>' +
         '</button>' +
@@ -20949,15 +20577,20 @@ window.openHabDetail = function(id) {
             '</div>' +
         '</div>' +
 
-        // ── Acciones — Editar · Cerrar · Archive · Delete ─────────
+        // ── Acciones — Editar · Cerrar · Archive · Delete ────────
         '<div class="hab-detail-actions">' +
-            '<button class="hab-detail-action-btn" onclick="closeHabDetail();setTimeout(function(){openHabitModal();setTimeout(function(){editHabit(\'' + h.id + '\')},80);},120);">✏️ Editar</button>' +
+            '<button class="hab-detail-action-btn" onclick="closeHabDetail();editHabit(\'' + h.id + '\');">✏️ Editar</button>' +
             '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✓ Cerrar</button>' +
-            '<button class="hab-detail-action-btn" onclick="window._habArchive(\'' + h.id + '\')" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
+            '<button class="hab-detail-action-btn" onclick="archiveHabitDetail(\'' + h.id + '\')" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
             '<button class="hab-detail-action-btn danger" onclick="if(confirm(\'¿Eliminar este hábito?\')){ deleteHabit(\'' + h.id + '\');closeHabDetail();}">🗑️ Delete</button>' +
         '</div>';
 
-    // El overlay lo abre el wrapper con requestAnimationFrame para evitar parpadeo
+    if (!alreadyOpen) {
+        overlay.classList.add('open');
+    } else if (modal) {
+        // Quitar updating en el siguiente frame para restaurar animación futura
+        requestAnimationFrame(function(){ modal.classList.remove('updating'); });
+    }
 };
 
 window.closeHabDetail = function() {
@@ -20965,64 +20598,43 @@ window.closeHabDetail = function() {
     if (ov) ov.classList.remove('open');
 };
 
-})();
-</script>
+// Marca/desmarca sin re-renderizar la lista — solo refresca el modal
+window.toggleHabitNoRender = function(id) {
+    // Bloquear todos los renders mientras toggleHabit corre
+    var _r1 = window.renderHabToday,
+        _r2 = window.renderHabDisciplined,
+        _r3 = window.renderStrengthList;
+    window.renderHabToday       = function(){};
+    window.renderHabDisciplined = function(){};
+    window.renderStrengthList   = function(){};
 
+    if (typeof window.toggleHabit === 'function') window.toggleHabit(id);
 
+    window.renderHabToday       = _r1;
+    window.renderHabDisciplined = _r2;
+    window.renderStrengthList   = _r3;
 
+    // Refrescar solo el modal (sin parpadeo)
+    if (typeof window.openHabDetail === 'function') window.openHabDetail(id);
 
-<script>
-// ═══════════════════════════════════════════════════════════════
-//  FIX FINAL — panel HOY al crear + boss HP + modal sin parpadeo
-//  Se ejecuta DESPUÉS de todos los scripts para garantizar que
-//  parchea las versiones finales reales de cada función.
-// ═══════════════════════════════════════════════════════════════
-(function(){
-
-// ── FIX 1: switchHabTab — respetar _habSaveRendering ─────────
-// Este patch se aplica AL FINAL, después de los 7 overrides de
-// switchHabTab, asegurando que la cadena completa respete el flag.
-var _finalOrigSwitch = window.switchHabTab;
-window.switchHabTab = function(tab, el) {
-    if (typeof _finalOrigSwitch === 'function') _finalOrigSwitch(tab, el);
+    // Actualizar badge y barra de progreso del fondo sin tocar las cards
+    if (typeof updateHabitBadge === 'function') updateHabitBadge();
 };
 
-// ── FIX 2: boss HP — actualizar ambas clases de texto y barra ─
-var _origInstantUI2 = window._habInstantUIUpdate;
-window._habInstantUIUpdate = function(h) {
-    if (typeof _origInstantUI2 === 'function') _origInstantUI2(h);
-    try {
-        var heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
-        var BOSSES  = window._HAB_BOSSES || [];
-        if (!BOSSES.length) return;
-        var boss   = BOSSES[Math.min(heroRaw.bossIndex||0, BOSSES.length-1)];
-        var bossHp = Math.max(0, Math.round(heroRaw.bossHp != null ? heroRaw.bossHp : boss.maxHp));
-        var pct    = Math.max(0, Math.min(100, Math.round((bossHp / boss.maxHp) * 100)));
-        document.querySelectorAll('.hab-boss-hp-text,.hab-boss-3d-hp-text').forEach(function(el) {
-            el.textContent = bossHp + ' / ' + boss.maxHp + ' HP · ' + pct + '%';
-        });
-        document.querySelectorAll('.hab-boss-hp-fill,.hab-boss-3d-hp-fill').forEach(function(el) {
-            el.style.width = pct + '%';
-        });
-    } catch(e) {}
-};
-
-// ── FIX 3: modal detalle sin parpadeo ────────────────────────
-var _origOpenHabDetail2 = window.openHabDetail;
-window.openHabDetail = function(id) {
-    var ov = document.getElementById('habDetailOverlay');
-    if (!ov) return;
-    // 1. Asegurar que el overlay está cerrado (sin transición visible)
-    ov.classList.remove('open');
-    // 2. Rellenar el contenido con el overlay oculto (evita parpadeo)
-    if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Mostrar en el siguiente frame — el CSS transition hace el slide-up suave
-    requestAnimationFrame(function() {
-        ov.classList.add('open');
-    });
+window.archiveHabitDetail = function(id) {
+    if (!confirm('¿Archivar este hábito? Puedes restaurarlo después.')) return;
+    var habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+    var h = habits.find(function(x){ return x.id === id; });
+    if (h) {
+        h.archived = true;
+        localStorage.setItem('jch_habits_v1', JSON.stringify(habits));
+    }
+    closeHabDetail();
+    if (typeof window.renderHabToday       === 'function') window.renderHabToday();
+    if (typeof window.renderHabDisciplined === 'function') window.renderHabDisciplined();
+    if (typeof updateHabitBadge            === 'function') updateHabitBadge();
 };
 
 })();
 </script>
-
 </html>
