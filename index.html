@@ -5053,13 +5053,30 @@
         .hab-achievement {
             display:flex;align-items:center;gap:10px;
             background:rgba(251,191,36,0.08);border:1.5px solid rgba(251,191,36,0.2);
-            border-radius:12px;padding:10px;margin-bottom:8px;
+            border-radius:12px;padding:10px;margin-bottom:8px;transition:opacity 0.3s;
         }
         .hab-achievement-icon { font-size:1.5rem;flex-shrink:0; }
         .hab-achievement-info { flex:1; }
         .hab-achievement-name { font-size:0.78rem;font-weight:900;color:#fbbf24; }
         .hab-achievement-desc { font-size:0.6rem;color:#888;margin-top:1px; }
-        .hab-achievement.locked { opacity:0.35;filter:grayscale(1); }
+        .hab-achievement.locked { opacity:0.3;filter:grayscale(1); }
+        .hab-ach-category {
+            font-size:0.62rem;font-weight:900;color:#a78bfa;text-transform:uppercase;
+            letter-spacing:1.5px;margin:14px 0 6px 2px;display:flex;align-items:center;gap:8px;
+        }
+        .hab-ach-category-count {
+            background:rgba(167,139,250,0.18);border-radius:20px;
+            padding:1px 8px;font-size:0.6rem;color:#c4b5fd;
+        }
+        .hab-ach-summary {
+            display:flex;gap:10px;margin-bottom:14px;
+        }
+        .hab-ach-summary-item {
+            flex:1;background:rgba(255,255,255,0.04);border-radius:10px;
+            padding:8px 6px;text-align:center;
+        }
+        .hab-ach-summary-num { font-size:1.2rem;font-weight:900;color:#fbbf24; }
+        .hab-ach-summary-label { font-size:0.55rem;color:#888;margin-top:2px; }
 
         /* Tab Héroe */
         .hab-tab-content#habTab-heroe { }
@@ -15564,16 +15581,90 @@ const BOSSES = [
 window._HAB_BOSSES = BOSSES;
 
 const ACHIEVEMENTS = [
-    { id:'first',    name:'Primer Paso',       desc:'Completa tu primer hábito',            icon:'👣', cond: h => h.totalDone >= 1 },
-    { id:'week7',    name:'Una Semana',         desc:'Mantén una racha de 7 días',           icon:'🔥', cond: h => h.bestStreak >= 7 },
-    { id:'month30',  name:'El Mes',             desc:'Mantén una racha de 30 días',          icon:'🏆', cond: h => h.bestStreak >= 30 },
-    { id:'hundred',  name:'Centurión',          desc:'100 completaciones totales',           icon:'💯', cond: h => h.totalDone >= 100 },
-    { id:'five',     name:'Coleccionista',      desc:'Crea 5 hábitos distintos',             icon:'📦', cond: h => h.totalHabits >= 5 },
-    { id:'streak21', name:'Hábito Formado',     desc:'21 días seguidos',                     icon:'🧠', cond: h => h.bestStreak >= 21 },
-    { id:'boss1',    name:'Cazador de Monstruos',desc:'Derrota tu primer boss',              icon:'⚔️', cond: h => h.bossesDefeated >= 1 },
-    { id:'boss5',    name:'Exterminador',        desc:'Derrota 5 bosses',                    icon:'💀', cond: h => h.bossesDefeated >= 5 },
-    { id:'done500',  name:'Leyenda Viviente',   desc:'500 completaciones totales',           icon:'🌟', cond: h => h.totalDone >= 500 },
-    { id:'streak100',name:'Centurión de Rachas','desc':'100 días seguidos',                 icon:'👑', cond: h => h.bestStreak >= 100 },
+    // ── ONBOARDING ─────────────────────────────────────────────
+    { id:'first_task',   cat:'onboarding', name:'Crea tu primera tarea',    desc:'Creó su primera tarea.',                    icon:'✏️',  cond: h => h.totalHabits >= 1 },
+    { id:'done_task',    cat:'onboarding', name:'Completa una tarea',        desc:'Ha completado su primera tarea.',           icon:'✅',  cond: h => h.totalDone >= 1 },
+
+    // ── PROGRESO PERSONAL ─────────────────────────────────────
+    { id:'streak7',      cat:'progreso',   name:'Una Semana de Fuego',       desc:'Mantén una racha de 7 días seguidos.',      icon:'🔥',  cond: h => h.bestStreak >= 7 },
+    { id:'streak21',     cat:'progreso',   name:'Hábito Formado',            desc:'21 días seguidos. ¡El hábito es tuyo!',     icon:'🧠',  cond: h => h.bestStreak >= 21 },
+    { id:'streak30',     cat:'progreso',   name:'El Mes Épico',              desc:'30 días seguidos de constancia.',           icon:'📅',  cond: h => h.bestStreak >= 30 },
+    { id:'streak100',    cat:'progreso',   name:'Centurión de Rachas',       desc:'100 días seguidos. ¡Increíble disciplina!', icon:'👑',  cond: h => h.bestStreak >= 100 },
+    { id:'streak200',    cat:'progreso',   name:'Leyenda Imparable',         desc:'200 días seguidos. ¡Eres una leyenda!',     icon:'⚡',  cond: h => h.bestStreak >= 200 },
+    { id:'streak365',    cat:'progreso',   name:'Un Año Sin Rendirse',       desc:'365 días seguidos. ¡Un año completo!',      icon:'🌟',  cond: h => h.bestStreak >= 365 },
+    { id:'done10',       cat:'progreso',   name:'Primeros Pasos',            desc:'10 completaciones totales.',                icon:'👣',  cond: h => h.totalDone >= 10 },
+    { id:'done50',       cat:'progreso',   name:'Constante',                 desc:'50 completaciones totales.',                icon:'💪',  cond: h => h.totalDone >= 50 },
+    { id:'done100',      cat:'progreso',   name:'Centurión',                 desc:'100 completaciones totales.',               icon:'💯',  cond: h => h.totalDone >= 100 },
+    { id:'done500',      cat:'progreso',   name:'Leyenda Viviente',          desc:'500 completaciones totales.',               icon:'🏆',  cond: h => h.totalDone >= 500 },
+    { id:'done1000',     cat:'progreso',   name:'Maestro Absoluto',          desc:'1000 completaciones totales.',              icon:'💎',  cond: h => h.totalDone >= 1000 },
+    { id:'habits5',      cat:'progreso',   name:'Coleccionista',             desc:'Crea 5 hábitos distintos.',                 icon:'📦',  cond: h => h.totalHabits >= 5 },
+    { id:'habits10',     cat:'progreso',   name:'Arsenal de Hábitos',        desc:'Crea 10 hábitos distintos.',                icon:'📚',  cond: h => h.totalHabits >= 10 },
+
+    // ── MISIONES & BOSSES ─────────────────────────────────────
+    { id:'boss1',        cat:'misiones',   name:'Cazador de Monstruos',      desc:'Derrota tu primer boss.',                   icon:'⚔️',  cond: h => h.bossesDefeated >= 1 },
+    { id:'boss3',        cat:'misiones',   name:'Veterano de Batalla',       desc:'Derrota 3 bosses.',                         icon:'🗡️',  cond: h => h.bossesDefeated >= 3 },
+    { id:'boss5',        cat:'misiones',   name:'Exterminador',              desc:'Derrota 5 bosses.',                         icon:'💀',  cond: h => h.bossesDefeated >= 5 },
+    { id:'boss10',       cat:'misiones',   name:'Señor de la Guerra',        desc:'Derrota 10 bosses. ¡Imparable!',            icon:'👹',  cond: h => h.bossesDefeated >= 10 },
+    { id:'quest_slime',  cat:'misiones',   name:'Domador de Limo',           desc:'Completaste la misión del Monstruo de Limo: derrota al jefe acumulando 50 hábitos.', icon:'🟢', cond: h => h.totalDone >= 50 },
+    { id:'quest_rock',   cat:'misiones',   name:'Roca Sólida',               desc:'Completaste la misión de la Roca: mantén una racha de 14 días seguidos.',           icon:'🪨', cond: h => h.bestStreak >= 14 },
+    { id:'quest_thread', cat:'misiones',   name:'Hilo de Oro',               desc:'Completaste la misión del Hilo: completa 30 hábitos en un solo mes.',               icon:'🧵', cond: h => h.monthDone >= 30 },
+    { id:'quest_bug',    cat:'misiones',   name:'Bonanza Insectil',          desc:'Misiones de mascotas Escarabajo, Mariposa, Caracol y Araña: 200 completaciones.',    icon:'🦋', cond: h => h.totalDone >= 200 },
+    { id:'quest_basic',  cat:'misiones',   name:'Necesidades Básicas',       desc:'Misiones de Mono, Perezoso y Brote: mantén 3 hábitos activos por 21 días.',         icon:'🐒', cond: h => h.bestStreak >= 21 && h.totalHabits >= 3 },
+    { id:'quest_water',  cat:'misiones',   name:'Amigos de Agua Dulce',      desc:'Misiones de Ajolote, Rana e Hipopótamo: 100 hábitos completados.',                  icon:'🦎', cond: h => h.totalDone >= 100 },
+
+    // ── COLECCIONES (inspiradas en Habitica) ──────────────────
+    { id:'col_basic_pet',  cat:'coleccion', name:'Volver a lo Básico',       desc:'Has conseguido todas las Mascotas Básicas: completa 25 hábitos.',                  icon:'🐾', cond: h => h.totalDone >= 25 },
+    { id:'col_basic_mount',cat:'coleccion', name:'Toda tu Base',             desc:'Has domado todas las Monturas Básicas: mantén racha de 10 días.',                  icon:'🐴', cond: h => h.bestStreak >= 10 },
+    { id:'col_desert_pet', cat:'coleccion', name:'Demonio de Polvo',         desc:'Has conseguido todas las Mascotas Desérticas: 75 completaciones.',                 icon:'🦂', cond: h => h.totalDone >= 75 },
+    { id:'col_desert_mount',cat:'coleccion',name:'Autoridad Árida',          desc:'Has domado todas las Monturas Desérticas: racha de 20 días.',                      icon:'🐪', cond: h => h.bestStreak >= 20 },
+    { id:'col_zombie_pet', cat:'coleccion', name:'Monstruo Magus',           desc:'Has conseguido todas las Mascotas Zombi: 150 completaciones.',                     icon:'🧟', cond: h => h.totalDone >= 150 },
+    { id:'col_zombie_mount',cat:'coleccion',name:'Sepulturero de Muertos',   desc:'Has domado todas las Monturas Zombi: racha de 40 días.',                           icon:'⚰️', cond: h => h.bestStreak >= 40 },
+    { id:'col_white_pet',  cat:'coleccion', name:'Preparado para Pintar',    desc:'Has conseguido todas las Mascotas Blancas: 200 completaciones.',                   icon:'🤍', cond: h => h.totalDone >= 200 },
+    { id:'col_white_mount',cat:'coleccion', name:'Coleccionista de Perlas',  desc:'Has domado todas las Monturas Blancas: racha de 50 días.',                         icon:'🦢', cond: h => h.bestStreak >= 50 },
+    { id:'col_candy_pet',  cat:'coleccion', name:'Cosquillas Rosa',          desc:'Has conseguido las mascotas de Algodón de Azúcar Rosa: 250 completaciones.',       icon:'🩷', cond: h => h.totalDone >= 250 },
+    { id:'col_candy_mount',cat:'coleccion', name:'Perspectiva Optimista',    desc:'Has domado las Monturas de Algodón de Azúcar Rosa: racha de 60 días.',             icon:'🌸', cond: h => h.bestStreak >= 60 },
+    { id:'col_gold_pet',   cat:'coleccion', name:'Corazón de Oro',           desc:'Has conseguido todas las Mascotas Doradas: 300 completaciones.',                   icon:'💛', cond: h => h.totalDone >= 300 },
+    { id:'col_gold_mount', cat:'coleccion', name:'Todo lo que Brilla',       desc:'Has domado todas las Monturas Doradas: racha de 70 días.',                         icon:'✨', cond: h => h.bestStreak >= 70 },
+    { id:'col_skel_pet',   cat:'coleccion', name:'Coleccionista de Huesos',  desc:'Has conseguido todas las Mascotas Esqueleto: 350 completaciones.',                 icon:'💀', cond: h => h.totalDone >= 350 },
+    { id:'col_skel_mount', cat:'coleccion', name:'Ejército Huesudo',         desc:'Has domado todas las Monturas Esqueleto: racha de 80 días.',                       icon:'🦴', cond: h => h.bestStreak >= 80 },
+    { id:'col_red_pet',    cat:'coleccion', name:'Rojo de Ira',              desc:'Has conseguido todas las Mascotas Rojas: 400 completaciones.',                     icon:'❤️', cond: h => h.totalDone >= 400 },
+    { id:'col_red_mount',  cat:'coleccion', name:'Día Señalado',             desc:'Has domado todas las Monturas Rojas: racha de 90 días.',                           icon:'🌹', cond: h => h.bestStreak >= 90 },
+    { id:'col_blue_pet',   cat:'coleccion', name:'Las Violetas son Azules',  desc:'Has conseguido las mascotas de Algodón de Azúcar Azul: 450 completaciones.',      icon:'💙', cond: h => h.totalDone >= 450 },
+    { id:'col_blue_mount', cat:'coleccion', name:'La Salvaje Azul Lejanía',  desc:'Has domado las Monturas de Algodón de Azúcar Azul: racha de 100 días.',           icon:'🫐', cond: h => h.bestStreak >= 100 },
+    { id:'col_shadow_pet', cat:'coleccion', name:'Cliente Sombrío',          desc:'Has conseguido todas las Mascotas Sombrías: 500 completaciones.',                  icon:'🖤', cond: h => h.totalDone >= 500 },
+    { id:'col_shadow_mount',cat:'coleccion',name:'A la Sombra de Todo',      desc:'Has domado todas las Monturas Sombrías: racha de 110 días.',                      icon:'🌑', cond: h => h.bestStreak >= 110 },
+
+    // ── CRIANZA ÉPICA ─────────────────────────────────────────
+    { id:'breed_legend',   cat:'crianza',  name:'Bestiario Legendario',      desc:'Ha eclosionado todos los colores de mascotas míticas: Dragón, Grifo, Unicornio, Serpiente Marina y Cerdo Volador. Completa 600 hábitos.', icon:'🐉', cond: h => h.totalDone >= 600 },
+    { id:'breed_farm',     cat:'crianza',  name:'I-A-I-A-O',                 desc:'Ha eclosionado todos los colores de mascotas domésticas: Hurón, Cobaya, Gallo, Cerdo, Rata, Conejito, Caballo y Vaca. Completa 400 hábitos.', icon:'🐄', cond: h => h.totalDone >= 400 },
+    { id:'breed_reptile',  cat:'crianza',  name:'Rumble Reptacular',         desc:'Ha eclosionado todos los colores de mascotas reptiles: Caimán, Pterodáctilo, Serpiente, Triceratops, Tortuga, T-Rex y Velociraptor. Racha de 55 días.', icon:'🦎', cond: h => h.bestStreak >= 55 },
+    { id:'breed_forest',   cat:'crianza',  name:'Mago del Bosque',           desc:'Ha eclosionado todos los colores de criaturas del bosque: Tejón, Oso, Ciervo, Zorro, Rana, Erizo, Búho, Caracol, Ardilla y Brote. Racha de 65 días.', icon:'🦊', cond: h => h.bestStreak >= 65 },
+    { id:'breed_zodiac',   cat:'crianza',  name:'Cuidador del Zodiaco',      desc:'Ha eclosionado todas las mascotas del zodiaco: Rata, Vaca, Conejo, Serpiente, Caballo, Oveja, Mono, Gallo, Lobo, Tigre, Cerdo y Dragón. Racha de 75 días.', icon:'♈', cond: h => h.bestStreak >= 75 },
+    { id:'breed_flying',   cat:'crianza',  name:'Aves de Pluma',             desc:'Ha eclosionado todas las mascotas voladoras: Cerdo Volador, Búho, Loro, Pterodáctilo, Grifo, Halcón, Pavo Real y Gallo. 350 completaciones.', icon:'🦅', cond: h => h.totalDone >= 350 },
+    { id:'breed_polar',    cat:'crianza',  name:'Experto Polar',             desc:'Ha eclosionado todos los colores de mascotas Polares: Osos, Zorros, Pingüinos, Ballenas y Lobos. Racha de 45 días.', icon:'🐧', cond: h => h.bestStreak >= 45 },
+    { id:'breed_plant',    cat:'crianza',  name:'Cuidador de Plantas',       desc:'Ha eclosionado todos los colores de mascotas vegetales: Cactus y Brote. Completa 80 hábitos.', icon:'🌵', cond: h => h.totalDone >= 80 },
+    { id:'breed_dino',     cat:'crianza',  name:'Dinastía de Dinosaurios',   desc:'Ha eclosionado todos los colores de mascotas ave y dinosaurio: Halcón, Búho, Loro, Pavo Real, Pingüino, Gallo, Pterodáctilo, T-Rex, Triceratops y Velociraptor. Racha de 85 días.', icon:'🦕', cond: h => h.bestStreak >= 85 },
+    { id:'breed_invert',   cat:'crianza',  name:'Jefe Deshuesado',           desc:'Ha eclosionado todos los colores de mascotas invertebradas: Escarabajo, Mariposa, Calamar, Nudibranquio, Pulpo, Caracol y Araña. 450 completaciones.', icon:'🐙', cond: h => h.totalDone >= 450 },
+    { id:'breed_desert',   cat:'crianza',  name:'Amigo de Médano',           desc:'Ha eclosionado todos los colores de mascotas de clima desértico: Armadillo, Cactus, Zorro, Rana, Serpiente y Araña. Racha de 35 días.', icon:'🏜️', cond: h => h.bestStreak >= 35 },
+    { id:'breed_prickly',  cat:'crianza',  name:'Jinete Tosco',              desc:'Ha eclosionado todos los colores de mascotas y monturas incómodas: Cactus, Erizo y Piedra. Completa 120 hábitos.', icon:'🦔', cond: h => h.totalDone >= 120 },
+    { id:'breed_rodent',   cat:'crianza',  name:'Rey Roedor',                desc:'Ha eclosionado todos los colores de mascotas roedoras: Conejillo de Indias, Rata y Ardilla. Completa 160 hábitos.', icon:'🐹', cond: h => h.totalDone >= 160 },
+    { id:'breed_feline',   cat:'crianza',  name:'Señora de los Gatos',       desc:'Ha eclosionado todos los colores de mascotas felinas: Guepardo, León, Tigre Dientes de Sable y Tigre. Racha de 30 días.', icon:'🐆', cond: h => h.bestStreak >= 30 },
+
+    // ── LOGROS ÉPICOS ─────────────────────────────────────────
+    { id:'epic_tamer',     cat:'epicos',   name:'Domador de Bestias',        desc:'Ha encontrado las 90 mascotas. (Increíblemente difícil). Completa 700 hábitos.', icon:'🦁', cond: h => h.totalDone >= 700 },
+    { id:'epic_mounts',    cat:'epicos',   name:'Maestro de Monturas',       desc:'Ha domado las 90 monturas. (Aún más difícil). Racha de 150 días.',               icon:'🏇', cond: h => h.bestStreak >= 150 },
+    { id:'epic_triple',    cat:'epicos',   name:'Triple Bingo',              desc:'Ha encontrado las 90 mascotas, domado las 90 monturas, ¡y más! 1000 hábitos.',  icon:'🎰', cond: h => h.totalDone >= 1000 },
+    { id:'epic_gear_heal', cat:'epicos',   name:'Equipamiento Máximo - Sanador', desc:'Consiguió el conjunto completo de armas y armadura para la clase Sanador. Derrota 5 bosses.', icon:'💚', cond: h => h.bossesDefeated >= 5 },
+    { id:'epic_gear_rogue',cat:'epicos',   name:'Equipamiento Máximo - Pícaro', desc:'Consiguió el conjunto completo para la clase Pícaro. Derrota 7 bosses.',      icon:'🗡️', cond: h => h.bossesDefeated >= 7 },
+    { id:'epic_gear_war',  cat:'epicos',   name:'Equipamiento Máximo - Guerrero', desc:'Consiguió el conjunto completo para la clase Guerrero. Derrota 9 bosses.',  icon:'⚔️', cond: h => h.bossesDefeated >= 9 },
+    { id:'epic_gear_mage', cat:'epicos',   name:'Equipamiento Máximo - Mago', desc:'Consiguió el conjunto completo para la clase Mago. Derrota 12 bosses.',        icon:'🔮', cond: h => h.bossesDefeated >= 12 },
+    { id:'epic_season',    cat:'epicos',   name:'Especialista Estacional',   desc:'Ha completado todas las misiones estacionales: Búsqueda de Huevos, Santa Trampero y Encuentra al Cachorro. Racha de 120 días.', icon:'🌸', cond: h => h.bestStreak >= 120 },
+    { id:'epic_legend',    cat:'epicos',   name:'Bestiario Legendario',      desc:'Ha eclosionado todos los colores estándar de todas las mascotas míticas. 800 hábitos.', icon:'🐲', cond: h => h.totalDone >= 800 },
+
+    // ── ESPECIALES ────────────────────────────────────────────
+    { id:'sp_contributor', cat:'especiales', name:'Colaborador',             desc:'Has contribuido al planificador mejorando, sugiriendo o reportando. ¡Gracias!', icon:'🛠️', cond: h => h.totalDone >= 1 },
+    { id:'sp_new_life',    cat:'especiales', name:'Comienza una Nueva Aventura', desc:'Usaste un Orbe de Renacimiento para empezar de nuevo con más sabiduría.',   icon:'🔮', cond: h => h.reborn >= 1 },
+    { id:'sp_seasonal2',   cat:'especiales', name:'Bautizo del Planificador', desc:'¡Participaste en el primer gran evento del Planificador JCH! 30 días de uso.', icon:'🎉', cond: h => h.bestStreak >= 30 },
 ];
 
 const CLASSES = [
@@ -15895,21 +15986,67 @@ function renderBossFull(boss) {
 function renderHabAchievements() {
     const el=document.getElementById('habAchievements');
     if(!el) return;
-    const totalDone=habits.reduce((s,h)=>s+(h.log||[]).length,0);
-    const bestStreak=habits.reduce((m,h)=>Math.max(m,getBestStreak(h)),0);
-    const hStats={ totalDone, bestStreak, totalHabits:habits.length, bossesDefeated:hero.bossesDefeated||0 };
+    const totalDone  = habits.reduce((s,h)=>s+(h.log||[]).length, 0);
+    const bestStreak = habits.reduce((m,h)=>Math.max(m,getBestStreak(h)), 0);
 
-    el.innerHTML=`<div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;">Logros Desbloqueados</div>`+
-    ACHIEVEMENTS.map(a=>{
-        const unlocked=a.cond(hStats);
-        return `<div class="hab-achievement ${unlocked?'':'locked'}">
-            <div class="hab-achievement-icon">${a.icon}</div>
-            <div class="hab-achievement-info">
-                <div class="hab-achievement-name">${a.name} ${unlocked?'✅':''}</div>
-                <div class="hab-achievement-desc">${a.desc}</div>
-            </div>
-        </div>`;
-    }).join('');
+    // Calcular hábitos completados este mes
+    const now = new Date();
+    const monthKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const monthDone = habits.reduce((s,h)=> s+((h.log||[]).filter(k=>k.startsWith(monthKey)).length), 0);
+
+    const hStats = {
+        totalDone, bestStreak,
+        totalHabits: habits.length,
+        bossesDefeated: hero.bossesDefeated || 0,
+        monthDone,
+        reborn: hero.reborn || 0
+    };
+
+    const cats = [
+        { id:'onboarding', label:'Onboarding',        icon:'🚀' },
+        { id:'progreso',   label:'Progreso Personal', icon:'📈' },
+        { id:'misiones',   label:'Misiones & Bosses', icon:'⚔️' },
+        { id:'coleccion',  label:'Colecciones',       icon:'🎖️' },
+        { id:'crianza',    label:'Crianza de Mascotas',icon:'🐾' },
+        { id:'epicos',     label:'Logros Épicos',     icon:'🌟' },
+        { id:'especiales', label:'Especiales',        icon:'✨' },
+    ];
+
+    const totalUnlocked = ACHIEVEMENTS.filter(a=>a.cond(hStats)).length;
+    const total = ACHIEVEMENTS.length;
+
+    let html = `<div class="hab-ach-summary">
+        <div class="hab-ach-summary-item">
+            <div class="hab-ach-summary-num">${totalUnlocked}</div>
+            <div class="hab-ach-summary-label">Desbloqueados</div>
+        </div>
+        <div class="hab-ach-summary-item">
+            <div class="hab-ach-summary-num">${total - totalUnlocked}</div>
+            <div class="hab-ach-summary-label">Bloqueados</div>
+        </div>
+        <div class="hab-ach-summary-item">
+            <div class="hab-ach-summary-num">${Math.round(totalUnlocked/total*100)}%</div>
+            <div class="hab-ach-summary-label">Completado</div>
+        </div>
+    </div>`;
+
+    cats.forEach(cat => {
+        const list = ACHIEVEMENTS.filter(a => a.cat === cat.id);
+        const unlockedCount = list.filter(a => a.cond(hStats)).length;
+        html += `<div class="hab-ach-category">${cat.icon} ${cat.label}<span class="hab-ach-category-count">${unlockedCount}/${list.length}</span></div>`;
+        html += list.map(a => {
+            const unlocked = a.cond(hStats);
+            return `<div class="hab-achievement ${unlocked?'':'locked'}">
+                <div class="hab-achievement-icon">${a.icon}</div>
+                <div class="hab-achievement-info">
+                    <div class="hab-achievement-name">${a.name}${unlocked?' ✅':''}</div>
+                    <div class="hab-achievement-desc">${a.desc}</div>
+                </div>
+            </div>`;
+        }).join('');
+    });
+
+    el.innerHTML = html;
 }
 
 // ── Toggle hábito ─────────────────────────────────────────────
@@ -21560,16 +21697,14 @@ var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
     if (!ov) return;
-    // 1. Quitar .open — CSS pone overlay en opacity:0 + visibility:hidden
-    //    NO tocar estilos inline del modal — el CSS .open .hab-detail-modal los controla
+    // 1. Asegurar que el overlay está cerrado (sin transición visible)
     ov.classList.remove('open');
-    // 2. Inyectar HTML mientras overlay es invisible
+    // 2. Rellenar el contenido con el overlay oculto (evita parpadeo)
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Dar 30ms reales para que el browser móvil complete el reflow del nuevo HTML
-    //    antes de activar la transición — evita el flash transparente en Android
-    setTimeout(function() {
+    // 3. Mostrar en el siguiente frame — el CSS transition hace el slide-up suave
+    requestAnimationFrame(function() {
         ov.classList.add('open');
-    }, 30);
+    });
 };
 
 })();
