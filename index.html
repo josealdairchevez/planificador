@@ -16305,7 +16305,13 @@ window.habRepInc = function(habitId, target) {
         if (typeof playSparkleSound === 'function') playSparkleSound();
 
         // Marcar card visualmente como completada sin re-renderizar
-        if (card) card.classList.add('completed-today');
+        if (card) {
+            card.classList.add('completed-today');
+            // FIX: aplicar fondo de color del hábito al completarse
+            card.style.backgroundImage = 'linear-gradient(135deg, ' + color + '18 0%, transparent 60%)';
+            card.style.borderColor = color;
+            card.style.boxShadow = '0 0 18px ' + color + '40';
+        }
 
         // FIX: actualizar UI de XP, monedas y boss HP al instante
         _habInstantUIUpdate(h);
@@ -21560,13 +21566,19 @@ var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
     if (!ov) return;
-    // 1. Asegurar que el overlay está cerrado (sin transición visible)
+    // 1. Ocultar con visibility para que no parpadee durante el llenado
+    ov.style.visibility = 'hidden';
+    ov.style.transition = 'none';
     ov.classList.remove('open');
-    // 2. Rellenar el contenido con el overlay oculto (evita parpadeo)
+    // 2. Rellenar contenido con overlay invisible
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Mostrar en el siguiente frame — el CSS transition hace el slide-up suave
+    // 3. Mostrar suavemente en el siguiente frame (doble rAF elimina el flash)
     requestAnimationFrame(function() {
-        ov.classList.add('open');
+        requestAnimationFrame(function() {
+            ov.style.visibility = '';
+            ov.style.transition = '';
+            ov.classList.add('open');
+        });
     });
 };
 
