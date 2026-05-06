@@ -17164,6 +17164,175 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  HABIT RADAR — script independiente, scope global garantizado
+// ═══════════════════════════════════════════════════════════════
+var _HR = {
+    view:'hoy', calYear:new Date().getFullYear(), calMonth:new Date().getMonth(),
+    dk:function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); },
+    today:function(){ return this.dk(new Date()); },
+    habits:function(){ return JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); },
+    streak:function(h){
+        var log=new Set(h.log||[]),s=0,d=new Date(),tk=this.dk(d);
+        if(!log.has(tk))d.setDate(d.getDate()-1);
+        for(var i=0;i<3650;i++){var k=this.dk(d);if(!log.has(k))break;s++;d.setDate(d.getDate()-1);}
+        return s;
+    }
+};
+
+window.hrSwitchView = function(view, el) {
+    _HR.view=view;
+    document.querySelectorAll('.hr-tab').forEach(function(t){t.classList.remove('hr-tab-active');});
+    if(el) el.classList.add('hr-tab-active');
+    var views=['hoy','semana','mes','general'];
+    views.forEach(function(v){
+        var p=document.getElementById('hrView'+v.charAt(0).toUpperCase()+v.slice(1));
+        if(p) p.style.display=v===view?'':'none';
+    });
+    if(view==='hoy')     _hrRenderHoy();
+    if(view==='semana')  _hrRenderSemana();
+    if(view==='mes')     _hrRenderMes(_HR.calYear,_HR.calMonth);
+    if(view==='general') _hrRenderGeneral();
+};
+
+window.hrCalPrev = function(){
+    _HR.calMonth--; if(_HR.calMonth<0){_HR.calMonth=11;_HR.calYear--;}
+    _hrRenderMes(_HR.calYear,_HR.calMonth);
+};
+window.hrCalNext = function(){
+    _HR.calMonth++; if(_HR.calMonth>11){_HR.calMonth=0;_HR.calYear++;}
+    _hrRenderMes(_HR.calYear,_HR.calMonth);
+};
+
+function _hrRenderHoy() {
+    var el=document.getElementById('hrViewHoy'); if(!el)return;
+    var habits=_HR.habits(), today=_HR.today(), now=new Date();
+    var dow=(now.getDay()+6)%7;
+    var due=habits.filter(function(h){
+        if(h.archived)return false;
+        if(h.freq==='daily')return true;
+        if(h.freq==='weekly')return dow===0;
+        if(h.freq==='custom')return(h.days||[0,1,2,3,4]).includes(dow);
+        return true;
+    });
+    if(!due.length){el.innerHTML='<div style="text-align:center;padding:40px 20px;color:#555;font-size:0.85rem;">Sin hábitos para hoy.<br><br>¡Crea tu primer hábito con + CREAR!</div>';return;}
+    var done=due.filter(function(h){return (h.log||[]).includes(today);}).length;
+    var pct=Math.round(done/due.length*100);
+    var html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+        +'<span style="font-size:0.68rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;">HOY · '+done+'/'+due.length+'</span>'
+        +'<span style="font-size:0.8rem;font-weight:900;color:#10b981;">'+pct+'%</span>'
+        +'</div>';
+    html+=due.map(function(h){
+        var isDone=(h.log||[]).includes(today);
+        var streak=_HR.streak(h);
+        return '<div class="hr-hoy-card" style="--hc:'+h.color+';background:'+(isDone?h.color+'15':'rgba(255,255,255,0.04)')+';border-left-color:'+h.color+';">'
+            +'<div class="hr-hoy-emoji">'+h.emoji+'</div>'
+            +'<div class="hr-hoy-info">'
+            +'<div class="hr-hoy-name">'+h.name+'</div>'
+            +'<div class="hr-hoy-streak">🔥 '+streak+' días · +'+( h.xp||10)+' XP</div>'
+            +'</div>'
+            +'<div class="hr-hoy-check '+(isDone?'done':'')+'" style="'+(isDone?'background:'+h.color+';border-color:'+h.color+';':'border-color:'+h.color+'55;')+'">'+( isDone?'✓':'')+'</div>'
+            +'</div>';
+    }).join('');
+    el.innerHTML=html;
+}
+
+function _hrRenderSemana() {
+    var el=document.getElementById('hrViewSemana'); if(!el)return;
+    var habits=_HR.habits();
+    if(!habits.filter(function(h){return !h.archived;}).length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos creados.</div>';return;}
+    var labels=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    var now=new Date(), todayDow=(now.getDay()+6)%7;
+    var weekDays=[];
+    for(var i=0;i<7;i++){
+        var d=new Date(now); d.setDate(d.getDate()-todayDow+i);
+        weekDays.push({k:_HR.dk(d),isToday:i===todayDow,isFuture:d>now});
+    }
+    el.innerHTML=habits.filter(function(h){return !h.archived;}).map(function(h){
+        var log=h.log||[], streak=_HR.streak(h);
+        return '<div class="hr-week-card" style="--hc:'+h.color+';">'
+            +'<div class="hr-week-header">'
+            +'<div style="width:36px;height:36px;border-radius:10px;background:'+h.color+'22;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">'+h.emoji+'</div>'
+            +'<div class="hr-week-name">'+h.name+'</div>'
+            +'<div class="hr-week-streak">🔥 '+streak+'</div>'
+            +'</div>'
+            +'<div class="hr-week-days">'
+            +weekDays.map(function(wd,i){
+                var isDone=log.includes(wd.k);
+                return '<div class="hr-week-day">'
+                    +'<div class="hr-week-day-label">'+labels[i]+'</div>'
+                    +'<div class="hr-week-day-dot'+(isDone?' done':'')+(wd.isToday&&!isDone?' today':'')+(wd.isFuture?' future':'')+'" style="'+(isDone?'background:'+h.color+';border-color:'+h.color+';color:#fff;':wd.isToday?'border-color:rgba(255,255,255,0.5);':'')+'">'+(isDone?'✓':'')+'</div>'
+                    +'</div>';
+            }).join('')
+            +'</div>'
+            +'</div>';
+    }).join('');
+}
+
+function _hrRenderMes(year, month) {
+    var el=document.getElementById('hrViewMesGrid'), lbl=document.getElementById('hrCalLabel');
+    if(!el)return;
+    var MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    if(lbl)lbl.textContent=MONTHS[month]+' '+year;
+    var habits=_HR.habits().filter(function(h){return !h.archived;});
+    if(!habits.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos.</div>';return;}
+    var days=new Date(year,month+1,0).getDate(), today=_HR.today(), now=new Date();
+    el.innerHTML=habits.map(function(h){
+        var log=h.log||[], streak=_HR.streak(h);
+        var monthK=year+'-'+String(month+1).padStart(2,'0');
+        var doneCnt=log.filter(function(k){return k.startsWith(monthK);}).length;
+        var dots='';
+        for(var d=1;d<=days;d++){
+            var k=monthK+'-'+String(d).padStart(2,'0');
+            var isDone=log.includes(k), isToday=k===today, isFuture=new Date(year,month,d)>now;
+            dots+='<div class="hr-mes-dot'+(isDone?' done':'')+(isToday?' today':'')+'" style="'+(isDone?'background:'+h.color+';':'')+(isFuture?'opacity:0.15;':'')+'"></div>';
+        }
+        return '<div class="hr-mes-card">'
+            +'<div class="hr-mes-header">'
+            +'<div style="font-size:1.3rem">'+h.emoji+'</div>'
+            +'<div class="hr-mes-name">'+h.name+'</div>'
+            +'<div style="font-size:0.62rem;color:#888">🔥'+streak+' · '+doneCnt+'/'+days+'</div>'
+            +'</div>'
+            +'<div class="hr-mes-grid" style="--hc:'+h.color+'">'+dots+'</div>'
+            +'</div>';
+    }).join('');
+}
+
+function _hrRenderGeneral() {
+    var el=document.getElementById('hrViewGeneral'); if(!el)return;
+    var habits=_HR.habits().filter(function(h){return !h.archived;});
+    if(!habits.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos.</div>';return;}
+    var now=new Date(), days=[];
+    for(var i=89;i>=0;i--){var d=new Date(now);d.setDate(d.getDate()-i);days.push({d:d,k:_HR.dk(d)});}
+    el.innerHTML=habits.map(function(h){
+        var log=h.log||[], streak=_HR.streak(h);
+        return '<div class="hr-gen-card">'
+            +'<div class="hr-gen-header">'
+            +'<div style="font-size:1.3rem">'+h.emoji+'</div>'
+            +'<div class="hr-gen-name">'+h.name+'</div>'
+            +'<div style="font-size:0.62rem;color:#888">🔥'+streak+' · '+log.length+' total</div>'
+            +'</div>'
+            +'<div class="hr-gen-grid">'
+            +days.map(function(day){
+                var isDone=log.includes(day.k), isFuture=day.d>now;
+                return '<div class="hr-gen-dot'+(isDone?' lv4':'')+'" style="'+(isDone?'background:'+h.color+';':'')+(isFuture?'opacity:0.08;':'')+'"></div>';
+            }).join('')
+            +'</div>'
+            +'</div>';
+    }).join('');
+}
+
+window._hrInit = function() {
+    _HR.calYear=new Date().getFullYear(); _HR.calMonth=new Date().getMonth();
+    document.querySelectorAll('.hr-tab').forEach(function(t,i){t.classList.toggle('hr-tab-active',i===0);});
+    ['Hoy','Semana','Mes','General'].forEach(function(v,i){
+        var p=document.getElementById('hrView'+v); if(p)p.style.display=i===0?'':'none';
+    });
+    _hrRenderHoy();
+};
+</script>
 </body>
 
 <script>
@@ -18333,558 +18502,6 @@ window._HAB_CHESTS = CHESTS;
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  HABIT RADAR FEATURES — Rediseño completo estilo Habit Radar
-// ═══════════════════════════════════════════════════════════════
-// ── Helpers ──────────────────────────────────────────────────
-var _HR = {
-    view: 'hoy',
-    calYear: new Date().getFullYear(),
-    calMonth: new Date().getMonth(),
-
-    dk: function(d) {
-        return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    },
-    today: function() { return this.dk(new Date()); },
-    habits: function() { return JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); },
-    streak: function(h) {
-        var log=new Set(h.log||[]),s=0,d=new Date(),tk=this.dk(d);
-        if(!log.has(tk)){d.setDate(d.getDate()-1);}
-        for(var i=0;i<3650;i++){var k=this.dk(d);if(!log.has(k))break;s++;d.setDate(d.getDate()-1);}
-        return s;
-    }
-};
-
-// ── Cambio de vista principal ────────────────────────────────
-window.hrSwitchView = function(view, el) {
-    _HR.view = view;
-    // Actualizar tabs
-    document.querySelectorAll('.hr-tab').forEach(function(t){ t.classList.remove('hr-tab-active'); });
-    if(el) el.classList.add('hr-tab-active');
-    // Mostrar panel correcto
-    ['hoy','semana','mes','general'].forEach(function(v){
-        var p=document.getElementById('hrView'+v.charAt(0).toUpperCase()+v.slice(1));
-        if(p) p.style.display = v===view ? '' : 'none';
-    });
-    // Renderizar
-    if(view==='hoy')     hrRenderHoy();
-    if(view==='semana')  hrRenderSemana();
-    if(view==='mes')     hrRenderMes(_HR.calYear, _HR.calMonth);
-    if(view==='general') hrRenderGeneral();
-};
-
-// ── VISTA HOY ────────────────────────────────────────────────
-function hrRenderHoy() {
-    var el=document.getElementById('hrViewHoy');
-    if(!el)return;
-    var habits=_HR.habits(), today=_HR.today(), now=new Date();
-    var dow=(now.getDay()+6)%7;
-    var due=habits.filter(function(h){
-        if(h.freq==='daily')return true;
-        if(h.freq==='weekly')return dow===0;
-        if(h.freq==='custom')return(h.days||[0,1,2,3,4]).includes(dow);
-        return true;
-    });
-    if(!due.length){
-        el.innerHTML='<div style="text-align:center;padding:40px 20px;color:#555;font-size:0.85rem;">Sin hábitos para hoy.<br>¡Crea tu primer hábito!</div>';
-        return;
-    }
-    var done=due.filter(function(h){return (h.log||[]).includes(today);}).length;
-    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'+
-        '<span style="font-size:0.7rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;">HOY · '+done+'/'+due.length+' completados</span>'+
-        '<span style="font-size:0.75rem;font-weight:900;color:#10b981;">'+Math.round(done/due.length*100)+'%</span>'+
-        '</div>'+
-        due.map(function(h){
-            var isDone=(h.log||[]).includes(today);
-            var streak=_HR.streak(h);
-            return '<div class="hr-hoy-card" style="--hc:'+h.color+';background:'+(isDone?h.color+'18':'rgba(255,255,255,0.04)')+';border-color:'+h.color+';">'+
-                '<div class="hr-hoy-emoji">'+h.emoji+'</div>'+
-                '<div class="hr-hoy-info">'+
-                    '<div class="hr-hoy-name">'+h.name+'</div>'+
-                    '<div class="hr-hoy-streak">🔥 '+streak+' días · +'+( h.xp||10)+' XP</div>'+
-                '</div>'+
-                '<div class="hr-hoy-check '+(isDone?'done':'')+'" style="'+(isDone?'border-color:'+h.color+';background:'+h.color+';':'border-color:'+h.color+'44;')+'">'+(isDone?'✓':'')+'</div>'+
-            '</div>';
-        }).join('');
-}
-
-// ── VISTA SEMANA ─────────────────────────────────────────────
-function hrRenderSemana() {
-    var el=document.getElementById('hrViewSemana');
-    if(!el)return;
-    var habits=_HR.habits();
-    if(!habits.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos creados.</div>';return;}
-    var labels=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    var now=new Date(), todayDow=(now.getDay()+6)%7;
-    // Obtener los 7 días de esta semana (Lun-Dom)
-    var weekDays=[];
-    for(var i=0;i<7;i++){
-        var d=new Date(now);
-        d.setDate(d.getDate()-todayDow+i);
-        weekDays.push({date:d, key:_HR.dk(d), isFuture:d>now, isToday:i===todayDow});
-    }
-    el.innerHTML=habits.map(function(h){
-        var streak=_HR.streak(h);
-        var log=h.log||[];
-        return '<div class="hr-week-card" style="--hc:'+h.color+';">'+
-            '<div class="hr-week-header">'+
-                '<div class="hr-hoy-emoji" style="width:38px;height:38px;border-radius:10px;background:'+h.color+'22;font-size:1.2rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'+
-                '<div class="hr-week-name">'+h.name+'</div>'+
-                '<div class="hr-week-streak">🔥 '+streak+' días</div>'+
-            '</div>'+
-            '<div class="hr-week-days">'+
-                weekDays.map(function(wd, i){
-                    var isDone=log.includes(wd.key);
-                    var cls='hr-week-day-dot'+(isDone?' done':'')+(wd.isToday?' today':'')+(wd.isFuture?' future':'');
-                    return '<div class="hr-week-day">'+
-                        '<div class="hr-week-day-label">'+labels[i]+'</div>'+
-                        '<div class="'+cls+'" style="'+(isDone?'background:'+h.color+';border-color:'+h.color+';':wd.isToday?'border-color:rgba(255,255,255,0.4);':'')+'">'+
-                            (isDone?'✓':'')+'</div>'+
-                    '</div>';
-                }).join('')+
-            '</div>'+
-        '</div>';
-    }).join('');
-}
-
-// ── VISTA MES ────────────────────────────────────────────────
-function hrRenderMes(year, month) {
-    var el=document.getElementById('hrViewMesGrid');
-    var lbl=document.getElementById('hrCalLabel');
-    if(!el)return;
-    var MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    if(lbl) lbl.textContent=MONTHS[month]+' '+year;
-    var habits=_HR.habits();
-    if(!habits.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos creados.</div>';return;}
-    var daysInMonth=new Date(year,month+1,0).getDate();
-    var today=_HR.today(), now=new Date();
-    el.innerHTML=habits.map(function(h){
-        var log=h.log||[];
-        var dots='';
-        for(var d=1;d<=daysInMonth;d++){
-            var k=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-            var dt=new Date(year,month,d);
-            var isDone=log.includes(k);
-            var isToday=k===today;
-            var isFuture=dt>now;
-            dots+='<div class="hr-mes-dot'+(isDone?' done':'')+(isToday?' today':'')+'" style="'+(isDone?'background:'+h.color+';':'')+(isFuture?'opacity:0.2;':'')+'" title="'+k+'"></div>';
-        }
-        var streak=_HR.streak(h);
-        var doneCnt=log.filter(function(k){return k.startsWith(year+'-'+String(month+1).padStart(2,'0'));}).length;
-        return '<div class="hr-mes-card" style="--hc:'+h.color+';">'+
-            '<div class="hr-mes-header">'+
-                '<div style="font-size:1.3rem">'+h.emoji+'</div>'+
-                '<div class="hr-mes-name">'+h.name+'</div>'+
-                '<div style="font-size:0.62rem;color:#888;">🔥'+streak+' · '+doneCnt+'/'+daysInMonth+'</div>'+
-            '</div>'+
-            '<div class="hr-mes-grid">'+dots+'</div>'+
-        '</div>';
-    }).join('');
-}
-
-window.hrCalPrev = function() {
-    _HR.calMonth--;
-    if(_HR.calMonth<0){_HR.calMonth=11;_HR.calYear--;}
-    hrRenderMes(_HR.calYear,_HR.calMonth);
-};
-window.hrCalNext = function() {
-    _HR.calMonth++;
-    if(_HR.calMonth>11){_HR.calMonth=0;_HR.calYear++;}
-    hrRenderMes(_HR.calYear,_HR.calMonth);
-};
-
-// ── VISTA GENERAL (heatmap histórico) ────────────────────────
-function hrRenderGeneral() {
-    var el=document.getElementById('hrViewGeneral');
-    if(!el)return;
-    var habits=_HR.habits();
-    if(!habits.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos creados.</div>';return;}
-    var now=new Date();
-    // Últimos 90 días por hábito
-    var days=[];
-    for(var i=89;i>=0;i--){var d=new Date(now);d.setDate(d.getDate()-i);days.push({d:d,k:_HR.dk(d)});}
-    el.innerHTML=habits.map(function(h){
-        var log=h.log||[];
-        var streak=_HR.streak(h);
-        var total=log.length;
-        return '<div class="hr-gen-card" style="--hc:'+h.color+';">'+
-            '<div class="hr-gen-header">'+
-                '<div style="font-size:1.3rem">'+h.emoji+'</div>'+
-                '<div class="hr-gen-name">'+h.name+'</div>'+
-                '<div style="font-size:0.62rem;color:#888;">🔥'+streak+' días · '+total+' total</div>'+
-            '</div>'+
-            '<div class="hr-gen-grid">'+
-                days.map(function(day){
-                    var isDone=log.includes(day.k);
-                    var isFuture=day.d>now;
-                    return '<div class="hr-gen-dot'+(isDone?' lv4':'')+(isFuture?' future':'')+'" style="'+(isDone?'background:'+h.color+';':'')+(isFuture?'opacity:0.1;':'')+'" title="'+day.k+'"></div>';
-                }).join('')+
-            '</div>'+
-        '</div>';
-    }).join('');
-}
-
-// ── INIT — cuando switchHabTab llama 'radar' ─────────────────
-// Esto se llama desde switchHabTab en línea 17024
-function _hrInit() {
-    // Resetear a vista HOY
-    _HR.view='hoy';
-    _HR.calYear=new Date().getFullYear();
-    _HR.calMonth=new Date().getMonth();
-    // Activar tab HOY
-    document.querySelectorAll('.hr-tab').forEach(function(t,i){
-        t.classList.toggle('hr-tab-active', i===0);
-    });
-    // Mostrar solo vista HOY
-    ['Hoy','Semana','Mes','General'].forEach(function(v,i){
-        var p=document.getElementById('hrView'+v);
-        if(p) p.style.display=i===0?'':'none';
-    });
-    hrRenderHoy();
-}
-
-// ── RADAR listo ───────────────────────────────────────────────
-const _RAD_HABITS_KEY = 'jch_habits_v1';
-const _RAD_NOTES_KEY  = 'jch_notes_v1';
-function _radLoadHabits() { return JSON.parse(localStorage.getItem(_RAD_HABITS_KEY)||'[]'); }
-function _radLoadNotes()  { return JSON.parse(localStorage.getItem(_RAD_NOTES_KEY)||'{}'); }
-function _radSaveNotes(n) { localStorage.setItem(_RAD_NOTES_KEY, JSON.stringify(n)); }
-function _radDateKey(d)   { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function _radTodayKey()   { return _radDateKey(new Date()); }
-
-var _radarView   = 'semanal';
-var _calYear     = new Date().getFullYear();
-var _calMonth    = new Date().getMonth();
-var _selectedDay = null;
-
-// ── KPIs ─────────────────────────────────────────────────────
-function renderRadarKPIs() {
-    var el = document.getElementById('radarKPIs');
-    if (!el) return;
-    var habits = _radLoadHabits();
-    var today  = new Date(), todayK = _radDateKey(today);
-    var totalDone  = habits.reduce(function(s,h){return s+(h.log||[]).length;}, 0);
-    var doneToday  = habits.filter(function(h){return (h.log||[]).includes(todayK);}).length;
-    var bestStreak = habits.reduce(function(m,h){
-        var log=new Set(h.log||[]),s=0,d=new Date();
-        if(!log.has(todayK))d.setDate(d.getDate()-1);
-        for(var i=0;i<3650;i++){var k=_radDateKey(d);if(!log.has(k))break;s++;d.setDate(d.getDate()-1);}
-        return Math.max(m,s);
-    }, 0);
-    var weekDone = habits.reduce(function(s,h){
-        var c=0;for(var i=0;i<7;i++){var d=new Date(today);d.setDate(d.getDate()-i);if((h.log||[]).includes(_radDateKey(d)))c++;}
-        return s+c;
-    }, 0);
-    var kpis=[
-        {icon:'⚡',val:doneToday,label:'Hoy',color:'#fbbf24'},
-        {icon:'🔥',val:bestStreak,label:'Racha',color:'#f97316'},
-        {icon:'💯',val:totalDone,label:'Total',color:'#a78bfa'},
-        {icon:'📅',val:weekDone,label:'Esta semana',color:'#22c55e'},
-        {icon:'🏋️',val:habits.length,label:'Hábitos',color:'#3b82f6'},
-        {icon:'🎯',val:habits.length?Math.round(doneToday/habits.length*100)+'%':'0%',label:'Tasa hoy',color:'#10b981'},
-    ];
-    el.innerHTML=kpis.map(function(k){return '<div class="radar-kpi-card" style="--kpi-color:'+k.color+'">'+
-        '<div class="radar-kpi-icon">'+k.icon+'</div>'+
-        '<div class="radar-kpi-val" style="background:linear-gradient(135deg,#fff,'+k.color+');-webkit-background-clip:text;-webkit-text-fill-color:transparent">'+k.val+'</div>'+
-        '<div class="radar-kpi-label">'+k.label+'</div></div>';}).join('');
-}
-
-// ── SELECTOR DE VISTA ─────────────────────────────────────────
-window.selectRadarView = function(view, el) {
-    _radarView = view;
-    document.querySelectorAll('.hab-view-btn').forEach(function(b){b.classList.remove('active');});
-    if(el) el.classList.add('active');
-    var semEl=document.getElementById('habRadarSemana');
-    var mesEl=document.getElementById('habRadarMes');
-    var anualEl=document.getElementById('habRadarAnual');
-    var habEl=document.getElementById('habRadarHabitos');
-    if(semEl)   semEl.style.display   = view==='semanal'?'':'none';
-    if(mesEl)   mesEl.style.display   = view==='mensual'?'':'none';
-    if(anualEl) anualEl.style.display = view==='anual'?'':'none';
-    if(habEl)   habEl.style.display   = view==='habitos'?'':'none';
-    renderRadarKPIs();
-    if(view==='semanal')  { drawRadarChart(); drawDayBars(); drawLineChart(); }
-    if(view==='mensual')  { renderCalendar(_calYear,_calMonth); }
-    if(view==='anual')    { renderYearView(); }
-    if(view==='habitos')  { renderIndividualStats(); }
-};
-
-// ── GRÁFICO RADAR ─────────────────────────────────────────────
-function drawRadarChart() {
-    var svg=document.getElementById('habRadarSVG');
-    if(!svg) return;
-    var habits=_radLoadHabits();
-    var days=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    var cx=110,cy=110,r=80,N=7,step=(2*Math.PI)/N;
-    var counts=[0,0,0,0,0,0,0],totals=[0,0,0,0,0,0,0];
-    var now=new Date();
-    for(var w=0;w<12;w++){for(var d=0;d<7;d++){
-        var dd=new Date(now);dd.setDate(dd.getDate()-(w*7)-((now.getDay()+6)%7)+d);
-        if(dd>now)continue;var k=_radDateKey(dd);
-        habits.forEach(function(h){totals[d]++;if((h.log||[]).includes(k))counts[d]++;});
-    }}
-    var rates=days.map(function(_,i){return totals[i]>0?counts[i]/totals[i]:0;});
-    var html='<defs>'+
-        '<radialGradient id="radarBg" cx="50%" cy="50%" r="50%">'+
-        '<stop offset="0%" stop-color="rgba(99,102,241,0.12)"/><stop offset="100%" stop-color="rgba(0,0,0,0)"/></radialGradient>'+
-        '<linearGradient id="radarFill" x1="0%" y1="0%" x2="100%" y2="100%">'+
-        '<stop offset="0%" stop-color="rgba(99,102,241,0.5)"/><stop offset="100%" stop-color="rgba(167,139,250,0.25)"/></linearGradient></defs>';
-    html+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="url(#radarBg)"/>';
-    [0.2,0.4,0.6,0.8,1].forEach(function(pct,idx){
-        var pts=Array.from({length:N},function(_,i){var a=i*step-Math.PI/2;return (cx+r*pct*Math.cos(a)).toFixed(1)+','+(cy+r*pct*Math.sin(a)).toFixed(1);}).join(' ');
-        var op=idx===4?0.15:0.07;
-        html+='<polygon points="'+pts+'" fill="none" stroke="rgba(255,255,255,'+op+')" stroke-width="'+(idx===4?1.5:1)+'"/>';
-        if(idx<4){var lx=(cx+r*pct*Math.cos(-Math.PI/2)-4).toFixed(1),ly=(cy+r*pct*Math.sin(-Math.PI/2)+3).toFixed(1);
-            html+='<text x="'+lx+'" y="'+ly+'" font-size="6" fill="rgba(255,255,255,0.3)" text-anchor="middle">'+(pct*100)+'%</text>';}
-    });
-    for(var i=0;i<N;i++){var a=i*step-Math.PI/2,x2=(cx+r*Math.cos(a)).toFixed(1),y2=(cy+r*Math.sin(a)).toFixed(1);
-        html+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x2+'" y2="'+y2+'" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>';}
-    var dp=rates.map(function(v,i){var a=i*step-Math.PI/2;return [(cx+r*v*Math.cos(a)).toFixed(1),(cy+r*v*Math.sin(a)).toFixed(1)];});
-    html+='<polygon points="'+dp.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="url(#radarFill)" stroke="rgba(167,139,250,0.9)" stroke-width="2.5" stroke-linejoin="round"/>';
-    dp.forEach(function(pt,i){var clr=rates[i]>=0.7?'#22c55e':rates[i]>=0.4?'#fbbf24':'#ef4444';
-        html+='<circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="8" fill="'+clr+'22"/>';
-        html+='<circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="5" fill="'+clr+'" stroke="#0d0025" stroke-width="2"/>';
-        html+='<circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="2" fill="#fff"/>';});
-    days.forEach(function(d,i){var a=i*step-Math.PI/2,lx=(cx+(r+26)*Math.cos(a)).toFixed(1),ly=(cy+(r+26)*Math.sin(a)).toFixed(1);
-        var pct=Math.round(rates[i]*100),clr=rates[i]>=0.7?'#22c55e':rates[i]>=0.4?'#fbbf24':'#ef4444';
-        html+='<text x="'+lx+'" y="'+parseFloat(ly).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="900" fill="'+clr+'">'+d+'</text>';
-        html+='<text x="'+lx+'" y="'+(parseFloat(ly)+12)+'" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.4)">'+pct+'%</text>';});
-    svg.innerHTML=html;
-}
-
-// ── BARRAS POR DÍA ────────────────────────────────────────────
-function drawDayBars() {
-    var el=document.getElementById('radarDayBars');
-    if(!el)return;
-    var habits=_radLoadHabits(),days=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],now=new Date();
-    var counts=[0,0,0,0,0,0,0],totals=[0,0,0,0,0,0,0];
-    for(var w=0;w<12;w++){for(var d=0;d<7;d++){
-        var dd=new Date(now);dd.setDate(dd.getDate()-(w*7)-((now.getDay()+6)%7)+d);
-        if(dd>now)continue;var k=_radDateKey(dd);
-        habits.forEach(function(h){totals[d]++;if((h.log||[]).includes(k))counts[d]++;});
-    }}
-    var rates=days.map(function(_,i){return totals[i]>0?counts[i]/totals[i]:0;});
-    var todayDow=(now.getDay()+6)%7;
-    el.innerHTML=days.map(function(d,i){
-        var pct=Math.round(rates[i]*100),clr=rates[i]>=0.7?'#22c55e':rates[i]>=0.4?'#fbbf24':'#ef4444';
-        var isToday=i===todayDow,h2=Math.max(3,pct*0.46);
-        return '<div class="radar-day-col">'+
-            '<div class="radar-day-pct" style="color:'+clr+'">'+pct+'%</div>'+
-            '<div class="radar-day-bar-wrap"><div class="radar-day-bar" style="height:'+h2+'px;background:linear-gradient(to top,'+clr+','+clr+'88);'+(isToday?'box-shadow:0 0 8px '+clr+'66;':'')+'" title="'+d+': '+pct+'%"></div></div>'+
-            '<div class="radar-day-label" style="'+(isToday?'color:'+clr:'')+'">'+d+'</div></div>';
-    }).join('');
-}
-
-// ── GRÁFICO DE LÍNEA ──────────────────────────────────────────
-function drawLineChart() {
-    var svg=document.getElementById('habLineSVG');
-    if(!svg)return;
-    var habits=_radLoadHabits();
-    if(!habits.length){svg.innerHTML='<text x="150" y="35" text-anchor="middle" fill="#444" font-size="10">Sin datos aún</text>';return;}
-    var now=new Date(),weeks=8,rates=[];
-    for(var w=weeks-1;w>=0;w--){
-        var done=0,total=0;
-        for(var d=0;d<7;d++){var dd=new Date(now);dd.setDate(dd.getDate()-w*7-((now.getDay()+6)%7)+d);
-            if(dd>now)continue;var k=_radDateKey(dd);habits.forEach(function(h){total++;if((h.log||[]).includes(k))done++;});}
-        rates.push(total>0?done/total:null);
-    }
-    var W=300,H=60,padX=14,padY=6,xStep=(W-2*padX)/(weeks-1);
-    var maxR=Math.max.apply(null,rates.filter(function(r){return r!==null;}).concat([0.01]));
-    var html='<defs><linearGradient id="lgArea" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="rgba(99,102,241,0.4)"/><stop offset="100%" stop-color="rgba(99,102,241,0)"/></linearGradient></defs>';
-    [0,0.5,1].forEach(function(v){
-        var y=(padY+(H-2*padY)*(1-v/maxR)).toFixed(1);
-        html+='<line x1="'+padX+'" y1="'+y+'" x2="'+(W-padX)+'" y2="'+y+'" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>';
-        html+='<text x="'+(padX-2)+'" y="'+y+'" text-anchor="end" dominant-baseline="middle" font-size="6.5" fill="#444">'+Math.round(v*100)+'%</text>';});
-    var pts=[];
-    rates.forEach(function(r,i){if(r===null)return;var x=(padX+i*xStep).toFixed(1),y=(padY+(H-2*padY)*(1-r/maxR)).toFixed(1);pts.push({x:x,y:y,r:r});});
-    if(pts.length>1){
-        html+='<path d="M'+pts[0].x+','+(H-padY)+' '+pts.map(function(p){return 'L'+p.x+','+p.y;}).join(' ')+' L'+pts[pts.length-1].x+','+(H-padY)+' Z" fill="url(#lgArea)"/>';
-        html+='<path d="M'+pts.map(function(p){return p.x+','+p.y;}).join(' L')+'" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-        pts.forEach(function(p){var clr=p.r>=0.7?'#22c55e':p.r>=0.4?'#fbbf24':'#ef4444';
-            html+='<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="'+clr+'" stroke="#0d0025" stroke-width="1.5"/>';});}
-    rates.forEach(function(_,i){html+='<text x="'+(padX+i*xStep).toFixed(1)+'" y="'+(H+1)+'" text-anchor="middle" font-size="6.5" fill="#555">S'+(i+1)+'</text>';});
-    svg.innerHTML=html;
-}
-
-// ── CALENDARIO MENSUAL ────────────────────────────────────────
-window.changeCalMonth = function(delta) {
-    _calMonth+=delta;
-    if(_calMonth>11){_calMonth=0;_calYear++;}
-    if(_calMonth<0){_calMonth=11;_calYear--;}
-    renderCalendar(_calYear,_calMonth);
-};
-
-function renderCalendar(year,month) {
-    var habits=_radLoadHabits();
-    var labelEl=document.getElementById('habCalMonthLabel');
-    var dowEl=document.getElementById('habCalDows');
-    var daysEl=document.getElementById('habCalDays');
-    var sumEl=document.getElementById('radarMonthSummary');
-    if(!labelEl||!daysEl)return;
-    var MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    labelEl.textContent=MONTHS[month]+' '+year;
-    dowEl.innerHTML=['L','M','X','J','V','S','D'].map(function(d){return '<div class="hab-cal-dow">'+d+'</div>';}).join('');
-    var firstDay=new Date(year,month,1),lastDay=new Date(year,month+1,0);
-    var startDow=(firstDay.getDay()+6)%7,totalDays=lastDay.getDate();
-    var today=new Date(),todayStr=_radDateKey(today);
-    var monthDone=0,monthPossible=0,perfectDays=0,dayMap={};
-    for(var d=1;d<=totalDays;d++){
-        var k=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-        var dt=new Date(year,month,d),dow=(dt.getDay()+6)%7;
-        var due=habits.filter(function(h){
-            if(h.freq==='daily')return true;if(h.freq==='weekly')return dow===0;
-            if(h.freq==='custom')return(h.days||[0,1,2,3,4]).includes(dow);return true;});
-        var doneCnt=due.filter(function(h){return (h.log||[]).includes(k);}).length;
-        dayMap[d]=due.length>0?doneCnt/due.length:0;
-        if(dt<=today){monthDone+=doneCnt;monthPossible+=due.length;if(due.length>0&&doneCnt===due.length)perfectDays++;}
-    }
-    var monthRate=monthPossible>0?Math.round(monthDone/monthPossible*100):0;
-    if(sumEl)sumEl.innerHTML=[{val:monthDone,lbl:'Completadas'},{val:monthRate+'%',lbl:'Tasa del mes'},{val:perfectDays,lbl:'Días perfectos'}]
-        .map(function(s){return '<div class="radar-month-stat"><div class="radar-month-stat-val">'+s.val+'</div><div class="radar-month-stat-lbl">'+s.lbl+'</div></div>';}).join('');
-    var cells=[];
-    for(var i=0;i<startDow;i++)cells.push('<div class="hab-cal-day empty"></div>');
-    for(var d2=1;d2<=totalDays;d2++){
-        var k2=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
-        var dt2=new Date(year,month,d2),isFuture=dt2>today,isToday=k2===todayStr;
-        var rate=dayMap[d2],lv=rate===0?'lv0':rate<0.34?'lv1':rate<0.67?'lv2':rate<1?'lv3':'lv4';
-        cells.push('<div class="hab-cal-day has-data '+lv+(isToday?' today':'')+(isFuture?' future':'')+'" onclick="openDayDetail(''+k2+'')" title="'+Math.round(rate*100)+'%">'+d2+'</div>');
-    }
-    daysEl.innerHTML=cells.join('');
-}
-
-// ── VISTA ANUAL ───────────────────────────────────────────────
-function renderYearView() {
-    var gridEl=document.getElementById('habYearGrid'),monthsEl=document.getElementById('habYearMonths'),labelEl=document.getElementById('habYearLabel');
-    if(!gridEl)return;
-    var year=new Date().getFullYear(),habits=_radLoadHabits();
-    if(labelEl)labelEl.textContent=year;
-    var MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    if(monthsEl)monthsEl.innerHTML=MONTHS.map(function(m){return '<span>'+m+'</span>';}).join('');
-    var start=new Date(year,0,1);start.setDate(start.getDate()-(start.getDay()+6)%7);
-    var cells='';
-    for(var w=0;w<53;w++){for(var d=0;d<7;d++){
-        var dt=new Date(start);dt.setDate(dt.getDate()+w*7+d);
-        if(dt.getFullYear()!==year||dt>new Date()){cells+='<div class="hab-year-cell"></div>';continue;}
-        var k=_radDateKey(dt),cnt=habits.filter(function(h){return (h.log||[]).includes(k);}).length;
-        var lv=cnt===0?'':(cnt===1?'y-lv1':cnt===2?'y-lv2':cnt===3?'y-lv3':'y-lv4');
-        cells+='<div class="hab-year-cell '+lv+'" title="'+k+': '+cnt+' hábitos" onclick="openDayDetail(''+k+'')"></div>';
-    }}
-    gridEl.innerHTML=cells;
-}
-
-// ── STATS INDIVIDUALES ────────────────────────────────────────
-function renderIndividualStats() {
-    var el=document.getElementById('habIndividualStats');
-    if(!el)return;
-    var habits=_radLoadHabits();
-    if(!habits.length){el.innerHTML='<div class="hab-empty"><div class="hab-empty-icon">📊</div><div class="hab-empty-text">Crea hábitos para ver estadísticas</div></div>';return;}
-    var today=new Date(),todayK=_radTodayKey();
-    el.innerHTML=habits.map(function(h){
-        var log=h.log||[],logSet=new Set(log);
-        var streak=0,d=new Date();if(!logSet.has(todayK))d.setDate(d.getDate()-1);
-        for(var i=0;i<3650;i++){var k=_radDateKey(d);if(!logSet.has(k))break;streak++;d.setDate(d.getDate()-1);}
-        var bestStr=window._calcHabBestStreak?window._calcHabBestStreak(h):0;
-        var total=log.length,created=new Date(h.createdAt||today);
-        var daysSince=Math.max(1,Math.round((today-created)/86400000));
-        var rate=Math.round((total/daysSince)*100);
-        var heatCells='';
-        for(var i2=27;i2>=0;i2--){var dd=new Date(today);dd.setDate(dd.getDate()-i2);var hk=_radDateKey(dd);
-            heatCells+='<div style="width:9px;height:9px;border-radius:2px;background:'+(log.includes(hk)?h.color+'cc':'rgba(255,255,255,0.05)')+';display:inline-block;margin:1px"></div>';}
-        return '<div class="hab-individual-stat" style="--hab-color:'+h.color+'">'+
-            '<div class="hab-ind-header">'+
-            '<div class="hab-ind-emoji">'+h.emoji+'</div>'+
-            '<div style="flex:1"><div class="hab-ind-name">'+h.name+'</div>'+
-            '<div class="hab-ind-freq">'+({daily:'Diario',weekly:'Semanal',custom:'Personalizado'}[h.freq||'daily'])+' · +'+( h.xp||10)+' XP</div></div>'+
-            '<div style="font-size:1.4rem;font-weight:900;color:'+h.color+'">'+streak+'🔥</div></div>'+
-            '<div style="display:flex;flex-wrap:wrap;padding:6px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:8px">'+heatCells+'</div>'+
-            '<div class="hab-ind-stats-row">'+
-            '<div class="hab-ind-stat"><div class="hab-ind-val" style="color:'+h.color+'">'+streak+'</div><div class="hab-ind-lbl">Racha</div></div>'+
-            '<div class="hab-ind-stat"><div class="hab-ind-val">'+bestStr+'</div><div class="hab-ind-lbl">Mejor</div></div>'+
-            '<div class="hab-ind-stat"><div class="hab-ind-val">'+total+'</div><div class="hab-ind-lbl">Total</div></div>'+
-            '<div class="hab-ind-stat"><div class="hab-ind-val" style="color:'+(rate>=70?'#22c55e':rate>=40?'#fbbf24':'#ef4444')+'">'+rate+'%</div><div class="hab-ind-lbl">Tasa</div></div></div>'+
-            '<div class="hab-ind-minibar"><div class="hab-ind-minibar-fill" style="width:'+Math.min(rate,100)+'%;background:'+h.color+'"></div></div></div>';
-    }).join('');
-}
-
-// ── DETALLE DEL DÍA ───────────────────────────────────────────
-window.openDayDetail = function(dayKey) {
-    _selectedDay=dayKey;
-    var habits=_radLoadHabits(),notes=_radLoadNotes();
-    var backdropEl=document.getElementById('habDayBackdrop');
-    var modalEl=document.getElementById('habDayModal');
-    var dateEl=document.getElementById('habDayModalDate');
-    var listEl=document.getElementById('habDayHabitList');
-    var noteEl=document.getElementById('habDayNote');
-    if(!modalEl)return;
-    var parts=dayKey.split('-'),y=parseInt(parts[0]),m=parseInt(parts[1]),d=parseInt(parts[2]);
-    var dt=new Date(y,m-1,d);
-    var DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    var MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    if(dateEl)dateEl.innerHTML='<span style="color:#a78bfa">'+DIAS[dt.getDay()]+'</span>, '+d+' de '+MESES[m-1]+' '+y;
-    if(noteEl)noteEl.value=notes[dayKey]||'';
-    var dow=(dt.getDay()+6)%7;
-    var dueHabits=habits.filter(function(h){
-        if(h.freq==='daily')return true;if(h.freq==='weekly')return dow===0;
-        if(h.freq==='custom')return(h.days||[0,1,2,3,4]).includes(dow);return true;});
-    var doneCnt=dueHabits.filter(function(h){return (h.log||[]).includes(dayKey);}).length;
-    if(!dueHabits.length){
-        listEl.innerHTML='<div style="color:#555;font-size:0.75rem;text-align:center;padding:20px;">Sin hábitos programados</div>';
-    } else {
-        var pctStr=dueHabits.length?Math.round(doneCnt/dueHabits.length*100):0;
-        listEl.innerHTML='<div style="font-size:0.65rem;color:#888;margin:0 16px 10px;display:flex;justify-content:space-between">'+
-            '<span>'+doneCnt+'/'+dueHabits.length+' completados</span>'+
-            '<span style="color:'+(doneCnt===dueHabits.length?'#22c55e':'#666')+'">'+pctStr+'%</span></div>'+
-            dueHabits.map(function(h){var isDone=(h.log||[]).includes(dayKey);
-                return '<div class="hab-day-habit-row '+(isDone?'done':'')+'" onclick="toggleDayHabit(''+h.id+'',''+dayKey+'')">'+
-                    '<div class="hab-day-check '+(isDone?'done':'')+'" style="'+(isDone?'background:'+h.color+';border-color:'+h.color+';':'border-color:'+h.color+'44;')+'">'+(isDone?'✓':'')+'</div>'+
-                    '<span style="font-size:1.1rem">'+h.emoji+'</span>'+
-                    '<div style="flex:1"><div style="font-size:0.82rem;font-weight:900;color:#fff">'+h.name+'</div>'+
-                    '<div style="font-size:0.58rem;color:#666">+'+( h.xp||10)+' XP</div></div>'+
-                    (isDone?'<span style="font-size:1rem">✅</span>':'')+
-                '</div>';}).join('');
-    }
-    if(backdropEl)backdropEl.classList.add('show');
-    modalEl.classList.add('show');
-};
-
-window.closeDayDetail = function() {
-    var b=document.getElementById('habDayBackdrop'),m=document.getElementById('habDayModal');
-    if(b)b.classList.remove('show');if(m)m.classList.remove('show');_selectedDay=null;
-};
-
-window.toggleDayHabit = function(habitId,dayKey) {
-    var habits=_radLoadHabits(),h=habits.find(function(x){return x.id===habitId;});if(!h)return;
-    h.log=h.log||[];var idx=h.log.indexOf(dayKey);
-    if(idx===-1){h.log.push(dayKey);if(dayKey===_radTodayKey()){
-        if(typeof addGlobalReward==='function')addGlobalReward(h.xp||10,1);
-        if(typeof playSparkleSound==='function')playSparkleSound();}}
-    else{h.log.splice(idx,1);}
-    localStorage.setItem(_RAD_HABITS_KEY,JSON.stringify(habits));
-    if(typeof updateHabitBadge==='function')updateHabitBadge();
-    window.openDayDetail(dayKey);
-    if(_radarView==='mensual')renderCalendar(_calYear,_calMonth);
-    if(_radarView==='anual')renderYearView();
-    if(_radarView==='habitos')renderIndividualStats();
-};
-
-window.saveDayNote = function() {
-    if(!_selectedDay)return;
-    var noteEl=document.getElementById('habDayNote'),notes=_radLoadNotes();
-    notes[_selectedDay]=noteEl?noteEl.value.trim():'';_radSaveNotes(notes);
-    var t=document.getElementById('habStreakToast');
-    if(t){t.textContent='📝 Nota guardada';t.style.background='linear-gradient(135deg,#6366f1,#a78bfa)';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1800);}
-};
-
-window._calcHabBestStreak = function(h) {
-    var log=(h.log||[]).slice().sort();if(!log.length)return 0;
-    var best=0,cur=0,prev=null;
-    for(var i=0;i<log.length;i++){var k=log[i];
-        if(!prev){cur=1;}else{var d1=new Date(prev),d2=new Date(k);cur=(Math.round((d2-d1)/86400000)===1)?cur+1:1;}
-        if(cur>best)best=cur;prev=k;}
-    return best;
-};
-
-// ── RADAR listo ───────────────────────────────────────────────
-
 // ═══════════════════════════════════════════════════════════════
 //  LIFE RESET FEATURES — 66 Días, Pilares, Cartas, Hard Mode,
 //  Rating de Vida, Diario Emocional
