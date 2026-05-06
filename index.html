@@ -10841,6 +10841,13 @@
                     })();
                     // Actualizar la UI de estadísticas
                     updateStatsUI();
+                    // ── RESET VISUAL DE HÁBITOS al nuevo día ──────────────
+                    // Los datos ya son correctos (usan todayKey()) pero el
+                    // render debe refrescarse para mostrar hábitos sin completar
+                    try {
+                        if (typeof window.renderHabToday === 'function') window.renderHabToday();
+                        else if (typeof renderHabToday === 'function') renderHabToday();
+                    } catch(e) {}
                     // Actualizar los filtros de estadísticas al nuevo día
                     filterMonthVal = new Date().getMonth();
                     filterYearVal  = new Date().getFullYear();
@@ -10867,6 +10874,11 @@
             document.addEventListener('visibilitychange', function() {
                 if (!document.hidden) {
                     checkDayChange();
+                    // Re-renderizar hábitos para reflejar el nuevo día
+                    try {
+                        if (typeof window.renderHabToday === 'function') window.renderHabToday();
+                        else if (typeof renderHabToday === 'function') renderHabToday();
+                    } catch(e) {}
                     // También re-sync Firebase al volver a la pestaña
                     if (typeof syncToCloud === 'function' && typeof currentUser !== 'undefined' && currentUser) {
                         syncToCloud(false);
