@@ -15227,7 +15227,7 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
             <div class="hab-tab" onclick="switchHabTab('viaje',this)">🗓️ Viaje</div>
             <div class="hab-tab" onclick="switchHabTab('cartas',this)">🃏 Cartas</div>
             <div class="hab-tab" onclick="switchHabTab('diario',this)">😊 Diario</div>
-            <div class="hab-tab" onclick="switchHabTab('radar',this)">📡 Radar</div>
+            <div class="hab-tab" onclick="switchHabTab('radar',this);setTimeout(function(){if(typeof renderRadarKPIs==='function'){_radarView='semanal';var ids=['habRadarSemana','habRadarMes','habRadarAnual','habRadarHabitos'];ids.forEach(function(id,i){var e=document.getElementById(id);if(e)e.style.display=i===0?'':'none';});document.querySelectorAll('.hab-view-btn').forEach(function(b){b.classList.toggle('active',b.dataset.view==='semanal');});renderRadarKPIs();drawRadarChart();drawDayBars();drawLineChart();}},120)">📡 Radar</div>
             <div class="hab-tab" onclick="switchHabTab('stats',this)">📊 Stats</div>
             <div class="hab-tab" onclick="switchHabTab('logros',this)">🏆 Logros</div>
             <div class="hab-tab" onclick="switchHabTab('crear',this)">➕ Crear</div>
@@ -18594,23 +18594,29 @@ window._calcHabBestStreak = function(h) {
     return best;
 };
 
-// ── INIT — esperar a que switchHabTab esté listo ──────────────
-document.addEventListener('DOMContentLoaded', function() {
-    var origSwitch = window.switchHabTab;
-    window.switchHabTab = function(tab, el) {
-        if(origSwitch) origSwitch(tab, el);
-        if(tab==='radar'){
-            _radarView='semanal';
-            document.querySelectorAll('.hab-view-btn').forEach(function(b){b.classList.toggle('active',b.dataset.view==='semanal');});
-            ['habRadarSemana','habRadarMes','habRadarAnual','habRadarHabitos'].forEach(function(id,i){
-                var e=document.getElementById(id);if(e)e.style.display=i===0?'':'none';});
-            setTimeout(function(){renderRadarKPIs();drawRadarChart();drawDayBars();drawLineChart();},80);
-        }
-    };
+// ── INIT RADAR: event delegation — no depende de switchHabTab ──
+document.addEventListener('click', function(e) {
+    var tab = e.target.closest('[onclick*="switchHabTab"]');
+    if (!tab) return;
+    var onclk = tab.getAttribute('onclick') || '';
+    if (onclk.indexOf("'radar'") === -1 && onclk.indexOf('"radar"') === -1) return;
+    setTimeout(function() {
+        if (typeof renderRadarKPIs !== 'function') return;
+        _radarView = 'semanal';
+        document.querySelectorAll('.hab-view-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.view === 'semanal');
+        });
+        var ids = ['habRadarSemana','habRadarMes','habRadarAnual','habRadarHabitos'];
+        ids.forEach(function(id, i) {
+            var e2 = document.getElementById(id);
+            if (e2) e2.style.display = i === 0 ? '' : 'none';
+        });
+        renderRadarKPIs();
+        drawRadarChart();
+        drawDayBars();
+        drawLineChart();
+    }, 150);
 });
-
-
-})();
 
 // ═══════════════════════════════════════════════════════════════
 //  LIFE RESET FEATURES — 66 Días, Pilares, Cartas, Hard Mode,
