@@ -5448,8 +5448,111 @@
         /* ═══ HABIT RADAR FEATURES: Vistas, Gráfico Radar, Calendario, Notas ══ */
 
         /* ── SELECTOR DE VISTA ──────────────────────────────── */
-        /* ── SELECTOR DE VISTA ──────────────────────────────── */
-        .hab-view-selector {
+        /* ══ HABIT RADAR — Nuevo diseño estilo Habit Radar ══ */
+        .hr-tabs {
+            display:flex;gap:0;background:rgba(255,255,255,0.05);
+            border-radius:14px;padding:4px;margin-bottom:14px;
+        }
+        .hr-tab {
+            flex:1;text-align:center;padding:8px 4px;border-radius:10px;
+            font-size:0.72rem;font-weight:700;color:#666;cursor:pointer;
+            transition:all 0.2s;
+        }
+        .hr-tab-active {
+            background:linear-gradient(135deg,#10b981,#059669);
+            color:#fff;font-weight:900;
+            box-shadow:0 4px 12px rgba(16,185,129,0.35);
+        }
+        .hr-view { width:100%; }
+
+        /* Vista HOY */
+        .hr-hoy-card {
+            display:flex;align-items:center;gap:12px;
+            background:rgba(255,255,255,0.04);border-radius:16px;
+            padding:14px 16px;margin-bottom:10px;
+            border-left:4px solid var(--hc,#10b981);
+            transition:all 0.2s;
+        }
+        .hr-hoy-emoji {
+            width:44px;height:44px;border-radius:12px;
+            background:rgba(255,255,255,0.06);display:flex;
+            align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;
+        }
+        .hr-hoy-info { flex:1; }
+        .hr-hoy-name { font-size:0.88rem;font-weight:900;color:#fff; }
+        .hr-hoy-streak { font-size:0.62rem;color:#888;margin-top:2px; }
+        .hr-hoy-check {
+            width:34px;height:34px;border-radius:50%;border:2.5px solid rgba(255,255,255,0.15);
+            display:flex;align-items:center;justify-content:center;
+            font-size:1rem;cursor:pointer;transition:all 0.2s;flex-shrink:0;
+        }
+        .hr-hoy-check.done { border-color:var(--hc,#10b981);background:var(--hc,#10b981); }
+
+        /* Vista SEMANA */
+        .hr-week-card {
+            background:rgba(255,255,255,0.04);border-radius:16px;
+            padding:14px 16px;margin-bottom:10px;
+            border-left:4px solid var(--hc,#10b981);
+        }
+        .hr-week-header { display:flex;align-items:center;gap:10px;margin-bottom:12px; }
+        .hr-week-name { font-size:0.85rem;font-weight:900;color:#fff;flex:1; }
+        .hr-week-streak { font-size:0.65rem;color:#888; }
+        .hr-week-days { display:grid;grid-template-columns:repeat(7,1fr);gap:6px; }
+        .hr-week-day { text-align:center; }
+        .hr-week-day-label { font-size:0.5rem;color:#555;text-transform:uppercase;margin-bottom:4px;font-weight:700; }
+        .hr-week-day-dot {
+            width:32px;height:32px;border-radius:50%;margin:0 auto;
+            border:2px solid rgba(255,255,255,0.1);
+            display:flex;align-items:center;justify-content:center;
+            font-size:0.75rem;transition:all 0.2s;
+        }
+        .hr-week-day-dot.done { border-color:var(--hc,#10b981);background:var(--hc,#10b981);color:#fff; }
+        .hr-week-day-dot.today { border-color:rgba(255,255,255,0.4); }
+        .hr-week-day-dot.future { opacity:0.3; }
+
+        /* Vista MES */
+        .hr-mes-card {
+            background:rgba(255,255,255,0.04);border-radius:16px;
+            padding:14px 16px;margin-bottom:10px;
+        }
+        .hr-mes-header { display:flex;align-items:center;gap:10px;margin-bottom:10px; }
+        .hr-mes-name { font-size:0.82rem;font-weight:900;color:#fff;flex:1; }
+        .hr-mes-grid { display:flex;flex-wrap:wrap;gap:3px; }
+        .hr-mes-dot {
+            width:11px;height:11px;border-radius:3px;
+            background:rgba(255,255,255,0.06);transition:all 0.15s;
+        }
+        .hr-mes-dot.done { background:var(--hc,#10b981); }
+        .hr-mes-dot.today { outline:2px solid rgba(255,255,255,0.5); }
+        .hr-cal-nav-row {
+            display:flex;align-items:center;justify-content:space-between;
+            margin-bottom:12px;
+        }
+        .hr-cal-btn {
+            width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);
+            background:rgba(255,255,255,0.05);color:#aaa;font-size:1.2rem;
+            cursor:pointer;display:flex;align-items:center;justify-content:center;
+        }
+        .hr-cal-label { font-size:0.95rem;font-weight:900;color:#fff; }
+
+        /* Vista GENERAL */
+        .hr-gen-card {
+            background:rgba(255,255,255,0.04);border-radius:16px;
+            padding:14px 16px;margin-bottom:10px;
+        }
+        .hr-gen-header { display:flex;align-items:center;gap:10px;margin-bottom:10px; }
+        .hr-gen-name { font-size:0.82rem;font-weight:900;color:#fff;flex:1; }
+        .hr-gen-grid { display:flex;flex-wrap:wrap;gap:2px; }
+        .hr-gen-dot {
+            width:9px;height:9px;border-radius:2px;
+            background:rgba(255,255,255,0.05);
+        }
+        .hr-gen-dot.lv1 { background:var(--hc,#10b981);opacity:0.3; }
+        .hr-gen-dot.lv2 { background:var(--hc,#10b981);opacity:0.55; }
+        .hr-gen-dot.lv3 { background:var(--hc,#10b981);opacity:0.8; }
+        .hr-gen-dot.lv4 { background:var(--hc,#10b981);opacity:1; }
+
+        /* ── SELECTOR VIEJO — mantener para compatibilidad ── */
             display:flex;gap:3px;background:rgba(0,0,0,0.4);
             border:1px solid rgba(255,255,255,0.06);
             border-radius:14px;padding:4px;margin-bottom:16px;
@@ -15227,7 +15330,7 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
             <div class="hab-tab" onclick="switchHabTab('viaje',this)">🗓️ Viaje</div>
             <div class="hab-tab" onclick="switchHabTab('cartas',this)">🃏 Cartas</div>
             <div class="hab-tab" onclick="switchHabTab('diario',this)">😊 Diario</div>
-            <div class="hab-tab" onclick="switchHabTab('radar',this);setTimeout(function(){if(typeof renderRadarKPIs==='function'){_radarView='semanal';var ids=['habRadarSemana','habRadarMes','habRadarAnual','habRadarHabitos'];ids.forEach(function(id,i){var e=document.getElementById(id);if(e)e.style.display=i===0?'':'none';});document.querySelectorAll('.hab-view-btn').forEach(function(b){b.classList.toggle('active',b.dataset.view==='semanal');});renderRadarKPIs();drawRadarChart();drawDayBars();drawLineChart();}},120)">📡 Radar</div>
+            <div class="hab-tab" onclick="switchHabTab('radar',this)">📡 Radar</div>
             <div class="hab-tab" onclick="switchHabTab('stats',this)">📊 Stats</div>
             <div class="hab-tab" onclick="switchHabTab('logros',this)">🏆 Logros</div>
             <div class="hab-tab" onclick="switchHabTab('crear',this)">➕ Crear</div>
@@ -15318,52 +15421,28 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
 
             <!-- TAB RADAR — Ultra Premium Analytics -->
             <div class="hab-tab-content" id="habTab-radar">
-                <div class="hab-view-selector">
-                    <div class="hab-view-btn active" data-view="semanal" onclick="selectRadarView('semanal',this)">📡 Semana</div>
-                    <div class="hab-view-btn" data-view="mensual"  onclick="selectRadarView('mensual',this)">📅 Mes</div>
-                    <div class="hab-view-btn" data-view="anual"    onclick="selectRadarView('anual',this)">🗓️ Año</div>
-                    <div class="hab-view-btn" data-view="habitos"  onclick="selectRadarView('habitos',this)">📊 Hábitos</div>
+                <!-- Selector de vista estilo Habit Radar -->
+                <div class="hr-tabs">
+                    <div class="hr-tab hr-tab-active" onclick="hrSwitchView('hoy',this)">Hoy</div>
+                    <div class="hr-tab" onclick="hrSwitchView('semana',this)">Semana</div>
+                    <div class="hr-tab" onclick="hrSwitchView('mes',this)">Mes</div>
+                    <div class="hr-tab" onclick="hrSwitchView('general',this)">General</div>
                 </div>
-                <div class="radar-kpi-grid" id="radarKPIs"></div>
-                <div id="habRadarSemana">
-                    <div class="radar-section-title">🕸️ Rendimiento por día</div>
-                    <div class="hab-radar-container">
-                        <svg class="hab-radar-svg" id="habRadarSVG" viewBox="0 0 220 220"></svg>
+                <!-- Vista HOY -->
+                <div id="hrViewHoy" class="hr-view"></div>
+                <!-- Vista SEMANA -->
+                <div id="hrViewSemana" class="hr-view" style="display:none"></div>
+                <!-- Vista MES -->
+                <div id="hrViewMes" class="hr-view" style="display:none">
+                    <div class="hr-cal-nav-row">
+                        <button class="hr-cal-btn" onclick="hrCalPrev()">‹</button>
+                        <span id="hrCalLabel" class="hr-cal-label"></span>
+                        <button class="hr-cal-btn" onclick="hrCalNext()">›</button>
                     </div>
-                    <div class="radar-section-title">📊 Actividad por día</div>
-                    <div class="radar-day-bars" id="radarDayBars"></div>
-                    <div class="hab-line-chart-container" style="margin-top:12px;">
-                        <div class="hab-line-chart-title">📈 Tendencia últimas 8 semanas</div>
-                        <svg class="hab-line-svg" id="habLineSVG" viewBox="0 0 300 70"></svg>
-                    </div>
+                    <div id="hrViewMesGrid"></div>
                 </div>
-                <div id="habRadarMes" style="display:none;">
-                    <div id="radarMonthSummary" class="radar-month-summary"></div>
-                    <div class="hab-calendar-header">
-                        <button class="hab-cal-nav" onclick="changeCalMonth(-1)">‹</button>
-                        <div class="hab-cal-month" id="habCalMonthLabel"></div>
-                        <button class="hab-cal-nav" onclick="changeCalMonth(1)">›</button>
-                    </div>
-                    <div class="hab-cal-grid" id="habCalDows"></div>
-                    <div class="hab-cal-grid" id="habCalDays"></div>
-                </div>
-                <div id="habRadarAnual" style="display:none;">
-                    <div class="hab-line-chart-title">🌿 Actividad <span id="habYearLabel"></span></div>
-                    <div class="hab-year-months" id="habYearMonths"></div>
-                    <div class="hab-year-grid" id="habYearGrid"></div>
-                    <div class="radar-year-legend">
-                        <span>Menos</span>
-                        <div style="background:rgba(255,255,255,0.04)"></div>
-                        <div style="background:rgba(16,185,129,0.2)"></div>
-                        <div style="background:rgba(16,185,129,0.45)"></div>
-                        <div style="background:rgba(16,185,129,0.7)"></div>
-                        <div style="background:#10b981"></div>
-                        <span>Más</span>
-                    </div>
-                </div>
-                <div id="habRadarHabitos" style="display:none;">
-                    <div id="habIndividualStats"></div>
-                </div>
+                <!-- Vista GENERAL (heatmap anual) -->
+                <div id="hrViewGeneral" class="hr-view" style="display:none"></div>
             </div>
 
             <!-- TAB STATS -->
@@ -17032,6 +17111,9 @@ window.switchHabTab = function(tab,el) {
     if(tab==='stats')  renderHabStats();
     if(tab==='logros') renderHabAchievements();
     if(tab==='crear')  { updateEmojiGrid(); updateColorGrid(); }
+    if(tab==='radar')  {
+        setTimeout(function(){ if(typeof _hrInit==='function') _hrInit(); }, 30);
+    }
 };
 
 // ── Badge ─────────────────────────────────────────────────────
@@ -18251,9 +18333,216 @@ window._HAB_CHESTS = CHESTS;
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  HABIT RADAR FEATURES — Ultra Premium Analytics
+//  HABIT RADAR FEATURES — Rediseño completo estilo Habit Radar
 // ═══════════════════════════════════════════════════════════════
-// ── RADAR GLOBALS ────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────
+var _HR = {
+    view: 'hoy',
+    calYear: new Date().getFullYear(),
+    calMonth: new Date().getMonth(),
+
+    dk: function(d) {
+        return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    },
+    today: function() { return this.dk(new Date()); },
+    habits: function() { return JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); },
+    streak: function(h) {
+        var log=new Set(h.log||[]),s=0,d=new Date(),tk=this.dk(d);
+        if(!log.has(tk)){d.setDate(d.getDate()-1);}
+        for(var i=0;i<3650;i++){var k=this.dk(d);if(!log.has(k))break;s++;d.setDate(d.getDate()-1);}
+        return s;
+    }
+};
+
+// ── Cambio de vista principal ────────────────────────────────
+window.hrSwitchView = function(view, el) {
+    _HR.view = view;
+    // Actualizar tabs
+    document.querySelectorAll('.hr-tab').forEach(function(t){ t.classList.remove('hr-tab-active'); });
+    if(el) el.classList.add('hr-tab-active');
+    // Mostrar panel correcto
+    ['hoy','semana','mes','general'].forEach(function(v){
+        var p=document.getElementById('hrView'+v.charAt(0).toUpperCase()+v.slice(1));
+        if(p) p.style.display = v===view ? '' : 'none';
+    });
+    // Renderizar
+    if(view==='hoy')     hrRenderHoy();
+    if(view==='semana')  hrRenderSemana();
+    if(view==='mes')     hrRenderMes(_HR.calYear, _HR.calMonth);
+    if(view==='general') hrRenderGeneral();
+};
+
+// ── VISTA HOY ────────────────────────────────────────────────
+function hrRenderHoy() {
+    var el=document.getElementById('hrViewHoy');
+    if(!el)return;
+    var habits=_HR.habits(), today=_HR.today(), now=new Date();
+    var dow=(now.getDay()+6)%7;
+    var due=habits.filter(function(h){
+        if(h.freq==='daily')return true;
+        if(h.freq==='weekly')return dow===0;
+        if(h.freq==='custom')return(h.days||[0,1,2,3,4]).includes(dow);
+        return true;
+    });
+    if(!due.length){
+        el.innerHTML='<div style="text-align:center;padding:40px 20px;color:#555;font-size:0.85rem;">Sin hábitos para hoy.<br>¡Crea tu primer hábito!</div>';
+        return;
+    }
+    var done=due.filter(function(h){return (h.log||[]).includes(today);}).length;
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'+
+        '<span style="font-size:0.7rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;">HOY · '+done+'/'+due.length+' completados</span>'+
+        '<span style="font-size:0.75rem;font-weight:900;color:#10b981;">'+Math.round(done/due.length*100)+'%</span>'+
+        '</div>'+
+        due.map(function(h){
+            var isDone=(h.log||[]).includes(today);
+            var streak=_HR.streak(h);
+            return '<div class="hr-hoy-card" style="--hc:'+h.color+';background:'+(isDone?h.color+'18':'rgba(255,255,255,0.04)')+';border-color:'+h.color+';">'+
+                '<div class="hr-hoy-emoji">'+h.emoji+'</div>'+
+                '<div class="hr-hoy-info">'+
+                    '<div class="hr-hoy-name">'+h.name+'</div>'+
+                    '<div class="hr-hoy-streak">🔥 '+streak+' días · +'+( h.xp||10)+' XP</div>'+
+                '</div>'+
+                '<div class="hr-hoy-check '+(isDone?'done':'')+'" style="'+(isDone?'border-color:'+h.color+';background:'+h.color+';':'border-color:'+h.color+'44;')+'">'+(isDone?'✓':'')+'</div>'+
+            '</div>';
+        }).join('');
+}
+
+// ── VISTA SEMANA ─────────────────────────────────────────────
+function hrRenderSemana() {
+    var el=document.getElementById('hrViewSemana');
+    if(!el)return;
+    var habits=_HR.habits();
+    if(!habits.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos creados.</div>';return;}
+    var labels=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    var now=new Date(), todayDow=(now.getDay()+6)%7;
+    // Obtener los 7 días de esta semana (Lun-Dom)
+    var weekDays=[];
+    for(var i=0;i<7;i++){
+        var d=new Date(now);
+        d.setDate(d.getDate()-todayDow+i);
+        weekDays.push({date:d, key:_HR.dk(d), isFuture:d>now, isToday:i===todayDow});
+    }
+    el.innerHTML=habits.map(function(h){
+        var streak=_HR.streak(h);
+        var log=h.log||[];
+        return '<div class="hr-week-card" style="--hc:'+h.color+';">'+
+            '<div class="hr-week-header">'+
+                '<div class="hr-hoy-emoji" style="width:38px;height:38px;border-radius:10px;background:'+h.color+'22;font-size:1.2rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'+
+                '<div class="hr-week-name">'+h.name+'</div>'+
+                '<div class="hr-week-streak">🔥 '+streak+' días</div>'+
+            '</div>'+
+            '<div class="hr-week-days">'+
+                weekDays.map(function(wd, i){
+                    var isDone=log.includes(wd.key);
+                    var cls='hr-week-day-dot'+(isDone?' done':'')+(wd.isToday?' today':'')+(wd.isFuture?' future':'');
+                    return '<div class="hr-week-day">'+
+                        '<div class="hr-week-day-label">'+labels[i]+'</div>'+
+                        '<div class="'+cls+'" style="'+(isDone?'background:'+h.color+';border-color:'+h.color+';':wd.isToday?'border-color:rgba(255,255,255,0.4);':'')+'">'+
+                            (isDone?'✓':'')+'</div>'+
+                    '</div>';
+                }).join('')+
+            '</div>'+
+        '</div>';
+    }).join('');
+}
+
+// ── VISTA MES ────────────────────────────────────────────────
+function hrRenderMes(year, month) {
+    var el=document.getElementById('hrViewMesGrid');
+    var lbl=document.getElementById('hrCalLabel');
+    if(!el)return;
+    var MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    if(lbl) lbl.textContent=MONTHS[month]+' '+year;
+    var habits=_HR.habits();
+    if(!habits.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos creados.</div>';return;}
+    var daysInMonth=new Date(year,month+1,0).getDate();
+    var today=_HR.today(), now=new Date();
+    el.innerHTML=habits.map(function(h){
+        var log=h.log||[];
+        var dots='';
+        for(var d=1;d<=daysInMonth;d++){
+            var k=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+            var dt=new Date(year,month,d);
+            var isDone=log.includes(k);
+            var isToday=k===today;
+            var isFuture=dt>now;
+            dots+='<div class="hr-mes-dot'+(isDone?' done':'')+(isToday?' today':'')+'" style="'+(isDone?'background:'+h.color+';':'')+(isFuture?'opacity:0.2;':'')+'" title="'+k+'"></div>';
+        }
+        var streak=_HR.streak(h);
+        var doneCnt=log.filter(function(k){return k.startsWith(year+'-'+String(month+1).padStart(2,'0'));}).length;
+        return '<div class="hr-mes-card" style="--hc:'+h.color+';">'+
+            '<div class="hr-mes-header">'+
+                '<div style="font-size:1.3rem">'+h.emoji+'</div>'+
+                '<div class="hr-mes-name">'+h.name+'</div>'+
+                '<div style="font-size:0.62rem;color:#888;">🔥'+streak+' · '+doneCnt+'/'+daysInMonth+'</div>'+
+            '</div>'+
+            '<div class="hr-mes-grid">'+dots+'</div>'+
+        '</div>';
+    }).join('');
+}
+
+window.hrCalPrev = function() {
+    _HR.calMonth--;
+    if(_HR.calMonth<0){_HR.calMonth=11;_HR.calYear--;}
+    hrRenderMes(_HR.calYear,_HR.calMonth);
+};
+window.hrCalNext = function() {
+    _HR.calMonth++;
+    if(_HR.calMonth>11){_HR.calMonth=0;_HR.calYear++;}
+    hrRenderMes(_HR.calYear,_HR.calMonth);
+};
+
+// ── VISTA GENERAL (heatmap histórico) ────────────────────────
+function hrRenderGeneral() {
+    var el=document.getElementById('hrViewGeneral');
+    if(!el)return;
+    var habits=_HR.habits();
+    if(!habits.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#555;">Sin hábitos creados.</div>';return;}
+    var now=new Date();
+    // Últimos 90 días por hábito
+    var days=[];
+    for(var i=89;i>=0;i--){var d=new Date(now);d.setDate(d.getDate()-i);days.push({d:d,k:_HR.dk(d)});}
+    el.innerHTML=habits.map(function(h){
+        var log=h.log||[];
+        var streak=_HR.streak(h);
+        var total=log.length;
+        return '<div class="hr-gen-card" style="--hc:'+h.color+';">'+
+            '<div class="hr-gen-header">'+
+                '<div style="font-size:1.3rem">'+h.emoji+'</div>'+
+                '<div class="hr-gen-name">'+h.name+'</div>'+
+                '<div style="font-size:0.62rem;color:#888;">🔥'+streak+' días · '+total+' total</div>'+
+            '</div>'+
+            '<div class="hr-gen-grid">'+
+                days.map(function(day){
+                    var isDone=log.includes(day.k);
+                    var isFuture=day.d>now;
+                    return '<div class="hr-gen-dot'+(isDone?' lv4':'')+(isFuture?' future':'')+'" style="'+(isDone?'background:'+h.color+';':'')+(isFuture?'opacity:0.1;':'')+'" title="'+day.k+'"></div>';
+                }).join('')+
+            '</div>'+
+        '</div>';
+    }).join('');
+}
+
+// ── INIT — cuando switchHabTab llama 'radar' ─────────────────
+// Esto se llama desde switchHabTab en línea 17024
+function _hrInit() {
+    // Resetear a vista HOY
+    _HR.view='hoy';
+    _HR.calYear=new Date().getFullYear();
+    _HR.calMonth=new Date().getMonth();
+    // Activar tab HOY
+    document.querySelectorAll('.hr-tab').forEach(function(t,i){
+        t.classList.toggle('hr-tab-active', i===0);
+    });
+    // Mostrar solo vista HOY
+    ['Hoy','Semana','Mes','General'].forEach(function(v,i){
+        var p=document.getElementById('hrView'+v);
+        if(p) p.style.display=i===0?'':'none';
+    });
+    hrRenderHoy();
+}
+
+// ── RADAR listo ───────────────────────────────────────────────
 const _RAD_HABITS_KEY = 'jch_habits_v1';
 const _RAD_NOTES_KEY  = 'jch_notes_v1';
 function _radLoadHabits() { return JSON.parse(localStorage.getItem(_RAD_HABITS_KEY)||'[]'); }
@@ -18594,29 +18883,7 @@ window._calcHabBestStreak = function(h) {
     return best;
 };
 
-// ── INIT RADAR: event delegation — no depende de switchHabTab ──
-document.addEventListener('click', function(e) {
-    var tab = e.target.closest('[onclick*="switchHabTab"]');
-    if (!tab) return;
-    var onclk = tab.getAttribute('onclick') || '';
-    if (onclk.indexOf("'radar'") === -1 && onclk.indexOf('"radar"') === -1) return;
-    setTimeout(function() {
-        if (typeof renderRadarKPIs !== 'function') return;
-        _radarView = 'semanal';
-        document.querySelectorAll('.hab-view-btn').forEach(function(b) {
-            b.classList.toggle('active', b.dataset.view === 'semanal');
-        });
-        var ids = ['habRadarSemana','habRadarMes','habRadarAnual','habRadarHabitos'];
-        ids.forEach(function(id, i) {
-            var e2 = document.getElementById(id);
-            if (e2) e2.style.display = i === 0 ? '' : 'none';
-        });
-        renderRadarKPIs();
-        drawRadarChart();
-        drawDayBars();
-        drawLineChart();
-    }, 150);
-});
+// ── RADAR listo ───────────────────────────────────────────────
 
 // ═══════════════════════════════════════════════════════════════
 //  LIFE RESET FEATURES — 66 Días, Pilares, Cartas, Hard Mode,
