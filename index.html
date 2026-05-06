@@ -4638,10 +4638,11 @@
         }
         .hab-card:hover { border-color:rgba(255,255,255,0.15); border-left-color:var(--hab-card-color, rgba(255,255,255,0.15)); }
         .hab-card.completed-today {
-            border-color: color-mix(in srgb, var(--hab-card-color, #10b981) 50%, transparent);
+            border-color: color-mix(in srgb, var(--hab-card-color, #10b981) 60%, transparent);
             border-left-color: var(--hab-card-color, #10b981);
-            box-shadow: 0 0 18px color-mix(in srgb, var(--hab-card-color, #10b981) 25%, transparent);
-            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 18%, transparent) 0%, transparent 60%);
+            box-shadow: 0 0 22px color-mix(in srgb, var(--hab-card-color, #10b981) 35%, transparent);
+            background: rgba(8,20,40,0.9);
+            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 35%, transparent) 0%, color-mix(in srgb, var(--hab-card-color, transparent) 10%, transparent) 60%, transparent 100%);
         }
 
         .hab-card-top {
@@ -16809,6 +16810,9 @@ window.startHabTimer = function(habitId, totalSec) {
 
                 // FIX: actualizar UI de XP, monedas y boss HP al instante
                 _habInstantUIUpdate(hh);
+
+                // FIX TIMER: actualizar "Progreso de Hoy" y barra en tiempo real
+                if (typeof _habUpdateTodayProgress === 'function') _habUpdateTodayProgress();
 
                 if (typeof updateHabitBadge === 'function') updateHabitBadge();
                 if (typeof renderHabStats   === 'function') renderHabStats();
