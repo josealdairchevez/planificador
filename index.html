@@ -15987,10 +15987,10 @@ function renderHabToday() {
     el.innerHTML=`
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
             <span style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;">Progreso de hoy</span>
-            <span style="font-size:0.72rem;font-weight:900;color:#34d399;">${done}/${due.length} · ${pct}%</span>
+            <span id="habTodayCount" style="font-size:0.72rem;font-weight:900;color:#34d399;">${done}/${due.length} · ${pct}%</span>
         </div>
         <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;margin-bottom:1rem;overflow:hidden;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:6px;transition:width 0.5s;"></div>
+            <div id="habTodayBar" style="height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:6px;transition:width 0.5s;"></div>
         </div>
         ${cardsHtml}
     `;
@@ -16007,7 +16007,28 @@ function renderHabToday() {
     el.addEventListener('click', el._habDetailHandler);
 }
 
-// ── Tab STATS ─────────────────────────────────────────────────
+// ── Actualizar barra PROGRESO DE HOY sin re-renderizar ───────
+function _habUpdateTodayProgress() {
+    try {
+        var habits  = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+        var today   = (function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})(new Date());
+        var dow     = (new Date().getDay()+6)%7;
+        var due     = habits.filter(function(h){
+            if(h.archived) return false;
+            if(h.freq==='daily') return true;
+            if(h.freq==='weekly') return dow===0;
+            if(h.freq==='custom') return (h.days||[0,1,2,3,4]).includes(dow);
+            return true;
+        });
+        var done    = due.filter(function(h){ return (h.log||[]).includes(today); }).length;
+        var pct     = due.length ? Math.round(done/due.length*100) : 0;
+        var countEl = document.getElementById('habTodayCount');
+        var barEl   = document.getElementById('habTodayBar');
+        if (countEl) countEl.textContent = done+'/'+due.length+' · '+pct+'%';
+        if (barEl)   barEl.style.width = pct+'%';
+    } catch(e) {}
+}
+window._habUpdateTodayProgress = _habUpdateTodayProgress;
 function renderHabStats() {
     const ovEl=document.getElementById('habStatsOverview');
     const hmEl=document.getElementById('habHeatmap');
@@ -16576,11 +16597,24 @@ window.habRepInc = function(habitId, target) {
         if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
         if (typeof playSparkleSound === 'function') playSparkleSound();
 
-        // Marcar card visualmente como completada sin re-renderizar
-        if (card) card.classList.add('completed-today');
+        // Marcar card visualmente con color del hábito al completarse
+        if (card) {
+            card.classList.add('completed-today');
+            card.style.backgroundImage = 'linear-gradient(135deg,' + color + '18 0%,transparent 60%)';
+            card.style.borderColor = color;
+            card.style.boxShadow  = '0 0 18px ' + color + '40';
+            // Actualizar today-dot de la barra semanal
+            var todayDot = card.querySelector('.hab-day-dot.today-dot');
+            if (todayDot) {
+                todayDot.classList.add('done-dot');
+                todayDot.classList.remove('today-dot');
+                todayDot.style.background = color;
+                todayDot.style.boxShadow  = '0 0 6px ' + color;
+            }
+        }
 
-        // FIX: actualizar UI de XP, monedas y boss HP al instante
-        _habInstantUIUpdate(h);
+        // ── Actualizar PROGRESO DE HOY en tiempo real ────────────
+        _habUpdateTodayProgress();
 
         // Actualizar badge y stats sin tocar la lista
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
@@ -18029,10 +18063,10 @@ window.renderHabToday = function() {
     el.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
             <span style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;">Progreso de hoy</span>
-            <span style="font-size:0.72rem;font-weight:900;color:#34d399;">${done}/${due.length} · ${pct}%</span>
+            <span id="habTodayCount" style="font-size:0.72rem;font-weight:900;color:#34d399;">${done}/${due.length} · ${pct}%</span>
         </div>
         <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;margin-bottom:1rem;overflow:hidden;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:6px;transition:width 0.5s;"></div>
+            <div id="habTodayBar" style="height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:6px;transition:width 0.5s;"></div>
         </div>
         ${due.map(h => {
             let card = window.renderHabitCardHabitica(h, false);
@@ -19073,9 +19107,24 @@ window.incrementQty = function(habitId, delta, targetVal) {
             if (typeof addGlobalReward==='function') addGlobalReward(h.xp||10, 1);
             if (typeof playSparkleSound==='function') playSparkleSound();
 
-            // Marcar card visualmente
+            // Marcar card visualmente con color del hábito
             const cardEl = document.getElementById('habCard-'+habitId);
-            if (cardEl) cardEl.classList.add('completed-today');
+            if (cardEl) {
+                cardEl.classList.add('completed-today');
+                var hColor = h.color || '#10b981';
+                cardEl.style.backgroundImage = 'linear-gradient(135deg,'+hColor+'18 0%,transparent 60%)';
+                cardEl.style.borderColor = hColor;
+                cardEl.style.boxShadow  = '0 0 18px '+hColor+'40';
+                var tDot = cardEl.querySelector('.hab-day-dot.today-dot');
+                if (tDot) {
+                    tDot.classList.add('done-dot');
+                    tDot.classList.remove('today-dot');
+                    tDot.style.background = hColor;
+                }
+            }
+
+            // ── Actualizar PROGRESO DE HOY en tiempo real ────────
+            if (typeof _habUpdateTodayProgress==='function') _habUpdateTodayProgress();
 
             // Actualizar UI al instante (XP bar, boss HP, monedas)
             if (typeof _habInstantUIUpdate==='function') _habInstantUIUpdate(h);
