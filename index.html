@@ -19552,7 +19552,7 @@ function renderStrengthList() {
                 (done?'✓':'') + '</button>';
         }
 
-        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'' style="--hab-card-color:'+(h.color||'#10b981')+';border-color:color-mix(in srgb,'+(h.color||'#10b981')+' 55%, transparent);box-shadow:0 0 10px color-mix(in srgb,'+(h.color||'#10b981')+' 15%, transparent);">' +
+        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" style="--hab-card-color:'+(h.color||'#10b981')+';border-color:color-mix(in srgb,'+(h.color||'#10b981')+' 55%, transparent);box-shadow:0 0 10px color-mix(in srgb,'+(h.color||'#10b981')+' 15%, transparent);">' +
             '<div class="hab-card-top">' +
               renderStrengthRing(strength, sColor) +
               '<div class="hab-card-info">' +
