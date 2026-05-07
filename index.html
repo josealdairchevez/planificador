@@ -5023,6 +5023,22 @@
             background:rgba(239,68,68,0.2);border-color:#ef4444;color:#fca5a5;
         }
 
+        /* Selector de pilar en modal de crear hábito */
+        .hab-pillar-selector { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+        .hab-pillar-opt {
+            display:flex; align-items:center; gap:5px;
+            padding:5px 10px; border-radius:20px; font-size:0.7rem;
+            border:1.5px solid rgba(255,255,255,0.1);
+            background:rgba(255,255,255,0.04); color:#aaa;
+            cursor:pointer; transition:all 0.2s; font-weight:500;
+        }
+        .hab-pillar-opt.selected {
+            border-color:var(--pc,#a78bfa);
+            background:color-mix(in srgb, var(--pc,#a78bfa) 18%, transparent);
+            color:#fff; box-shadow:0 0 8px color-mix(in srgb, var(--pc,#a78bfa) 30%, transparent);
+        }
+        .hab-pillar-opt .popt-icon { font-size:0.85rem; }
+
         /* Recordatorio por hábito */
         .hab-reminder-row {
             display:flex;align-items:center;gap:10px;margin-top:0.4rem;
@@ -15661,6 +15677,19 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                 </div>
 
                 <div class="hab-form-section">
+                    <label class="hab-form-label">⚡ Pilar de vida vinculado</label>
+                    <div class="hab-pillar-selector" id="habPillarSelector">
+                        <div class="hab-pillar-opt selected" data-pillar="none" style="--pc:#888;" onclick="selectHabPillar(this)"><span class="popt-icon">🚫</span> Ninguno</div>
+                        <div class="hab-pillar-opt" data-pillar="sleep"    style="--pc:#6366f1;" onclick="selectHabPillar(this)"><span class="popt-icon">😴</span> Sueño</div>
+                        <div class="hab-pillar-opt" data-pillar="water"    style="--pc:#0ea5e9;" onclick="selectHabPillar(this)"><span class="popt-icon">💧</span> Hidratación</div>
+                        <div class="hab-pillar-opt" data-pillar="exercise" style="--pc:#22c55e;" onclick="selectHabPillar(this)"><span class="popt-icon">💪</span> Ejercicio</div>
+                        <div class="hab-pillar-opt" data-pillar="mind"     style="--pc:#a78bfa;" onclick="selectHabPillar(this)"><span class="popt-icon">🧠</span> Mente</div>
+                        <div class="hab-pillar-opt" data-pillar="screen"   style="--pc:#f97316;" onclick="selectHabPillar(this)"><span class="popt-icon">📵</span> Pantallas</div>
+                        <div class="hab-pillar-opt" data-pillar="hygiene"  style="--pc:#ec4899;" onclick="selectHabPillar(this)"><span class="popt-icon">🚿</span> Hábitos</div>
+                    </div>
+                </div>
+
+                <div class="hab-form-section">
                     <label class="hab-form-label">🔔 Recordatorio diario</label>
                     <div class="hab-reminder-row">
                         <div class="hab-reminder-toggle" id="habReminderToggle" onclick="toggleHabReminder()"></div>
@@ -15831,6 +15860,8 @@ const CLASSES = [
 // ── Estado ───────────────────────────────────────────────────
 let habits = [];
 let hero   = {};
+let selectedPillar = 'none';
+
 let selectedEmoji  = EMOJIS[0];
 let selectedColor  = COLORS[0];
 let selectedFreq   = 'daily';
@@ -17044,9 +17075,9 @@ window.saveHabit = function() {
 
     if(editId){
         const h=habits.find(x=>x.id===editId);
-        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined}); }
+        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
     } else {
-        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined});
+        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
     }
     saveHabits();
 
@@ -17103,6 +17134,13 @@ window.saveHabit = function() {
     if(todayTab) switchHabTab('hoy',todayTab);
     (window.renderHabToday||renderHabToday)();
     renderHabStats(); renderHabHero();
+};
+
+// ── Selector de pilar ────────────────────────────────────────
+window.selectHabPillar = function(el) {
+    selectedPillar = el.dataset.pillar || 'none';
+    document.querySelectorAll('.hab-pillar-opt').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
 };
 
 // ── Recordatorio de hábito — igual que calendario ─────────────
@@ -17222,6 +17260,11 @@ window.editHabit = function(id) {
     selectedEmoji=h.emoji||EMOJIS[0]; selectedColor=h.color||COLORS[0];
     selectedFreq=h.freq||'daily'; selectedXP=h.xp||10;
     selectedDiff=h.diff||'easy'; selectedDays=[...(h.days||[0,1,2,3,4])];
+    selectedPillar=h.pillar||'none'; reminderOn=!!h.reminderOn;
+    // Restaurar pilar seleccionado en UI
+    document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
+        b.classList.toggle('selected', b.dataset.pillar===(h.pillar||'none'));
+    });
     selectedType=h.type||'positive'; reminderOn=!!h.reminderOn;
     if(h.reminderTime) document.getElementById('habReminderTime').value=h.reminderTime;
     const tog=document.getElementById('habReminderToggle');
@@ -17333,6 +17376,10 @@ window.selectHabColor = function(el,color) {
     el.classList.add('selected');
 };
 function resetHabForm() {
+    selectedPillar='none';
+    document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
+        b.classList.toggle('selected', b.dataset.pillar==='none');
+    });
     selectedEmoji=EMOJIS[0]; selectedColor=COLORS[0];
     selectedFreq='daily'; selectedXP=10; selectedDiff='easy';
     selectedDays=[0,1,2,3,4]; selectedType='positive'; reminderOn=false;
@@ -18794,21 +18841,23 @@ const PILLARS = [
 
 function calcPillarScore(pillar) {
     const habits = loadHabits();
-    const related = habits.filter(h => {
-        const name = (h.name||'').toLowerCase();
-        return pillar.habitKeys.some(k => name.includes(k));
-    });
+    // Prioridad 1: hábitos vinculados explícitamente a este pilar
+    let related = habits.filter(h => h.pillar === pillar.id);
+    // Prioridad 2: hábitos sin pilar asignado que coincidan por nombre
     if (!related.length) {
-        // Si no hay hábitos relacionados, score basado en completitud general
-        const all = loadHabits();
-        const totalDone = all.reduce((s,h)=>(s+(h.log||[]).length),0);
-        return Math.min(100, Math.round(totalDone * 1.5));
+        related = habits.filter(h => {
+            if (h.pillar && h.pillar !== 'none') return false; // ya tiene pilar asignado a otro
+            const name = (h.name||'').toLowerCase();
+            return pillar.habitKeys.some(k => name.includes(k));
+        });
     }
+    // Si no hay ninguno relacionado, score 0 (no contaminar con completitud general)
+    if (!related.length) return 0;
     const now = new Date();
     let done=0, total=0;
     for (let i=0;i<14;i++) {
         const d=new Date(now); d.setDate(d.getDate()-i);
-        const k=d.toISOString().split('T')[0];
+        const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
         related.forEach(h=>{
             total++;
             if((h.log||[]).includes(k)) done++;
