@@ -16600,42 +16600,63 @@ window.habRepInc = function(habitId, target) {
 
         // ── FIX COMPLETO: actualizar tarjeta al instante ──────────────
         if (card) {
-            // 1) Fondo del rectángulo con el color del hábito (via CSS class, sin inline que interfiera)
+            // 1) Fondo del rectángulo con el color del hábito
             card.classList.add('completed-today');
             card.style.removeProperty('background-image');
             card.style.removeProperty('border-color');
             card.style.removeProperty('box-shadow');
 
-            // 2) Actualizar mini-estadísticas (Racha, Mejor, Total, Tasa)
             try {
                 const hhFresh2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(function(x){return x.id===habitId;});
                 if (hhFresh2) {
-                    const pills2 = card.querySelectorAll('.hab-stat-pill .hab-stat-val');
-                    if (pills2.length >= 4) {
-                        const logSet2 = new Set(hhFresh2.log||[]);
-                        let streak3=0; const dsTmp2=new Date();
-                        while(true){
-                            const kk2=dsTmp2.getFullYear()+'-'+String(dsTmp2.getMonth()+1).padStart(2,'0')+'-'+String(dsTmp2.getDate()).padStart(2,'0');
-                            if(!logSet2.has(kk2)) break;
-                            streak3++; dsTmp2.setDate(dsTmp2.getDate()-1);
-                            if(streak3>3650) break;
+                    // 2) Calcular racha recién actualizada (con log ya guardado)
+                    const logSet2 = new Set(hhFresh2.log||[]);
+                    let streak3=0; const dsTmp2=new Date();
+                    while(true){
+                        const kk2=dsTmp2.getFullYear()+'-'+String(dsTmp2.getMonth()+1).padStart(2,'0')+'-'+String(dsTmp2.getDate()).padStart(2,'0');
+                        if(!logSet2.has(kk2)) break;
+                        streak3++; dsTmp2.setDate(dsTmp2.getDate()-1);
+                        if(streak3>3650) break;
+                    }
+
+                    // 3) Actualizar badge de racha 🔥 en hab-card-meta
+                    var metaEl2 = card.querySelector('.hab-card-meta');
+                    if (metaEl2) {
+                        var streakBadge2 = metaEl2.querySelector('.hab-card-streak');
+                        if (streak3 > 0) {
+                            if (streakBadge2) {
+                                streakBadge2.textContent = '🔥 ' + streak3;
+                            } else {
+                                // No existía (racha era 0 al renderizar) → insertar después del freq span
+                                var freqSpan2 = metaEl2.querySelector('.hab-card-freq');
+                                var newBadge2 = document.createElement('span');
+                                newBadge2.className = 'hab-card-streak';
+                                newBadge2.textContent = '🔥 ' + streak3;
+                                if (freqSpan2 && freqSpan2.nextSibling) {
+                                    metaEl2.insertBefore(newBadge2, freqSpan2.nextSibling);
+                                } else {
+                                    metaEl2.appendChild(newBadge2);
+                                }
+                            }
                         }
+                    }
+
+                    // 4) Actualizar mini-estadísticas (Racha, Total/Mejor, Tasa)
+                    const pills2 = card.querySelectorAll('.hab-stat-pill .hab-stat-val');
+                    if (pills2.length >= 3) {
                         pills2[0].textContent = streak3;
                         pills2[0].style.color = hhFresh2.color || '#10b981';
-                        const logArr2=[...(hhFresh2.log||[])].sort();
-                        let best3=0,cur3=0,prev3=null;
-                        for(const kk2 of logArr2){if(!prev3){cur3=1;}else{const d1=new Date(prev3),d2=new Date(kk2);cur3=(Math.round((d2-d1)/86400000)===1)?cur3+1:1;}if(cur3>best3)best3=cur3;prev3=kk2;}
-                        pills2[1].textContent = best3;
-                        pills2[2].textContent = (hhFresh2.log||[]).length;
+                        // pills2[1] = Total o Mejor según función de render
+                        pills2[pills2.length-2].textContent = (hhFresh2.log||[]).length;
                         const daysOld2=Math.max(1,Math.round((new Date()-new Date(hhFresh2.createdAt||new Date()))/86400000));
-                        pills2[3].textContent = Math.round(((hhFresh2.log||[]).length/daysOld2)*100)+'%';
+                        pills2[pills2.length-1].textContent = Math.round(((hhFresh2.log||[]).length/daysOld2)*100)+'%';
                     }
-                    // 3) Dot de hoy en la barra semanal
-                    const todayDots2 = card.querySelectorAll('.hab-day-dot');
-                    const dow3 = (new Date().getDay()+6)%7;
-                    if (todayDots2[dow3]) {
-                        todayDots2[dow3].classList.add('done-dot');
-                        todayDots2[dow3].classList.remove('today-dot');
+
+                    // 5) Dot de hoy: buscar por clase today-dot (evita bug de índice por zona horaria)
+                    var todayDot2 = card.querySelector('.hab-day-dot.today-dot');
+                    if (todayDot2) {
+                        todayDot2.classList.add('done-dot');
+                        todayDot2.classList.remove('today-dot');
                     }
                 }
             } catch(eStats2) {}
@@ -16864,40 +16885,55 @@ window.startHabTimer = function(habitId, totalSec) {
                     // 1) Fondo del rectángulo con el color del hábito
                     card2.classList.add('completed-today');
 
-                    // 2) Actualizar mini-estadísticas (Racha, Mejor, Total, Tasa)
                     try {
                         const hhFresh = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(x=>x.id===habitId);
                         if (hhFresh) {
-                            const pills = card2.querySelectorAll('.hab-stat-pill .hab-stat-val');
-                            if (pills.length >= 4) {
-                                // Racha actual
-                                const logSet = new Set(hhFresh.log||[]);
-                                let streak2=0; const dsTmp=new Date();
-                                while(true){
-                                    const kk=dsTmp.getFullYear()+'-'+String(dsTmp.getMonth()+1).padStart(2,'0')+'-'+String(dsTmp.getDate()).padStart(2,'0');
-                                    if(!logSet.has(kk)) break;
-                                    streak2++; dsTmp.setDate(dsTmp.getDate()-1);
-                                    if(streak2>3650) break;
+                            // 2) Calcular racha recién actualizada
+                            const logSet = new Set(hhFresh.log||[]);
+                            let streak2=0; const dsTmp=new Date();
+                            while(true){
+                                const kk=dsTmp.getFullYear()+'-'+String(dsTmp.getMonth()+1).padStart(2,'0')+'-'+String(dsTmp.getDate()).padStart(2,'0');
+                                if(!logSet.has(kk)) break;
+                                streak2++; dsTmp.setDate(dsTmp.getDate()-1);
+                                if(streak2>3650) break;
+                            }
+
+                            // 3) Actualizar badge de racha 🔥 en hab-card-meta
+                            var metaElT = card2.querySelector('.hab-card-meta');
+                            if (metaElT) {
+                                var streakBadgeT = metaElT.querySelector('.hab-card-streak');
+                                if (streak2 > 0) {
+                                    if (streakBadgeT) {
+                                        streakBadgeT.textContent = '🔥 ' + streak2;
+                                    } else {
+                                        var freqSpanT = metaElT.querySelector('.hab-card-freq');
+                                        var newBadgeT = document.createElement('span');
+                                        newBadgeT.className = 'hab-card-streak';
+                                        newBadgeT.textContent = '🔥 ' + streak2;
+                                        if (freqSpanT && freqSpanT.nextSibling) {
+                                            metaElT.insertBefore(newBadgeT, freqSpanT.nextSibling);
+                                        } else {
+                                            metaElT.appendChild(newBadgeT);
+                                        }
+                                    }
                                 }
+                            }
+
+                            // 4) Actualizar mini-estadísticas (Racha, Total, Tasa)
+                            const pills = card2.querySelectorAll('.hab-stat-pill .hab-stat-val');
+                            if (pills.length >= 3) {
                                 pills[0].textContent = streak2;
                                 pills[0].style.color = hhFresh.color || '#10b981';
-                                // Mejor racha
-                                const logArr=[...(hhFresh.log||[])].sort();
-                                let best2=0,cur2=0,prev2=null;
-                                for(const kk of logArr){if(!prev2){cur2=1;}else{const d1=new Date(prev2),d2=new Date(kk);cur2=(Math.round((d2-d1)/86400000)===1)?cur2+1:1;}if(cur2>best2)best2=cur2;prev2=kk;}
-                                pills[1].textContent = best2;
-                                // Total
-                                pills[2].textContent = (hhFresh.log||[]).length;
-                                // Tasa
+                                pills[pills.length-2].textContent = (hhFresh.log||[]).length;
                                 const daysOld=Math.max(1,Math.round((new Date()-new Date(hhFresh.createdAt||new Date()))/86400000));
-                                pills[3].textContent = Math.round(((hhFresh.log||[]).length/daysOld)*100)+'%';
+                                pills[pills.length-1].textContent = Math.round(((hhFresh.log||[]).length/daysOld)*100)+'%';
                             }
-                            // 3) Dot de hoy en la barra semanal
-                            const todayDots = card2.querySelectorAll('.hab-day-dot');
-                            const dow2 = (new Date().getDay()+6)%7;
-                            if (todayDots[dow2]) {
-                                todayDots[dow2].classList.add('done-dot');
-                                todayDots[dow2].classList.remove('today-dot');
+
+                            // 5) Dot de hoy: buscar por clase today-dot (evita bug de índice por zona horaria)
+                            var todayDotT = card2.querySelector('.hab-day-dot.today-dot');
+                            if (todayDotT) {
+                                todayDotT.classList.add('done-dot');
+                                todayDotT.classList.remove('today-dot');
                             }
                         }
                     } catch(eStats) {}
