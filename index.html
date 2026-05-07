@@ -16804,15 +16804,72 @@ window.startHabTimer = function(habitId, totalSec) {
                 if (typeof addGlobalReward === 'function') addGlobalReward(hh.xp||10, 1);
                 if (typeof playSparkleSound === 'function') playSparkleSound();
 
-                // Marcar card como completada sin re-render
+                // ── FIX COMPLETO: actualizar tarjeta al instante ──────────────
                 const card2 = document.getElementById('habCard-' + habitId);
-                if (card2) card2.classList.add('completed-today');
+                if (card2) {
+                    // 1) Fondo del rectángulo con el color del hábito
+                    card2.classList.add('completed-today');
 
-                // FIX: actualizar UI de XP, monedas y boss HP al instante
+                    // 2) Actualizar mini-estadísticas (Racha, Mejor, Total, Tasa)
+                    try {
+                        const hhFresh = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(x=>x.id===habitId);
+                        if (hhFresh) {
+                            const pills = card2.querySelectorAll('.hab-stat-pill .hab-stat-val');
+                            if (pills.length >= 4) {
+                                // Racha actual
+                                const logSet = new Set(hhFresh.log||[]);
+                                let streak2=0; const dsTmp=new Date();
+                                while(true){
+                                    const kk=dsTmp.getFullYear()+'-'+String(dsTmp.getMonth()+1).padStart(2,'0')+'-'+String(dsTmp.getDate()).padStart(2,'0');
+                                    if(!logSet.has(kk)) break;
+                                    streak2++; dsTmp.setDate(dsTmp.getDate()-1);
+                                    if(streak2>3650) break;
+                                }
+                                pills[0].textContent = streak2;
+                                pills[0].style.color = hhFresh.color || '#10b981';
+                                // Mejor racha
+                                const logArr=[...(hhFresh.log||[])].sort();
+                                let best2=0,cur2=0,prev2=null;
+                                for(const kk of logArr){if(!prev2){cur2=1;}else{const d1=new Date(prev2),d2=new Date(kk);cur2=(Math.round((d2-d1)/86400000)===1)?cur2+1:1;}if(cur2>best2)best2=cur2;prev2=kk;}
+                                pills[1].textContent = best2;
+                                // Total
+                                pills[2].textContent = (hhFresh.log||[]).length;
+                                // Tasa
+                                const daysOld=Math.max(1,Math.round((new Date()-new Date(hhFresh.createdAt||new Date()))/86400000));
+                                pills[3].textContent = Math.round(((hhFresh.log||[]).length/daysOld)*100)+'%';
+                            }
+                            // 3) Dot de hoy en la barra semanal
+                            const todayDots = card2.querySelectorAll('.hab-day-dot');
+                            const dow2 = (new Date().getDay()+6)%7;
+                            if (todayDots[dow2]) {
+                                todayDots[dow2].classList.add('done-dot');
+                                todayDots[dow2].classList.remove('today-dot');
+                            }
+                        }
+                    } catch(eStats) {}
+                }
+
+                // 4) Actualizar UI de XP, monedas y boss HP al instante
                 _habInstantUIUpdate(hh);
 
-                // FIX TIMER: actualizar "Progreso de Hoy" y barra en tiempo real
-                if (typeof _habUpdateTodayProgress === 'function') _habUpdateTodayProgress();
+                // 5) Actualizar "Progreso de Hoy" (contador + barra) en tiempo real
+                try {
+                    const hListProg = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+                    const dowProg   = (new Date().getDay()+6)%7;
+                    const dueProg   = hListProg.filter(function(x){
+                        if(x.archived) return false;
+                        if(x.freq==='daily') return true;
+                        if(x.freq==='weekly') return dowProg===0;
+                        if(x.freq==='custom') return (x.days||[0,1,2,3,4]).includes(dowProg);
+                        return true;
+                    });
+                    const doneProg  = dueProg.filter(function(x){ return (x.log||[]).includes(today); }).length;
+                    const pctProg   = dueProg.length ? Math.round(doneProg/dueProg.length*100) : 0;
+                    const countEl2  = document.getElementById('habTodayCount');
+                    const barEl2    = document.getElementById('habTodayBar');
+                    if (countEl2) countEl2.textContent = doneProg+'/'+dueProg.length+' · '+pctProg+'%';
+                    if (barEl2)   barEl2.style.width = pctProg+'%';
+                } catch(eProg) {}
 
                 if (typeof updateHabitBadge === 'function') updateHabitBadge();
                 if (typeof renderHabStats   === 'function') renderHabStats();
