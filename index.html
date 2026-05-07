@@ -16371,7 +16371,7 @@ window.buildHabControl = function(h, done) {
 
     // Leer cantidad actual del localStorage
     const QTY_KEY = 'jch_qty_v1';
-    const today   = new Date().toISOString().split('T')[0];
+    const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
     const qtyKey  = h.id + '_' + today;
     const cur     = qty[qtyKey] || 0;
@@ -16496,7 +16496,7 @@ function _habInstantUIUpdate(h) {
 
 window.habRepInc = function(habitId, target) {
     const QTY_KEY = 'jch_qty_v1';
-    const today   = new Date().toISOString().split('T')[0];
+    const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
     const qtyKey  = habitId + '_' + today;
     const cur     = qty[qtyKey] || 0;
@@ -16665,7 +16665,7 @@ window.habRepInc = function(habitId, target) {
         // 4) Actualizar "Progreso de Hoy" (contador + barra) en tiempo real
         try {
             const hListProg2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
-            const todayProg2 = new Date().toISOString().split('T')[0];
+            const todayProg2 = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
             const dowProg2   = (new Date().getDay()+6)%7;
             const dueProg2   = hListProg2.filter(function(x){
                 if(x.archived) return false;
@@ -16709,7 +16709,7 @@ window.habRepInc = function(habitId, target) {
 
 window.habRepDec = function(habitId, target) {
     const QTY_KEY = 'jch_qty_v1';
-    const today   = new Date().toISOString().split('T')[0];
+    const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
     const qtyKey  = habitId + '_' + today;
     const cur     = qty[qtyKey] || 0;
@@ -16764,7 +16764,7 @@ const _habTimers = {}; // { habitId: { interval, elapsed, total } }
 
 window.startHabTimer = function(habitId, totalSec) {
     const QTY_KEY = 'jch_qty_v1';
-    const today   = new Date().toISOString().split('T')[0];
+    const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
     const qtyKey  = habitId + '_' + today;
 
@@ -18169,17 +18169,17 @@ window.switchHabTab = function(tab, el) {
 const _origRenderToday = window.renderHabToday;
 window.renderHabToday = function() {
     // Exponer helpers al scope de la feature
-    window._calcHabStreak = window._calcHabStreak || function(h) {
+    window._calcHabStreak = function(h) {
         const log=new Set(h.log||[]); let s=0,d=new Date();
         if(!log.has(todayKey())) d.setDate(d.getDate()-1);
         while(true){ const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; if(!log.has(k)) break; s++; d.setDate(d.getDate()-1); if(s>3650) break; } return s;
     };
-    window._calcHabRate = window._calcHabRate || function(h) {
+    window._calcHabRate = function(h) {
         const log=h.log||[]; if(!log.length) return 0;
         const now=new Date(),created=new Date(h.createdAt||now);
         return Math.round((log.length/Math.max(1,Math.round((now-created)/86400000)))*100);
     };
-    window._calcHabDots = window._calcHabDots || function(h) {
+    window._calcHabDots = function(h) {
         const dots=[],d=new Date(),dow=(d.getDay()+6)%7;
         d.setDate(d.getDate()-dow);
         const log=new Set(h.log||[]),today=todayKey();
@@ -18731,7 +18731,7 @@ function saveJournal(j){ localStorage.setItem(JOURNAL_KEY,JSON.stringify(j)); }
 function loadCards()   { return JSON.parse(localStorage.getItem(CARDS_KEY)||'[]'); }
 function saveCards(c)  { localStorage.setItem(CARDS_KEY,JSON.stringify(c)); }
 
-function todayKey() { return new Date().toISOString().split('T')[0]; }
+function todayKey() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
 // ── PILARES DE VIDA ───────────────────────────────────────────
 const PILLARS = [
@@ -19129,7 +19129,7 @@ function loadHabits()  { return JSON.parse(localStorage.getItem(HABITS_KEY)||'[]
 function saveHabits(h) { localStorage.setItem(HABITS_KEY, JSON.stringify(h)); }
 function loadQty()     { return JSON.parse(localStorage.getItem(QTY_KEY)||'{}'); }
 function saveQty(q)    { localStorage.setItem(QTY_KEY, JSON.stringify(q)); }
-function todayKey()    { return new Date().toISOString().split('T')[0]; }
+function todayKey()    { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
 let _routineFilter = 'all';
 let _selectedRoutine = 'morning';
