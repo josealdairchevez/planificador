@@ -6030,17 +6030,58 @@
 
         /* ── HABIT STRENGTH ─────────────────────────────────── */
         .hab-strength-ring {
-            width:52px;height:52px;flex-shrink:0;position:relative;
+            width:54px;height:54px;flex-shrink:0;position:relative;cursor:pointer;
         }
-        .hab-strength-svg { width:100%;height:100%;transform:rotate(-90deg); }
-        .hab-strength-bg  { fill:none;stroke:rgba(255,255,255,0.07);stroke-width:5; }
-        .hab-strength-arc { fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 0.8s ease; }
+        .hab-strength-ring:hover .hab-strength-ring-wrap { transform:scale(1.08); }
+        .hab-strength-ring-wrap {
+            width:100%;height:100%;position:relative;
+            transition:transform 0.2s ease;
+        }
+        .hab-strength-svg {
+            width:100%;height:100%;transform:rotate(-90deg);overflow:visible;
+        }
+        .hab-strength-bg  {
+            fill:none;stroke:rgba(255,255,255,0.06);stroke-width:4.5;
+        }
+        .hab-strength-arc {
+            fill:none;stroke-width:4.5;stroke-linecap:round;
+            transition:stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1);
+            filter:drop-shadow(0 0 4px #00e5ff) drop-shadow(0 0 8px #00b8d9);
+        }
+        .hab-strength-arc-glow {
+            fill:none;stroke-width:8;stroke-linecap:round;opacity:0.18;
+            transition:stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .hab-strength-energy {
+            fill:none;stroke:#ffffff;stroke-width:4.5;
+            stroke-dasharray:12 125.6;stroke-linecap:round;opacity:0;
+            transition:opacity 0.4s;
+        }
+        .hab-strength-ring.elite .hab-strength-energy { opacity:1; }
+        .hab-strength-ring.elite .hab-strength-arc {
+            filter:drop-shadow(0 0 6px #00e5ff) drop-shadow(0 0 14px #00e5ff) drop-shadow(0 0 20px #00b8d9);
+        }
+        @keyframes habStrengthSpin { from{transform:rotate(-90deg);} to{transform:rotate(270deg);} }
+        .hab-strength-ring.elite .hab-strength-energy {
+            animation:habStrengthSpin 2s linear infinite;
+            transform-origin:24px 24px;
+        }
+        @keyframes habStrengthPulse { 0%,100%{opacity:1;} 50%{opacity:0.65;} }
+        .hab-strength-ring.active .hab-strength-ring-wrap {
+            animation:habStrengthPulse 2.5s ease-in-out infinite;
+        }
         .hab-strength-label {
             position:absolute;inset:0;display:flex;flex-direction:column;
-            align-items:center;justify-content:center;
+            align-items:center;justify-content:center;pointer-events:none;
         }
-        .hab-strength-pct  { font-size:0.6rem;font-weight:900;color:#fff;line-height:1; }
-        .hab-strength-word { font-size:0.38rem;color:#888;text-transform:uppercase;letter-spacing:0.5px; }
+        .hab-strength-pct {
+            font-size:0.62rem;font-weight:900;color:#00e5ff;line-height:1;
+            text-shadow:0 0 8px rgba(0,229,255,0.8);
+        }
+        .hab-strength-word {
+            font-size:0.36rem;color:#aaa;text-transform:uppercase;
+            letter-spacing:0.5px;margin-top:1px;
+        }
 
         /* ── TRACKER DE CANTIDAD ─────────────────────────────── */
         .hab-qty-row {
@@ -19289,20 +19330,45 @@ function strengthColor(pct) {
     return '#ef4444';
 }
 
-// ── RENDER HABIT STRENGTH RING (SVG inline) ───────────────────
+// ── RENDER HABIT STRENGTH RING (SVG inline — Neon Cyan) ──────
 function renderStrengthRing(pct, color) {
     const r = 20, circ = 2 * Math.PI * r;
     const offset = circ * (1 - pct / 100);
     const label  = strengthLabel(pct);
-    return '<div class="hab-strength-ring">' +
-        '<svg class="hab-strength-svg" viewBox="0 0 48 48">' +
-          '<circle class="hab-strength-bg" cx="24" cy="24" r="'+r+'"/>' +
-          '<circle class="hab-strength-arc" cx="24" cy="24" r="'+r+'" stroke="'+color+'" ' +
-            'stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>' +
-        '</svg>' +
-        '<div class="hab-strength-label">' +
-          '<span class="hab-strength-pct" style="color:'+color+';">'+pct+'</span>' +
-          '<span class="hab-strength-word">'+label+'</span>' +
+    // Siempre cyan brilloso independiente del nivel
+    const cyanColor = '#00e5ff';
+    const isElite   = pct >= 90;
+    const isActive  = pct >= 10;
+    const ringClass = 'hab-strength-ring' + (isElite?' elite':isActive?' active':'');
+    return '<div class="'+ringClass+'">' +
+        '<div class="hab-strength-ring-wrap">' +
+          '<svg class="hab-strength-svg" viewBox="0 0 48 48" style="overflow:visible;">' +
+            '<defs>' +
+              '<mask id="srMask_'+pct+'">' +
+                '<circle cx="24" cy="24" r="'+r+'" fill="none" stroke="white" stroke-width="4.5"' +
+                  ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"' +
+                  ' stroke-linecap="round"/>' +
+              '</mask>' +
+            '</defs>' +
+            '<circle class="hab-strength-bg" cx="24" cy="24" r="'+r+'"/>' +
+            '<circle class="hab-strength-arc-glow" cx="24" cy="24" r="'+r+'"' +
+              ' stroke="'+cyanColor+'"' +
+              ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"' +
+              ' stroke-linecap="round"/>' +
+            '<circle class="hab-strength-arc" cx="24" cy="24" r="'+r+'"' +
+              ' stroke="'+cyanColor+'"' +
+              ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>' +
+            (isElite ?
+              '<g mask="url(#srMask_'+pct+')">' +
+                '<circle cx="24" cy="24" r="'+r+'" class="hab-strength-energy">' +
+                  '<animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="2s" repeatCount="indefinite"/>' +
+                '</circle>' +
+              '</g>' : '') +
+          '</svg>' +
+          '<div class="hab-strength-label">' +
+            '<span class="hab-strength-pct">'+pct+'<span style="font-size:0.45rem;vertical-align:super;">%</span></span>' +
+            '<span class="hab-strength-word">'+label+'</span>' +
+          '</div>' +
         '</div>' +
         '</div>';
 }
@@ -19591,23 +19657,25 @@ function renderWeekdayChart() {
     const now    = new Date();
     const localKey = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 
-    // Analizar últimas 12 semanas
+    // Analizar últimas 12 semanas — solo contar días donde el hábito ya existía
     for (let w = 0; w < 12; w++) {
         for (let d = 0; d < 7; d++) {
             const dd = new Date(now);
             dd.setDate(dd.getDate() - w*7 - ((now.getDay()+6)%7) + d);
             if (dd > now) continue;
             const k = localKey(dd);
-            weeks[d]++;
             habits.forEach(h => {
+                // Solo contar si el hábito ya existía ese día
+                const created = new Date(h.createdAt || '2000-01-01');
+                if (dd < created) return;
+                weeks[d]++;
                 if ((h.log||[]).includes(k)) counts[d]++;
             });
         }
     }
 
-    // Tasa = hábitos completados ese día / (semanas que ocurrió × hábitos activos)
-    const numHab = Math.max(habits.length, 1);
-    const rates  = weeks.map((w,i) => w>0 ? Math.min(1, counts[i]/(w*numHab)) : 0);
+    // Tasa = completadas / oportunidades_reales (ya ajustado por fecha de creación)
+    const rates  = weeks.map((w,i) => w>0 ? Math.min(1, counts[i]/w) : 0);
     const maxR   = Math.max(...rates, 0.01);
     const bestI  = rates.indexOf(Math.max(...rates));
     const nonZero = rates.filter(r=>r>0);
