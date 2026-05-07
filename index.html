@@ -16598,24 +16598,68 @@ window.habRepInc = function(habitId, target) {
         if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
         if (typeof playSparkleSound === 'function') playSparkleSound();
 
-        // Marcar card visualmente con color del hábito al completarse
+        // ── FIX COMPLETO: actualizar tarjeta al instante ──────────────
         if (card) {
+            // 1) Fondo del rectángulo con el color del hábito (via CSS class, sin inline que interfiera)
             card.classList.add('completed-today');
-            card.style.backgroundImage = 'linear-gradient(135deg,' + color + '18 0%,transparent 60%)';
-            card.style.borderColor = color;
-            card.style.boxShadow  = '0 0 18px ' + color + '40';
-            // Actualizar today-dot de la barra semanal
-            var todayDot = card.querySelector('.hab-day-dot.today-dot');
-            if (todayDot) {
-                todayDot.classList.add('done-dot');
-                todayDot.classList.remove('today-dot');
-                todayDot.style.background = color;
-                todayDot.style.boxShadow  = '0 0 6px ' + color;
-            }
+            card.style.removeProperty('background-image');
+            card.style.removeProperty('border-color');
+            card.style.removeProperty('box-shadow');
+
+            // 2) Actualizar mini-estadísticas (Racha, Mejor, Total, Tasa)
+            try {
+                const hhFresh2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(function(x){return x.id===habitId;});
+                if (hhFresh2) {
+                    const pills2 = card.querySelectorAll('.hab-stat-pill .hab-stat-val');
+                    if (pills2.length >= 4) {
+                        const logSet2 = new Set(hhFresh2.log||[]);
+                        let streak3=0; const dsTmp2=new Date();
+                        while(true){
+                            const kk2=dsTmp2.getFullYear()+'-'+String(dsTmp2.getMonth()+1).padStart(2,'0')+'-'+String(dsTmp2.getDate()).padStart(2,'0');
+                            if(!logSet2.has(kk2)) break;
+                            streak3++; dsTmp2.setDate(dsTmp2.getDate()-1);
+                            if(streak3>3650) break;
+                        }
+                        pills2[0].textContent = streak3;
+                        pills2[0].style.color = hhFresh2.color || '#10b981';
+                        const logArr2=[...(hhFresh2.log||[])].sort();
+                        let best3=0,cur3=0,prev3=null;
+                        for(const kk2 of logArr2){if(!prev3){cur3=1;}else{const d1=new Date(prev3),d2=new Date(kk2);cur3=(Math.round((d2-d1)/86400000)===1)?cur3+1:1;}if(cur3>best3)best3=cur3;prev3=kk2;}
+                        pills2[1].textContent = best3;
+                        pills2[2].textContent = (hhFresh2.log||[]).length;
+                        const daysOld2=Math.max(1,Math.round((new Date()-new Date(hhFresh2.createdAt||new Date()))/86400000));
+                        pills2[3].textContent = Math.round(((hhFresh2.log||[]).length/daysOld2)*100)+'%';
+                    }
+                    // 3) Dot de hoy en la barra semanal
+                    const todayDots2 = card.querySelectorAll('.hab-day-dot');
+                    const dow3 = (new Date().getDay()+6)%7;
+                    if (todayDots2[dow3]) {
+                        todayDots2[dow3].classList.add('done-dot');
+                        todayDots2[dow3].classList.remove('today-dot');
+                    }
+                }
+            } catch(eStats2) {}
         }
 
-        // ── Actualizar PROGRESO DE HOY en tiempo real ────────────
-        _habUpdateTodayProgress();
+        // 4) Actualizar "Progreso de Hoy" (contador + barra) en tiempo real
+        try {
+            const hListProg2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+            const todayProg2 = new Date().toISOString().split('T')[0];
+            const dowProg2   = (new Date().getDay()+6)%7;
+            const dueProg2   = hListProg2.filter(function(x){
+                if(x.archived) return false;
+                if(x.freq==='daily') return true;
+                if(x.freq==='weekly') return dowProg2===0;
+                if(x.freq==='custom') return (x.days||[0,1,2,3,4]).includes(dowProg2);
+                return true;
+            });
+            const doneProg2  = dueProg2.filter(function(x){ return (x.log||[]).includes(todayProg2); }).length;
+            const pctProg2   = dueProg2.length ? Math.round(doneProg2/dueProg2.length*100) : 0;
+            const countEl3   = document.getElementById('habTodayCount');
+            const barEl3     = document.getElementById('habTodayBar');
+            if (countEl3) countEl3.textContent = doneProg2+'/'+dueProg2.length+' · '+pctProg2+'%';
+            if (barEl3)   barEl3.style.width = pctProg2+'%';
+        } catch(eProg2) {}
 
         // Actualizar badge y stats sin tocar la lista
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
