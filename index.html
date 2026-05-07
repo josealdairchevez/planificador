@@ -16666,6 +16666,16 @@ window.habRepInc = function(habitId, target) {
         if (typeof renderHabStats   === 'function') renderHabStats();
         if (typeof renderHabHero    === 'function') renderHabHero();
 
+        // Racha (igual que toggleHabit)
+        try {
+            var hForStreak = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(function(x){return x.id===habitId;});
+            if (hForStreak && typeof calcStreak === 'function') {
+                var streakNow = calcStreak(hForStreak);
+                if (streakNow >= 3 && typeof showStreakToast === 'function') showStreakToast(hForStreak, streakNow);
+            }
+            if (typeof checkAndGrantAchievements === 'function') checkAndGrantAchievements();
+        } catch(eStreak) {}
+
         // Confeti
         if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
     }
@@ -16918,6 +16928,16 @@ window.startHabTimer = function(habitId, totalSec) {
                 if (typeof updateHabitBadge === 'function') updateHabitBadge();
                 if (typeof renderHabStats   === 'function') renderHabStats();
                 if (typeof renderHabHero    === 'function') renderHabHero();
+
+                // Racha (igual que toggleHabit)
+                try {
+                    var hForStreakT = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(function(x){return x.id===habitId;});
+                    if (hForStreakT && typeof calcStreak === 'function') {
+                        var streakNowT = calcStreak(hForStreakT);
+                        if (streakNowT >= 3 && typeof showStreakToast === 'function') showStreakToast(hForStreakT, streakNowT);
+                    }
+                    if (typeof checkAndGrantAchievements === 'function') checkAndGrantAchievements();
+                } catch(eStreakT) {}
             }
 
             playHabTimerComplete();
