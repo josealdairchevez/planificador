@@ -5,10 +5,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-self.addEventListener('install', function(e) {
-    self.skipWaiting();
-});
-
+// ── REGISTRAR CANAL DE NOTIFICACIÓN EN ANDROID ───────────
 self.addEventListener('activate', function(e) {
     e.waitUntil(
         self.clients.claim().then(function() {
@@ -33,45 +30,30 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ── Flag para evitar doble notificación ──────────────────
-// onBackgroundMessage y el evento push nativo pueden disparar
-// juntos en algunos dispositivos Android — este flag evita duplicados
-var _notifShownKeys = {};
-
-// ── Función para obtener hora local del recordatorio ─────
-function _getHoraLocal(fireAt) {
-    if (!fireAt) return '';
-    try {
-        var fecha = new Date(parseInt(fireAt));
-        var hh = String(fecha.getHours()).padStart(2, '0');
-        var mm = String(fecha.getMinutes()).padStart(2, '0');
-        return ' · ' + hh + ':' + mm;
-    } catch(e) { return ''; }
-}
-
 // ── Notificaciones en BACKGROUND o APP CERRADA ───────────
 messaging.onBackgroundMessage(function(payload) {
     console.log('[SW] onBackgroundMessage recibido:', JSON.stringify(payload));
 
-    var title  = (payload.data && payload.data.title) || 'Planificador JCH';
-    var body   = (payload.data && payload.data.body)  || 'Tienes un recordatorio';
-    var evId   = (payload.data && payload.data.evId)  || '';
-    var fireAt = (payload.data && payload.data.fireAt) || '';
+    const title  = (payload.data && payload.data.title) || 'Planificador JCH';
+    const body   = (payload.data && payload.data.body)  || 'Tienes un recordatorio';
+    const evId   = (payload.data && payload.data.evId)  || '';
+    const fireAt = (payload.data && payload.data.fireAt) || '';
 
-    // ── Marcar esta notificación como ya mostrada (anti-duplicado) ──
-    var dedupeKey = evId + '-' + fireAt;
-    if (_notifShownKeys[dedupeKey]) {
-        console.log('[SW] Notificación ya mostrada, ignorando duplicado:', dedupeKey);
-        return;
+    // ── MEJORA 2: Hora local en la notificación ──────────
+    var horaStr = '';
+    if (fireAt) {
+        var fecha = new Date(parseInt(fireAt));
+        var hh = String(fecha.getHours()).padStart(2, '0');
+        var mm = String(fecha.getMinutes()).padStart(2, '0');
+        horaStr = ' · ' + hh + ':' + mm;
     }
-    _notifShownKeys[dedupeKey] = true;
-    // Limpiar la key después de 10 segundos
-    setTimeout(function() { delete _notifShownKeys[dedupeKey]; }, 10000);
 
-    var isHabit     = evId.startsWith('hab_');
-    var actionLabel = isHabit ? '✅ Marcar hecho' : '📋 Ver tarea';
-    var horaStr     = _getHoraLocal(fireAt);
-    var tag         = 'jch-' + evId + '-' + Date.now();
+    const isHabit     = evId.startsWith('hab_');
+    const actionLabel = isHabit ? '✅ Marcar hecho' : '📋 Ver tarea';
+
+    // ── MEJORA 1: Tag con evId fijo (sin Date.now()) ─────
+    // Mismo tag = Android reemplaza en vez de duplicar
+    const tag = 'jch-' + evId + '-' + fireAt;
 
     return self.registration.showNotification(title, {
         body:               body + horaStr,
@@ -82,7 +64,6 @@ messaging.onBackgroundMessage(function(payload) {
         tag:                tag,
         renotify:           true,
         silent:             false,
-        timestamp:          Date.now(),
         data:               { url: './index.html', evId: evId, fireAt: fireAt },
         actions: [
             { action: 'open',    title: actionLabel },
@@ -106,52 +87,7 @@ self.addEventListener('notificationclick', function(e) {
 });
 
 // ── CRÍTICO: mantener SW activo para mensajes data-only ──
+// Necesario para que Android procese notificaciones con app cerrada
 self.addEventListener('fetch', function(e) {
-    // No interceptar — solo mantener el SW vivo en Android
-});
-
-// ── Push directo (fallback si onBackgroundMessage no dispara) ─
-self.addEventListener('push', function(e) {
-    if (!e.data) return;
-    var data = {};
-    try { data = e.data.json(); } catch(err) { return; }
-
-    // Si tiene bloque notification, Firebase lo maneja solo
-    if (data.notification) return;
-
-    var d      = data.data || {};
-    var evId   = d.evId   || '';
-    var fireAt = d.fireAt  || '';
-
-    // ── Anti-duplicado: si onBackgroundMessage ya lo mostró, ignorar ──
-    var dedupeKey = evId + '-' + fireAt;
-    if (_notifShownKeys[dedupeKey]) {
-        console.log('[SW] push ignorado — ya mostrado por onBackgroundMessage:', dedupeKey);
-        return;
-    }
-    _notifShownKeys[dedupeKey] = true;
-    setTimeout(function() { delete _notifShownKeys[dedupeKey]; }, 10000);
-
-    var title   = d.title || 'Planificador JCH';
-    var body    = d.body  || 'Tienes un recordatorio';
-    var horaStr = _getHoraLocal(fireAt);
-    var isHabit = evId.startsWith('hab_');
-
-    e.waitUntil(
-        self.registration.showNotification(title, {
-            body:               body + horaStr,
-            icon:               './icon-192.png',
-            badge:              './icon-192.png',
-            vibrate:            [500, 200, 500, 200, 800],
-            requireInteraction: true,
-            tag:                'jch-push-' + evId + '-' + Date.now(),
-            renotify:           true,
-            silent:             false,
-            data:               { url: './index.html', evId: evId },
-            actions: [
-                { action: 'open',    title: isHabit ? '✅ Marcar hecho' : '📋 Ver tarea' },
-                { action: 'dismiss', title: '✕ Cerrar' }
-            ]
-        })
-    );
+    // No interceptar fetches — solo mantener el SW vivo
 });
