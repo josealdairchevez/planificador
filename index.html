@@ -16641,15 +16641,37 @@ window.habRepInc = function(habitId, target) {
                         }
                     }
 
-                    // 4) Actualizar mini-estadísticas (Racha, Total/Mejor, Tasa)
+                    // 4) Actualizar mini-estadísticas: [0]=Racha [1]=Mejor [2]=Total [3]=Tasa
                     const pills2 = card.querySelectorAll('.hab-stat-pill .hab-stat-val');
-                    if (pills2.length >= 3) {
+                    if (pills2.length >= 4) {
+                        // Calcular mejor racha
+                        const logArr2 = [...(hhFresh2.log||[])].sort();
+                        let best2=0,cur2=0,prev2=null;
+                        for(const kk of logArr2){
+                            if(!prev2){cur2=1;}
+                            else{const d1=new Date(prev2),d2=new Date(kk);cur2=(Math.round((d2-d1)/86400000)===1)?cur2+1:1;}
+                            if(cur2>best2)best2=cur2;prev2=kk;
+                        }
+                        const daysOld2=Math.max(1,Math.round((new Date()-new Date(hhFresh2.createdAt||new Date()))/86400000));
                         pills2[0].textContent = streak3;
                         pills2[0].style.color = hhFresh2.color || '#10b981';
-                        // pills2[1] = Total o Mejor según función de render
-                        pills2[pills2.length-2].textContent = (hhFresh2.log||[]).length;
+                        pills2[1].textContent = best2;   // ← MEJOR
+                        pills2[2].textContent = (hhFresh2.log||[]).length; // ← TOTAL
+                        pills2[3].textContent = Math.round(((hhFresh2.log||[]).length/daysOld2)*100)+'%'; // ← TASA
+                    } else if (pills2.length === 3) {
+                        // Layout alternativo con 3 pills
+                        const logArr2 = [...(hhFresh2.log||[])].sort();
+                        let best2=0,cur2=0,prev2=null;
+                        for(const kk of logArr2){
+                            if(!prev2){cur2=1;}
+                            else{const d1=new Date(prev2),d2=new Date(kk);cur2=(Math.round((d2-d1)/86400000)===1)?cur2+1:1;}
+                            if(cur2>best2)best2=cur2;prev2=kk;
+                        }
                         const daysOld2=Math.max(1,Math.round((new Date()-new Date(hhFresh2.createdAt||new Date()))/86400000));
-                        pills2[pills2.length-1].textContent = Math.round(((hhFresh2.log||[]).length/daysOld2)*100)+'%';
+                        pills2[0].textContent = streak3;
+                        pills2[0].style.color = hhFresh2.color || '#10b981';
+                        pills2[1].textContent = best2;
+                        pills2[2].textContent = Math.round(((hhFresh2.log||[]).length/daysOld2)*100)+'%';
                     }
 
                     // 5) Dot de hoy: buscar por clase today-dot (evita bug de índice por zona horaria)
@@ -16919,14 +16941,35 @@ window.startHabTimer = function(habitId, totalSec) {
                                 }
                             }
 
-                            // 4) Actualizar mini-estadísticas (Racha, Total, Tasa)
+                            // 4) Actualizar mini-estadísticas: [0]=Racha [1]=Mejor [2]=Total [3]=Tasa
                             const pills = card2.querySelectorAll('.hab-stat-pill .hab-stat-val');
-                            if (pills.length >= 3) {
+                            if (pills.length >= 4) {
+                                const logArr3=[...(hhFresh.log||[])].sort();
+                                let best3=0,cur3=0,prev3=null;
+                                for(const kk of logArr3){
+                                    if(!prev3){cur3=1;}
+                                    else{const d1=new Date(prev3),d2=new Date(kk);cur3=(Math.round((d2-d1)/86400000)===1)?cur3+1:1;}
+                                    if(cur3>best3)best3=cur3;prev3=kk;
+                                }
+                                const daysOld=Math.max(1,Math.round((new Date()-new Date(hhFresh.createdAt||new Date()))/86400000));
                                 pills[0].textContent = streak2;
                                 pills[0].style.color = hhFresh.color || '#10b981';
-                                pills[pills.length-2].textContent = (hhFresh.log||[]).length;
+                                pills[1].textContent = best3;
+                                pills[2].textContent = (hhFresh.log||[]).length;
+                                pills[3].textContent = Math.round(((hhFresh.log||[]).length/daysOld)*100)+'%';
+                            } else if (pills.length === 3) {
+                                const logArr3=[...(hhFresh.log||[])].sort();
+                                let best3=0,cur3=0,prev3=null;
+                                for(const kk of logArr3){
+                                    if(!prev3){cur3=1;}
+                                    else{const d1=new Date(prev3),d2=new Date(kk);cur3=(Math.round((d2-d1)/86400000)===1)?cur3+1:1;}
+                                    if(cur3>best3)best3=cur3;prev3=kk;
+                                }
                                 const daysOld=Math.max(1,Math.round((new Date()-new Date(hhFresh.createdAt||new Date()))/86400000));
-                                pills[pills.length-1].textContent = Math.round(((hhFresh.log||[]).length/daysOld)*100)+'%';
+                                pills[0].textContent = streak2;
+                                pills[0].style.color = hhFresh.color || '#10b981';
+                                pills[1].textContent = best3;
+                                pills[2].textContent = Math.round(((hhFresh.log||[]).length/daysOld)*100)+'%';
                             }
 
                             // 5) Dot de hoy: buscar por clase today-dot (evita bug de índice por zona horaria)
@@ -21770,14 +21813,15 @@ var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
     if (!ov) return;
-    // 1. Asegurar que el overlay está cerrado (sin transición visible)
+    // 1. Cerrar overlay — CSS lo pone invisible (opacity:0 + visibility:hidden)
     ov.classList.remove('open');
-    // 2. Rellenar el contenido con el overlay oculto (evita parpadeo)
+    // 2. Inyectar HTML mientras overlay está invisible
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Mostrar en el siguiente frame — el CSS transition hace el slide-up suave
-    requestAnimationFrame(function() {
+    // 3. Esperar 30ms reales para que el browser móvil complete el reflow
+    //    antes de activar la transición — evita el flash transparente en Android
+    setTimeout(function() {
         ov.classList.add('open');
-    });
+    }, 30);
 };
 
 })();
