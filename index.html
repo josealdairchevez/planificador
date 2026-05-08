@@ -16227,22 +16227,34 @@ function _legacyRenderBossMini_DISABLED() {
 }
 
 function renderBossFull(boss) {
-    const bossHp = Math.max(0, hero.bossHp || boss.maxHp);
-    const pct    = Math.round(bossHp / boss.maxHp * 100);
+    const bossHp  = Math.max(0, hero.bossHp || boss.maxHp);
+    const pct     = Math.round(bossHp / boss.maxHp * 100);
+    const bossIdx = Math.min(hero.bossIndex || 0, BOSSES.length - 1);
+    // SVG animado del boss actual
+    const svgMap  = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25];
+    const svgIdx  = svgMap[bossIdx] !== undefined ? svgMap[bossIdx] : 0;
+    const svgFn   = (typeof BOSS_SVGS !== 'undefined') && BOSS_SVGS[Math.min(svgIdx, BOSS_SVGS.length-1)];
+    const bossArt = svgFn ? svgFn() : `<span style="font-size:3rem">${boss.emoji||'👾'}</span>`;
     return `
-    <div class="hab-boss-panel">
-        <div class="hab-boss-top">
-            <div class="hab-boss-avatar" style="font-size:2.5rem;">${boss.emoji||'👾'}</div>
-            <div class="hab-boss-info">
-                <div class="hab-boss-name">${boss.name}</div>
-                <div class="hab-boss-sub">🎁 Recompensa: ${boss.reward}</div>
-                <div class="hab-boss-sub">⭐ +${boss.xpReward} XP al vencer</div>
+    <div class="hab-boss-panel" style="position:relative;overflow:hidden;">
+        <div class="hab-boss-top" style="align-items:flex-start;gap:12px;">
+            <div style="width:88px;height:88px;flex-shrink:0;display:flex;align-items:center;
+                        justify-content:center;background:rgba(0,0,0,0.35);border-radius:14px;
+                        overflow:hidden;border:1.5px solid rgba(239,68,68,0.3);">
+                ${bossArt}
             </div>
+            <div class="hab-boss-info" style="flex:1;">
+                <div class="hab-boss-name" style="font-size:0.92rem;">${boss.name}</div>
+                <div class="hab-boss-sub" style="margin-top:3px;">🎁 ${boss.reward}</div>
+                <div class="hab-boss-sub" style="margin-top:2px;">⭐ +${boss.xpReward} XP al vencer</div>
+                <div class="hab-boss-sub" style="margin-top:2px;">☠️ Completa hábitos para atacar</div>
+            </div>
+            <div id="habBossDmg" class="hab-boss-dmg-flash"></div>
         </div>
-        <div class="hab-boss-hp-track" style="height:12px;margin-top:8px;">
+        <div class="hab-boss-hp-track" style="height:12px;margin-top:10px;">
             <div class="hab-boss-hp-fill" style="width:${pct}%"></div>
         </div>
-        <div class="hab-boss-hp-text">${bossHp}/${boss.maxHp} HP</div>
+        <div class="hab-boss-hp-text" style="font-size:0.62rem;">${bossHp} / ${boss.maxHp} HP · ${pct}%</div>
     </div>`;
 }
 
