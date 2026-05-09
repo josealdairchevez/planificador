@@ -15309,6 +15309,17 @@ function reschedAll(){
       });
     save(list);
     saveToFirestore(list);
+    // Enviar al SW para programación local offline
+    var _habOnly = list.filter(function(r){ return String(r.evId).startsWith('hab_'); });
+    if (_habOnly.length && navigator.serviceWorker) {
+        navigator.serviceWorker.ready.then(function(reg) {
+            var sw = reg.active || (navigator.serviceWorker.controller);
+            if (sw) {
+                sw.postMessage({ type: 'SCHEDULE_REMINDERS', reminders: list });
+                console.log('[JCH] reschedAll → SW: '+list.length+' recordatorios programados');
+            }
+        });
+    }
     console.log('[JCH] reschedAll total: '+list.length+' en Firestore');
   }catch(e){ console.warn('[JCH] reschedAll error:',e); }
 }
@@ -17283,6 +17294,26 @@ window.saveHabit = function() {
             localStorage.setItem('jch_rem_v4', JSON.stringify(_rem));
             if (typeof window._jchSaveToFirestore === 'function') {
                 window._jchSaveToFirestore(_rem);
+            }
+            // ── PROGRAMAR EN SERVICE WORKER para notificaciones con app cerrada ──
+            // El SW usa setTimeout internamente para disparar en el momento exacto
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'SCHEDULE_REMINDERS',
+                    reminders: _rem
+                });
+                console.log('[JCH] Recordatorios enviados al SW:', _rem.length);
+            } else if (navigator.serviceWorker) {
+                // SW registrado pero no activo aún — esperar y reintentar
+                navigator.serviceWorker.ready.then(function(reg) {
+                    if (reg.active) {
+                        reg.active.postMessage({
+                            type: 'SCHEDULE_REMINDERS',
+                            reminders: _rem
+                        });
+                        console.log('[JCH] Recordatorios enviados al SW (ready):', _rem.length);
+                    }
+                });
             }
         } catch(e) { console.warn('[JCH] saveHabit SYNC error:',e); }
     }
