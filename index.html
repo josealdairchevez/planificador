@@ -16071,7 +16071,8 @@ function renderHabitCard(h, showEdit) {
     const dots=calcWeekDots(h), rate=calcCompletionRate(h);
     const isNeg = h.type==='negative';
     const weekBar=dots.map(d=>`<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`).join('');
-    const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.58rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
+    const _remTimes1 = h.reminderTimes&&h.reminderTimes.length ? h.reminderTimes : (h.reminderTime ? [h.reminderTime] : []);
+    const reminderBadge = (h.reminderOn&&_remTimes1.length) ? `<span style="font-size:0.58rem;color:#60a5fa;">🔔 ${_remTimes1.join(' · ')}</span>` : '';
     return `
     <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-card-color:${h.color||'#10b981'};">
         <div class="hab-card-top">
@@ -17346,7 +17347,8 @@ function rescheduleAllReminders(force) {
         // Leer hábitos directamente de localStorage
         const allHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
         const habsWithReminder = allHabits.filter(function(h) {
-            return h.reminderOn && h.reminderTime && !h.archived;
+            return h.reminderOn && !h.archived &&
+                   ((h.reminderTimes && h.reminderTimes.length) || h.reminderTime);
         });
 
         if (!habsWithReminder.length) {
@@ -17354,8 +17356,6 @@ function rescheduleAllReminders(force) {
             return;
         }
 
-        // Leer la lista actual (que incluye eventos del calendario)
-        // usando load() del módulo de recordatorios
         var currentList = [];
         try { currentList = JSON.parse(localStorage.getItem('jch_rem_v4') || '[]'); } catch(e) {}
 
@@ -17365,15 +17365,27 @@ function rescheduleAllReminders(force) {
         });
 
         const nowDate = new Date();
+        // Expandir hábitos con múltiples recordatorios
+        var habEntries = [];
         habsWithReminder.forEach(function(h) {
-            var parts    = (h.reminderTime || '08:00').split(':').map(Number);
+            var times = (h.reminderTimes && h.reminderTimes.length)
+                ? h.reminderTimes
+                : [h.reminderTime || '08:00'];
+            times.forEach(function(t, idx) {
+                habEntries.push({ h: h, time: t, idx: idx });
+            });
+        });
+
+        habEntries.forEach(function(item) {
+            var h = item.h, t = item.time, idx = item.idx;
+            var parts    = (t || '08:00').split(':').map(Number);
             var hr = parts[0] || 8, mn = parts[1] || 0;
             var todayFire = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), hr, mn, 0);
             var fireAt    = todayFire.getTime() > (now + 60000)
                 ? todayFire.getTime()
-                : todayFire.getTime() + 86400000; // mañana si ya pasó
+                : todayFire.getTime() + 86400000;
             var entry = {
-                evId:   'hab_single_' + (h.name || '').replace(/\W+/g, '_'),
+                evId:   'hab_' + (h.name || '').replace(/\W+/g, '_') + (idx > 0 ? '_' + idx : ''),
                 fireAt: fireAt,
                 title:  (h.emoji || '🌿') + ' ' + (h.name || 'Hábito'),
                 body:   '¡Es hora de tu hábito diario!'
@@ -17432,7 +17444,8 @@ window.editHabit = function(id) {
     if(rTogE) rTogE.classList.toggle('on', reminderOn);
     setTimeout(function(){ renderHabRemindersList(); }, 50);
     selectedType=h.type||'positive'; reminderOn=!!h.reminderOn;
-    if(h.reminderTime) document.getElementById('habReminderTime').value=h.reminderTime;
+    // habReminderTime ya no existe (reemplazado por lista de múltiples recordatorios)
+    // reminderTimes ya fue restaurado arriba
     const tog=document.getElementById('habReminderToggle');
     if(tog) tog.classList.toggle('on',reminderOn);
     updateEmojiGrid(); updateColorGrid();
@@ -17934,7 +17947,8 @@ window.renderHabitCardHabitica = function(h, showEdit) {
     const streak = window._calcHabStreak ? window._calcHabStreak(h) : 0;
     const rate   = window._calcHabRate   ? window._calcHabRate(h)   : 0;
     const dots   = window._calcHabDots   ? window._calcHabDots(h)   : [];
-    const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.55rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
+    const _remTimes2 = h.reminderTimes&&h.reminderTimes.length ? h.reminderTimes : (h.reminderTime ? [h.reminderTime] : []);
+    const reminderBadge = (h.reminderOn&&_remTimes2.length) ? `<span style="font-size:0.55rem;color:#60a5fa;">🔔 ${_remTimes2.join(' · ')}</span>` : '';
 
     const weekBar = dots.map ? dots.map(d =>
         `<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`
@@ -19942,6 +19956,17 @@ window.openHabitModal = function() {
             b.classList.toggle('selected', b.dataset.ht==='check'));
         var qc = document.getElementById('habQtyConfig');
         if (qc) qc.style.display = 'none';
+    } else {
+        // Edición: restaurar tipo en UI según _selectedHType
+        var _htEdit = window._selectedHType || 'check';
+        var _rtEdit = window._selectedRoutine || 'morning';
+        document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b =>
+            b.classList.toggle('selected', b.dataset.ht===_htEdit));
+        document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b =>
+            b.classList.toggle('selected', b.dataset.rt===_rtEdit));
+        // Mostrar/ocultar config de cantidad
+        var qcE = document.getElementById('habQtyConfig');
+        if (qcE) qcE.style.display = (_htEdit==='quantity'||_htEdit==='timer') ? '' : 'none';
     }
     // Forzar render del panel HOY al abrir el modal
     setTimeout(function() {
