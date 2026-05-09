@@ -15345,12 +15345,17 @@ function check(){
   var _o=localStorage.setItem.bind(localStorage);
   localStorage.setItem=function(k,v){
     _o(k,v);
-    // Solo reaccionar al calendario — jch_rem_v4 lo escribe save() y causaría loop
-    if(k==='jch_calendar_v1'){
+    // Reaccionar al calendario Y a los hábitos
+    if(k==='jch_calendar_v1' || k==='jch_habits_v1'){
       try{
-        var list=buildList(JSON.parse(v)||[]);
-        var now=Date.now(), nowDate=new Date(), allH=[];
-        try{ allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(ex){}
+        // Leer lista de calendario
+        var calData = [];
+        try { calData = JSON.parse(localStorage.getItem('jch_calendar_v1')||'[]'); } catch(ex) {}
+        var list = buildList(calData);
+        var now = Date.now(), nowDate = new Date();
+        // Leer hábitos — si estamos reaccionando a jch_habits_v1, usar el valor nuevo
+        var allH = [];
+        try { allH = JSON.parse(k==='jch_habits_v1' ? v : (localStorage.getItem('jch_habits_v1')||'[]')); } catch(ex) {}
         // Expandir hábitos con múltiples recordatorios
         var _habExpanded = [];
         allH.forEach(function(h) {
@@ -15373,6 +15378,13 @@ function check(){
             list.push({evId:evId,fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
         });
         save(list); saveToFirestore(list);
+        // Enviar al SW para programación local offline
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.ready.then(function(reg) {
+                var sw = reg.active || navigator.serviceWorker.controller;
+                if (sw) sw.postMessage({ type: 'SCHEDULE_REMINDERS', reminders: list });
+            });
+        }
       }catch(e){}
     }
   };
