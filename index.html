@@ -15285,19 +15285,27 @@ function reschedAll(){
             expandedH.push(h);
         }
     });
+    // Eliminar recordatorios de hábitos anteriores de la lista del calendario
+    list = list.filter(function(r){ return !String(r.evId).startsWith('hab_'); });
+
+    var _habIdx = {};
     expandedH.filter(function(h){ return h.reminderOn && h.reminderTime && !h.archived; })
       .forEach(function(h){
+        var baseName = (h.name||'').replace(/\W+/g,'_');
+        _habIdx[baseName] = (_habIdx[baseName]||0);
+        var idx = _habIdx[baseName];
+        _habIdx[baseName]++;
         var parts=(h.reminderTime||'08:00').split(':').map(Number);
         var hr=parts[0]||8, mn=parts[1]||0;
         var todayFire=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
         var fireAt=todayFire.getTime()>(now+60000)?todayFire.getTime():todayFire.getTime()+86400000;
         list.push({
-          evId:'hab_single_'+(h.name||'').replace(/\W+/g,'_'),
+          evId:'hab_'+baseName+(idx>0?'_'+idx:''),
           fireAt:fireAt,
           title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),
           body:'¡Es hora de tu hábito diario!'
         });
-        console.log('[JCH] reschedAll hab: '+(h.name||'?')+' -> '+new Date(fireAt).toLocaleString());
+        console.log('[JCH] reschedAll hab: '+(h.name||'?')+' idx='+idx+' -> '+new Date(fireAt).toLocaleString());
       });
     save(list);
     saveToFirestore(list);
@@ -17290,6 +17298,12 @@ window.saveHabit = function() {
         }
         setTimeout(function() {
             if (typeof window._jchCheckNow === 'function') window._jchCheckNow();
+            // Log para debugging de recordatorios
+            try {
+                var _remDebug = JSON.parse(localStorage.getItem('jch_rem_v4')||'[]');
+                console.log('[JCH] saveHabit: recordatorios en jch_rem_v4:', 
+                    _remDebug.map(function(r){ return r.evId+' → '+new Date(r.fireAt).toLocaleString(); }));
+            } catch(e) {}
         }, 500);
     }, 400);
 
@@ -19969,7 +19983,9 @@ const _origOpenHabit = window.openHabitModal;
 window.openHabitModal = function() {
     _origOpenHabit && _origOpenHabit();
     // Solo resetear a 'check' si es un modal NUEVO (no edición)
-    var isEditing = !!(document.getElementById('habEditId') && document.getElementById('habEditId').value);
+    // _pendingEditId se setea ANTES de llamar openHabitModal desde el botón Editar
+    var isEditing = !!(window._pendingEditId ||
+        (document.getElementById('habEditId') && document.getElementById('habEditId').value));
     if (!isEditing) {
         _selectedRoutine = 'morning';
         _selectedHType   = 'check';
@@ -23325,7 +23341,7 @@ window.openHabDetail = function(id) {
 
         // ── Acciones — Editar · Cerrar · Archive · Delete ─────────
         '<div class="hab-detail-actions">' +
-            '<button class="hab-detail-action-btn" onclick="closeHabDetail();setTimeout(function(){if(typeof window.reminderTimes===\'undefined\')window.reminderTimes=[];openHabitModal();setTimeout(function(){editHabit(\'' + h.id + '\')},120);},120);">✏️ Editar</button>' +
+            '<button class="hab-detail-action-btn" onclick="window._pendingEditId=\'' + h.id + '\';closeHabDetail();setTimeout(function(){if(typeof window.reminderTimes===\'undefined\')window.reminderTimes=[];openHabitModal();setTimeout(function(){editHabit(\'' + h.id + '\');window._pendingEditId=null;},120);},120);">✏️ Editar</button>' +
             '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✓ Cerrar</button>' +
             '<button class="hab-detail-action-btn" onclick="window._habArchive(\'' + h.id + '\')" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
             '<button class="hab-detail-action-btn danger" onclick="if(confirm(\'¿Eliminar este hábito?\')){ deleteHabit(\'' + h.id + '\');closeHabDetail();}">🗑️ Delete</button>' +
