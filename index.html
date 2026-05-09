@@ -15157,10 +15157,17 @@ function showNotif(title,body,tag){
 function saveToFirestore(list){
   var snapshot=list.slice();
   function doSave(user){
+    console.log('[JCH] saveToFirestore enviando '+snapshot.length+' recordatorios:', snapshot.map(function(r){return r.evId+'@'+new Date(r.fireAt).toLocaleString();}));
     firebase.firestore().collection('users').doc(user.uid)
-      .set({fcm_reminders:snapshot},{merge:true})
-      .then(function(){ console.log('[JCH] Firestore OK: '+snapshot.length+' recordatorios'); })
-      .catch(function(e){ console.warn('[JCH] Firestore error:',e); });
+      .update({fcm_reminders: snapshot})
+      .then(function(){ console.log('[JCH] Firestore ACTUALIZADO: '+snapshot.length+' recordatorios'); })
+      .catch(function(e){
+        // Si el doc no existe, crearlo con set
+        firebase.firestore().collection('users').doc(user.uid)
+          .set({fcm_reminders:snapshot},{merge:false})
+          .then(function(){ console.log('[JCH] Firestore CREADO: '+snapshot.length+' recordatorios'); })
+          .catch(function(e2){ console.warn('[JCH] Firestore error:',e2); });
+      });
   }
   function tryUpdate(){
     if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
@@ -17304,10 +17311,13 @@ window.saveHabit = function() {
                 _list2.push({evId:evId,fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
                 console.log('[JCH] Forzando Firestore: '+evId+' → '+new Date(fa).toLocaleString());
             });
-            if (_list2.length > 0 && typeof saveToFirestore === 'function') {
-                saveToFirestore(_list2);
-                // También guardar en jch_rem_v4 local sin triggear el observer
-                try { _o('jch_rem_v4', JSON.stringify(_list2)); } catch(ex) {}
+            // Usar _jchSaveToFirestore (expuesta globalmente) o saveToFirestore
+            var _stfFn = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
+            if (_list2.length > 0 && _stfFn) {
+                _stfFn(_list2);
+                console.log('[JCH] forceFirestore: enviando '+_list2.length+' recordatorios a Firestore');
+            } else {
+                console.warn('[JCH] forceFirestore: no se encontró saveToFirestore. _list2.length='+_list2.length);
             }
             // Enviar al SW
             if (navigator.serviceWorker) {
