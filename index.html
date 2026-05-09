@@ -17207,6 +17207,18 @@ window.saveHabit = function() {
     if (_htBtn && _htBtn.dataset.ht) _htNow = _htBtn.dataset.ht;
     else if (window._selectedHType) _htNow = window._selectedHType;
 
+    // CRÍTICO: Sincronizar reminderTimes desde el DOM antes de capturar
+    // (en Android, onchange puede no haber disparado si el usuario no salió del input)
+    var _domInputs = document.querySelectorAll('#habRemindersList .hab-reminder-item-time');
+    if (_domInputs && _domInputs.length > 0) {
+        if (typeof reminderTimes === 'undefined') window.reminderTimes = [];
+        _domInputs.forEach(function(inp, i) {
+            if (inp.value) reminderTimes[i] = inp.value;
+        });
+        // Truncar si hay más entradas en array que inputs en DOM
+        reminderTimes.length = _domInputs.length;
+    }
+
     // Capturar reminderTimes y reminderOn ANTES del reset
     var _savedReminderTimes = (typeof reminderTimes !== 'undefined') ? [...reminderTimes] : [];
     var _savedReminderOn    = (typeof reminderOn    !== 'undefined') ? reminderOn : false;
@@ -17528,6 +17540,13 @@ window.toggleHabReminder = function() {
     reminderOn=!reminderOn;
     const tog=document.getElementById('habReminderToggle');
     if(tog) tog.classList.toggle('on',reminderOn);
+    // Al activar por primera vez, añadir un recordatorio inicial
+    if (reminderOn && reminderTimes.length === 0) {
+        var now = new Date();
+        var h = String(now.getHours()).padStart(2,'0');
+        var m = String(now.getMinutes()).padStart(2,'0');
+        reminderTimes.push(h + ':' + m);
+    }
     renderHabRemindersList();
 };
 
@@ -17537,7 +17556,9 @@ function renderHabRemindersList() {
     const addBtn  = document.getElementById('habReminderAddBtn');
     const counter = document.getElementById('habReminderCounter');
     const htNow   = (document.querySelector('.hab-htype-btn.selected[data-ht]')||{}).dataset.ht || 'check';
-    const maxQty  = htNow === 'quantity' ? (parseInt((document.getElementById('habQtyTarget')||{}).value)||1) : 1;
+    const maxQty  = htNow === 'quantity'
+        ? (parseInt((document.getElementById('habQtyTarget')||{}).value)||1)
+        : 1; // check y timer: máximo 1 recordatorio
 
     if (!reminderOn || !list) return;
 
@@ -17548,7 +17569,9 @@ function renderHabRemindersList() {
         `<div class="hab-reminder-item">
             <span class="hab-reminder-item-num">${i+1}</span>
             <input type="time" class="hab-reminder-item-time" value="${t}"
-                onchange="reminderTimes[${i}]=this.value;updateHabReminderCounter()">
+                oninput="reminderTimes[${i}]=this.value;updateHabReminderCounter()"
+                onchange="reminderTimes[${i}]=this.value;updateHabReminderCounter()"
+                onblur="reminderTimes[${i}]=this.value;updateHabReminderCounter()">
             <span class="hab-reminder-item-del" onclick="removeHabReminder(${i})">✕</span>
         </div>`
     ).join('');
