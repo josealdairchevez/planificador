@@ -17198,31 +17198,40 @@ window.saveHabit = function() {
     const name=document.getElementById('habNameInput').value.trim();
     if(!name){ document.getElementById('habNameInput').focus(); return; }
     const editId=document.getElementById('habEditId').value;
-    // Leer reminderTime de forma segura (el input puede no existir si es tipo cantidad)
-    const _rtEl = document.getElementById('habReminderTime');
-    const reminderTime = _rtEl ? _rtEl.value : (reminderTimes.length ? reminderTimes[0] : '08:00');
 
-    // Leer habitType y qtyTarget del formulario en el momento de guardar
+    // ── Capturar TODOS los valores ANTES de cualquier reset ──
+    // Leer habitType del DOM en este momento exacto
     var _htNow = 'check';
     var _htBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
     if (_htBtn && _htBtn.dataset.ht) _htNow = _htBtn.dataset.ht;
     else if (window._selectedHType) _htNow = window._selectedHType;
+
+    // Capturar reminderTimes y reminderOn ANTES del reset
+    var _savedReminderTimes = (typeof reminderTimes !== 'undefined') ? [...reminderTimes] : [];
+    var _savedReminderOn    = (typeof reminderOn    !== 'undefined') ? reminderOn : false;
+
+    // Leer reminderTime de forma segura
+    const _rtEl = document.getElementById('habReminderTime');
+    const reminderTime = _savedReminderTimes.length
+        ? _savedReminderTimes[0]
+        : (_rtEl ? _rtEl.value : '08:00');
+
     var _qtyNow = parseInt((document.getElementById('habQtyTarget')||{}).value||'1');
     var _unitNow = ((document.getElementById('habQtyUnit')||{}).value||'').trim() || (_htNow==='timer'?'min':'');
     var _rtNow = window._selectedRoutine || 'morning';
 
     if(editId){
         const h=habits.find(x=>x.id===editId);
-        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime:reminderTimes.length?reminderTimes[0]:'08:00',reminderTimes:_htNow==='quantity'?[...reminderTimes]:undefined,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
+        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn:_savedReminderOn,reminderTime:reminderTime,reminderTimes:_htNow==='quantity'&&_savedReminderTimes.length?_savedReminderTimes:undefined,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
     } else {
-        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime:reminderTimes.length?reminderTimes[0]:(document.getElementById('habReminderTime')||{value:'08:00'}).value,reminderTimes:_htNow==='quantity'?[...reminderTimes]:undefined,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
+        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn:_savedReminderOn,reminderTime:reminderTime,reminderTimes:_htNow==='quantity'&&_savedReminderTimes.length?_savedReminderTimes:undefined,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
     }
     saveHabits();
 
     // ── ESCRITURA SINCRÓNICA EN jch_rem_v4 ──────────────────────────────────
     // NO esperar setTimeout — escribir el recordatorio AHORA MISMO
     // para que check() lo encuentre en el próximo ciclo (10s)
-    if (reminderOn) {
+    if (_savedReminderOn) {
         try {
             var _now = Date.now(), _nowD = new Date();
             var _title = (selectedEmoji||'🌿') + ' ' + name;
@@ -17232,11 +17241,10 @@ window.saveHabit = function() {
             // Eliminar todos los recordatorios anteriores de este hábito
             _rem = _rem.filter(function(r){ return !r.evId.startsWith('hab_'+name.replace(/\W+/g,'_')); });
 
-            // Construir lista de horas a programar:
-            // Si tiene múltiples (cantidad), usar reminderTimes; si no, usar reminderTime único
+            // Construir lista de horas a programar
             var _timesToSchedule = [];
-            if (reminderTimes && reminderTimes.length > 0) {
-                _timesToSchedule = reminderTimes;
+            if (_savedReminderTimes && _savedReminderTimes.length > 0) {
+                _timesToSchedule = _savedReminderTimes;
             } else if (reminderTime) {
                 _timesToSchedule = [reminderTime];
             }
@@ -17412,6 +17420,9 @@ window.editHabit = function(id) {
     selectedPillar=h.pillar||'none';
     reminderOn=!!h.reminderOn;
     reminderTimes=h.reminderTimes?[...h.reminderTimes]:(h.reminderTime?[h.reminderTime]:[]);
+    // Restaurar tipo de hábito
+    window._selectedHType = h.habitType || 'check';
+    window._selectedRoutine = h.routine || 'morning';
     // Restaurar pilar seleccionado en UI
     document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
         b.classList.toggle('selected', b.dataset.pillar===(h.pillar||'none'));
@@ -19920,19 +19931,22 @@ window.switchHabTab = function(tab, el) {
 const _origOpenHabit = window.openHabitModal;
 window.openHabitModal = function() {
     _origOpenHabit && _origOpenHabit();
-    _selectedRoutine = 'morning';
-    _selectedHType   = 'check';
+    // Solo resetear a 'check' si es un modal NUEVO (no edición)
+    var isEditing = !!(document.getElementById('habEditId') && document.getElementById('habEditId').value);
+    if (!isEditing) {
+        _selectedRoutine = 'morning';
+        _selectedHType   = 'check';
+        document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b =>
+            b.classList.toggle('selected', b.dataset.rt==='morning'));
+        document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b =>
+            b.classList.toggle('selected', b.dataset.ht==='check'));
+        var qc = document.getElementById('habQtyConfig');
+        if (qc) qc.style.display = 'none';
+    }
     // Forzar render del panel HOY al abrir el modal
-    // (garantiza visibilidad en móvil tras transición CSS)
     setTimeout(function() {
         if (typeof window.renderHabToday === 'function') window.renderHabToday();
     }, 50);
-    document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b =>
-        b.classList.toggle('selected', b.dataset.rt==='morning'));
-    document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b =>
-        b.classList.toggle('selected', b.dataset.ht==='check'));
-    const qc = document.getElementById('habQtyConfig');
-    if (qc) qc.style.display = 'none';
     // Dibujar boss canvas al abrir el modal
     setTimeout(function() {
         var h = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
@@ -23263,7 +23277,7 @@ window.openHabDetail = function(id) {
 
         // ── Acciones — Editar · Cerrar · Archive · Delete ─────────
         '<div class="hab-detail-actions">' +
-            '<button class="hab-detail-action-btn" onclick="closeHabDetail();setTimeout(function(){openHabitModal();setTimeout(function(){editHabit(\'' + h.id + '\')},80);},120);">✏️ Editar</button>' +
+            '<button class="hab-detail-action-btn" onclick="closeHabDetail();setTimeout(function(){if(typeof window.reminderTimes===\'undefined\')window.reminderTimes=[];openHabitModal();setTimeout(function(){editHabit(\'' + h.id + '\')},120);},120);">✏️ Editar</button>' +
             '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✓ Cerrar</button>' +
             '<button class="hab-detail-action-btn" onclick="window._habArchive(\'' + h.id + '\')" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
             '<button class="hab-detail-action-btn danger" onclick="if(confirm(\'¿Eliminar este hábito?\')){ deleteHabit(\'' + h.id + '\');closeHabDetail();}">🗑️ Delete</button>' +
