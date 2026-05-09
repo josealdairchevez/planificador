@@ -14720,19 +14720,27 @@
     });
 
     /* ── Cargar datos desde Firestore ──────────────────────── */
+    // Detectar si es TWA (APK móvil) o navegador web
+    function getDeviceKey() {
+        var isTWA = document.referrer.includes('android-app://') ||
+                    window.matchMedia('(display-mode: standalone)').matches ||
+                    navigator.userAgent.includes('wv') || // WebView
+                    (window.navigator.standalone === true);
+        return isTWA ? 'mobile' : 'web';
+    }
+    window._jchDeviceKey = getDeviceKey();
+    console.log('[JCH] Dispositivo detectado:', window._jchDeviceKey);
+
     async function loadFromCloud() {
         if (!currentUser) return;
 
-        // Si ya se hizo la carga en esta sesión, no volver a recargar
         const alreadyLoaded = sessionStorage.getItem('jch_cloud_loaded');
         if (alreadyLoaded === currentUser.uid) {
             setSyncStatus('✅ Sesión activa', 'synced');
-            // FIX: aunque ya cargamos, programar FCM reminders con los datos ya en localStorage
             setTimeout(function() {
                 if (typeof rescheduleAllReminders === 'function') {
                     window._lastHabReschedule = 0;
                     rescheduleAllReminders();
-                    console.log('[JCH] rescheduleAllReminders ejecutado tras reload con datos de nube');
                 }
             }, 1500);
             return;
@@ -14741,31 +14749,49 @@
         try {
             setSyncStatus('⏳ Cargando datos...', 'syncing');
             const doc = await db.collection('users').doc(currentUser.uid).get();
+            const deviceKey = window._jchDeviceKey;
+
             if (doc.exists) {
                 const data = doc.data();
-                if (data.localStorage) {
-                    // FIX: Restaurar datos de la nube SOLO si son más recientes o locales están vacíos
-                    // Esto evita que PC (con localStorage vacío) sobreescriba datos del móvil
-                    const cloudLastSync = data.lastSync ? data.lastSync.toMillis() : 0;
-                    const localLastSync = parseInt(localStorage.getItem('jch_last_sync') || '0');
+                // ── NUEVO: leer datos del dispositivo actual ──
+                const deviceData = data.devices && data.devices[deviceKey];
+                const legacyData = data.localStorage; // datos viejos sin separación
 
-                    // Siempre restaurar desde nube en la primera carga de sesión
-                    Object.entries(data.localStorage).forEach(([k, v]) => {
+                if (deviceData && deviceData.localStorage) {
+                    // Este dispositivo ya tiene datos guardados — restaurar los suyos
+                    console.log('[JCH] loadFromCloud: restaurando datos de dispositivo:', deviceKey);
+                    Object.entries(deviceData.localStorage).forEach(([k, v]) => {
                         try { localStorage.setItem(k, v); } catch(e) {}
                     });
-                    localStorage.setItem('jch_last_sync', String(cloudLastSync || Date.now()));
-
-                    // Marcar que ya se cargo para no repetir en esta sesion
+                    localStorage.setItem('jch_last_sync', String(deviceData.lastSync || Date.now()));
                     sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                     setSyncStatus('✅ Datos cargados', 'synced');
-                    // Recargar UNA SOLA VEZ para aplicar los datos restaurados
                     setTimeout(() => { location.reload(); }, 600);
+                } else if (legacyData && !deviceData) {
+                    // Primera vez con separación por dispositivo
+                    // Solo cargar legacy si este dispositivo no tiene datos propios aún
+                    const localHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
+                    if (localHabits.length === 0) {
+                        // No hay datos locales — cargar legacy como punto de partida
+                        console.log('[JCH] loadFromCloud: cargando datos legacy para nuevo dispositivo:', deviceKey);
+                        Object.entries(legacyData).forEach(([k, v]) => {
+                            try { localStorage.setItem(k, v); } catch(e) {}
+                        });
+                        sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                        setSyncStatus('✅ Datos cargados', 'synced');
+                        setTimeout(() => { location.reload(); }, 600);
+                    } else {
+                        // Ya hay datos locales — guardarlos como datos de este dispositivo
+                        console.log('[JCH] loadFromCloud: guardando datos locales existentes para dispositivo:', deviceKey);
+                        sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                        await syncToCloud(false);
+                        setSyncStatus('✅ Datos sincronizados', 'synced');
+                    }
                 } else {
                     sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                     setSyncStatus('✅ Cuenta nueva lista', 'synced');
                 }
             } else {
-                // Primera vez: guardar datos iniciales vacios
                 sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                 await syncToCloud(false);
                 setSyncStatus('✅ Cuenta sincronizada', 'synced');
@@ -14782,6 +14808,12 @@
         try {
             if (showFeedback) setSyncStatus('⏳ Sincronizando...', 'syncing');
 
+            const localHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
+            if (!showFeedback && localHabits.length === 0) {
+                console.log('[JCH] syncToCloud: sin hábitos locales, omitiendo subida');
+                return;
+            }
+
             // Recopilar todas las claves jch_ del localStorage
             const jchData = {};
             Object.keys(localStorage).forEach(k => {
@@ -14790,37 +14822,26 @@
                 }
             });
 
-            // FIX: No sobreescribir la nube si no hay datos locales de hábitos
-            // Esto evita que abrir la app en un dispositivo nuevo borre los hábitos del móvil
-            const localHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
-            if (!showFeedback && localHabits.length === 0) {
-                // Sincronización automática sin datos: verificar si la nube tiene datos
-                const doc = await db.collection('users').doc(currentUser.uid).get();
-                if (doc.exists && doc.data().localStorage && doc.data().localStorage['jch_habits_v1']) {
-                    const cloudHabits = JSON.parse(doc.data().localStorage['jch_habits_v1'] || '[]');
-                    if (cloudHabits.length > 0) {
-                        // La nube tiene hábitos y local no — restaurar sin sobreescribir
-                        console.log('[JCH] syncToCloud: nube tiene hábitos, local vacío — restaurando sin sobreescribir');
-                        Object.entries(doc.data().localStorage).forEach(([k, v]) => {
-                            try { localStorage.setItem(k, v); } catch(e) {}
-                        });
-                        setSyncStatus('✅ Datos restaurados', 'synced');
-                        setTimeout(() => { location.reload(); }, 800);
-                        return;
-                    }
-                }
-            }
-
             const now = Date.now();
             localStorage.setItem('jch_last_sync', String(now));
             jchData['jch_last_sync'] = String(now);
 
-            await db.collection('users').doc(currentUser.uid).set({
-                localStorage: jchData,
+            const deviceKey = window._jchDeviceKey || getDeviceKey();
+            console.log('[JCH] syncToCloud: subiendo datos de dispositivo:', deviceKey, 'hábitos:', localHabits.length);
+
+            // Guardar bajo devices[deviceKey] para separar móvil de web
+            const updateData = {
+                ['devices.' + deviceKey + '.localStorage']: jchData,
+                ['devices.' + deviceKey + '.lastSync']: now,
+                ['devices.' + deviceKey + '.deviceType']: deviceKey,
                 lastSync: firebase.firestore.FieldValue.serverTimestamp(),
                 email: currentUser.email,
                 displayName: currentUser.displayName || ''
-            }, { merge: true });
+            };
+            // También mantener localStorage legacy para compatibilidad
+            updateData['localStorage'] = jchData;
+
+            await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
 
             if (showFeedback) {
                 setSyncStatus('✅ ¡Sincronizado!', 'synced');
