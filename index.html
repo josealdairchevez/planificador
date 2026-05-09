@@ -15356,6 +15356,10 @@ function check(){
         // Leer hábitos — si estamos reaccionando a jch_habits_v1, usar el valor nuevo
         var allH = [];
         try { allH = JSON.parse(k==='jch_habits_v1' ? v : (localStorage.getItem('jch_habits_v1')||'[]')); } catch(ex) {}
+        // DEBUG: mostrar hábitos con reminder
+        var habsConReminder = allH.filter(function(h){ return h.reminderOn && !h.archived; });
+        console.log('[JCH Observer] k='+k+' hábitos totales:'+allH.length+' con reminder:'+habsConReminder.length);
+        habsConReminder.forEach(function(h){ console.log('[JCH Observer]  → '+h.name+' reminderTime:'+h.reminderTime+' reminderTimes:'+JSON.stringify(h.reminderTimes)); });
         // Expandir hábitos con múltiples recordatorios
         var _habExpanded = [];
         allH.forEach(function(h) {
@@ -17271,6 +17275,49 @@ window.saveHabit = function() {
         habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn:_savedReminderOn,reminderTime:reminderTime,reminderTimes:_htNow==='quantity'&&_savedReminderTimes.length?_savedReminderTimes:undefined,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
     }
     saveHabits();
+
+    // ── FORZAR actualización de Firestore con los recordatorios del nuevo hábito ──
+    // No esperar al observer — llamar directamente aquí también
+    setTimeout(function() {
+        try {
+            var _allH2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
+            var _calD2 = [];
+            try { _calD2 = JSON.parse(localStorage.getItem('jch_calendar_v1')||'[]'); } catch(ex) {}
+            var _list2 = typeof buildList === 'function' ? buildList(_calD2) : [];
+            var _now2 = Date.now(), _nowD2 = new Date();
+            var _habExp2 = [];
+            _allH2.forEach(function(h) {
+                if (!h.reminderOn || h.archived) return;
+                if (h.reminderTimes && h.reminderTimes.length > 0) {
+                    h.reminderTimes.forEach(function(t, idx) { _habExp2.push({h:h,time:t,idx:idx}); });
+                } else if (h.reminderTime) {
+                    _habExp2.push({h:h, time:h.reminderTime, idx:0});
+                }
+            });
+            _habExp2.forEach(function(item) {
+                var h=item.h, t=item.time, idx=item.idx;
+                var parts=(t||'08:00').split(':').map(Number);
+                var hr=parts[0]||8, mn=parts[1]||0;
+                var tf=new Date(_nowD2.getFullYear(),_nowD2.getMonth(),_nowD2.getDate(),hr,mn,0);
+                var fa=tf.getTime()>(_now2+60000)?tf.getTime():tf.getTime()+86400000;
+                var evId='hab_'+(h.name||'').replace(/\W+/g,'_')+(idx>0?'_'+idx:'');
+                _list2.push({evId:evId,fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
+                console.log('[JCH] Forzando Firestore: '+evId+' → '+new Date(fa).toLocaleString());
+            });
+            if (_list2.length > 0 && typeof saveToFirestore === 'function') {
+                saveToFirestore(_list2);
+                // También guardar en jch_rem_v4 local sin triggear el observer
+                try { _o('jch_rem_v4', JSON.stringify(_list2)); } catch(ex) {}
+            }
+            // Enviar al SW
+            if (navigator.serviceWorker) {
+                navigator.serviceWorker.ready.then(function(reg) {
+                    var sw = reg.active || navigator.serviceWorker.controller;
+                    if (sw) sw.postMessage({ type: 'SCHEDULE_REMINDERS', reminders: _list2 });
+                });
+            }
+        } catch(e) { console.warn('[JCH] forceFirestore error:', e); }
+    }, 800);
 
     // ── ESCRITURA SINCRÓNICA EN jch_rem_v4 ──────────────────────────────────
     // NO esperar setTimeout — escribir el recordatorio AHORA MISMO
