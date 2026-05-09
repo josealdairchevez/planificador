@@ -5039,45 +5039,6 @@
         }
         .hab-pillar-opt .popt-icon { font-size:0.85rem; }
 
-        /* Recordatorio por hábito — múltiples */
-        .hab-reminders-list { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
-        .hab-reminder-item {
-            display:flex; align-items:center; gap:8px;
-            background:rgba(255,255,255,0.04); border-radius:10px;
-            padding:6px 10px; border:1px solid rgba(255,255,255,0.07);
-        }
-        .hab-reminder-item-num {
-            font-size:0.6rem; color:#6366f1; font-weight:900;
-            min-width:18px; text-align:center;
-        }
-        .hab-reminder-item-time {
-            flex:1; background:transparent; border:none; color:#fff;
-            font-size:0.75rem; font-weight:600; outline:none;
-        }
-        .hab-reminder-item-del {
-            font-size:0.75rem; cursor:pointer; color:#555;
-            padding:2px 4px; border-radius:4px;
-            transition:color 0.2s;
-        }
-        .hab-reminder-item-del:hover { color:#ef4444; }
-        .hab-reminder-add-btn {
-            display:flex; align-items:center; gap:6px;
-            background:rgba(99,102,241,0.12); border:1px dashed rgba(99,102,241,0.35);
-            border-radius:10px; padding:7px 12px; cursor:pointer;
-            font-size:0.7rem; color:#818cf8; font-weight:600;
-            transition:all 0.2s; margin-top:4px;
-        }
-        .hab-reminder-add-btn:hover { background:rgba(99,102,241,0.2); color:#a5b4fc; }
-        .hab-reminder-add-btn:disabled, .hab-reminder-add-btn.maxed {
-            opacity:0.4; cursor:not-allowed; pointer-events:none;
-        }
-        .hab-reminder-toggle-row {
-            display:flex; align-items:center; gap:10px; margin-bottom:4px;
-        }
-        .hab-reminder-counter {
-            font-size:0.6rem; color:#555; margin-left:auto;
-        }
-
         /* Recordatorio por hábito */
         .hab-reminder-row {
             display:flex;align-items:center;gap:10px;margin-top:0.4rem;
@@ -14720,27 +14681,19 @@
     });
 
     /* ── Cargar datos desde Firestore ──────────────────────── */
-    // Detectar si es TWA (APK móvil) o navegador web
-    function getDeviceKey() {
-        var isTWA = document.referrer.includes('android-app://') ||
-                    window.matchMedia('(display-mode: standalone)').matches ||
-                    navigator.userAgent.includes('wv') || // WebView
-                    (window.navigator.standalone === true);
-        return isTWA ? 'mobile' : 'web';
-    }
-    window._jchDeviceKey = getDeviceKey();
-    console.log('[JCH] Dispositivo detectado:', window._jchDeviceKey);
-
     async function loadFromCloud() {
         if (!currentUser) return;
 
+        // Si ya se hizo la carga en esta sesión, no volver a recargar
         const alreadyLoaded = sessionStorage.getItem('jch_cloud_loaded');
         if (alreadyLoaded === currentUser.uid) {
             setSyncStatus('✅ Sesión activa', 'synced');
+            // FIX: aunque ya cargamos, programar FCM reminders con los datos ya en localStorage
             setTimeout(function() {
                 if (typeof rescheduleAllReminders === 'function') {
                     window._lastHabReschedule = 0;
                     rescheduleAllReminders();
+                    console.log('[JCH] rescheduleAllReminders ejecutado tras reload con datos de nube');
                 }
             }, 1500);
             return;
@@ -14749,49 +14702,31 @@
         try {
             setSyncStatus('⏳ Cargando datos...', 'syncing');
             const doc = await db.collection('users').doc(currentUser.uid).get();
-            const deviceKey = window._jchDeviceKey;
-
             if (doc.exists) {
                 const data = doc.data();
-                // ── NUEVO: leer datos del dispositivo actual ──
-                const deviceData = data.devices && data.devices[deviceKey];
-                const legacyData = data.localStorage; // datos viejos sin separación
+                if (data.localStorage) {
+                    // FIX: Restaurar datos de la nube SOLO si son más recientes o locales están vacíos
+                    // Esto evita que PC (con localStorage vacío) sobreescriba datos del móvil
+                    const cloudLastSync = data.lastSync ? data.lastSync.toMillis() : 0;
+                    const localLastSync = parseInt(localStorage.getItem('jch_last_sync') || '0');
 
-                if (deviceData && deviceData.localStorage) {
-                    // Este dispositivo ya tiene datos guardados — restaurar los suyos
-                    console.log('[JCH] loadFromCloud: restaurando datos de dispositivo:', deviceKey);
-                    Object.entries(deviceData.localStorage).forEach(([k, v]) => {
+                    // Siempre restaurar desde nube en la primera carga de sesión
+                    Object.entries(data.localStorage).forEach(([k, v]) => {
                         try { localStorage.setItem(k, v); } catch(e) {}
                     });
-                    localStorage.setItem('jch_last_sync', String(deviceData.lastSync || Date.now()));
+                    localStorage.setItem('jch_last_sync', String(cloudLastSync || Date.now()));
+
+                    // Marcar que ya se cargo para no repetir en esta sesion
                     sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                     setSyncStatus('✅ Datos cargados', 'synced');
+                    // Recargar UNA SOLA VEZ para aplicar los datos restaurados
                     setTimeout(() => { location.reload(); }, 600);
-                } else if (legacyData && !deviceData) {
-                    // Primera vez con separación por dispositivo
-                    // Solo cargar legacy si este dispositivo no tiene datos propios aún
-                    const localHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
-                    if (localHabits.length === 0) {
-                        // No hay datos locales — cargar legacy como punto de partida
-                        console.log('[JCH] loadFromCloud: cargando datos legacy para nuevo dispositivo:', deviceKey);
-                        Object.entries(legacyData).forEach(([k, v]) => {
-                            try { localStorage.setItem(k, v); } catch(e) {}
-                        });
-                        sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
-                        setSyncStatus('✅ Datos cargados', 'synced');
-                        setTimeout(() => { location.reload(); }, 600);
-                    } else {
-                        // Ya hay datos locales — guardarlos como datos de este dispositivo
-                        console.log('[JCH] loadFromCloud: guardando datos locales existentes para dispositivo:', deviceKey);
-                        sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
-                        await syncToCloud(false);
-                        setSyncStatus('✅ Datos sincronizados', 'synced');
-                    }
                 } else {
                     sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                     setSyncStatus('✅ Cuenta nueva lista', 'synced');
                 }
             } else {
+                // Primera vez: guardar datos iniciales vacios
                 sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
                 await syncToCloud(false);
                 setSyncStatus('✅ Cuenta sincronizada', 'synced');
@@ -14808,12 +14743,6 @@
         try {
             if (showFeedback) setSyncStatus('⏳ Sincronizando...', 'syncing');
 
-            const localHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
-            if (!showFeedback && localHabits.length === 0) {
-                console.log('[JCH] syncToCloud: sin hábitos locales, omitiendo subida');
-                return;
-            }
-
             // Recopilar todas las claves jch_ del localStorage
             const jchData = {};
             Object.keys(localStorage).forEach(k => {
@@ -14822,26 +14751,37 @@
                 }
             });
 
+            // FIX: No sobreescribir la nube si no hay datos locales de hábitos
+            // Esto evita que abrir la app en un dispositivo nuevo borre los hábitos del móvil
+            const localHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
+            if (!showFeedback && localHabits.length === 0) {
+                // Sincronización automática sin datos: verificar si la nube tiene datos
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists && doc.data().localStorage && doc.data().localStorage['jch_habits_v1']) {
+                    const cloudHabits = JSON.parse(doc.data().localStorage['jch_habits_v1'] || '[]');
+                    if (cloudHabits.length > 0) {
+                        // La nube tiene hábitos y local no — restaurar sin sobreescribir
+                        console.log('[JCH] syncToCloud: nube tiene hábitos, local vacío — restaurando sin sobreescribir');
+                        Object.entries(doc.data().localStorage).forEach(([k, v]) => {
+                            try { localStorage.setItem(k, v); } catch(e) {}
+                        });
+                        setSyncStatus('✅ Datos restaurados', 'synced');
+                        setTimeout(() => { location.reload(); }, 800);
+                        return;
+                    }
+                }
+            }
+
             const now = Date.now();
             localStorage.setItem('jch_last_sync', String(now));
             jchData['jch_last_sync'] = String(now);
 
-            const deviceKey = window._jchDeviceKey || getDeviceKey();
-            console.log('[JCH] syncToCloud: subiendo datos de dispositivo:', deviceKey, 'hábitos:', localHabits.length);
-
-            // Guardar bajo devices[deviceKey] para separar móvil de web
-            const updateData = {
-                ['devices.' + deviceKey + '.localStorage']: jchData,
-                ['devices.' + deviceKey + '.lastSync']: now,
-                ['devices.' + deviceKey + '.deviceType']: deviceKey,
+            await db.collection('users').doc(currentUser.uid).set({
+                localStorage: jchData,
                 lastSync: firebase.firestore.FieldValue.serverTimestamp(),
                 email: currentUser.email,
                 displayName: currentUser.displayName || ''
-            };
-            // También mantener localStorage legacy para compatibilidad
-            updateData['localStorage'] = jchData;
-
-            await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
+            }, { merge: true });
 
             if (showFeedback) {
                 setSyncStatus('✅ ¡Sincronizado!', 'synced');
@@ -15178,17 +15118,10 @@ function showNotif(title,body,tag){
 function saveToFirestore(list){
   var snapshot=list.slice();
   function doSave(user){
-    console.log('[JCH] saveToFirestore enviando '+snapshot.length+' recordatorios:', snapshot.map(function(r){return r.evId+'@'+new Date(r.fireAt).toLocaleString();}));
     firebase.firestore().collection('users').doc(user.uid)
-      .update({fcm_reminders: snapshot})
-      .then(function(){ console.log('[JCH] Firestore ACTUALIZADO: '+snapshot.length+' recordatorios'); })
-      .catch(function(e){
-        // Si el doc no existe, crearlo con set
-        firebase.firestore().collection('users').doc(user.uid)
-          .set({fcm_reminders:snapshot},{merge:false})
-          .then(function(){ console.log('[JCH] Firestore CREADO: '+snapshot.length+' recordatorios'); })
-          .catch(function(e2){ console.warn('[JCH] Firestore error:',e2); });
-      });
+      .set({fcm_reminders:snapshot},{merge:true})
+      .then(function(){ console.log('[JCH] Firestore OK: '+snapshot.length+' recordatorios'); })
+      .catch(function(e){ console.warn('[JCH] Firestore error:',e); });
   }
   function tryUpdate(){
     if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
@@ -15303,51 +15236,22 @@ function reschedAll(){
     var now=Date.now(), nowDate=new Date();
     var allH=[];
     try{ allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(ex){}
-    // Expandir hábitos con múltiples recordatorios
-    var expandedH = [];
-    allH.forEach(function(h){
-        if(!h.reminderOn || h.archived) return;
-        if(h.reminderTimes && h.reminderTimes.length > 0){
-            h.reminderTimes.forEach(function(t){ expandedH.push(Object.assign({},h,{reminderTime:t})); });
-        } else if(h.reminderTime){
-            expandedH.push(h);
-        }
-    });
-    // Eliminar recordatorios de hábitos anteriores de la lista del calendario
-    list = list.filter(function(r){ return !String(r.evId).startsWith('hab_'); });
-
-    var _habIdx = {};
-    expandedH.filter(function(h){ return h.reminderOn && h.reminderTime && !h.archived; })
+    allH.filter(function(h){ return h.reminderOn && h.reminderTime && !h.archived; })
       .forEach(function(h){
-        var baseName = (h.name||'').replace(/\W+/g,'_');
-        _habIdx[baseName] = (_habIdx[baseName]||0);
-        var idx = _habIdx[baseName];
-        _habIdx[baseName]++;
         var parts=(h.reminderTime||'08:00').split(':').map(Number);
         var hr=parts[0]||8, mn=parts[1]||0;
         var todayFire=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
         var fireAt=todayFire.getTime()>(now+60000)?todayFire.getTime():todayFire.getTime()+86400000;
         list.push({
-          evId:'hab_'+baseName+(idx>0?'_'+idx:''),
+          evId:'hab_single_'+(h.name||'').replace(/\W+/g,'_'),
           fireAt:fireAt,
           title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),
           body:'¡Es hora de tu hábito diario!'
         });
-        console.log('[JCH] reschedAll hab: '+(h.name||'?')+' idx='+idx+' -> '+new Date(fireAt).toLocaleString());
+        console.log('[JCH] reschedAll hab: '+(h.name||'?')+' -> '+new Date(fireAt).toLocaleString());
       });
     save(list);
     saveToFirestore(list);
-    // Enviar al SW para programación local offline
-    var _habOnly = list.filter(function(r){ return String(r.evId).startsWith('hab_'); });
-    if (_habOnly.length && navigator.serviceWorker) {
-        navigator.serviceWorker.ready.then(function(reg) {
-            var sw = reg.active || (navigator.serviceWorker.controller);
-            if (sw) {
-                sw.postMessage({ type: 'SCHEDULE_REMINDERS', reminders: list });
-                console.log('[JCH] reschedAll → SW: '+list.length+' recordatorios programados');
-            }
-        });
-    }
     console.log('[JCH] reschedAll total: '+list.length+' en Firestore');
   }catch(e){ console.warn('[JCH] reschedAll error:',e); }
 }
@@ -15373,50 +15277,21 @@ function check(){
   var _o=localStorage.setItem.bind(localStorage);
   localStorage.setItem=function(k,v){
     _o(k,v);
-    // Reaccionar al calendario Y a los hábitos
-    if(k==='jch_calendar_v1' || k==='jch_habits_v1'){
+    // Solo reaccionar al calendario — jch_rem_v4 lo escribe save() y causaría loop
+    if(k==='jch_calendar_v1'){
       try{
-        // Leer lista de calendario
-        var calData = [];
-        try { calData = JSON.parse(localStorage.getItem('jch_calendar_v1')||'[]'); } catch(ex) {}
-        var list = buildList(calData);
-        var now = Date.now(), nowDate = new Date();
-        // Leer hábitos — si estamos reaccionando a jch_habits_v1, usar el valor nuevo
-        var allH = [];
-        try { allH = JSON.parse(k==='jch_habits_v1' ? v : (localStorage.getItem('jch_habits_v1')||'[]')); } catch(ex) {}
-        // DEBUG: mostrar hábitos con reminder
-        var habsConReminder = allH.filter(function(h){ return h.reminderOn && !h.archived; });
-        console.log('[JCH Observer] k='+k+' hábitos totales:'+allH.length+' con reminder:'+habsConReminder.length);
-        habsConReminder.forEach(function(h){ console.log('[JCH Observer]  → '+h.name+' reminderTime:'+h.reminderTime+' reminderTimes:'+JSON.stringify(h.reminderTimes)); });
-        // Expandir hábitos con múltiples recordatorios
-        var _habExpanded = [];
-        allH.forEach(function(h) {
-            if (!h.reminderOn || h.archived) return;
-            if (h.reminderTimes && h.reminderTimes.length > 0) {
-                h.reminderTimes.forEach(function(t, idx) {
-                    _habExpanded.push({h: h, time: t, idx: idx});
-                });
-            } else if (h.reminderTime) {
-                _habExpanded.push({h: h, time: h.reminderTime, idx: 0});
-            }
-        });
-        _habExpanded.forEach(function(item) {
-            var h = item.h, t = item.time, idx = item.idx;
-            var parts = (t||'08:00').split(':').map(Number);
+        var list=buildList(JSON.parse(v)||[]);
+        var now=Date.now(), nowDate=new Date(), allH=[];
+        try{ allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(ex){}
+        allH.filter(function(h){ return h.reminderOn&&h.reminderTime&&!h.archived; })
+          .forEach(function(h){
+            var parts=(h.reminderTime||'08:00').split(':').map(Number);
             var hr=parts[0]||8, mn=parts[1]||0;
             var tf=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
             var fa=tf.getTime()>(now+60000)?tf.getTime():tf.getTime()+86400000;
-            var evId='hab_'+(h.name||'').replace(/\W+/g,'_')+(idx>0?'_'+idx:'');
-            list.push({evId:evId,fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
-        });
+            list.push({evId:'hab_single_'+(h.name||'').replace(/\W+/g,'_'),fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
+          });
         save(list); saveToFirestore(list);
-        // Enviar al SW para programación local offline
-        if (navigator.serviceWorker) {
-            navigator.serviceWorker.ready.then(function(reg) {
-                var sw = reg.active || navigator.serviceWorker.controller;
-                if (sw) sw.postMessage({ type: 'SCHEDULE_REMINDERS', reminders: list });
-            });
-        }
       }catch(e){}
     }
   };
@@ -15848,17 +15723,12 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                     </div>
                 </div>
 
-                <div class="hab-form-section" id="habReminderSection">
-                    <label class="hab-form-label">🔔 Recordatorios diarios
-                        <span class="hab-reminder-counter" id="habReminderCounter">0 / 1</span>
-                    </label>
-                    <div class="hab-reminder-toggle-row">
+                <div class="hab-form-section">
+                    <label class="hab-form-label">🔔 Recordatorio diario</label>
+                    <div class="hab-reminder-row">
                         <div class="hab-reminder-toggle" id="habReminderToggle" onclick="toggleHabReminder()"></div>
-                        <span class="hab-reminder-label" style="font-size:0.65rem;color:#888;">Activar recordatorios</span>
-                    </div>
-                    <div class="hab-reminders-list" id="habRemindersList"></div>
-                    <div class="hab-reminder-add-btn maxed" id="habReminderAddBtn" onclick="addHabReminder()">
-                        ＋ Agregar recordatorio
+                        <span class="hab-reminder-label">Hora:</span>
+                        <input type="time" class="hab-reminder-time" id="habReminderTime" value="08:00">
                     </div>
                 </div>
 
@@ -15880,7 +15750,7 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                     </div>
                     <div class="hab-qty-config" id="habQtyConfig" style="display:none;">
                         <div style="display:flex;gap:8px;margin-top:6px;">
-                            <input class="hab-unit-input" id="habQtyTarget" type="number" min="1" value="8" placeholder="Meta" style="flex:1;" onchange="window.onHabQtyChange&&window.onHabQtyChange()" oninput="window.onHabQtyChange&&window.onHabQtyChange()">
+                            <input class="hab-unit-input" id="habQtyTarget" type="number" min="1" value="8" placeholder="Meta" style="flex:1;">
                             <input class="hab-unit-input" id="habQtyUnit" type="text" placeholder="vasos, min, págs..." style="flex:2;">
                         </div>
                         <div id="habTimerHint" style="display:none;margin-top:5px;font-size:0.6rem;color:#60a5fa;">⏱️ El número de arriba = minutos totales del timer</div>
@@ -16050,7 +15920,6 @@ let selectedDiff   = 'easy';
 let selectedDays   = [0,1,2,3,4];
 let selectedType   = 'positive';
 let reminderOn     = false;
-let reminderTimes  = []; // Array de horas para hábitos de cantidad
 
 // ── Persistencia ─────────────────────────────────────────────
 function loadHabits() {
@@ -16134,8 +16003,7 @@ function renderHabitCard(h, showEdit) {
     const dots=calcWeekDots(h), rate=calcCompletionRate(h);
     const isNeg = h.type==='negative';
     const weekBar=dots.map(d=>`<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`).join('');
-    const _remTimes1 = h.reminderTimes&&h.reminderTimes.length ? h.reminderTimes : (h.reminderTime ? [h.reminderTime] : []);
-    const reminderBadge = (h.reminderOn&&_remTimes1.length) ? `<span style="font-size:0.58rem;color:#60a5fa;">🔔 ${_remTimes1.join(' · ')}</span>` : '';
+    const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.58rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
     return `
     <div class="hab-card ${done?'completed-today':''} ${isNeg?'negative-habit':''}" id="habCard-${h.id}" style="--hab-card-color:${h.color||'#10b981'};">
         <div class="hab-card-top">
@@ -16311,13 +16179,6 @@ function renderHabHero() {
         ${renderBossFull(boss)}
     `;
 
-    // Inyectar SVG premium del boss actual
-    setTimeout(function() {
-        if (typeof window.drawBoss3D === 'function') {
-            window.drawBoss3D('habHeroBossSVG', Math.min(hero.bossIndex||0, BOSSES.length-1));
-        }
-    }, 30);
-
     if(detEl) detEl.innerHTML=`
         <div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.8rem 0 0.4rem;">Clase del Héroe</div>
         <div class="hab-class-grid">
@@ -16358,31 +16219,22 @@ function _legacyRenderBossMini_DISABLED() {
 }
 
 function renderBossFull(boss) {
-    const bossHp  = Math.max(0, hero.bossHp || boss.maxHp);
-    const pct     = Math.round(bossHp / boss.maxHp * 100);
-    const bossIdx = Math.min(hero.bossIndex || 0, BOSSES.length - 1);
-    const hpColor = pct > 60 ? '#22c55e' : pct > 30 ? '#eab308' : '#ef4444';
+    const bossHp=Math.max(0,hero.bossHp||boss.maxHp);
+    const pct=Math.round(bossHp/boss.maxHp*100);
     return `
-    <div class="hab-boss-panel" style="background:linear-gradient(135deg,rgba(15,10,30,0.98),rgba(25,15,45,0.98));border:1.5px solid rgba(139,92,246,0.25);border-radius:18px;padding:16px;margin-top:10px;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-            <div id="habHeroBossSVG" style="width:90px;height:90px;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(139,92,246,0.5));"></div>
-            <div style="flex:1;">
-                <div style="font-size:0.95rem;font-weight:900;color:#fff;letter-spacing:0.5px;margin-bottom:3px;">${boss.name}</div>
-                <div style="font-size:0.62rem;color:#a78bfa;margin-bottom:2px;">🎁 ${boss.reward}</div>
-                <div style="font-size:0.62rem;color:#fbbf24;">⭐ +${boss.xpReward} XP al vencer</div>
-                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
-                    <span style="font-size:0.58rem;color:#888;">Boss #${bossIdx+1}/20</span>
-                    <span style="font-size:0.58rem;color:${hpColor};font-weight:700;">${pct}% HP</span>
-                </div>
+    <div class="hab-boss-panel">
+        <div class="hab-boss-top">
+            <div class="hab-boss-avatar" style="font-size:2.5rem;">${boss.emoji}</div>
+            <div class="hab-boss-info">
+                <div class="hab-boss-name">${boss.name}</div>
+                <div class="hab-boss-sub">🎁 Recompensa: ${boss.reward}</div>
+                <div class="hab-boss-sub">⭐ +${boss.xpReward} XP al vencer</div>
             </div>
         </div>
-        <div style="background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;height:10px;margin-bottom:6px;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${hpColor},${hpColor}aa);border-radius:8px;transition:width 0.6s ease;"></div>
+        <div class="hab-boss-hp-track" style="height:12px;margin-top:8px;">
+            <div class="hab-boss-hp-fill" style="width:${pct}%"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:0.62rem;color:#888;">${bossHp} / ${boss.maxHp} HP</span>
-            <span style="font-size:0.58rem;color:#555;">⚔️ Completa hábitos para atacar</span>
-        </div>
+        <div class="hab-boss-hp-text">${bossHp}/${boss.maxHp} HP</div>
     </div>`;
 }
 
@@ -17262,125 +17114,49 @@ window.saveHabit = function() {
     const name=document.getElementById('habNameInput').value.trim();
     if(!name){ document.getElementById('habNameInput').focus(); return; }
     const editId=document.getElementById('habEditId').value;
+    const reminderTime=document.getElementById('habReminderTime').value;
 
-    // ── Capturar TODOS los valores ANTES de cualquier reset ──
-    // Leer habitType del DOM en este momento exacto
+    // Leer habitType y qtyTarget del formulario en el momento de guardar
     var _htNow = 'check';
     var _htBtn = document.querySelector('.hab-htype-btn[data-ht].selected');
     if (_htBtn && _htBtn.dataset.ht) _htNow = _htBtn.dataset.ht;
     else if (window._selectedHType) _htNow = window._selectedHType;
-
-    // CRÍTICO: Sincronizar reminderTimes desde el DOM antes de capturar
-    // (en Android, onchange puede no haber disparado si el usuario no salió del input)
-    var _domInputs = document.querySelectorAll('#habRemindersList .hab-reminder-item-time');
-    if (_domInputs && _domInputs.length > 0) {
-        if (typeof reminderTimes === 'undefined') window.reminderTimes = [];
-        _domInputs.forEach(function(inp, i) {
-            if (inp.value) reminderTimes[i] = inp.value;
-        });
-        // Truncar si hay más entradas en array que inputs en DOM
-        reminderTimes.length = _domInputs.length;
-    }
-
-    // Capturar reminderTimes y reminderOn ANTES del reset
-    var _savedReminderTimes = (typeof reminderTimes !== 'undefined') ? [...reminderTimes] : [];
-    var _savedReminderOn    = (typeof reminderOn    !== 'undefined') ? reminderOn : false;
-
-    // Leer reminderTime de forma segura
-    const _rtEl = document.getElementById('habReminderTime');
-    const reminderTime = _savedReminderTimes.length
-        ? _savedReminderTimes[0]
-        : (_rtEl ? _rtEl.value : '08:00');
-
     var _qtyNow = parseInt((document.getElementById('habQtyTarget')||{}).value||'1');
     var _unitNow = ((document.getElementById('habQtyUnit')||{}).value||'').trim() || (_htNow==='timer'?'min':'');
     var _rtNow = window._selectedRoutine || 'morning';
 
     if(editId){
         const h=habits.find(x=>x.id===editId);
-        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn:_savedReminderOn,reminderTime:reminderTime,reminderTimes:_htNow==='quantity'&&_savedReminderTimes.length?_savedReminderTimes:undefined,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
+        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
     } else {
-        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn:_savedReminderOn,reminderTime:reminderTime,reminderTimes:_htNow==='quantity'&&_savedReminderTimes.length?_savedReminderTimes:undefined,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
+        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
     }
     saveHabits();
-
-    // ── Sincronizar a la nube INMEDIATAMENTE (sin delay) ────────────────────
-    // syncToCloud sube jch_habits_v1 con el nuevo hábito antes de cualquier reload
-    if (typeof window.syncToCloud === 'function' && window._jchCurrentUser) {
-        window.syncToCloud(false).then(function() {
-            console.log('[JCH] saveHabit: syncToCloud completado, actualizando fcm_reminders');
-            // Después de subir los hábitos, actualizar fcm_reminders
-            if (typeof rescheduleAllReminders === 'function') {
-                window._lastHabReschedule = 0;
-                rescheduleAllReminders(true);
-            }
-        }).catch(function(e) {
-            console.warn('[JCH] saveHabit: syncToCloud error:', e);
-        });
-    } else {
-        // Sin usuario autenticado: al menos programar en SW local
-        setTimeout(function() {
-            if (typeof rescheduleAllReminders === 'function') {
-                window._lastHabReschedule = 0;
-                rescheduleAllReminders(true);
-            }
-        }, 300);
-    }
 
     // ── ESCRITURA SINCRÓNICA EN jch_rem_v4 ──────────────────────────────────
     // NO esperar setTimeout — escribir el recordatorio AHORA MISMO
     // para que check() lo encuentre en el próximo ciclo (10s)
-    if (_savedReminderOn) {
+    if (reminderOn && reminderTime) {
         try {
             var _now = Date.now(), _nowD = new Date();
+            var _parts = reminderTime.split(':').map(Number);
+            var _hr = _parts[0]||8, _mn = _parts[1]||0;
+            var _todayFire = new Date(_nowD.getFullYear(),_nowD.getMonth(),_nowD.getDate(),_hr,_mn,0);
+            var _fireAt = _todayFire.getTime() > (_now + 60000) ? _todayFire.getTime() : _todayFire.getTime() + 86400000;
+            var _evId = 'hab_single_' + name.replace(/\W+/g,'_');
             var _title = (selectedEmoji||'🌿') + ' ' + name;
-            var _body  = '¡Es hora de tu hábito diario!';
-            var _rem   = [];
+            var _body = '¡Es hora de tu hábito diario!';
+            // Leer lista actual, eliminar entrada anterior de este hábito, agregar nueva
+            var _rem = [];
             try { _rem = JSON.parse(localStorage.getItem('jch_rem_v4')||'[]'); } catch(e){}
-            // Eliminar todos los recordatorios anteriores de este hábito
-            _rem = _rem.filter(function(r){ return !r.evId.startsWith('hab_'+name.replace(/\W+/g,'_')); });
-
-            // Construir lista de horas a programar
-            var _timesToSchedule = [];
-            if (_savedReminderTimes && _savedReminderTimes.length > 0) {
-                _timesToSchedule = _savedReminderTimes;
-            } else if (reminderTime) {
-                _timesToSchedule = [reminderTime];
-            }
-
-            _timesToSchedule.forEach(function(t, idx) {
-                var _parts   = (t||'08:00').split(':').map(Number);
-                var _hr      = _parts[0]||8, _mn = _parts[1]||0;
-                var _todayFire = new Date(_nowD.getFullYear(),_nowD.getMonth(),_nowD.getDate(),_hr,_mn,0);
-                var _fireAt  = _todayFire.getTime() > (_now + 60000) ? _todayFire.getTime() : _todayFire.getTime() + 86400000;
-                var _evId    = 'hab_' + name.replace(/\W+/g,'_') + (idx > 0 ? '_'+idx : '');
-                _rem.push({ evId:_evId, fireAt:_fireAt, title:_title, body:_body });
-                console.log('[JCH] saveHabit: recordatorio '+(idx+1)+' → '+_title+' a las '+new Date(_fireAt).toLocaleTimeString());
-            });
-
+            _rem = _rem.filter(function(r){ return r.evId !== _evId; });
+            _rem.push({ evId:_evId, fireAt:_fireAt, title:_title, body:_body });
             localStorage.setItem('jch_rem_v4', JSON.stringify(_rem));
+            console.log('[JCH] saveHabit SYNC: recordatorio guardado → '+_title+' a las '+new Date(_fireAt).toLocaleTimeString());
+            // Subir a Firestore inmediatamente
             if (typeof window._jchSaveToFirestore === 'function') {
                 window._jchSaveToFirestore(_rem);
-            }
-            // ── PROGRAMAR EN SERVICE WORKER para notificaciones con app cerrada ──
-            // El SW usa setTimeout internamente para disparar en el momento exacto
-            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                    type: 'SCHEDULE_REMINDERS',
-                    reminders: _rem
-                });
-                console.log('[JCH] Recordatorios enviados al SW:', _rem.length);
-            } else if (navigator.serviceWorker) {
-                // SW registrado pero no activo aún — esperar y reintentar
-                navigator.serviceWorker.ready.then(function(reg) {
-                    if (reg.active) {
-                        reg.active.postMessage({
-                            type: 'SCHEDULE_REMINDERS',
-                            reminders: _rem
-                        });
-                        console.log('[JCH] Recordatorios enviados al SW (ready):', _rem.length);
-                    }
-                });
+                console.log('[JCH] saveHabit SYNC: Firestore actualizado con '+_rem.length+' recordatorios');
             }
         } catch(e) { console.warn('[JCH] saveHabit SYNC error:',e); }
     }
@@ -17396,12 +17172,6 @@ window.saveHabit = function() {
         }
         setTimeout(function() {
             if (typeof window._jchCheckNow === 'function') window._jchCheckNow();
-            // Log para debugging de recordatorios
-            try {
-                var _remDebug = JSON.parse(localStorage.getItem('jch_rem_v4')||'[]');
-                console.log('[JCH] saveHabit: recordatorios en jch_rem_v4:', 
-                    _remDebug.map(function(r){ return r.evId+' → '+new Date(r.fireAt).toLocaleString(); }));
-            } catch(e) {}
         }, 500);
     }, 400);
 
@@ -17453,10 +17223,8 @@ function scheduleHabitReminder(name, time, emoji) {
         localStorage.setItem('jch_rem_v4', JSON.stringify(clean));
 
         // Subir a Firestore (FCM background)
-        var _stfR = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
-        if (_stfR) {
-            _stfR(clean);
-            console.log('[JCH] rescheduleAllReminders: enviando a Firestore '+clean.length+' recordatorios');
+        if (typeof saveToFirestore === 'function') {
+            saveToFirestore(clean);
             console.log('[JCH] scheduleHabitReminder: ' + title + ' → ' + new Date(fireAt).toLocaleString());
         }
     } catch(e) { console.warn('[JCH] scheduleHabitReminder error:', e); }
@@ -17473,8 +17241,7 @@ function rescheduleAllReminders(force) {
         // Leer hábitos directamente de localStorage
         const allHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
         const habsWithReminder = allHabits.filter(function(h) {
-            return h.reminderOn && !h.archived &&
-                   ((h.reminderTimes && h.reminderTimes.length) || h.reminderTime);
+            return h.reminderOn && h.reminderTime && !h.archived;
         });
 
         if (!habsWithReminder.length) {
@@ -17482,6 +17249,8 @@ function rescheduleAllReminders(force) {
             return;
         }
 
+        // Leer la lista actual (que incluye eventos del calendario)
+        // usando load() del módulo de recordatorios
         var currentList = [];
         try { currentList = JSON.parse(localStorage.getItem('jch_rem_v4') || '[]'); } catch(e) {}
 
@@ -17491,27 +17260,15 @@ function rescheduleAllReminders(force) {
         });
 
         const nowDate = new Date();
-        // Expandir hábitos con múltiples recordatorios
-        var habEntries = [];
         habsWithReminder.forEach(function(h) {
-            var times = (h.reminderTimes && h.reminderTimes.length)
-                ? h.reminderTimes
-                : [h.reminderTime || '08:00'];
-            times.forEach(function(t, idx) {
-                habEntries.push({ h: h, time: t, idx: idx });
-            });
-        });
-
-        habEntries.forEach(function(item) {
-            var h = item.h, t = item.time, idx = item.idx;
-            var parts    = (t || '08:00').split(':').map(Number);
+            var parts    = (h.reminderTime || '08:00').split(':').map(Number);
             var hr = parts[0] || 8, mn = parts[1] || 0;
             var todayFire = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), hr, mn, 0);
             var fireAt    = todayFire.getTime() > (now + 60000)
                 ? todayFire.getTime()
-                : todayFire.getTime() + 86400000;
+                : todayFire.getTime() + 86400000; // mañana si ya pasó
             var entry = {
-                evId:   'hab_' + (h.name || '').replace(/\W+/g, '_') + (idx > 0 ? '_' + idx : ''),
+                evId:   'hab_single_' + (h.name || '').replace(/\W+/g, '_'),
                 fireAt: fireAt,
                 title:  (h.emoji || '🌿') + ' ' + (h.name || 'Hábito'),
                 body:   '¡Es hora de tu hábito diario!'
@@ -17555,23 +17312,13 @@ window.editHabit = function(id) {
     selectedEmoji=h.emoji||EMOJIS[0]; selectedColor=h.color||COLORS[0];
     selectedFreq=h.freq||'daily'; selectedXP=h.xp||10;
     selectedDiff=h.diff||'easy'; selectedDays=[...(h.days||[0,1,2,3,4])];
-    selectedPillar=h.pillar||'none';
-    reminderOn=!!h.reminderOn;
-    reminderTimes=h.reminderTimes?[...h.reminderTimes]:(h.reminderTime?[h.reminderTime]:[]);
-    // Restaurar tipo de hábito
-    window._selectedHType = h.habitType || 'check';
-    window._selectedRoutine = h.routine || 'morning';
+    selectedPillar=h.pillar||'none'; reminderOn=!!h.reminderOn;
     // Restaurar pilar seleccionado en UI
     document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
         b.classList.toggle('selected', b.dataset.pillar===(h.pillar||'none'));
     });
-    // Restaurar toggle de recordatorio
-    const rTogE=document.getElementById('habReminderToggle');
-    if(rTogE) rTogE.classList.toggle('on', reminderOn);
-    setTimeout(function(){ renderHabRemindersList(); }, 50);
     selectedType=h.type||'positive'; reminderOn=!!h.reminderOn;
-    // habReminderTime ya no existe (reemplazado por lista de múltiples recordatorios)
-    // reminderTimes ya fue restaurado arriba
+    if(h.reminderTime) document.getElementById('habReminderTime').value=h.reminderTime;
     const tog=document.getElementById('habReminderToggle');
     if(tog) tog.classList.toggle('on',reminderOn);
     updateEmojiGrid(); updateColorGrid();
@@ -17654,78 +17401,6 @@ window.toggleHabReminder = function() {
     reminderOn=!reminderOn;
     const tog=document.getElementById('habReminderToggle');
     if(tog) tog.classList.toggle('on',reminderOn);
-    // Al activar por primera vez, añadir un recordatorio inicial
-    if (reminderOn && reminderTimes.length === 0) {
-        var now = new Date();
-        var h = String(now.getHours()).padStart(2,'0');
-        var m = String(now.getMinutes()).padStart(2,'0');
-        reminderTimes.push(h + ':' + m);
-    }
-    renderHabRemindersList();
-};
-
-// Renderiza la lista de recordatorios según la cantidad del hábito
-function renderHabRemindersList() {
-    const list    = document.getElementById('habRemindersList');
-    const addBtn  = document.getElementById('habReminderAddBtn');
-    const counter = document.getElementById('habReminderCounter');
-    const htNow   = (document.querySelector('.hab-htype-btn.selected[data-ht]')||{}).dataset.ht || 'check';
-    const maxQty  = htNow === 'quantity'
-        ? (parseInt((document.getElementById('habQtyTarget')||{}).value)||1)
-        : 1; // check y timer: máximo 1 recordatorio
-
-    if (!reminderOn || !list) return;
-
-    // Asegurar que reminderTimes no excede maxQty
-    while (reminderTimes.length > maxQty) reminderTimes.pop();
-
-    list.innerHTML = reminderTimes.map((t,i) =>
-        `<div class="hab-reminder-item">
-            <span class="hab-reminder-item-num">${i+1}</span>
-            <input type="time" class="hab-reminder-item-time" value="${t}"
-                oninput="reminderTimes[${i}]=this.value;updateHabReminderCounter()"
-                onchange="reminderTimes[${i}]=this.value;updateHabReminderCounter()"
-                onblur="reminderTimes[${i}]=this.value;updateHabReminderCounter()">
-            <span class="hab-reminder-item-del" onclick="removeHabReminder(${i})">✕</span>
-        </div>`
-    ).join('');
-
-    updateHabReminderCounter();
-    if (addBtn) {
-        addBtn.classList.toggle('maxed', reminderTimes.length >= maxQty);
-    }
-}
-
-function updateHabReminderCounter() {
-    const counter = document.getElementById('habReminderCounter');
-    const htNow   = (document.querySelector('.hab-htype-btn.selected[data-ht]')||{}).dataset.ht || 'check';
-    const maxQty  = htNow === 'quantity' ? (parseInt((document.getElementById('habQtyTarget')||{}).value)||1) : 1;
-    if (counter) counter.textContent = reminderTimes.length + ' / ' + maxQty;
-    const addBtn = document.getElementById('habReminderAddBtn');
-    if (addBtn) addBtn.classList.toggle('maxed', reminderTimes.length >= maxQty);
-}
-
-window.addHabReminder = function() {
-    const htNow  = (document.querySelector('.hab-htype-btn.selected[data-ht]')||{}).dataset.ht || 'check';
-    const maxQty = htNow === 'quantity' ? (parseInt((document.getElementById('habQtyTarget')||{}).value)||1) : 1;
-    if (reminderTimes.length >= maxQty) return;
-    // Proponer hora: 1h después del último o 08:00
-    const last = reminderTimes.length ? reminderTimes[reminderTimes.length-1] : '07:00';
-    const [hh,mm] = last.split(':').map(Number);
-    const next = String((hh+1)%24).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
-    reminderTimes.push(next);
-    renderHabRemindersList();
-};
-
-window.removeHabReminder = function(idx) {
-    reminderTimes.splice(idx, 1);
-    renderHabRemindersList();
-};
-
-// Llamar cuando cambia la cantidad del hábito para actualizar el máximo
-window.onHabQtyChange = function() {
-    updateHabReminderCounter();
-    renderHabRemindersList();
 };
 window.selectHeroClass = function(cls) {
     loadHero(); hero.class=cls; saveHero();
@@ -17753,19 +17428,8 @@ window.selectHabColor = function(el,color) {
     el.classList.add('selected');
 };
 function resetHabForm() {
-    // Reset recordatorios
-    reminderTimes = [];
-    reminderOn    = false;
-    selectedPillar = 'none';
-    var _rTog = document.getElementById('habReminderToggle');
-    if (_rTog) _rTog.classList.remove('on');
-    var _rList = document.getElementById('habRemindersList');
-    if (_rList) _rList.innerHTML = '';
-    var _rCounter = document.getElementById('habReminderCounter');
-    if (_rCounter) _rCounter.textContent = '0 / 1';
-    var _rAddBtn = document.getElementById('habReminderAddBtn');
-    if (_rAddBtn) _rAddBtn.classList.add('maxed');
-    document.querySelectorAll('.hab-pillar-opt').forEach(function(b){
+    selectedPillar='none';
+    document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
         b.classList.toggle('selected', b.dataset.pillar==='none');
     });
     selectedEmoji=EMOJIS[0]; selectedColor=COLORS[0];
@@ -18084,8 +17748,7 @@ window.renderHabitCardHabitica = function(h, showEdit) {
     const streak = window._calcHabStreak ? window._calcHabStreak(h) : 0;
     const rate   = window._calcHabRate   ? window._calcHabRate(h)   : 0;
     const dots   = window._calcHabDots   ? window._calcHabDots(h)   : [];
-    const _remTimes2 = h.reminderTimes&&h.reminderTimes.length ? h.reminderTimes : (h.reminderTime ? [h.reminderTime] : []);
-    const reminderBadge = (h.reminderOn&&_remTimes2.length) ? `<span style="font-size:0.55rem;color:#60a5fa;">🔔 ${_remTimes2.join(' · ')}</span>` : '';
+    const reminderBadge = (h.reminderOn&&h.reminderTime) ? `<span style="font-size:0.55rem;color:#60a5fa;">🔔 ${h.reminderTime}</span>` : '';
 
     const weekBar = dots.map ? dots.map(d =>
         `<div class="hab-day-dot ${d.done?'done-dot':''} ${d.isToday&&!d.done?'today-dot':''}" style="--hab-color:${h.color}"></div>`
@@ -20026,7 +19689,6 @@ window.filterByRoutine = function(rt, el) {
 
 // ── SELECTORES EN FORMULARIO ──────────────────────────────────
 window.selectHabRoutine = function(el) {
-    setTimeout(function(){ if(reminderOn) renderHabRemindersList(); }, 30);
     _selectedRoutine = el.dataset.rt;
     document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b => b.classList.remove('selected'));
     el.classList.add('selected');
@@ -20043,7 +19705,6 @@ window.selectHabHType = function(el) {
     const unitInput = document.getElementById('habQtyUnit');
     if (unitInput && _selectedHType === 'timer') { unitInput.value = 'min'; unitInput.placeholder = 'min'; }
     else if (unitInput && _selectedHType === 'quantity') { unitInput.value = ''; unitInput.placeholder = 'vasos, págs, veces...'; }
-    setTimeout(function(){ updateHabReminderCounter(); }, 30);
 };
 
 // ── saveHabit: el original ya incluye habitType directamente ──
@@ -20082,35 +19743,19 @@ window.switchHabTab = function(tab, el) {
 const _origOpenHabit = window.openHabitModal;
 window.openHabitModal = function() {
     _origOpenHabit && _origOpenHabit();
-    // Solo resetear a 'check' si es un modal NUEVO (no edición)
-    // _pendingEditId se setea ANTES de llamar openHabitModal desde el botón Editar
-    var isEditing = !!(window._pendingEditId ||
-        (document.getElementById('habEditId') && document.getElementById('habEditId').value));
-    if (!isEditing) {
-        _selectedRoutine = 'morning';
-        _selectedHType   = 'check';
-        document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b =>
-            b.classList.toggle('selected', b.dataset.rt==='morning'));
-        document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b =>
-            b.classList.toggle('selected', b.dataset.ht==='check'));
-        var qc = document.getElementById('habQtyConfig');
-        if (qc) qc.style.display = 'none';
-    } else {
-        // Edición: restaurar tipo en UI según _selectedHType
-        var _htEdit = window._selectedHType || 'check';
-        var _rtEdit = window._selectedRoutine || 'morning';
-        document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b =>
-            b.classList.toggle('selected', b.dataset.ht===_htEdit));
-        document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b =>
-            b.classList.toggle('selected', b.dataset.rt===_rtEdit));
-        // Mostrar/ocultar config de cantidad
-        var qcE = document.getElementById('habQtyConfig');
-        if (qcE) qcE.style.display = (_htEdit==='quantity'||_htEdit==='timer') ? '' : 'none';
-    }
+    _selectedRoutine = 'morning';
+    _selectedHType   = 'check';
     // Forzar render del panel HOY al abrir el modal
+    // (garantiza visibilidad en móvil tras transición CSS)
     setTimeout(function() {
         if (typeof window.renderHabToday === 'function') window.renderHabToday();
     }, 50);
+    document.querySelectorAll('.hab-htype-btn[data-rt]').forEach(b =>
+        b.classList.toggle('selected', b.dataset.rt==='morning'));
+    document.querySelectorAll('.hab-htype-btn[data-ht]').forEach(b =>
+        b.classList.toggle('selected', b.dataset.ht==='check'));
+    const qc = document.getElementById('habQtyConfig');
+    if (qc) qc.style.display = 'none';
     // Dibujar boss canvas al abrir el modal
     setTimeout(function() {
         var h = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
@@ -23441,7 +23086,7 @@ window.openHabDetail = function(id) {
 
         // ── Acciones — Editar · Cerrar · Archive · Delete ─────────
         '<div class="hab-detail-actions">' +
-            '<button class="hab-detail-action-btn" onclick="window._pendingEditId=\'' + h.id + '\';closeHabDetail();setTimeout(function(){if(typeof window.reminderTimes===\'undefined\')window.reminderTimes=[];openHabitModal();setTimeout(function(){editHabit(\'' + h.id + '\');window._pendingEditId=null;},120);},120);">✏️ Editar</button>' +
+            '<button class="hab-detail-action-btn" onclick="closeHabDetail();setTimeout(function(){openHabitModal();setTimeout(function(){editHabit(\'' + h.id + '\')},80);},120);">✏️ Editar</button>' +
             '<button class="hab-detail-action-btn" onclick="closeHabDetail()">✓ Cerrar</button>' +
             '<button class="hab-detail-action-btn" onclick="window._habArchive(\'' + h.id + '\')" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">📋 Archive</button>' +
             '<button class="hab-detail-action-btn danger" onclick="if(confirm(\'¿Eliminar este hábito?\')){ deleteHabit(\'' + h.id + '\');closeHabDetail();}">🗑️ Delete</button>' +
@@ -23494,12 +23139,6 @@ window._habInstantUIUpdate = function(h) {
         document.querySelectorAll('.hab-boss-hp-fill,.hab-boss-3d-hp-fill').forEach(function(el) {
             el.style.width = pct + '%';
         });
-        // Actualizar HP % en panel HÉROE si está visible
-        var heroHpPct = document.querySelector('#habHeroBossSVG + div [data-boss-pct]');
-        // Redibujar SVG boss en panel HÉROE si es visible
-        if (document.getElementById('habHeroBossSVG') && typeof window.drawBoss3D === 'function') {
-            window.drawBoss3D('habHeroBossSVG', Math.min(heroRaw.bossIndex||0, 19));
-        }
     } catch(e) {}
 };
 
