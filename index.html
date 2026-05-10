@@ -4638,11 +4638,10 @@
         }
         .hab-card:hover { border-color:rgba(255,255,255,0.15); border-left-color:var(--hab-card-color, rgba(255,255,255,0.15)); }
         .hab-card.completed-today {
-            border-color: color-mix(in srgb, var(--hab-card-color, #10b981) 60%, transparent);
+            border-color: color-mix(in srgb, var(--hab-card-color, #10b981) 50%, transparent);
             border-left-color: var(--hab-card-color, #10b981);
-            box-shadow: 0 0 22px color-mix(in srgb, var(--hab-card-color, #10b981) 35%, transparent);
-            background: rgba(8,20,40,0.9);
-            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 35%, transparent) 0%, color-mix(in srgb, var(--hab-card-color, transparent) 10%, transparent) 60%, transparent 100%);
+            box-shadow: 0 0 18px color-mix(in srgb, var(--hab-card-color, #10b981) 25%, transparent);
+            background-image: linear-gradient(135deg, color-mix(in srgb, var(--hab-card-color, transparent) 18%, transparent) 0%, transparent 60%);
         }
 
         .hab-card-top {
@@ -5022,22 +5021,6 @@
         .hab-type-btn.selected-neg {
             background:rgba(239,68,68,0.2);border-color:#ef4444;color:#fca5a5;
         }
-
-        /* Selector de pilar en modal de crear hábito */
-        .hab-pillar-selector { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
-        .hab-pillar-opt {
-            display:flex; align-items:center; gap:5px;
-            padding:5px 10px; border-radius:20px; font-size:0.7rem;
-            border:1.5px solid rgba(255,255,255,0.1);
-            background:rgba(255,255,255,0.04); color:#aaa;
-            cursor:pointer; transition:all 0.2s; font-weight:500;
-        }
-        .hab-pillar-opt.selected {
-            border-color:var(--pc,#a78bfa);
-            background:color-mix(in srgb, var(--pc,#a78bfa) 18%, transparent);
-            color:#fff; box-shadow:0 0 8px color-mix(in srgb, var(--pc,#a78bfa) 30%, transparent);
-        }
-        .hab-pillar-opt .popt-icon { font-size:0.85rem; }
 
         /* Recordatorio por hábito */
         .hab-reminder-row {
@@ -15677,19 +15660,6 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                 </div>
 
                 <div class="hab-form-section">
-                    <label class="hab-form-label">⚡ Pilar de vida vinculado</label>
-                    <div class="hab-pillar-selector" id="habPillarSelector">
-                        <div class="hab-pillar-opt selected" data-pillar="none" style="--pc:#888;" onclick="selectHabPillar(this)"><span class="popt-icon">🚫</span> Ninguno</div>
-                        <div class="hab-pillar-opt" data-pillar="sleep"    style="--pc:#6366f1;" onclick="selectHabPillar(this)"><span class="popt-icon">😴</span> Sueño</div>
-                        <div class="hab-pillar-opt" data-pillar="water"    style="--pc:#0ea5e9;" onclick="selectHabPillar(this)"><span class="popt-icon">💧</span> Hidratación</div>
-                        <div class="hab-pillar-opt" data-pillar="exercise" style="--pc:#22c55e;" onclick="selectHabPillar(this)"><span class="popt-icon">💪</span> Ejercicio</div>
-                        <div class="hab-pillar-opt" data-pillar="mind"     style="--pc:#a78bfa;" onclick="selectHabPillar(this)"><span class="popt-icon">🧠</span> Mente</div>
-                        <div class="hab-pillar-opt" data-pillar="screen"   style="--pc:#f97316;" onclick="selectHabPillar(this)"><span class="popt-icon">📵</span> Pantallas</div>
-                        <div class="hab-pillar-opt" data-pillar="hygiene"  style="--pc:#ec4899;" onclick="selectHabPillar(this)"><span class="popt-icon">🚿</span> Hábitos</div>
-                    </div>
-                </div>
-
-                <div class="hab-form-section">
                     <label class="hab-form-label">🔔 Recordatorio diario</label>
                     <div class="hab-reminder-row">
                         <div class="hab-reminder-toggle" id="habReminderToggle" onclick="toggleHabReminder()"></div>
@@ -15760,26 +15730,12 @@ const COLORS = ['#10b981','#3b82f6','#f97316','#a78bfa','#f43f5e','#fbbf24','#06
 const DAYS_ES = ['L','M','X','J','V','S','D'];
 
 const BOSSES = [
-    { name:'Goblin del Caos',       emoji:'👺', maxHp:100,  reward:'⚔️ Espada de Inicio',           xpReward:50   },
-    { name:'Lobo Zombie',           emoji:'🐺', maxHp:180,  reward:'🦴 Colmillo Maldito',            xpReward:80   },
-    { name:'Troll del Pantano',     emoji:'🧌', maxHp:280,  reward:'🛡️ Escudo de Barro',             xpReward:120  },
-    { name:'Oso Zombie',            emoji:'🐻', maxHp:380,  reward:'🐾 Garra Putrefacta',            xpReward:160  },
-    { name:'Espectro',              emoji:'👻', maxHp:500,  reward:'🔮 Orbe Oscuro',                 xpReward:220  },
-    { name:'Ghoul Devorador',       emoji:'💀', maxHp:650,  reward:'🦷 Colmillo del Vacío',          xpReward:290  },
-    { name:'Momia Ancestral',       emoji:'🧟', maxHp:800,  reward:'📜 Pergamino Maldito',           xpReward:370  },
-    { name:'Hombre Lobo',           emoji:'🐺', maxHp:980,  reward:'🌕 Piedra Lunar',                xpReward:460  },
-    { name:'Vampiro Noble',         emoji:'🧛', maxHp:1150, reward:'🩸 Capa de Sangre',              xpReward:560  },
-    { name:'Gigante Maldito',       emoji:'👹', maxHp:1350, reward:'🪨 Roca del Titán',              xpReward:680  },
-    { name:'Golem de Piedra',       emoji:'🗿', maxHp:1550, reward:'⚙️ Núcleo Pétreo',              xpReward:820  },
-    { name:'Caballero Vampiro',     emoji:'🧛', maxHp:1780, reward:'🗡️ Espada Oscura',              xpReward:980  },
-    { name:'Golem de Fuego',        emoji:'🔥', maxHp:2050, reward:'💎 Gema del Campeón',            xpReward:1200 },
-    { name:'Demonio Ancestral',     emoji:'😈', maxHp:2400, reward:'🌟 Estrella Legendaria',         xpReward:1450 },
-    { name:'Hidra Legendaria',      emoji:'🐍', maxHp:2800, reward:'🏆 Escama de Hidra',             xpReward:1750 },
-    { name:'Dragón Verde',          emoji:'🐉', maxHp:3200, reward:'🌿 Corazón del Bosque',          xpReward:2100 },
-    { name:'Demonio Oscuro',        emoji:'👿', maxHp:3700, reward:'🔱 Tridente Infernal',           xpReward:2500 },
-    { name:'Dragón Azul',           emoji:'🐲', maxHp:4300, reward:'⚡ Escama Tormentosa',           xpReward:3000 },
-    { name:'Dragón Rojo',           emoji:'🐉', maxHp:5000, reward:'🔥 Corazón de Llamas',          xpReward:3600 },
-    { name:'Dragón Negro',          emoji:'🌑', maxHp:6000, reward:'👑 Corona del Campeón Eterno',   xpReward:4500 },
+    { name:'Goblin del Caos',    emoji:'👺', maxHp:100,  reward:'⚔️ Espada de Inicio',    xpReward:50  },
+    { name:'Troll del Pantano',  emoji:'🧌', maxHp:200,  reward:'🛡️ Escudo de Barro',     xpReward:100 },
+    { name:'Esqueleto Maldito',  emoji:'💀', maxHp:350,  reward:'🔮 Orbe Oscuro',          xpReward:150 },
+    { name:'Dragón de Hielo',    emoji:'🐉', maxHp:500,  reward:'👑 Corona del Guerrero',  xpReward:250 },
+    { name:'Demonio Ancestral',  emoji:'😈', maxHp:800,  reward:'💎 Gema del Campeón',     xpReward:400 },
+    { name:'Dios de la Sombra',  emoji:'🌑', maxHp:1200, reward:'🌟 Estrella Legendaria',  xpReward:700 },
 ];
 // Exponer BOSSES globalmente para que todos los módulos puedan accederlo
 window._HAB_BOSSES = BOSSES;
@@ -15803,12 +15759,10 @@ const ACHIEVEMENTS = [
     { id:'habits5',       cat:'progreso',   name:'Coleccionista',               desc:'Crea 5 hábitos distintos.',                        icon:'📦', cond: h => h.totalHabits >= 5 },
     { id:'habits10',      cat:'progreso',   name:'Arsenal de Hábitos',          desc:'Crea 10 hábitos distintos.',                       icon:'📚', cond: h => h.totalHabits >= 10 },
     // ── MISIONES & BOSSES ────────────────────────────────────────
-    { id:'boss1',         cat:'misiones',   name:'Cazador de Monstruos',        desc:'Derrota tu primer boss.',                          icon:'⚔️', cond: h => h.bossesDefeated >= 1  },
-    { id:'boss3',         cat:'misiones',   name:'Veterano de Batalla',         desc:'Derrota 3 bosses.',                                icon:'🗡️', cond: h => h.bossesDefeated >= 3  },
-    { id:'boss5',         cat:'misiones',   name:'Exterminador',                desc:'Derrota 5 bosses.',                                icon:'💀', cond: h => h.bossesDefeated >= 5  },
+    { id:'boss1',         cat:'misiones',   name:'Cazador de Monstruos',        desc:'Derrota tu primer boss.',                          icon:'⚔️', cond: h => h.bossesDefeated >= 1 },
+    { id:'boss3',         cat:'misiones',   name:'Veterano de Batalla',         desc:'Derrota 3 bosses.',                                icon:'🗡️', cond: h => h.bossesDefeated >= 3 },
+    { id:'boss5',         cat:'misiones',   name:'Exterminador',                desc:'Derrota 5 bosses.',                                icon:'💀', cond: h => h.bossesDefeated >= 5 },
     { id:'boss10',        cat:'misiones',   name:'Señor de la Guerra',          desc:'Derrota 10 bosses. ¡Imparable!',                   icon:'👹', cond: h => h.bossesDefeated >= 10 },
-    { id:'boss15',        cat:'misiones',   name:'Asesino de Dragones',         desc:'Derrota 15 bosses. ¡Leyenda!',                     icon:'🐉', cond: h => h.bossesDefeated >= 15 },
-    { id:'boss20',        cat:'misiones',   name:'Campeón Eterno',              desc:'¡Derrota los 20 bosses! Eres el máximo héroe.',     icon:'👑', cond: h => h.bossesDefeated >= 20 },
     { id:'quest_slime',   cat:'misiones',   name:'Domador de Limo',             desc:'Misión del Monstruo de Limo: acumula 50 hábitos completados.',  icon:'🟢', cond: h => h.totalDone >= 50 },
     { id:'quest_rock',    cat:'misiones',   name:'Roca Sólida',                 desc:'Misión de la Roca: mantén una racha de 14 días seguidos.',      icon:'🪨', cond: h => h.bestStreak >= 14 },
     { id:'quest_thread',  cat:'misiones',   name:'Hilo de Oro',                 desc:'Misión del Hilo: completa 30 hábitos en un mes.',               icon:'🧵', cond: h => h.monthDone >= 30 },
@@ -15855,10 +15809,10 @@ const ACHIEVEMENTS = [
     { id:'epic_tamer',    cat:'epicos',  name:'Domador de Bestias',             desc:'Ha encontrado las 90 mascotas: 700 completaciones.',                     icon:'🦁', cond: h => h.totalDone >= 700 },
     { id:'epic_mounts',   cat:'epicos',  name:'Maestro de Monturas',            desc:'Ha domado las 90 monturas: racha de 150 días.',                          icon:'🏇', cond: h => h.bestStreak >= 150 },
     { id:'epic_triple',   cat:'epicos',  name:'Triple Bingo',                   desc:'Mascotas, monturas y más: 1000 completaciones.',                         icon:'🎰', cond: h => h.totalDone >= 1000 },
-    { id:'epic_gear_heal',cat:'epicos',  name:'Equipo Máximo - Sanador',        desc:'Conjunto completo de Sanador: derrota 5 bosses.',                        icon:'💚', cond: h => h.bossesDefeated >= 5  },
-    { id:'epic_gear_rogue',cat:'epicos', name:'Equipo Máximo - Pícaro',         desc:'Conjunto completo de Pícaro: derrota 8 bosses.',                         icon:'🗡️', cond: h => h.bossesDefeated >= 8  },
-    { id:'epic_gear_war', cat:'epicos',  name:'Equipo Máximo - Guerrero',       desc:'Conjunto completo de Guerrero: derrota 12 bosses.',                      icon:'⚔️', cond: h => h.bossesDefeated >= 12 },
-    { id:'epic_gear_mage',cat:'epicos',  name:'Equipo Máximo - Mago',           desc:'Conjunto completo de Mago: derrota 16 bosses.',                          icon:'🔮', cond: h => h.bossesDefeated >= 16 },
+    { id:'epic_gear_heal',cat:'epicos',  name:'Equipo Máximo - Sanador',        desc:'Conjunto completo de Sanador: derrota 5 bosses.',                        icon:'💚', cond: h => h.bossesDefeated >= 5 },
+    { id:'epic_gear_rogue',cat:'epicos', name:'Equipo Máximo - Pícaro',         desc:'Conjunto completo de Pícaro: derrota 7 bosses.',                         icon:'🗡️', cond: h => h.bossesDefeated >= 7 },
+    { id:'epic_gear_war', cat:'epicos',  name:'Equipo Máximo - Guerrero',       desc:'Conjunto completo de Guerrero: derrota 9 bosses.',                       icon:'⚔️', cond: h => h.bossesDefeated >= 9 },
+    { id:'epic_gear_mage',cat:'epicos',  name:'Equipo Máximo - Mago',           desc:'Conjunto completo de Mago: derrota 12 bosses.',                          icon:'🔮', cond: h => h.bossesDefeated >= 12 },
     { id:'epic_season',   cat:'epicos',  name:'Especialista Estacional',        desc:'Todas las misiones estacionales completadas: racha 120 días.',           icon:'🌸', cond: h => h.bestStreak >= 120 },
     // ── ESPECIALES ───────────────────────────────────────────────
     { id:'sp_contributor',cat:'especiales', name:'Colaborador',                 desc:'Has contribuido al planificador mejorando o sugiriendo. ¡Gracias!',      icon:'🛠️', cond: h => h.totalDone >= 1 },
@@ -15876,8 +15830,6 @@ const CLASSES = [
 // ── Estado ───────────────────────────────────────────────────
 let habits = [];
 let hero   = {};
-let selectedPillar = 'none';
-
 let selectedEmoji  = EMOJIS[0];
 let selectedColor  = COLORS[0];
 let selectedFreq   = 'daily';
@@ -16418,7 +16370,7 @@ window.buildHabControl = function(h, done) {
 
     // Leer cantidad actual del localStorage
     const QTY_KEY = 'jch_qty_v1';
-    const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
+    const today   = new Date().toISOString().split('T')[0];
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
     const qtyKey  = h.id + '_' + today;
     const cur     = qty[qtyKey] || 0;
@@ -16543,7 +16495,7 @@ function _habInstantUIUpdate(h) {
 
 window.habRepInc = function(habitId, target) {
     const QTY_KEY = 'jch_qty_v1';
-    const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
+    const today   = new Date().toISOString().split('T')[0];
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
     const qtyKey  = habitId + '_' + today;
     const cur     = qty[qtyKey] || 0;
@@ -16645,126 +16597,29 @@ window.habRepInc = function(habitId, target) {
         if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
         if (typeof playSparkleSound === 'function') playSparkleSound();
 
-        // ── FIX COMPLETO: actualizar tarjeta al instante ──────────────
+        // Marcar card visualmente con color del hábito al completarse
         if (card) {
-            // 1) Fondo del rectángulo con el color del hábito
             card.classList.add('completed-today');
-            card.style.removeProperty('background-image');
-            card.style.removeProperty('border-color');
-            card.style.removeProperty('box-shadow');
-
-            try {
-                const hhFresh2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(function(x){return x.id===habitId;});
-                if (hhFresh2) {
-                    // 2) Calcular racha recién actualizada (con log ya guardado)
-                    const logSet2 = new Set(hhFresh2.log||[]);
-                    let streak3=0; const dsTmp2=new Date();
-                    while(true){
-                        const kk2=dsTmp2.getFullYear()+'-'+String(dsTmp2.getMonth()+1).padStart(2,'0')+'-'+String(dsTmp2.getDate()).padStart(2,'0');
-                        if(!logSet2.has(kk2)) break;
-                        streak3++; dsTmp2.setDate(dsTmp2.getDate()-1);
-                        if(streak3>3650) break;
-                    }
-
-                    // 3) Actualizar badge de racha 🔥 en hab-card-meta
-                    var metaEl2 = card.querySelector('.hab-card-meta');
-                    if (metaEl2) {
-                        var streakBadge2 = metaEl2.querySelector('.hab-card-streak');
-                        if (streak3 > 0) {
-                            if (streakBadge2) {
-                                streakBadge2.textContent = '🔥 ' + streak3;
-                            } else {
-                                // No existía (racha era 0 al renderizar) → insertar después del freq span
-                                var freqSpan2 = metaEl2.querySelector('.hab-card-freq');
-                                var newBadge2 = document.createElement('span');
-                                newBadge2.className = 'hab-card-streak';
-                                newBadge2.textContent = '🔥 ' + streak3;
-                                if (freqSpan2 && freqSpan2.nextSibling) {
-                                    metaEl2.insertBefore(newBadge2, freqSpan2.nextSibling);
-                                } else {
-                                    metaEl2.appendChild(newBadge2);
-                                }
-                            }
-                        }
-                    }
-
-                    // 4) Actualizar mini-estadísticas: [0]=Racha [1]=Mejor [2]=Total [3]=Tasa
-                    const pills2 = card.querySelectorAll('.hab-stat-pill .hab-stat-val');
-                    if (pills2.length >= 4) {
-                        // Calcular mejor racha
-                        const logArr2 = [...(hhFresh2.log||[])].sort();
-                        let best2=0,cur2=0,prev2=null;
-                        for(const kk of logArr2){
-                            if(!prev2){cur2=1;}
-                            else{const d1=new Date(prev2),d2=new Date(kk);cur2=(Math.round((d2-d1)/86400000)===1)?cur2+1:1;}
-                            if(cur2>best2)best2=cur2;prev2=kk;
-                        }
-                        const daysOld2=Math.max(1,Math.round((new Date()-new Date(hhFresh2.createdAt||new Date()))/86400000));
-                        pills2[0].textContent = streak3;
-                        pills2[0].style.color = hhFresh2.color || '#10b981';
-                        pills2[1].textContent = best2;   // ← MEJOR
-                        pills2[2].textContent = (hhFresh2.log||[]).length; // ← TOTAL
-                        pills2[3].textContent = Math.round(((hhFresh2.log||[]).length/daysOld2)*100)+'%'; // ← TASA
-                    } else if (pills2.length === 3) {
-                        // Layout alternativo con 3 pills
-                        const logArr2 = [...(hhFresh2.log||[])].sort();
-                        let best2=0,cur2=0,prev2=null;
-                        for(const kk of logArr2){
-                            if(!prev2){cur2=1;}
-                            else{const d1=new Date(prev2),d2=new Date(kk);cur2=(Math.round((d2-d1)/86400000)===1)?cur2+1:1;}
-                            if(cur2>best2)best2=cur2;prev2=kk;
-                        }
-                        const daysOld2=Math.max(1,Math.round((new Date()-new Date(hhFresh2.createdAt||new Date()))/86400000));
-                        pills2[0].textContent = streak3;
-                        pills2[0].style.color = hhFresh2.color || '#10b981';
-                        pills2[1].textContent = best2;
-                        pills2[2].textContent = Math.round(((hhFresh2.log||[]).length/daysOld2)*100)+'%';
-                    }
-
-                    // 5) Dot de hoy: buscar por clase today-dot (evita bug de índice por zona horaria)
-                    var todayDot2 = card.querySelector('.hab-day-dot.today-dot');
-                    if (todayDot2) {
-                        todayDot2.classList.add('done-dot');
-                        todayDot2.classList.remove('today-dot');
-                    }
-                }
-            } catch(eStats2) {}
+            card.style.backgroundImage = 'linear-gradient(135deg,' + color + '18 0%,transparent 60%)';
+            card.style.borderColor = color;
+            card.style.boxShadow  = '0 0 18px ' + color + '40';
+            // Actualizar today-dot de la barra semanal
+            var todayDot = card.querySelector('.hab-day-dot.today-dot');
+            if (todayDot) {
+                todayDot.classList.add('done-dot');
+                todayDot.classList.remove('today-dot');
+                todayDot.style.background = color;
+                todayDot.style.boxShadow  = '0 0 6px ' + color;
+            }
         }
 
-        // 4) Actualizar "Progreso de Hoy" (contador + barra) en tiempo real
-        try {
-            const hListProg2 = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
-            const todayProg2 = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
-            const dowProg2   = (new Date().getDay()+6)%7;
-            const dueProg2   = hListProg2.filter(function(x){
-                if(x.archived) return false;
-                if(x.freq==='daily') return true;
-                if(x.freq==='weekly') return dowProg2===0;
-                if(x.freq==='custom') return (x.days||[0,1,2,3,4]).includes(dowProg2);
-                return true;
-            });
-            const doneProg2  = dueProg2.filter(function(x){ return (x.log||[]).includes(todayProg2); }).length;
-            const pctProg2   = dueProg2.length ? Math.round(doneProg2/dueProg2.length*100) : 0;
-            const countEl3   = document.getElementById('habTodayCount');
-            const barEl3     = document.getElementById('habTodayBar');
-            if (countEl3) countEl3.textContent = doneProg2+'/'+dueProg2.length+' · '+pctProg2+'%';
-            if (barEl3)   barEl3.style.width = pctProg2+'%';
-        } catch(eProg2) {}
+        // ── Actualizar PROGRESO DE HOY en tiempo real ────────────
+        _habUpdateTodayProgress();
 
         // Actualizar badge y stats sin tocar la lista
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
         if (typeof renderHabStats   === 'function') renderHabStats();
         if (typeof renderHabHero    === 'function') renderHabHero();
-
-        // Racha (igual que toggleHabit)
-        try {
-            var hForStreak = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(function(x){return x.id===habitId;});
-            if (hForStreak && typeof calcStreak === 'function') {
-                var streakNow = calcStreak(hForStreak);
-                if (streakNow >= 3 && typeof showStreakToast === 'function') showStreakToast(hForStreak, streakNow);
-            }
-            if (typeof checkAndGrantAchievements === 'function') checkAndGrantAchievements();
-        } catch(eStreak) {}
 
         // Confeti
         if (typeof window.launchConfetti === 'function') window.launchConfetti(50);
@@ -16778,7 +16633,7 @@ window.habRepInc = function(habitId, target) {
 
 window.habRepDec = function(habitId, target) {
     const QTY_KEY = 'jch_qty_v1';
-    const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
+    const today   = new Date().toISOString().split('T')[0];
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
     const qtyKey  = habitId + '_' + today;
     const cur     = qty[qtyKey] || 0;
@@ -16833,7 +16688,7 @@ const _habTimers = {}; // { habitId: { interval, elapsed, total } }
 
 window.startHabTimer = function(habitId, totalSec) {
     const QTY_KEY = 'jch_qty_v1';
-    const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
+    const today   = new Date().toISOString().split('T')[0];
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
     const qtyKey  = habitId + '_' + today;
 
@@ -16948,122 +16803,16 @@ window.startHabTimer = function(habitId, totalSec) {
                 if (typeof addGlobalReward === 'function') addGlobalReward(hh.xp||10, 1);
                 if (typeof playSparkleSound === 'function') playSparkleSound();
 
-                // ── FIX COMPLETO: actualizar tarjeta al instante ──────────────
+                // Marcar card como completada sin re-render
                 const card2 = document.getElementById('habCard-' + habitId);
-                if (card2) {
-                    // 1) Fondo del rectángulo con el color del hábito
-                    card2.classList.add('completed-today');
+                if (card2) card2.classList.add('completed-today');
 
-                    try {
-                        const hhFresh = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(x=>x.id===habitId);
-                        if (hhFresh) {
-                            // 2) Calcular racha recién actualizada
-                            const logSet = new Set(hhFresh.log||[]);
-                            let streak2=0; const dsTmp=new Date();
-                            while(true){
-                                const kk=dsTmp.getFullYear()+'-'+String(dsTmp.getMonth()+1).padStart(2,'0')+'-'+String(dsTmp.getDate()).padStart(2,'0');
-                                if(!logSet.has(kk)) break;
-                                streak2++; dsTmp.setDate(dsTmp.getDate()-1);
-                                if(streak2>3650) break;
-                            }
-
-                            // 3) Actualizar badge de racha 🔥 en hab-card-meta
-                            var metaElT = card2.querySelector('.hab-card-meta');
-                            if (metaElT) {
-                                var streakBadgeT = metaElT.querySelector('.hab-card-streak');
-                                if (streak2 > 0) {
-                                    if (streakBadgeT) {
-                                        streakBadgeT.textContent = '🔥 ' + streak2;
-                                    } else {
-                                        var freqSpanT = metaElT.querySelector('.hab-card-freq');
-                                        var newBadgeT = document.createElement('span');
-                                        newBadgeT.className = 'hab-card-streak';
-                                        newBadgeT.textContent = '🔥 ' + streak2;
-                                        if (freqSpanT && freqSpanT.nextSibling) {
-                                            metaElT.insertBefore(newBadgeT, freqSpanT.nextSibling);
-                                        } else {
-                                            metaElT.appendChild(newBadgeT);
-                                        }
-                                    }
-                                }
-                            }
-
-                            // 4) Actualizar mini-estadísticas: [0]=Racha [1]=Mejor [2]=Total [3]=Tasa
-                            const pills = card2.querySelectorAll('.hab-stat-pill .hab-stat-val');
-                            if (pills.length >= 4) {
-                                const logArr3=[...(hhFresh.log||[])].sort();
-                                let best3=0,cur3=0,prev3=null;
-                                for(const kk of logArr3){
-                                    if(!prev3){cur3=1;}
-                                    else{const d1=new Date(prev3),d2=new Date(kk);cur3=(Math.round((d2-d1)/86400000)===1)?cur3+1:1;}
-                                    if(cur3>best3)best3=cur3;prev3=kk;
-                                }
-                                const daysOld=Math.max(1,Math.round((new Date()-new Date(hhFresh.createdAt||new Date()))/86400000));
-                                pills[0].textContent = streak2;
-                                pills[0].style.color = hhFresh.color || '#10b981';
-                                pills[1].textContent = best3;
-                                pills[2].textContent = (hhFresh.log||[]).length;
-                                pills[3].textContent = Math.round(((hhFresh.log||[]).length/daysOld)*100)+'%';
-                            } else if (pills.length === 3) {
-                                const logArr3=[...(hhFresh.log||[])].sort();
-                                let best3=0,cur3=0,prev3=null;
-                                for(const kk of logArr3){
-                                    if(!prev3){cur3=1;}
-                                    else{const d1=new Date(prev3),d2=new Date(kk);cur3=(Math.round((d2-d1)/86400000)===1)?cur3+1:1;}
-                                    if(cur3>best3)best3=cur3;prev3=kk;
-                                }
-                                const daysOld=Math.max(1,Math.round((new Date()-new Date(hhFresh.createdAt||new Date()))/86400000));
-                                pills[0].textContent = streak2;
-                                pills[0].style.color = hhFresh.color || '#10b981';
-                                pills[1].textContent = best3;
-                                pills[2].textContent = Math.round(((hhFresh.log||[]).length/daysOld)*100)+'%';
-                            }
-
-                            // 5) Dot de hoy: buscar por clase today-dot (evita bug de índice por zona horaria)
-                            var todayDotT = card2.querySelector('.hab-day-dot.today-dot');
-                            if (todayDotT) {
-                                todayDotT.classList.add('done-dot');
-                                todayDotT.classList.remove('today-dot');
-                            }
-                        }
-                    } catch(eStats) {}
-                }
-
-                // 4) Actualizar UI de XP, monedas y boss HP al instante
+                // FIX: actualizar UI de XP, monedas y boss HP al instante
                 _habInstantUIUpdate(hh);
-
-                // 5) Actualizar "Progreso de Hoy" (contador + barra) en tiempo real
-                try {
-                    const hListProg = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
-                    const dowProg   = (new Date().getDay()+6)%7;
-                    const dueProg   = hListProg.filter(function(x){
-                        if(x.archived) return false;
-                        if(x.freq==='daily') return true;
-                        if(x.freq==='weekly') return dowProg===0;
-                        if(x.freq==='custom') return (x.days||[0,1,2,3,4]).includes(dowProg);
-                        return true;
-                    });
-                    const doneProg  = dueProg.filter(function(x){ return (x.log||[]).includes(today); }).length;
-                    const pctProg   = dueProg.length ? Math.round(doneProg/dueProg.length*100) : 0;
-                    const countEl2  = document.getElementById('habTodayCount');
-                    const barEl2    = document.getElementById('habTodayBar');
-                    if (countEl2) countEl2.textContent = doneProg+'/'+dueProg.length+' · '+pctProg+'%';
-                    if (barEl2)   barEl2.style.width = pctProg+'%';
-                } catch(eProg) {}
 
                 if (typeof updateHabitBadge === 'function') updateHabitBadge();
                 if (typeof renderHabStats   === 'function') renderHabStats();
                 if (typeof renderHabHero    === 'function') renderHabHero();
-
-                // Racha (igual que toggleHabit)
-                try {
-                    var hForStreakT = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]').find(function(x){return x.id===habitId;});
-                    if (hForStreakT && typeof calcStreak === 'function') {
-                        var streakNowT = calcStreak(hForStreakT);
-                        if (streakNowT >= 3 && typeof showStreakToast === 'function') showStreakToast(hForStreakT, streakNowT);
-                    }
-                    if (typeof checkAndGrantAchievements === 'function') checkAndGrantAchievements();
-                } catch(eStreakT) {}
             }
 
             playHabTimerComplete();
@@ -17091,9 +16840,9 @@ window.saveHabit = function() {
 
     if(editId){
         const h=habits.find(x=>x.id===editId);
-        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
+        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined}); }
     } else {
-        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
+        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined});
     }
     saveHabits();
 
@@ -17150,13 +16899,6 @@ window.saveHabit = function() {
     if(todayTab) switchHabTab('hoy',todayTab);
     (window.renderHabToday||renderHabToday)();
     renderHabStats(); renderHabHero();
-};
-
-// ── Selector de pilar ────────────────────────────────────────
-window.selectHabPillar = function(el) {
-    selectedPillar = el.dataset.pillar || 'none';
-    document.querySelectorAll('.hab-pillar-opt').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
 };
 
 // ── Recordatorio de hábito — igual que calendario ─────────────
@@ -17276,11 +17018,6 @@ window.editHabit = function(id) {
     selectedEmoji=h.emoji||EMOJIS[0]; selectedColor=h.color||COLORS[0];
     selectedFreq=h.freq||'daily'; selectedXP=h.xp||10;
     selectedDiff=h.diff||'easy'; selectedDays=[...(h.days||[0,1,2,3,4])];
-    selectedPillar=h.pillar||'none'; reminderOn=!!h.reminderOn;
-    // Restaurar pilar seleccionado en UI
-    document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
-        b.classList.toggle('selected', b.dataset.pillar===(h.pillar||'none'));
-    });
     selectedType=h.type||'positive'; reminderOn=!!h.reminderOn;
     if(h.reminderTime) document.getElementById('habReminderTime').value=h.reminderTime;
     const tog=document.getElementById('habReminderToggle');
@@ -17392,10 +17129,6 @@ window.selectHabColor = function(el,color) {
     el.classList.add('selected');
 };
 function resetHabForm() {
-    selectedPillar='none';
-    document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
-        b.classList.toggle('selected', b.dataset.pillar==='none');
-    });
     selectedEmoji=EMOJIS[0]; selectedColor=COLORS[0];
     selectedFreq='daily'; selectedXP=10; selectedDiff='easy';
     selectedDays=[0,1,2,3,4]; selectedType='positive'; reminderOn=false;
@@ -18275,17 +18008,17 @@ window.switchHabTab = function(tab, el) {
 const _origRenderToday = window.renderHabToday;
 window.renderHabToday = function() {
     // Exponer helpers al scope de la feature
-    window._calcHabStreak = function(h) {
+    window._calcHabStreak = window._calcHabStreak || function(h) {
         const log=new Set(h.log||[]); let s=0,d=new Date();
         if(!log.has(todayKey())) d.setDate(d.getDate()-1);
         while(true){ const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; if(!log.has(k)) break; s++; d.setDate(d.getDate()-1); if(s>3650) break; } return s;
     };
-    window._calcHabRate = function(h) {
+    window._calcHabRate = window._calcHabRate || function(h) {
         const log=h.log||[]; if(!log.length) return 0;
         const now=new Date(),created=new Date(h.createdAt||now);
         return Math.round((log.length/Math.max(1,Math.round((now-created)/86400000)))*100);
     };
-    window._calcHabDots = function(h) {
+    window._calcHabDots = window._calcHabDots || function(h) {
         const dots=[],d=new Date(),dow=(d.getDay()+6)%7;
         d.setDate(d.getDate()-dow);
         const log=new Set(h.log||[]),today=todayKey();
@@ -18837,7 +18570,7 @@ function saveJournal(j){ localStorage.setItem(JOURNAL_KEY,JSON.stringify(j)); }
 function loadCards()   { return JSON.parse(localStorage.getItem(CARDS_KEY)||'[]'); }
 function saveCards(c)  { localStorage.setItem(CARDS_KEY,JSON.stringify(c)); }
 
-function todayKey() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayKey() { return new Date().toISOString().split('T')[0]; }
 
 // ── PILARES DE VIDA ───────────────────────────────────────────
 const PILLARS = [
@@ -18857,23 +18590,21 @@ const PILLARS = [
 
 function calcPillarScore(pillar) {
     const habits = loadHabits();
-    // Prioridad 1: hábitos vinculados explícitamente a este pilar
-    let related = habits.filter(h => h.pillar === pillar.id);
-    // Prioridad 2: hábitos sin pilar asignado que coincidan por nombre
+    const related = habits.filter(h => {
+        const name = (h.name||'').toLowerCase();
+        return pillar.habitKeys.some(k => name.includes(k));
+    });
     if (!related.length) {
-        related = habits.filter(h => {
-            if (h.pillar && h.pillar !== 'none') return false; // ya tiene pilar asignado a otro
-            const name = (h.name||'').toLowerCase();
-            return pillar.habitKeys.some(k => name.includes(k));
-        });
+        // Si no hay hábitos relacionados, score basado en completitud general
+        const all = loadHabits();
+        const totalDone = all.reduce((s,h)=>(s+(h.log||[]).length),0);
+        return Math.min(100, Math.round(totalDone * 1.5));
     }
-    // Si no hay ninguno relacionado, score 0 (no contaminar con completitud general)
-    if (!related.length) return 0;
     const now = new Date();
     let done=0, total=0;
     for (let i=0;i<14;i++) {
         const d=new Date(now); d.setDate(d.getDate()-i);
-        const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        const k=d.toISOString().split('T')[0];
         related.forEach(h=>{
             total++;
             if((h.log||[]).includes(k)) done++;
@@ -19237,7 +18968,7 @@ function loadHabits()  { return JSON.parse(localStorage.getItem(HABITS_KEY)||'[]
 function saveHabits(h) { localStorage.setItem(HABITS_KEY, JSON.stringify(h)); }
 function loadQty()     { return JSON.parse(localStorage.getItem(QTY_KEY)||'{}'); }
 function saveQty(q)    { localStorage.setItem(QTY_KEY, JSON.stringify(q)); }
-function todayKey()    { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayKey()    { return new Date().toISOString().split('T')[0]; }
 
 let _routineFilter = 'all';
 let _selectedRoutine = 'morning';
@@ -21476,29 +21207,15 @@ window.renderHabHero = function() {
         {id:'healer',name:'Sanador',icon:'💚',bonus:'HP inmune',color:'#10b981'},
     ];
     const BOSSES = window._HAB_BOSSES||[
-        {name:'Goblin del Caos',     maxHp:100,  xpReward:50,   reward:'⚔️ Espada de Inicio'},
-        {name:'Lobo Zombie',         maxHp:180,  xpReward:80,   reward:'🦴 Colmillo Maldito'},
-        {name:'Troll del Pantano',   maxHp:280,  xpReward:120,  reward:'🛡️ Escudo de Barro'},
-        {name:'Oso Zombie',          maxHp:380,  xpReward:160,  reward:'🐾 Garra Putrefacta'},
-        {name:'Espectro',            maxHp:500,  xpReward:220,  reward:'🔮 Orbe Oscuro'},
-        {name:'Ghoul Devorador',     maxHp:650,  xpReward:290,  reward:'🦷 Colmillo del Vacío'},
-        {name:'Momia Ancestral',     maxHp:800,  xpReward:370,  reward:'📜 Pergamino Maldito'},
-        {name:'Hombre Lobo',         maxHp:980,  xpReward:460,  reward:'🌕 Piedra Lunar'},
-        {name:'Vampiro Noble',       maxHp:1150, xpReward:560,  reward:'🩸 Capa de Sangre'},
-        {name:'Gigante Maldito',     maxHp:1350, xpReward:680,  reward:'🪨 Roca del Titán'},
-        {name:'Golem de Piedra',     maxHp:1550, xpReward:820,  reward:'⚙️ Núcleo Pétreo'},
-        {name:'Caballero Vampiro',   maxHp:1780, xpReward:980,  reward:'🗡️ Espada Oscura'},
-        {name:'Golem de Fuego',      maxHp:2050, xpReward:1200, reward:'💎 Gema del Campeón'},
-        {name:'Demonio Ancestral',   maxHp:2400, xpReward:1450, reward:'🌟 Estrella Legendaria'},
-        {name:'Hidra Legendaria',    maxHp:2800, xpReward:1750, reward:'🏆 Escama de Hidra'},
-        {name:'Dragón Verde',        maxHp:3200, xpReward:2100, reward:'🌿 Corazón del Bosque'},
-        {name:'Demonio Oscuro',      maxHp:3700, xpReward:2500, reward:'🔱 Tridente Infernal'},
-        {name:'Dragón Azul',         maxHp:4300, xpReward:3000, reward:'⚡ Escama Tormentosa'},
-        {name:'Dragón Rojo',         maxHp:5000, xpReward:3600, reward:'🔥 Corazón de Llamas'},
-        {name:'Dragón Negro',        maxHp:6000, xpReward:4500, reward:'👑 Corona del Campeón Eterno'},
+        {name:'T-Rex Primigenio',maxHp:100,xpReward:50,reward:'⚔️ Espada de Inicio'},
+        {name:'Pterodáctilo Cazador',maxHp:200,xpReward:100,reward:'🛡️ Escudo Óseo'},
+        {name:'Mosasaurio Profundo',maxHp:350,xpReward:150,reward:'🔮 Orbe Marino'},
+        {name:'Dragón Volcánico',maxHp:500,xpReward:250,reward:'👑 Corona de Fuego'},
+        {name:'Demonio Ancestral',maxHp:800,xpReward:400,reward:'💎 Gema del Abismo'},
+        {name:'Dios de la Sombra',maxHp:1200,xpReward:700,reward:'🌟 Estrella Cósmica'},
     ];
     const cls  = CLASSES.find(c=>c.id===hero.class)||CLASSES[0];
-    const bossI= Math.min(hero.bossIndex||0,19);
+    const bossI= Math.min(hero.bossIndex||0,5);
     const boss = BOSSES[bossI];
     const hpPct= Math.max(0,Math.round(hero.hp/hero.maxHp*100));
     const xpPct= Math.round((hero.xp/hero.xpNext)*100);
@@ -21577,28 +21294,14 @@ window.renderHabHero = function() {
 window.renderBossMini = function() {
     const hero  = JSON.parse(localStorage.getItem('jch_hero_v1')||'null')||{bossIndex:0,bossHp:100};
     const BOSSES= window._HAB_BOSSES||[
-        {name:'Goblin del Caos',     maxHp:100,  xpReward:50,   reward:'⚔️ Espada de Inicio',         type:'Bestia',   lv:'Nv.1'},
-        {name:'Lobo Zombie',         maxHp:180,  xpReward:80,   reward:'🦴 Colmillo Maldito',          type:'No-muerto',lv:'Nv.2'},
-        {name:'Troll del Pantano',   maxHp:280,  xpReward:120,  reward:'🛡️ Escudo de Barro',           type:'Bestia',   lv:'Nv.3'},
-        {name:'Oso Zombie',          maxHp:380,  xpReward:160,  reward:'🐾 Garra Putrefacta',          type:'No-muerto',lv:'Nv.4'},
-        {name:'Espectro',            maxHp:500,  xpReward:220,  reward:'🔮 Orbe Oscuro',               type:'Espectral',lv:'Nv.5'},
-        {name:'Ghoul Devorador',     maxHp:650,  xpReward:290,  reward:'🦷 Colmillo del Vacío',        type:'No-muerto',lv:'Nv.6'},
-        {name:'Momia Ancestral',     maxHp:800,  xpReward:370,  reward:'📜 Pergamino Maldito',         type:'No-muerto',lv:'Nv.7'},
-        {name:'Hombre Lobo',         maxHp:980,  xpReward:460,  reward:'🌕 Piedra Lunar',              type:'Hombre-bestia',lv:'Nv.8'},
-        {name:'Vampiro Noble',       maxHp:1150, xpReward:560,  reward:'🩸 Capa de Sangre',            type:'No-muerto',lv:'Nv.9'},
-        {name:'Gigante Maldito',     maxHp:1350, xpReward:680,  reward:'🪨 Roca del Titán',            type:'Gigante',  lv:'Nv.10'},
-        {name:'Golem de Piedra',     maxHp:1550, xpReward:820,  reward:'⚙️ Núcleo Pétreo',            type:'Constructo',lv:'Nv.11'},
-        {name:'Caballero Vampiro',   maxHp:1780, xpReward:980,  reward:'🗡️ Espada Oscura',            type:'No-muerto',lv:'Nv.12'},
-        {name:'Golem de Fuego',      maxHp:2050, xpReward:1200, reward:'💎 Gema del Campeón',          type:'Constructo',lv:'Nv.13'},
-        {name:'Demonio Ancestral',   maxHp:2400, xpReward:1450, reward:'🌟 Estrella Legendaria',       type:'Demonio',  lv:'Nv.14'},
-        {name:'Hidra Legendaria',    maxHp:2800, xpReward:1750, reward:'🏆 Escama de Hidra',           type:'Bestia',   lv:'Nv.15'},
-        {name:'Dragón Verde',        maxHp:3200, xpReward:2100, reward:'🌿 Corazón del Bosque',        type:'Dragón',   lv:'Nv.16'},
-        {name:'Demonio Oscuro',      maxHp:3700, xpReward:2500, reward:'🔱 Tridente Infernal',         type:'Demonio',  lv:'Nv.17'},
-        {name:'Dragón Azul',         maxHp:4300, xpReward:3000, reward:'⚡ Escama Tormentosa',         type:'Dragón',   lv:'Nv.18'},
-        {name:'Dragón Rojo',         maxHp:5000, xpReward:3600, reward:'🔥 Corazón de Llamas',        type:'Dragón',   lv:'Nv.19'},
-        {name:'Dragón Negro',        maxHp:6000, xpReward:4500, reward:'👑 Corona del Campeón Eterno', type:'Dragón',   lv:'Nv.20'},
+        {name:'T-Rex Primigenio',    maxHp:100,  xpReward:50,  reward:'⚔️ Espada de Inicio',    type:'Bestia',    lv:'Nv.1'},
+        {name:'Pterodáctilo Cazador',maxHp:200,  xpReward:100, reward:'🛡️ Escudo Óseo',         type:'Volador',   lv:'Nv.2'},
+        {name:'Mosasaurio Profundo', maxHp:350,  xpReward:150, reward:'🔮 Orbe Marino',          type:'Acuático',  lv:'Nv.3'},
+        {name:'Dragón Volcánico',    maxHp:500,  xpReward:250, reward:'👑 Corona de Fuego',      type:'Dragón',    lv:'Nv.4'},
+        {name:'Demonio Ancestral',   maxHp:800,  xpReward:400, reward:'💎 Gema del Abismo',      type:'Demonio',   lv:'Nv.5'},
+        {name:'Dios de la Sombra',   maxHp:1200, xpReward:700, reward:'🌟 Estrella Cósmica',     type:'Cósmico',   lv:'Nv.6'},
     ];
-    const bossI = Math.min(hero.bossIndex||0,19);
+    const bossI = Math.min(hero.bossIndex||0,5);
     const boss  = BOSSES[bossI];
     // FIX: Clamp bossHp — si es mayor que maxHp o corrupto, resetear a maxHp
     const rawHp = parseFloat(hero.bossHp);
@@ -21906,15 +21609,14 @@ var _origOpenHabDetail2 = window.openHabDetail;
 window.openHabDetail = function(id) {
     var ov = document.getElementById('habDetailOverlay');
     if (!ov) return;
-    // 1. Cerrar overlay — CSS lo pone invisible (opacity:0 + visibility:hidden)
+    // 1. Asegurar que el overlay está cerrado (sin transición visible)
     ov.classList.remove('open');
-    // 2. Inyectar HTML mientras overlay está invisible
+    // 2. Rellenar el contenido con el overlay oculto (evita parpadeo)
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Esperar 30ms reales para que el browser móvil complete el reflow
-    //    antes de activar la transición — evita el flash transparente en Android
-    setTimeout(function() {
+    // 3. Mostrar en el siguiente frame — el CSS transition hace el slide-up suave
+    requestAnimationFrame(function() {
         ov.classList.add('open');
-    }, 30);
+    });
 };
 
 })();
