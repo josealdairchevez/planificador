@@ -14693,18 +14693,17 @@
                 await loadFromCloud();
                 setInterval(() => syncToCloud(false), 3 * 60 * 1000);
                 window.addEventListener('beforeunload', () => syncToCloud(false));
-
-                // Subir recordatorios de hábitos a Firestore al iniciar sesión
-                // FIX: delay mayor para asegurar que loadFromCloud + reload ya terminaron
-                // y que los hábitos del móvil ya están en localStorage
-                setTimeout(function() {
-                    if (typeof rescheduleAllReminders === 'function') {
-                        window._lastHabReschedule = 0;
-                        rescheduleAllReminders();
-                        console.log('[JCH] rescheduleAllReminders ejecutado tras auth');
-                    }
-                }, 3500); // 3.5s: cubre el reload de 600ms + carga de datos
             }
+
+            // SIEMPRE ejecutar rescheduleAllReminders al autenticarse
+            // (incluso después de un reload — authStateResolved ya es true pero igual necesitamos programar)
+            setTimeout(function() {
+                if (typeof rescheduleAllReminders === 'function') {
+                    window._lastHabReschedule = 0;
+                    rescheduleAllReminders(true);
+                    console.log('[JCH] rescheduleAllReminders ejecutado tras auth/reload');
+                }
+            }, 2000);
 
         } else {
             currentUser = null;
@@ -14740,12 +14739,7 @@
         const _nowCheck = Date.now();
         if (alreadyLoadedUid === currentUser.uid && (_nowCheck - alreadyLoadedTs) < 60000) {
             setSyncStatus('✅ Sesión activa', 'synced');
-            setTimeout(function() {
-                if (typeof rescheduleAllReminders === 'function') {
-                    window._lastHabReschedule = 0;
-                    rescheduleAllReminders();
-                }
-            }, 1500);
+            // rescheduleAllReminders se llama desde el bloque auth SIEMPRE
             return;
         }
 
@@ -15188,26 +15182,44 @@ function showNotif(title,body,tag){
 }
 
 function saveToFirestore(list){
-  var snapshot=list.slice();
+  if(!list || list.length===0){
+    console.log('[JCH] saveToFirestore: lista vacía, omitiendo');
+    return;
+  }
+  var snapshot = list.slice();
+  var attempts = 0;
+
   function doSave(user){
-    console.log('[JCH] saveToFirestore enviando '+snapshot.length+' recordatorios');
-    // Siempre usar set+merge:true — nunca destruye el documento
+    console.log('[JCH] saveToFirestore: guardando '+snapshot.length+' recordatorios para uid='+user.uid);
     firebase.firestore().collection('users').doc(user.uid)
       .set({fcm_reminders: snapshot}, {merge: true})
-      .then(function(){ console.log('[JCH] Firestore OK: '+snapshot.length+' recordatorios guardados'); })
-      .catch(function(e){ console.warn('[JCH] Firestore error en saveToFirestore:',e); });
+      .then(function(){
+        console.log('[JCH] ✅ Firestore fcm_reminders actualizado: '+snapshot.length+' recordatorios');
+      })
+      .catch(function(e){
+        console.warn('[JCH] ❌ Firestore error:', e.code, e.message);
+      });
   }
+
   function tryUpdate(){
+    attempts++;
+    if(attempts > 20){ console.warn('[JCH] saveToFirestore: máximo de reintentos alcanzado'); return; }
     if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
-      setTimeout(tryUpdate,500); return;
+      setTimeout(tryUpdate, 500); return;
     }
-    var user=firebase.auth().currentUser;
-    if(user){ doSave(user); }
-    else{
-      var unsub=firebase.auth().onAuthStateChanged(function(u){
+    var user = firebase.auth().currentUser;
+    if(user){
+      doSave(user);
+    } else {
+      // Esperar auth state — máximo 10 segundos
+      var timeout = setTimeout(function(){
+        console.warn('[JCH] saveToFirestore: timeout esperando auth');
+      }, 10000);
+      var unsub = firebase.auth().onAuthStateChanged(function(u){
+        clearTimeout(timeout);
         unsub();
-        if(u) doSave(u);
-        else console.warn('[JCH] saveToFirestore: sin usuario');
+        if(u){ doSave(u); }
+        else{ console.warn('[JCH] saveToFirestore: usuario no autenticado'); }
       });
     }
   }
@@ -17496,8 +17508,18 @@ function rescheduleAllReminders(force) {
                    ((h.reminderTimes && h.reminderTimes.length) || h.reminderTime);
         });
 
-        if (!habsWithReminder.length) {
-            console.log('[JCH] No hay hábitos con recordatorio activo');
+        // Incluir también eventos del calendario con recordatorio
+        var calEvents = [];
+        try { calEvents = JSON.parse(localStorage.getItem('jch_calendar_v1')||'[]'); } catch(ex){}
+        var calWithReminder = calEvents.filter(function(e){ return e.reminder && e.reminder !== 'none' && !e.done; });
+
+        console.log('[JCH] rescheduleAllReminders: '+habsWithReminder.length+' hábitos, '+calWithReminder.length+' eventos con recordatorio');
+
+        if (!habsWithReminder.length && !calWithReminder.length) {
+            console.log('[JCH] No hay recordatorios activos — limpiando Firestore');
+            // Aun así actualizar Firestore con lista vacía para limpiar datos viejos
+            var _stfEmpty = window._jchSaveToFirestore || (typeof saveToFirestore==='function'?saveToFirestore:null);
+            if (_stfEmpty) _stfEmpty([]);
             return;
         }
 
