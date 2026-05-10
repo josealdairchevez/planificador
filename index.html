@@ -6030,17 +6030,58 @@
 
         /* ── HABIT STRENGTH ─────────────────────────────────── */
         .hab-strength-ring {
-            width:52px;height:52px;flex-shrink:0;position:relative;
+            width:54px;height:54px;flex-shrink:0;position:relative;cursor:pointer;
         }
-        .hab-strength-svg { width:100%;height:100%;transform:rotate(-90deg); }
-        .hab-strength-bg  { fill:none;stroke:rgba(255,255,255,0.07);stroke-width:5; }
-        .hab-strength-arc { fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 0.8s ease; }
+        .hab-strength-ring:hover .hab-strength-ring-wrap { transform:scale(1.08); }
+        .hab-strength-ring-wrap {
+            width:100%;height:100%;position:relative;
+            transition:transform 0.2s ease;
+        }
+        .hab-strength-svg {
+            width:100%;height:100%;transform:rotate(-90deg);overflow:visible;
+        }
+        .hab-strength-bg  {
+            fill:none;stroke:rgba(255,255,255,0.06);stroke-width:4.5;
+        }
+        .hab-strength-arc {
+            fill:none;stroke-width:4.5;stroke-linecap:round;
+            transition:stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1);
+            filter:drop-shadow(0 0 4px #00e5ff) drop-shadow(0 0 8px #00b8d9);
+        }
+        .hab-strength-arc-glow {
+            fill:none;stroke-width:8;stroke-linecap:round;opacity:0.18;
+            transition:stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .hab-strength-energy {
+            fill:none;stroke:#ffffff;stroke-width:4.5;
+            stroke-dasharray:12 125.6;stroke-linecap:round;opacity:0;
+            transition:opacity 0.4s;
+        }
+        .hab-strength-ring.elite .hab-strength-energy { opacity:1; }
+        .hab-strength-ring.elite .hab-strength-arc {
+            filter:drop-shadow(0 0 6px #00e5ff) drop-shadow(0 0 14px #00e5ff) drop-shadow(0 0 20px #00b8d9);
+        }
+        @keyframes habStrengthSpin { from{transform:rotate(-90deg);} to{transform:rotate(270deg);} }
+        .hab-strength-ring.elite .hab-strength-energy {
+            animation:habStrengthSpin 2s linear infinite;
+            transform-origin:24px 24px;
+        }
+        @keyframes habStrengthPulse { 0%,100%{opacity:1;} 50%{opacity:0.65;} }
+        .hab-strength-ring.active .hab-strength-ring-wrap {
+            animation:habStrengthPulse 2.5s ease-in-out infinite;
+        }
         .hab-strength-label {
             position:absolute;inset:0;display:flex;flex-direction:column;
-            align-items:center;justify-content:center;
+            align-items:center;justify-content:center;pointer-events:none;
         }
-        .hab-strength-pct  { font-size:0.6rem;font-weight:900;color:#fff;line-height:1; }
-        .hab-strength-word { font-size:0.38rem;color:#888;text-transform:uppercase;letter-spacing:0.5px; }
+        .hab-strength-pct {
+            font-size:0.62rem;font-weight:900;color:#00e5ff;line-height:1;
+            text-shadow:0 0 8px rgba(0,229,255,0.8);
+        }
+        .hab-strength-word {
+            font-size:0.36rem;color:#aaa;text-transform:uppercase;
+            letter-spacing:0.5px;margin-top:1px;
+        }
 
         /* ── TRACKER DE CANTIDAD ─────────────────────────────── */
         .hab-qty-row {
@@ -6105,23 +6146,24 @@
             text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;
         }
         .hab-wdc-bars {
-            display:flex;gap:4px;align-items:flex-end;height:80px;
+            display:flex;gap:5px;align-items:flex-end;height:90px;padding:4px 0;
         }
         .hab-wdc-bar-col {
             flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
         }
         .hab-wdc-bar-track {
-            flex:1;width:100%;border-radius:4px;background:rgba(255,255,255,0.05);
+            flex:1;width:100%;border-radius:6px;background:rgba(255,255,255,0.06);
             display:flex;align-items:flex-end;overflow:hidden;position:relative;
+            border:1px solid rgba(255,255,255,0.06);
         }
         .hab-wdc-bar-fill {
-            width:100%;border-radius:4px;transition:height 0.6s ease;
-            background:linear-gradient(180deg,#6366f1,#4f46e5);
+            width:100%;border-radius:5px;transition:height 0.7s cubic-bezier(0.34,1.56,0.64,1);
+            background:linear-gradient(180deg,#818cf8,#4f46e5);
         }
-        .hab-wdc-bar-fill.best { background:linear-gradient(180deg,#22c55e,#16a34a); }
-        .hab-wdc-bar-fill.worst { background:linear-gradient(180deg,#ef4444,#dc2626); }
-        .hab-wdc-label { font-size:0.52rem;color:#555;font-weight:800; }
-        .hab-wdc-pct   { font-size:0.5rem;color:#888; }
+        .hab-wdc-bar-fill.best  { background:linear-gradient(180deg,#4ade80,#16a34a); }
+        .hab-wdc-bar-fill.worst { background:linear-gradient(180deg,#f87171,#dc2626); }
+        .hab-wdc-label { font-size:0.52rem;color:#555;font-weight:800;letter-spacing:0.3px; }
+        .hab-wdc-pct   { font-size:0.55rem;color:#777;font-weight:600; }
 
         /* ── CRECIMIENTO COMPUESTO 1% ───────────────────────── */
         .hab-compound-banner {
@@ -16330,6 +16372,8 @@ window.toggleHabit = function(id) {
     renderHabStats();
     renderHabHero();
     checkAndGrantAchievements();
+    // Actualizar gráfico semanal si panel FUERZA está abierto
+    if (document.getElementById('habWdcBars') && typeof renderWeekdayChart==='function') renderWeekdayChart();
 };
 
 // ── Animación flotante XP / Monedas / Daño / HP ──────────────
@@ -16755,6 +16799,8 @@ window.habRepInc = function(habitId, target) {
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
         if (typeof renderHabStats   === 'function') renderHabStats();
         if (typeof renderHabHero    === 'function') renderHabHero();
+        // Actualizar gráfico semanal si FUERZA está abierto
+        if (document.getElementById('habWdcBars') && typeof renderWeekdayChart==='function') renderWeekdayChart();
 
         // Racha (igual que toggleHabit)
         try {
@@ -19252,19 +19298,18 @@ function calcHabitStrength(h) {
     const log = new Set(h.log || []);
     const now = new Date();
     let score = 0, maxScore = 0;
-    const WINDOW = 66; // 66 días como Life Reset
+    const WINDOW = 66;
+    const localKey = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 
     for (let i = 0; i < WINDOW; i++) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
-        const k = d.toISOString().split('T')[0];
-        // Peso decreciente: días recientes valen más
-        const weight = 1 - (i / WINDOW) * 0.6; // de 1.0 a 0.4
+        const k = localKey(d);
+        const weight = 1 - (i / WINDOW) * 0.6;
         maxScore += weight;
         if (log.has(k)) score += weight;
     }
     const raw = maxScore > 0 ? score / maxScore : 0;
-    // Aplicar curva: más difícil llegar a 100%
     return Math.round(Math.min(100, raw * 115));
 }
 
@@ -19285,20 +19330,45 @@ function strengthColor(pct) {
     return '#ef4444';
 }
 
-// ── RENDER HABIT STRENGTH RING (SVG inline) ───────────────────
+// ── RENDER HABIT STRENGTH RING (SVG inline — Neon Cyan) ──────
 function renderStrengthRing(pct, color) {
     const r = 20, circ = 2 * Math.PI * r;
     const offset = circ * (1 - pct / 100);
     const label  = strengthLabel(pct);
-    return '<div class="hab-strength-ring">' +
-        '<svg class="hab-strength-svg" viewBox="0 0 48 48">' +
-          '<circle class="hab-strength-bg" cx="24" cy="24" r="'+r+'"/>' +
-          '<circle class="hab-strength-arc" cx="24" cy="24" r="'+r+'" stroke="'+color+'" ' +
-            'stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>' +
-        '</svg>' +
-        '<div class="hab-strength-label">' +
-          '<span class="hab-strength-pct" style="color:'+color+';">'+pct+'</span>' +
-          '<span class="hab-strength-word">'+label+'</span>' +
+    // Siempre cyan brilloso independiente del nivel
+    const cyanColor = '#00e5ff';
+    const isElite   = pct >= 90;
+    const isActive  = pct >= 10;
+    const ringClass = 'hab-strength-ring' + (isElite?' elite':isActive?' active':'');
+    return '<div class="'+ringClass+'">' +
+        '<div class="hab-strength-ring-wrap">' +
+          '<svg class="hab-strength-svg" viewBox="0 0 48 48" style="overflow:visible;">' +
+            '<defs>' +
+              '<mask id="srMask_'+pct+'">' +
+                '<circle cx="24" cy="24" r="'+r+'" fill="none" stroke="white" stroke-width="4.5"' +
+                  ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"' +
+                  ' stroke-linecap="round"/>' +
+              '</mask>' +
+            '</defs>' +
+            '<circle class="hab-strength-bg" cx="24" cy="24" r="'+r+'"/>' +
+            '<circle class="hab-strength-arc-glow" cx="24" cy="24" r="'+r+'"' +
+              ' stroke="'+cyanColor+'"' +
+              ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"' +
+              ' stroke-linecap="round"/>' +
+            '<circle class="hab-strength-arc" cx="24" cy="24" r="'+r+'"' +
+              ' stroke="'+cyanColor+'"' +
+              ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>' +
+            (isElite ?
+              '<g mask="url(#srMask_'+pct+')">' +
+                '<circle cx="24" cy="24" r="'+r+'" class="hab-strength-energy">' +
+                  '<animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="2s" repeatCount="indefinite"/>' +
+                '</circle>' +
+              '</g>' : '') +
+          '</svg>' +
+          '<div class="hab-strength-label">' +
+            '<span class="hab-strength-pct">'+pct+'<span style="font-size:0.45rem;vertical-align:super;">%</span></span>' +
+            '<span class="hab-strength-word">'+label+'</span>' +
+          '</div>' +
         '</div>' +
         '</div>';
 }
@@ -19449,32 +19519,45 @@ function renderCompoundBanner() {
     if (!el) return;
     const habits    = loadHabits();
     const totalDone = habits.reduce((s,h)=>s+(h.log||[]).length,0);
+    const todayK    = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+    const doneToday = habits.filter(h=>(h.log||[]).includes(todayK)).length;
+
     // Crecimiento compuesto: (1.01)^totalDone
     const multiplier = Math.pow(1.01, totalDone);
     const xFactor    = multiplier.toFixed(2);
     const pctGrowth  = Math.round((multiplier-1)*100);
 
-    // Hitos
-    const days365  = Math.round(Math.pow(1.01,365)*100)/100;
-    const days66   = Math.round(Math.pow(1.01,66)*100)/100;
-    const days1825 = Math.round(Math.pow(1.01,1825)*100)/100;
+    // Función para formatear números grandes
+    function fmtX(n) {
+        if (n >= 1e9) return '×'+(n/1e9).toFixed(1)+'B';
+        if (n >= 1e6) return '×'+(n/1e6).toFixed(1)+'M';
+        if (n >= 1e3) return '×'+(n/1e3).toFixed(1)+'K';
+        return '×'+Math.round(n*100)/100;
+    }
+
+    // Hitos proyectados (si completaras 1 hábito/día)
+    const v66   = fmtX(Math.pow(1.01, 66));
+    const v365  = fmtX(Math.pow(1.01, 365));
+    const v1825 = fmtX(Math.pow(1.01, 1825));
 
     el.innerHTML =
         '<div class="hab-compound-header">' +
           '<div>' +
             '<div class="hab-compound-title">📈 Crecimiento Compuesto 1%</div>' +
-            '<div class="hab-compound-sub">Cada hábito completado te hace 1% mejor</div>' +
+            '<div class="hab-compound-sub">Cada hábito completado acumula +1% · Hoy: <b style="color:#22c55e">'+(doneToday>0?'+'+doneToday+'%':'0 completados')+'</b></div>' +
           '</div>' +
           '<div>' +
             '<div class="hab-compound-value">×'+xFactor+'</div>' +
-            '<div style="font-size:0.58rem;color:#22c55e;text-align:right;">+'+pctGrowth+'% total</div>' +
+            '<div style="font-size:0.58rem;color:#22c55e;text-align:right;">+'+pctGrowth+'% acumulado</div>' +
           '</div>' +
         '</div>' +
+        '<div style="font-size:0.58rem;color:#666;margin:4px 0 6px 0;padding:0 2px;">📊 Si completas 1 hábito diario, en...</div>' +
         '<div class="hab-compound-days-row">' +
-          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">×'+days66+'</div><div class="hab-compound-m-lbl">66 días</div></div>' +
-          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">×'+days365+'</div><div class="hab-compound-m-lbl">1 año</div></div>' +
-          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">×'+days1825+'</div><div class="hab-compound-m-lbl">5 años</div></div>' +
-        '</div>';
+          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">'+v66+'</div><div class="hab-compound-m-lbl">66 días</div></div>' +
+          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">'+v365+'</div><div class="hab-compound-m-lbl">1 año</div></div>' +
+          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">'+v1825+'</div><div class="hab-compound-m-lbl">5 años</div></div>' +
+        '</div>' +
+        '<div style="font-size:0.55rem;color:#555;text-align:center;margin-top:4px;">Has completado hábitos <b style="color:#6366f1">'+(totalDone)+' veces</b> en total · Tu multiplicador actual: <b style="color:#22c55e">×'+xFactor+'</b></div>';
 }
 
 function renderStrengthList() {
@@ -19534,7 +19617,7 @@ function renderStrengthList() {
                 (done?'✓':'') + '</button>';
         }
 
-        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'">' +
+        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" style="--hab-card-color:'+(h.color||'#10b981')+';border-color:color-mix(in srgb,'+(h.color||'#10b981')+' 55%, transparent);box-shadow:0 0 10px color-mix(in srgb,'+(h.color||'#10b981')+' 15%, transparent);">' +
             '<div class="hab-card-top">' +
               renderStrengthRing(strength, sColor) +
               '<div class="hab-card-info">' +
@@ -19546,17 +19629,18 @@ function renderStrengthList() {
                 '<span style="font-size:0.6rem;cursor:pointer;color:#555;" onclick="event.stopPropagation();deleteHabit(\''+h.id+'\')">🗑️</span>' +
               '</div>' +
             '</div>' +
-            '<div class="hab-perf-bar perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'"></div>' +
+            '<div class="hab-perf-bar" style="background:linear-gradient(90deg,'+(h.color||'#10b981')+','+(h.color||'#10b981')+'88);opacity:'+(strength>=70?'1':strength>=50?'0.8':strength>=30?'0.55':'0.35')+';"></div>' +
             '</div>';
     }).join('');
 }
 
 function calcDiscStreak(h) {
     const log=new Set(h.log||[]); let s=0,d=new Date();
-    const k0=d.toISOString().split('T')[0];
+    const localKey=function(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');};
+    const k0=localKey(d);
     if(!log.has(k0)) d.setDate(d.getDate()-1);
     while(true){
-        const k=d.toISOString().split('T')[0];
+        const k=localKey(d);
         if(!log.has(k)) break; s++; d.setDate(d.getDate()-1); if(s>3650) break;
     }
     return s;
@@ -19568,38 +19652,55 @@ function renderWeekdayChart() {
     if (!el) return;
     const habits = loadHabits();
     const DAYS   = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const counts = [0,0,0,0,0,0,0];
-    const totals = [0,0,0,0,0,0,0];
+    const counts = [0,0,0,0,0,0,0]; // veces completado ese día de la semana
+    const weeks  = [0,0,0,0,0,0,0]; // cuántas veces ha ocurrido ese día de semana
     const now    = new Date();
+    const localKey = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 
+    // Analizar últimas 12 semanas — solo contar días donde el hábito ya existía
     for (let w = 0; w < 12; w++) {
         for (let d = 0; d < 7; d++) {
             const dd = new Date(now);
             dd.setDate(dd.getDate() - w*7 - ((now.getDay()+6)%7) + d);
             if (dd > now) continue;
-            const k = dd.toISOString().split('T')[0];
+            const k = localKey(dd);
             habits.forEach(h => {
-                totals[d]++;
+                // Solo contar si el hábito ya existía ese día
+                const created = new Date(h.createdAt || '2000-01-01');
+                if (dd < created) return;
+                weeks[d]++;
                 if ((h.log||[]).includes(k)) counts[d]++;
             });
         }
     }
 
-    const rates  = totals.map((t,i) => t>0 ? counts[i]/t : 0);
+    // Tasa = completadas / oportunidades_reales (ya ajustado por fecha de creación)
+    const rates  = weeks.map((w,i) => w>0 ? Math.min(1, counts[i]/w) : 0);
     const maxR   = Math.max(...rates, 0.01);
     const bestI  = rates.indexOf(Math.max(...rates));
-    const worstI = rates.indexOf(Math.min(...rates.filter(r=>r>0)));
+    const nonZero = rates.filter(r=>r>0);
+    const worstI = nonZero.length ? rates.indexOf(Math.min(...nonZero)) : -1;
+    const todayDow = (new Date().getDay()+6)%7;
+    const totalLogs = counts.reduce((s,c)=>s+c,0);
 
-    el.innerHTML = DAYS.map((d,i) => {
+    if (totalLogs === 0) {
+        el.innerHTML = '<div style="width:100%;text-align:center;padding:18px 0;color:#555;font-size:0.7rem;">📊 Completa hábitos para ver tu actividad semanal</div>';
+        return;
+    }
+
+    el.innerHTML = DAYS.map((day,i) => {
         const pct  = Math.round(rates[i]*100);
-        const hPct = Math.round((rates[i]/maxR)*100);
-        const cls  = i===bestI?'best':i===worstI&&rates[i]>0?'worst':'';
+        // Altura mínima 12% si hay algún dato, para que la barra sea visible
+        const hPct = pct > 0 ? Math.max(Math.round((rates[i]/maxR)*100), 12) : 0;
+        const isToday = i === todayDow;
+        const cls = i===bestI&&pct>0?'best':i===worstI&&pct>0?'worst':'';
+        const barColor = isToday && cls==='' ? 'background:linear-gradient(180deg,#a78bfa,#7c3aed);' : '';
         return '<div class="hab-wdc-bar-col">' +
-            '<div class="hab-wdc-bar-track">' +
-              '<div class="hab-wdc-bar-fill '+cls+'" style="height:'+hPct+'%"></div>' +
+            '<div class="hab-wdc-bar-track" style="'+(isToday?'background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3);':'')+'">' +
+              '<div class="hab-wdc-bar-fill '+cls+'" style="height:'+hPct+'%;'+barColor+'" title="'+pct+'% los '+day+'"></div>' +
             '</div>' +
-            '<div class="hab-wdc-pct">'+pct+'%</div>' +
-            '<div class="hab-wdc-label">'+d+'</div>' +
+            '<div class="hab-wdc-pct" style="'+(isToday?'color:#a78bfa;font-weight:800;':'')+(pct===0?'color:#383838;':'')+'">'+(pct>0?pct+'%':'-')+'</div>' +
+            '<div class="hab-wdc-label" style="'+(isToday?'color:#a78bfa;font-weight:900;':'')+'">'+day+'</div>' +
             '</div>';
     }).join('');
 }
@@ -21274,766 +21375,8 @@ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
 <circle cx="69" cy="14.5" r="1.5" fill="rgba(255,255,255,0.8)"/>
 </svg>`;}
 
-const BOSS_SVGS = [svgBoss0, svgBoss1, svgBoss2, svgBoss3, svgBoss4, svgBoss5,
-    // Boss 6 — Goblin del Caos (verde, mazo mágico)
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="g6bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#16a34a" stop-opacity="0.25"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="g6body" cx="35%" cy="30%"><stop offset="0%" stop-color="#86efac"/><stop offset="50%" stop-color="#22c55e"/><stop offset="100%" stop-color="#14532d"/></radialGradient>
-  <filter id="g6glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="g6sh"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.5)"/></filter>
-</defs>
-<ellipse cx="55" cy="75" rx="42" ry="28" fill="url(#g6bg)"/>
-<ellipse cx="55" cy="105" rx="22" ry="5" fill="rgba(0,0,0,0.3)"/>
-<!-- Cuerpo goblin musculoso -->
-<ellipse cx="55" cy="65" rx="22" ry="26" fill="url(#g6body)" filter="url(#g6sh)"/>
-<ellipse cx="55" cy="60" rx="14" ry="16" fill="rgba(187,247,208,0.25)"/>
-<!-- Armadura dorada en pecho -->
-<path d="M42 58 Q55 52 68 58 Q65 70 55 72 Q45 70 42 58Z" fill="#b45309" stroke="#fbbf24" stroke-width="1"/>
-<circle cx="55" cy="63" r="5" fill="#fbbf24" filter="url(#g6glow)"/>
-<!-- Cabeza grande con orejas puntiagudas -->
-<ellipse cx="55" cy="38" rx="18" ry="16" fill="url(#g6body)" filter="url(#g6sh)"/>
-<polygon points="38,28 34,14 42,26" fill="#22c55e"/>
-<polygon points="72,28 76,14 68,26" fill="#22c55e"/>
-<!-- Cuernos pequeños -->
-<polygon points="49,24 47,14 52,23" fill="#92400e"/>
-<polygon points="61,24 63,14 58,23" fill="#92400e"/>
-<!-- Cara feroz -->
-<circle cx="48" cy="37" r="4" fill="#fef08a"/><circle cx="48" cy="37" r="2.5" fill="#dc2626"/>
-<circle cx="62" cy="37" r="4" fill="#fef08a"/><circle cx="62" cy="37" r="2.5" fill="#dc2626"/>
-<circle cx="48.5" cy="36.5" r="1" fill="#111"/><circle cx="62.5" cy="36.5" r="1" fill="#111"/>
-<path d="M47 47 Q55 52 63 47" stroke="#86efac" stroke-width="1.5" fill="none"/>
-<polygon points="49,49 52,54 46,54" fill="white"/>
-<polygon points="61,49 64,54 58,54" fill="white"/>
-<!-- Nariz grande -->
-<ellipse cx="55" cy="43" rx="5" ry="4" fill="#15803d"/>
-<circle cx="53" cy="43" r="1.5" fill="#14532d"/><circle cx="57" cy="43" r="1.5" fill="#14532d"/>
-<!-- Mazo mágico -->
-<rect x="68" y="50" width="5" height="36" rx="2" fill="#92400e" filter="url(#g6sh)"/>
-<ellipse cx="70" cy="46" rx="10" ry="9" fill="#16a34a" stroke="#4ade80" stroke-width="1.5" filter="url(#g6glow)"/>
-<circle cx="70" cy="46" r="5" fill="#86efac" filter="url(#g6glow)"/>
-<!-- Brazos -->
-<ellipse cx="35" cy="65" rx="8" ry="14" fill="#22c55e" filter="url(#g6sh)"/>
-<ellipse cx="75" cy="62" rx="8" ry="14" fill="#22c55e" filter="url(#g6sh)"/>
-<!-- Piernas -->
-<ellipse cx="46" cy="90" rx="9" ry="14" fill="#15803d" filter="url(#g6sh)"/>
-<ellipse cx="64" cy="90" rx="9" ry="14" fill="#15803d" filter="url(#g6sh)"/>
-<!-- Botas doradas -->
-<ellipse cx="46" cy="101" rx="11" ry="6" fill="#b45309"/>
-<ellipse cx="64" cy="101" rx="11" ry="6" fill="#b45309"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="2s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 7 — Lobo Zombie (gris oscuro, calabaza, Halloween)
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="lz7bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#6b21a8" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="lz7body" cx="35%" cy="30%"><stop offset="0%" stop-color="#9ca3af"/><stop offset="50%" stop-color="#4b5563"/><stop offset="100%" stop-color="#1f2937"/></radialGradient>
-  <filter id="lz7glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="lz7sh"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.6)"/></filter>
-</defs>
-<ellipse cx="55" cy="78" rx="44" ry="26" fill="url(#lz7bg)"/>
-<ellipse cx="55" cy="106" rx="22" ry="5" fill="rgba(0,0,0,0.4)"/>
-<!-- Cuerpo musculoso lobo -->
-<ellipse cx="55" cy="66" rx="23" ry="26" fill="url(#lz7body)" filter="url(#lz7sh)"/>
-<!-- Cinturón -->
-<rect x="36" y="72" width="38" height="7" rx="3" fill="#92400e" stroke="#d97706" stroke-width="1"/>
-<rect x="52" y="71" width="6" height="9" rx="2" fill="#d97706"/>
-<!-- Cicatrices en cuerpo -->
-<line x1="44" y1="60" x2="52" y2="68" stroke="#dc2626" stroke-width="1.5" opacity="0.8"/>
-<line x1="58" y1="58" x2="65" y2="66" stroke="#dc2626" stroke-width="1.5" opacity="0.8"/>
-<!-- Cabeza lobuna -->
-<ellipse cx="55" cy="37" rx="20" ry="18" fill="url(#lz7body)" filter="url(#lz7sh)"/>
-<!-- Orejas de lobo puntiagudas -->
-<polygon points="40,28 35,10 48,26" fill="#4b5563" stroke="#9ca3af" stroke-width="1"/>
-<polygon points="70,28 75,10 62,26" fill="#4b5563" stroke="#9ca3af" stroke-width="1"/>
-<polygon points="41,26 37,14 47,25" fill="#be185d"/>
-<polygon points="69,26 73,14 63,25" fill="#be185d"/>
-<!-- Hocico -->
-<ellipse cx="55" cy="47" rx="9" ry="7" fill="#374151"/>
-<ellipse cx="55" cy="46" rx="6" ry="5" fill="#1f2937"/>
-<circle cx="53" cy="46" r="1.5" fill="#f97316" filter="url(#lz7glow)"/><circle cx="57" cy="46" r="1.5" fill="#f97316" filter="url(#lz7glow)"/>
-<!-- Ojos naranjas brillantes -->
-<circle cx="46" cy="36" r="4.5" fill="#1f2937"/><circle cx="46" cy="36" r="3" fill="#f97316" filter="url(#lz7glow)"/><circle cx="46" cy="36" r="1.5" fill="#fee2e2"/>
-<circle cx="64" cy="36" r="4.5" fill="#1f2937"/><circle cx="64" cy="36" r="3" fill="#f97316" filter="url(#lz7glow)"/><circle cx="64" cy="36" r="1.5" fill="#fee2e2"/>
-<!-- Calabaza en mano -->
-<ellipse cx="28" cy="68" rx="12" ry="11" fill="#ea580c" filter="url(#lz7sh)"/>
-<rect x="34" y="57" width="3" height="5" rx="1" fill="#15803d"/>
-<line x1="24" y1="65" x2="20" y2="63" stroke="#dc2626" stroke-width="2"/>
-<line x1="24" y1="68" x2="19" y2="69" stroke="#dc2626" stroke-width="2"/>
-<polygon points="24,64 32,64 30,70 26,70" fill="#1c1917"/>
-<circle cx="25" cy="66" r="2" fill="#fef08a" filter="url(#lz7glow)"/>
-<circle cx="31" cy="66" r="2" fill="#fef08a" filter="url(#lz7glow)"/>
-<!-- Cola de lobo -->
-<path d="M77 65 Q90 55 95 45 Q100 38 95 34 Q88 30 84 40 Q80 52 75 62Z" fill="#4b5563"/>
-<!-- Garras -->
-<ellipse cx="35" cy="63" rx="7" ry="13" fill="#374151" filter="url(#lz7sh)"/>
-<ellipse cx="75" cy="63" rx="7" ry="13" fill="#374151" filter="url(#lz7sh)"/>
-<!-- Piernas -->
-<ellipse cx="45" cy="90" rx="10" ry="14" fill="#1f2937" filter="url(#lz7sh)"/>
-<ellipse cx="65" cy="90" rx="10" ry="14" fill="#1f2937" filter="url(#lz7sh)"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-4;0,0" dur="1.8s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 8 — Troll del Pantano
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="tr8bg" cx="50%" cy="70%"><stop offset="0%" stop-color="#166534" stop-opacity="0.35"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="tr8body" cx="30%" cy="25%"><stop offset="0%" stop-color="#a3e635"/><stop offset="50%" stop-color="#4d7c0f"/><stop offset="100%" stop-color="#1a2e05"/></radialGradient>
-  <filter id="tr8glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="tr8sh"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,0,0.65)"/></filter>
-</defs>
-<ellipse cx="55" cy="80" rx="46" ry="25" fill="url(#tr8bg)"/>
-<ellipse cx="55" cy="107" rx="26" ry="6" fill="rgba(0,0,0,0.35)"/>
-<!-- Cuerpo enorme y robusto -->
-<ellipse cx="55" cy="65" rx="28" ry="30" fill="url(#tr8body)" filter="url(#tr8sh)"/>
-<ellipse cx="55" cy="58" rx="18" ry="20" fill="rgba(163,230,53,0.2)"/>
-<!-- Verrugas -->
-<circle cx="42" cy="60" r="3" fill="#365314"/><circle cx="68" cy="57" r="2.5" fill="#365314"/><circle cx="50" cy="52" r="2" fill="#365314"/>
-<!-- Cabeza enorme con verrugas -->
-<ellipse cx="55" cy="35" rx="24" ry="21" fill="url(#tr8body)" filter="url(#tr8sh)"/>
-<circle cx="45" cy="30" r="3" fill="#365314"/><circle cx="65" cy="28" r="2.5" fill="#365314"/><circle cx="55" cy="22" r="2" fill="#365314"/>
-<!-- Orejas grandes de troll -->
-<ellipse cx="31" cy="35" rx="9" ry="13" fill="#4d7c0f" filter="url(#tr8sh)"/>
-<ellipse cx="79" cy="35" rx="9" ry="13" fill="#4d7c0f" filter="url(#tr8sh)"/>
-<ellipse cx="31" cy="35" rx="5" ry="8" fill="#be185d" opacity="0.6"/>
-<ellipse cx="79" cy="35" rx="5" ry="8" fill="#be185d" opacity="0.6"/>
-<!-- Ojos amarillo-verde brillantes -->
-<circle cx="44" cy="34" r="5.5" fill="#fef08a"/><circle cx="44" cy="34" r="3.5" fill="#84cc16" filter="url(#tr8glow)"/><circle cx="44" cy="33" r="1.5" fill="#14532d"/>
-<circle cx="66" cy="34" r="5.5" fill="#fef08a"/><circle cx="66" cy="34" r="3.5" fill="#84cc16" filter="url(#tr8glow)"/><circle cx="66" cy="33" r="1.5" fill="#14532d"/>
-<!-- Nariz enorme bulbosa -->
-<ellipse cx="55" cy="44" rx="7" ry="6" fill="#365314"/><ellipse cx="52" cy="45" rx="2" ry="2.5" fill="#1a2e05"/><ellipse cx="58" cy="45" rx="2" ry="2.5" fill="#1a2e05"/>
-<!-- Boca con colmillos -->
-<path d="M42 52 Q55 60 68 52" stroke="#a3e635" stroke-width="2" fill="none"/>
-<polygon points="46,53 48,59 44,59" fill="white"/><polygon points="64,53 66,59 62,59" fill="white"/>
-<polygon points="52,54 54,61 50,61" fill="white"/><polygon points="58,54 60,61 56,61" fill="white"/>
-<!-- Brazos enormes con garras -->
-<ellipse cx="28" cy="68" rx="11" ry="18" fill="#4d7c0f" filter="url(#tr8sh)"/>
-<ellipse cx="82" cy="68" rx="11" ry="18" fill="#4d7c0f" filter="url(#tr8sh)"/>
-<!-- Garras en manos -->
-<polygon points="20,80 17,88 23,85" fill="#a3e635"/><polygon points="24,82 21,90 27,87" fill="#a3e635"/><polygon points="28,83 26,91 31,88" fill="#a3e635"/>
-<polygon points="90,80 93,88 87,85" fill="#a3e635"/><polygon points="86,82 89,90 83,87" fill="#a3e635"/><polygon points="82,83 84,91 79,88" fill="#a3e635"/>
-<!-- Piernas cortas y gordas -->
-<ellipse cx="44" cy="93" rx="13" ry="15" fill="#365314" filter="url(#tr8sh)"/>
-<ellipse cx="66" cy="93" rx="13" ry="15" fill="#365314" filter="url(#tr8sh)"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-2;0,0" dur="2.5s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 9 — Oso Zombie
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="oz9bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.25"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="oz9body" cx="35%" cy="30%"><stop offset="0%" stop-color="#6b7280"/><stop offset="50%" stop-color="#374151"/><stop offset="100%" stop-color="#111827"/></radialGradient>
-  <filter id="oz9glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="oz9sh"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,0,0.6)"/></filter>
-</defs>
-<ellipse cx="55" cy="78" rx="46" ry="26" fill="url(#oz9bg)"/>
-<ellipse cx="55" cy="107" rx="26" ry="6" fill="rgba(0,0,0,0.4)"/>
-<!-- Cuerpo enorme oso zombie -->
-<ellipse cx="55" cy="66" rx="28" ry="30" fill="url(#oz9body)" filter="url(#oz9sh)"/>
-<!-- Costillas visibles -->
-<line x1="42" y1="58" x2="50" y2="62" stroke="#4b5563" stroke-width="1.5"/><line x1="42" y1="64" x2="50" y2="67" stroke="#4b5563" stroke-width="1.5"/>
-<line x1="68" y1="58" x2="60" y2="62" stroke="#4b5563" stroke-width="1.5"/><line x1="68" y1="64" x2="60" y2="67" stroke="#4b5563" stroke-width="1.5"/>
-<!-- Heridas con brillo púrpura -->
-<path d="M46 55 Q52 58 48 62" stroke="#7c3aed" stroke-width="2" fill="none" filter="url(#oz9glow)"/>
-<path d="M62 54 Q67 57 63 62" stroke="#7c3aed" stroke-width="2" fill="none" filter="url(#oz9glow)"/>
-<!-- Cabeza oso grande -->
-<ellipse cx="55" cy="36" rx="22" ry="20" fill="url(#oz9body)" filter="url(#oz9sh)"/>
-<!-- Orejas redondeadas de oso -->
-<circle cx="35" cy="20" r="10" fill="#374151" filter="url(#oz9sh)"/>
-<circle cx="75" cy="20" r="10" fill="#374151" filter="url(#oz9sh)"/>
-<circle cx="35" cy="20" r="6" fill="#1f2937"/>
-<circle cx="75" cy="20" r="6" fill="#1f2937"/>
-<!-- Ojos zombis morados brillantes -->
-<circle cx="44" cy="35" r="5" fill="#111"/><circle cx="44" cy="35" r="3.5" fill="#7c3aed" filter="url(#oz9glow)"/><circle cx="43.5" cy="34.5" r="1.5" fill="#c4b5fd"/>
-<circle cx="66" cy="35" r="5" fill="#111"/><circle cx="66" cy="35" r="3.5" fill="#7c3aed" filter="url(#oz9glow)"/><circle cx="65.5" cy="34.5" r="1.5" fill="#c4b5fd"/>
-<!-- Hocico de oso -->
-<ellipse cx="55" cy="46" rx="8" ry="6" fill="#1f2937"/>
-<ellipse cx="55" cy="44" rx="5" ry="3.5" fill="#374151"/>
-<circle cx="53" cy="44" r="1.5" fill="#6b7280"/><circle cx="57" cy="44" r="1.5" fill="#6b7280"/>
-<!-- Boca abierta mostrando dientes podridos -->
-<path d="M44 52 Q55 60 66 52" fill="#111" stroke="#374151" stroke-width="1"/>
-<polygon points="47,53 49,60 45,60" fill="#a3a3a3"/><polygon points="53,54 55,61 51,61" fill="#a3a3a3"/><polygon points="59,53 61,60 57,60" fill="#9ca3af"/>
-<!-- Garras masivas -->
-<ellipse cx="28" cy="69" rx="12" ry="17" fill="#374151" filter="url(#oz9sh)"/>
-<ellipse cx="82" cy="69" rx="12" ry="17" fill="#374151" filter="url(#oz9sh)"/>
-<polygon points="18,82 14,90 21,87" fill="#6b7280"/><polygon points="22,84 18,92 25,89" fill="#6b7280"/><polygon points="26,85 23,93 29,90" fill="#6b7280"/>
-<!-- Piernas -->
-<ellipse cx="43" cy="92" rx="13" ry="14" fill="#1f2937" filter="url(#oz9sh)"/>
-<ellipse cx="67" cy="92" rx="13" ry="14" fill="#1f2937" filter="url(#oz9sh)"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="2.2s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 10 — Espectro (fantasma neon azul)
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="esp10bg" cx="50%" cy="50%"><stop offset="0%" stop-color="#06b6d4" stop-opacity="0.4"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="esp10body" cx="40%" cy="30%"><stop offset="0%" stop-color="#e0f7fa"/><stop offset="40%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#083344"/></radialGradient>
-  <filter id="esp10glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="esp10sh"><feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#06b6d4" flood-opacity="0.7"/></filter>
-</defs>
-<ellipse cx="55" cy="85" rx="38" ry="20" fill="url(#esp10bg)" filter="url(#esp10glow)"/>
-<!-- Cola fantasmal ondulante -->
-<path d="M35 75 Q30 85 35 95 Q40 105 35 110 Q30 105 32 95 Q28 85 32 75" fill="#06b6d4" opacity="0.7"/>
-<path d="M75 75 Q80 85 75 95 Q70 105 75 110 Q80 105 78 95 Q82 85 78 75" fill="#06b6d4" opacity="0.7"/>
-<path d="M55 75 Q50 85 55 95 Q60 105 55 110 Q50 105 52 95 Q48 85 52 75" fill="#67e8f9" opacity="0.8"/>
-<!-- Cuerpo fantasma principal -->
-<path d="M28 70 Q25 45 30 30 Q38 15 55 12 Q72 15 80 30 Q85 45 82 70 Q80 85 75 95 Q70 105 65 110 Q60 105 62 95 Q58 88 55 95 Q52 88 48 95 Q50 105 45 110 Q40 105 35 95 Q30 85 28 70Z" fill="url(#esp10body)" filter="url(#esp10sh)" opacity="0.92"/>
-<!-- Brillo interno -->
-<ellipse cx="55" cy="50" rx="20" ry="25" fill="rgba(224,247,250,0.15)"/>
-<!-- Ojos neon azul eléctrico -->
-<ellipse cx="44" cy="42" rx="8" ry="10" fill="#083344"/>
-<ellipse cx="44" cy="42" rx="6" ry="8" fill="#06b6d4" filter="url(#esp10glow)"/>
-<ellipse cx="44" cy="42" rx="3" ry="4" fill="#e0f9ff"/>
-<ellipse cx="66" cy="42" rx="8" ry="10" fill="#083344"/>
-<ellipse cx="66" cy="42" rx="6" ry="8" fill="#06b6d4" filter="url(#esp10glow)"/>
-<ellipse cx="66" cy="42" rx="3" ry="4" fill="#e0f9ff"/>
-<!-- Boca abierta con grito -->
-<ellipse cx="55" cy="60" rx="10" ry="7" fill="#083344"/>
-<ellipse cx="55" cy="60" rx="7" ry="5" fill="#164e63"/>
-<!-- Manos fantasmales -->
-<ellipse cx="22" cy="58" rx="8" ry="10" fill="#06b6d4" opacity="0.8" filter="url(#esp10glow)"/>
-<ellipse cx="88" cy="58" rx="8" ry="10" fill="#06b6d4" opacity="0.8" filter="url(#esp10glow)"/>
-<!-- Dedos -->
-<ellipse cx="16" cy="52" rx="3" ry="7" fill="#67e8f9" opacity="0.9"/><ellipse cx="14" cy="60" rx="3" ry="7" fill="#67e8f9" opacity="0.9"/>
-<ellipse cx="94" cy="52" rx="3" ry="7" fill="#67e8f9" opacity="0.9"/><ellipse cx="96" cy="60" rx="3" ry="7" fill="#67e8f9" opacity="0.9"/>
-<!-- Partículas de energía -->
-<circle cx="38" cy="20" r="2" fill="#67e8f9" filter="url(#esp10glow)"/><circle cx="72" cy="18" r="2.5" fill="#67e8f9" filter="url(#esp10glow)"/><circle cx="85" cy="35" r="1.5" fill="#06b6d4" filter="url(#esp10glow)"/>
-<animate attributeName="opacity" values="0.85;1;0.85" dur="1.5s" repeatCount="indefinite"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-6;0,0" dur="2s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 11 — Ghoul Devorador
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="gh11bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#dc2626" stop-opacity="0.25"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="gh11body" cx="35%" cy="25%"><stop offset="0%" stop-color="#6b7280"/><stop offset="50%" stop-color="#292524"/><stop offset="100%" stop-color="#0c0a09"/></radialGradient>
-  <filter id="gh11glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="gh11sh"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,0,0.7)"/></filter>
-</defs>
-<ellipse cx="55" cy="80" rx="44" ry="24" fill="url(#gh11bg)"/>
-<ellipse cx="55" cy="107" rx="24" ry="6" fill="rgba(0,0,0,0.5)"/>
-<!-- Cuerpo ghoul flaco y amenazante -->
-<path d="M35 95 Q32 75 34 58 Q38 42 55 38 Q72 42 76 58 Q78 75 75 95Z" fill="url(#gh11body)" filter="url(#gh11sh)"/>
-<!-- Costillas expuestas -->
-<line x1="42" y1="60" x2="55" y2="56" stroke="#57534e" stroke-width="2"/><line x1="42" y1="66" x2="55" y2="63" stroke="#57534e" stroke-width="2"/><line x1="42" y1="72" x2="55" y2="70" stroke="#57534e" stroke-width="2"/>
-<line x1="68" y1="60" x2="55" y2="56" stroke="#57534e" stroke-width="2"/><line x1="68" y1="66" x2="55" y2="63" stroke="#57534e" stroke-width="2"/><line x1="68" y1="72" x2="55" y2="70" stroke="#57534e" stroke-width="2"/>
-<!-- Cabeza cráneo ghoul -->
-<ellipse cx="55" cy="24" rx="20" ry="20" fill="url(#gh11body)" filter="url(#gh11sh)"/>
-<ellipse cx="55" cy="20" rx="15" ry="14" fill="rgba(107,114,128,0.2)"/>
-<!-- Mandíbula inferior separada -->
-<path d="M38 35 Q55 45 72 35 Q70 50 55 52 Q40 50 38 35Z" fill="#1c1917"/>
-<!-- Dientes afilados -->
-<polygon points="41,36 43,46 39,46" fill="#e7e5e4"/><polygon points="46,37 48,48 44,48" fill="#d6d3d1"/>
-<polygon points="51,38 53,49 49,49" fill="#e7e5e4"/><polygon points="56,38 58,49 54,49" fill="#d6d3d1"/>
-<polygon points="61,37 63,48 59,48" fill="#e7e5e4"/><polygon points="66,36 68,46 64,46" fill="#d6d3d1"/>
-<!-- Ojos vacíos rojos -->
-<ellipse cx="42" cy="22" rx="7" ry="8" fill="#0c0a09"/><circle cx="42" cy="22" r="4.5" fill="#dc2626" filter="url(#gh11glow)"/><circle cx="42" cy="22" r="2" fill="#fca5a5"/>
-<ellipse cx="68" cy="22" rx="7" ry="8" fill="#0c0a09"/><circle cx="68" cy="22" r="4.5" fill="#dc2626" filter="url(#gh11glow)"/><circle cx="68" cy="22" r="2" fill="#fca5a5"/>
-<!-- Brazos largos con garras -->
-<path d="M32 55 Q20 65 15 78 Q12 86 16 88" stroke="#374151" stroke-width="10" fill="none" stroke-linecap="round" filter="url(#gh11sh)"/>
-<path d="M78 55 Q90 65 95 78 Q98 86 94 88" stroke="#374151" stroke-width="10" fill="none" stroke-linecap="round" filter="url(#gh11sh)"/>
-<!-- Garras largas -->
-<polygon points="12,84 8,95 15,90" fill="#6b7280"/><polygon points="16,86 13,97 19,92" fill="#6b7280"/><polygon points="20,87 18,98 23,93" fill="#6b7280"/>
-<polygon points="98,84 102,95 95,90" fill="#6b7280"/><polygon points="94,86 97,97 91,92" fill="#6b7280"/><polygon points="90,87 92,98 87,93" fill="#6b7280"/>
-<!-- Piernas -->
-<ellipse cx="44" cy="96" rx="10" ry="13" fill="#1c1917" filter="url(#gh11sh)"/>
-<ellipse cx="66" cy="96" rx="10" ry="13" fill="#1c1917" filter="url(#gh11sh)"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="1.6s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 12 — Momia Ancestral
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="mm12bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#d97706" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="mm12body" cx="35%" cy="25%"><stop offset="0%" stop-color="#d6d3d1"/><stop offset="50%" stop-color="#a8a29e"/><stop offset="100%" stop-color="#44403c"/></radialGradient>
-  <filter id="mm12glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="mm12sh"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,0,0.6)"/></filter>
-</defs>
-<ellipse cx="55" cy="80" rx="44" ry="24" fill="url(#mm12bg)"/>
-<ellipse cx="55" cy="107" rx="24" ry="6" fill="rgba(0,0,0,0.4)"/>
-<!-- Cuerpo momia con vendas -->
-<ellipse cx="55" cy="68" rx="22" ry="28" fill="url(#mm12body)" filter="url(#mm12sh)"/>
-<!-- Vendas horizontales -->
-<rect x="34" y="50" width="42" height="5" rx="2" fill="#d6d3d1" opacity="0.9"/><rect x="34" y="57" width="42" height="5" rx="2" fill="#c4b9b0" opacity="0.9"/>
-<rect x="34" y="64" width="42" height="5" rx="2" fill="#d6d3d1" opacity="0.9"/><rect x="34" y="71" width="42" height="5" rx="2" fill="#c4b9b0" opacity="0.9"/>
-<rect x="34" y="78" width="42" height="5" rx="2" fill="#d6d3d1" opacity="0.9"/>
-<!-- Vendas diagonales en cuerpo -->
-<line x1="34" y1="50" x2="56" y2="82" stroke="#b5aca4" stroke-width="2.5" opacity="0.7"/>
-<line x1="42" y1="50" x2="65" y2="82" stroke="#b5aca4" stroke-width="2.5" opacity="0.7"/>
-<!-- Cabeza momia -->
-<ellipse cx="55" cy="32" rx="19" ry="22" fill="url(#mm12body)" filter="url(#mm12sh)"/>
-<!-- Vendas en cabeza -->
-<rect x="37" y="22" width="36" height="5" rx="2" fill="#d6d3d1"/><rect x="37" y="29" width="36" height="5" rx="2" fill="#c4b9b0"/>
-<rect x="37" y="36" width="36" height="5" rx="2" fill="#d6d3d1"/>
-<!-- Ojos naranjas brillantes de momia -->
-<ellipse cx="44" cy="35" rx="6" ry="7" fill="#1c1917"/>
-<circle cx="44" cy="35" r="4" fill="#d97706" filter="url(#mm12glow)"/>
-<circle cx="44" cy="34" r="2" fill="#fef08a"/>
-<ellipse cx="66" cy="35" rx="6" ry="7" fill="#1c1917"/>
-<circle cx="66" cy="35" r="4" fill="#d97706" filter="url(#mm12glow)"/>
-<circle cx="66" cy="34" r="2" fill="#fef08a"/>
-<!-- Boca descarnada -->
-<path d="M43 48 Q55 52 67 48" stroke="#78716c" stroke-width="2" fill="none"/>
-<line x1="47" y1="48" x2="47" y2="53" stroke="#78716c" stroke-width="1.5"/>
-<line x1="52" y1="49" x2="52" y2="54" stroke="#78716c" stroke-width="1.5"/>
-<line x1="57" y1="49" x2="57" y2="54" stroke="#78716c" stroke-width="1.5"/>
-<line x1="62" y1="48" x2="62" y2="53" stroke="#78716c" stroke-width="1.5"/>
-<!-- Brazos con vendas extendidos -->
-<path d="M33 60 Q18 58 12 65" stroke="#d6d3d1" stroke-width="11" fill="none" stroke-linecap="round" filter="url(#mm12sh)"/>
-<line x1="33" y1="55" x2="14" y2="60" stroke="#b5aca4" stroke-width="3"/>
-<line x1="33" y1="62" x2="12" y2="67" stroke="#b5aca4" stroke-width="3"/>
-<path d="M77 60 Q92 58 98 65" stroke="#d6d3d1" stroke-width="11" fill="none" stroke-linecap="round" filter="url(#mm12sh)"/>
-<line x1="77" y1="55" x2="96" y2="60" stroke="#b5aca4" stroke-width="3"/>
-<line x1="77" y1="62" x2="98" y2="67" stroke="#b5aca4" stroke-width="3"/>
-<!-- Piernas con vendas -->
-<ellipse cx="44" cy="93" rx="11" ry="14" fill="#a8a29e" filter="url(#mm12sh)"/>
-<ellipse cx="66" cy="93" rx="11" ry="14" fill="#a8a29e" filter="url(#mm12sh)"/>
-<line x1="34" y1="85" x2="55" y2="85" stroke="#d6d3d1" stroke-width="2.5"/><line x1="34" y1="91" x2="55" y2="91" stroke="#d6d3d1" stroke-width="2.5"/>
-<line x1="56" y1="85" x2="77" y2="85" stroke="#d6d3d1" stroke-width="2.5"/><line x1="56" y1="91" x2="77" y2="91" stroke="#d6d3d1" stroke-width="2.5"/>
-<!-- Pergamino en mano -->
-<rect x="4" y="60" width="8" height="15" rx="2" fill="#fef3c7"/><circle cx="8" cy="60" r="4" fill="#fef3c7"/><circle cx="8" cy="75" r="4" fill="#fef3c7"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="2.4s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 13 — Hombre Lobo (lupino poderoso)
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="hl13bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="hl13body" cx="35%" cy="25%"><stop offset="0%" stop-color="#9ca3af"/><stop offset="50%" stop-color="#374151"/><stop offset="100%" stop-color="#111827"/></radialGradient>
-  <filter id="hl13glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="hl13sh"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,0,0.6)"/></filter>
-</defs>
-<ellipse cx="55" cy="80" rx="46" ry="25" fill="url(#hl13bg)"/>
-<!-- Luna llena detrás -->
-<circle cx="80" cy="18" r="16" fill="#fef3c7" opacity="0.4" filter="url(#hl13glow)"/>
-<circle cx="80" cy="18" r="14" fill="#fef9c3" opacity="0.5"/>
-<ellipse cx="55" cy="107" rx="26" ry="6" fill="rgba(0,0,0,0.45)"/>
-<!-- Cuerpo musculoso lobo -->
-<ellipse cx="55" cy="66" rx="26" ry="30" fill="url(#hl13body)" filter="url(#hl13sh)"/>
-<ellipse cx="55" cy="58" rx="17" ry="20" fill="rgba(156,163,175,0.2)"/>
-<!-- Cicatrices batalla -->
-<line x1="44" y1="58" x2="53" y2="68" stroke="#dc2626" stroke-width="2"/><line x1="58" y1="56" x2="67" y2="66" stroke="#dc2626" stroke-width="2"/>
-<!-- Cola larga y esponjosa -->
-<path d="M78 70 Q95 58 103 44 Q108 34 103 28 Q97 22 91 32 Q85 44 78 60Z" fill="#374151" stroke="#6b7280" stroke-width="1"/>
-<path d="M80 68 Q96 57 100 46 Q104 38 100 33" stroke="#9ca3af" stroke-width="2" fill="none" opacity="0.5"/>
-<!-- Cabeza lobuna grande -->
-<ellipse cx="52" cy="35" rx="22" ry="20" fill="url(#hl13body)" filter="url(#hl13sh)"/>
-<!-- Hocico prominente -->
-<ellipse cx="52" cy="47" rx="12" ry="9" fill="#1f2937"/>
-<ellipse cx="52" cy="44" rx="8" ry="6" fill="#111827"/>
-<circle cx="49" cy="44" r="2" fill="#6b7280" filter="url(#hl13glow)"/><circle cx="55" cy="44" r="2" fill="#6b7280" filter="url(#hl13glow)"/>
-<!-- Boca feroz con colmillos -->
-<path d="M40 52 Q52 60 64 52" fill="#111827" stroke="#374151" stroke-width="1"/>
-<polygon points="42,52 45,62 39,62" fill="white"/><polygon points="50,53 53,64 47,64" fill="white"/>
-<polygon points="57,53 60,64 54,64" fill="white"/><polygon points="63,52 66,62 60,62" fill="white"/>
-<!-- Orejas puntiagudas con pelo -->
-<polygon points="36,26 30,8 44,24" fill="#374151" stroke="#6b7280" stroke-width="1.5"/>
-<polygon points="68,26 74,8 60,24" fill="#374151" stroke="#6b7280" stroke-width="1.5"/>
-<polygon points="37,24 32,12 43,23" fill="#111827"/>
-<polygon points="67,24 72,12 61,23" fill="#111827"/>
-<!-- Ojos amarillo-naranja lunares -->
-<circle cx="42" cy="33" r="5.5" fill="#111"/><circle cx="42" cy="33" r="4" fill="#f59e0b" filter="url(#hl13glow)"/><circle cx="42" cy="33" r="2" fill="#fef3c7"/>
-<circle cx="62" cy="33" r="5.5" fill="#111"/><circle cx="62" cy="33" r="4" fill="#f59e0b" filter="url(#hl13glow)"/><circle cx="62" cy="33" r="2" fill="#fef3c7"/>
-<!-- Brazos peludos y musculosos -->
-<ellipse cx="28" cy="67" rx="12" ry="18" fill="#374151" filter="url(#hl13sh)"/>
-<ellipse cx="82" cy="65" rx="11" ry="17" fill="#374151" filter="url(#hl13sh)"/>
-<!-- Garras -->
-<polygon points="19,82 16,91 22,88" fill="#9ca3af"/><polygon points="23,84 20,93 26,90" fill="#9ca3af"/><polygon points="27,85 25,94 30,91" fill="#9ca3af"/>
-<!-- Piernas -->
-<ellipse cx="43" cy="92" rx="13" ry="14" fill="#1f2937" filter="url(#hl13sh)"/>
-<ellipse cx="67" cy="92" rx="13" ry="14" fill="#1f2937" filter="url(#hl13sh)"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-4;0,0" dur="1.7s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 14 — Vampiro Noble
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="vn14bg" cx="50%" cy="50%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="vn14body" cx="35%" cy="25%"><stop offset="0%" stop-color="#e2c4f0"/><stop offset="50%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0c0a09"/></radialGradient>
-  <filter id="vn14glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="vn14sh"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,0,0.6)"/></filter>
-</defs>
-<ellipse cx="55" cy="80" rx="44" ry="24" fill="url(#vn14bg)"/>
-<ellipse cx="55" cy="107" rx="22" ry="6" fill="rgba(0,0,0,0.45)"/>
-<!-- Capa vampírica -->
-<path d="M20 95 Q15 70 22 50 Q30 30 55 25 Q80 30 88 50 Q95 70 90 95 Q80 105 75 110 Q65 100 55 108 Q45 100 35 110 Q30 105 20 95Z" fill="#1e1b4b" filter="url(#vn14sh)"/>
-<path d="M20 95 Q25 80 28 65 Q32 50 40 42" stroke="#7c3aed" stroke-width="1.5" fill="none" opacity="0.6"/>
-<path d="M90 95 Q85 80 82 65 Q78 50 70 42" stroke="#7c3aed" stroke-width="1.5" fill="none" opacity="0.6"/>
-<!-- Decoraciones doradas en capa -->
-<path d="M35 110 Q40 100 50 95" stroke="#d97706" stroke-width="1.5" fill="none"/>
-<path d="M75 110 Q70 100 60 95" stroke="#d97706" stroke-width="1.5" fill="none"/>
-<!-- Broche del cuello -->
-<circle cx="55" cy="52" r="6" fill="#7c3aed" stroke="#d97706" stroke-width="1.5" filter="url(#vn14glow)"/>
-<circle cx="55" cy="52" r="3" fill="#c4b5fd"/>
-<!-- Camisa y cuello blanco -->
-<ellipse cx="55" cy="65" rx="14" ry="18" fill="#f8f4ff"/>
-<rect x="50" y="52" width="10" height="20" fill="#e2c4f0"/>
-<!-- Corbatín rojo -->
-<polygon points="52,55 58,55 55,60" fill="#dc2626"/>
-<polygon points="53,60 57,60 55,64" fill="#dc2626"/>
-<!-- Cabeza pálida elegante -->
-<ellipse cx="55" cy="33" rx="16" ry="18" fill="#f1e6ff" filter="url(#vn14sh)"/>
-<!-- Cabello negro dramático -->
-<path d="M40 28 Q38 18 42 12 Q46 8 50 14 Q48 22 40 28Z" fill="#1c1917"/>
-<path d="M70 28 Q72 18 68 12 Q64 8 60 14 Q62 22 70 28Z" fill="#1c1917"/>
-<path d="M40 30 Q38 15 48 10 Q55 8 62 10 Q72 15 70 30" fill="#1c1917"/>
-<!-- Ojos rojos brillantes amenazantes -->
-<ellipse cx="46" cy="32" rx="5" ry="6" fill="#0c0a09"/>
-<circle cx="46" cy="32" r="3.5" fill="#dc2626" filter="url(#vn14glow)"/>
-<circle cx="46" cy="31" r="1.5" fill="#fca5a5"/>
-<ellipse cx="64" cy="32" rx="5" ry="6" fill="#0c0a09"/>
-<circle cx="64" cy="32" r="3.5" fill="#dc2626" filter="url(#vn14glow)"/>
-<circle cx="64" cy="31" r="1.5" fill="#fca5a5"/>
-<!-- Nariz afilada -->
-<path d="M53 38 L55 44 L57 38" fill="#e2c4f0" stroke="#c4a4e0" stroke-width="0.5"/>
-<!-- Boca con colmillos -->
-<path d="M44 46 Q55 52 66 46" fill="#dc2626" stroke="#7c3aed" stroke-width="0.5"/>
-<polygon points="49,46 51,53 47,53" fill="white"/><polygon points="61,46 63,53 59,53" fill="white"/>
-<!-- Alas de murciélago -->
-<path d="M20 45 Q8 35 5 22 Q8 15 14 20 Q20 28 26 38" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1" filter="url(#vn14sh)"/>
-<path d="M90 45 Q102 35 105 22 Q102 15 96 20 Q90 28 84 38" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1" filter="url(#vn14sh)"/>
-<!-- Rosa roja en mano -->
-<line x1="28" y1="70" x2="22" y2="90" stroke="#15803d" stroke-width="2"/>
-<circle cx="22" cy="68" r="6" fill="#dc2626" filter="url(#vn14glow)"/>
-<path d="M19 66 Q22 64 25 66 Q22 62 22 68" fill="#f87171"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-4;0,0" dur="2.1s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 15 — Gigante Maldito
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="gm15bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#dc2626" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="gm15body" cx="30%" cy="20%"><stop offset="0%" stop-color="#9ca3af"/><stop offset="50%" stop-color="#4b5563"/><stop offset="100%" stop-color="#111827"/></radialGradient>
-  <filter id="gm15glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="gm15sh"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="rgba(0,0,0,0.7)"/></filter>
-</defs>
-<ellipse cx="55" cy="82" rx="48" ry="25" fill="url(#gm15bg)"/>
-<ellipse cx="55" cy="108" rx="28" ry="6" fill="rgba(0,0,0,0.5)"/>
-<!-- Cuerpo gigante enorme -->
-<ellipse cx="55" cy="67" rx="30" ry="32" fill="url(#gm15body)" filter="url(#gm15sh)"/>
-<!-- Armadura rota en pecho -->
-<path d="M38 55 Q55 48 72 55 Q70 70 55 73 Q40 70 38 55Z" fill="#374151" stroke="#6b7280" stroke-width="1.5"/>
-<line x1="50" y1="50" x2="60" y2="73" stroke="#4b5563" stroke-width="2"/>
-<circle cx="55" cy="61" r="5" fill="#dc2626" filter="url(#gm15glow)"/>
-<!-- Runa maldita en pecho -->
-<text x="51" y="64" font-size="8" fill="#fca5a5" font-weight="bold">✦</text>
-<!-- Cadenas rotas en muñecas -->
-<circle cx="27" cy="68" r="5" fill="none" stroke="#6b7280" stroke-width="2.5"/>
-<circle cx="83" cy="68" r="5" fill="none" stroke="#6b7280" stroke-width="2.5"/>
-<line x1="20" y1="68" x2="22" y2="64" stroke="#6b7280" stroke-width="2"/><line x1="16" y1="70" x2="19" y2="68" stroke="#6b7280" stroke-width="2"/>
-<!-- Cabeza masiva -->
-<ellipse cx="55" cy="32" rx="24" ry="22" fill="url(#gm15body)" filter="url(#gm15sh)"/>
-<!-- Cuernos del maldito -->
-<polygon points="36,18 30,4 42,16" fill="#dc2626" stroke="#b91c1c" stroke-width="1"/>
-<polygon points="74,18 80,4 68,16" fill="#dc2626" stroke="#b91c1c" stroke-width="1"/>
-<polygon points="46,16 43,4 50,14" fill="#7f1d1d"/>
-<polygon points="64,16 67,4 60,14" fill="#7f1d1d"/>
-<!-- Cicatrices rúnicas en cara -->
-<line x1="38" y1="28" x2="46" y2="34" stroke="#dc2626" stroke-width="1.5" filter="url(#gm15glow)"/>
-<line x1="64" y1="28" x2="72" y2="34" stroke="#dc2626" stroke-width="1.5" filter="url(#gm15glow)"/>
-<!-- Ojos rojos malditos -->
-<ellipse cx="43" cy="32" rx="6.5" ry="7" fill="#0c0a09"/>
-<circle cx="43" cy="32" r="4.5" fill="#dc2626" filter="url(#gm15glow)"/>
-<circle cx="43" cy="31" r="2" fill="#fca5a5"/>
-<ellipse cx="67" cy="32" rx="6.5" ry="7" fill="#0c0a09"/>
-<circle cx="67" cy="32" r="4.5" fill="#dc2626" filter="url(#gm15glow)"/>
-<circle cx="67" cy="31" r="2" fill="#fca5a5"/>
-<!-- Nariz aplastada -->
-<ellipse cx="55" cy="42" rx="5" ry="4" fill="#374151"/><circle cx="52.5" cy="42" r="2" fill="#1f2937"/><circle cx="57.5" cy="42" r="2" fill="#1f2937"/>
-<!-- Boca enorme con colmillos -->
-<path d="M38 50 Q55 60 72 50" fill="#111827" stroke="#374151" stroke-width="1.5"/>
-<polygon points="41,50 44,60 38,60" fill="#e7e5e4"/><polygon points="52,51 55,62 49,62" fill="#e7e5e4"/>
-<polygon points="58,51 61,62 55,62" fill="#e7e5e4"/><polygon points="66,50 69,60 63,60" fill="#e7e5e4"/>
-<!-- Brazos masivos -->
-<ellipse cx="25" cy="70" rx="14" ry="20" fill="#4b5563" filter="url(#gm15sh)"/>
-<ellipse cx="85" cy="70" rx="14" ry="20" fill="#4b5563" filter="url(#gm15sh)"/>
-<!-- Puños enormes -->
-<ellipse cx="22" cy="88" rx="12" ry="10" fill="#374151" filter="url(#gm15sh)"/>
-<ellipse cx="88" cy="88" rx="12" ry="10" fill="#374151" filter="url(#gm15sh)"/>
-<!-- Piernas masivas -->
-<ellipse cx="42" cy="95" rx="14" ry="13" fill="#1f2937" filter="url(#gm15sh)"/>
-<ellipse cx="68" cy="95" rx="14" ry="13" fill="#1f2937" filter="url(#gm15sh)"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="2.3s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 16 — Golem de Piedra (con lava)
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="gp16bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#f97316" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="gp16body" cx="35%" cy="25%"><stop offset="0%" stop-color="#a8a29e"/><stop offset="50%" stop-color="#57534e"/><stop offset="100%" stop-color="#1c1917"/></radialGradient>
-  <filter id="gp16glow"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="gp16sh"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="rgba(0,0,0,0.7)"/></filter>
-</defs>
-<ellipse cx="55" cy="82" rx="48" ry="25" fill="url(#gp16bg)"/>
-<ellipse cx="55" cy="108" rx="28" ry="7" fill="rgba(0,0,0,0.5)"/>
-<!-- Cuerpo de piedra masivo con grietas de lava -->
-<ellipse cx="55" cy="66" rx="30" ry="32" fill="url(#gp16body)" filter="url(#gp16sh)"/>
-<!-- Grietas de lava en cuerpo -->
-<path d="M42 50 Q48 58 45 68 Q50 75 47 82" stroke="#f97316" stroke-width="3" fill="none" filter="url(#gp16glow)"/>
-<path d="M60 52 Q65 60 62 70 Q67 77 64 84" stroke="#ea580c" stroke-width="2.5" fill="none" filter="url(#gp16glow)"/>
-<path d="M48 55 Q55 58 62 55" stroke="#fb923c" stroke-width="2" fill="none" filter="url(#gp16glow)"/>
-<!-- Núcleo de lava en pecho -->
-<circle cx="55" cy="62" r="12" fill="#1c1917" stroke="#f97316" stroke-width="2"/>
-<circle cx="55" cy="62" r="8" fill="#f97316" filter="url(#gp16glow)" opacity="0.9"/>
-<circle cx="55" cy="62" r="5" fill="#fbbf24" filter="url(#gp16glow)"/>
-<circle cx="55" cy="62" r="2.5" fill="#fef3c7"/>
-<!-- Cabeza de piedra cuadrada y masiva -->
-<rect x="33" y="12" width="44" height="42" rx="6" fill="url(#gp16body)" filter="url(#gp16sh)"/>
-<!-- Cuernos de piedra -->
-<polygon points="38,14 34,2 42,12" fill="#78716c"/><polygon points="72,14 76,2 68,12" fill="#78716c"/>
-<!-- Grietas en cara -->
-<path d="M38 22 Q42 28 40 35" stroke="#f97316" stroke-width="2" fill="none" filter="url(#gp16glow)"/>
-<path d="M72 22 Q68 28 70 35" stroke="#f97316" stroke-width="2" fill="none" filter="url(#gp16glow)"/>
-<!-- Ojos de lava brillantes -->
-<rect x="38" y="24" width="14" height="12" rx="3" fill="#0c0a09"/>
-<rect x="40" y="26" width="10" height="8" rx="2" fill="#f97316" filter="url(#gp16glow)"/>
-<rect x="42" y="27" width="6" height="6" rx="1" fill="#fef3c7"/>
-<rect x="58" y="24" width="14" height="12" rx="3" fill="#0c0a09"/>
-<rect x="60" y="26" width="10" height="8" rx="2" fill="#f97316" filter="url(#gp16glow)"/>
-<rect x="62" y="27" width="6" height="6" rx="1" fill="#fef3c7"/>
-<!-- Boca de lava -->
-<rect x="38" y="42" width="34" height="10" rx="3" fill="#1c1917"/>
-<path d="M38 43 Q55 38 72 43" stroke="#f97316" stroke-width="2" fill="none" filter="url(#gp16glow)"/>
-<path d="M38 52 Q55 57 72 52" stroke="#ea580c" stroke-width="2" fill="none" filter="url(#gp16glow)"/>
-<!-- Brazos masivos de piedra con grietas -->
-<ellipse cx="23" cy="70" rx="14" ry="20" fill="#57534e" filter="url(#gp16sh)"/>
-<path d="M18 60 Q22 70 20 80" stroke="#f97316" stroke-width="2" fill="none" filter="url(#gp16glow)"/>
-<ellipse cx="87" cy="70" rx="14" ry="20" fill="#57534e" filter="url(#gp16sh)"/>
-<path d="M92 60 Q88 70 90 80" stroke="#f97316" stroke-width="2" fill="none" filter="url(#gp16glow)"/>
-<!-- Puños de roca -->
-<ellipse cx="21" cy="88" rx="13" ry="10" fill="#44403c" filter="url(#gp16sh)"/>
-<ellipse cx="89" cy="88" rx="13" ry="10" fill="#44403c" filter="url(#gp16sh)"/>
-<!-- Piernas masivas -->
-<ellipse cx="42" cy="95" rx="14" ry="13" fill="#44403c" filter="url(#gp16sh)"/>
-<ellipse cx="68" cy="95" rx="14" ry="13" fill="#44403c" filter="url(#gp16sh)"/>
-<!-- Charco de lava en suelo -->
-<ellipse cx="55" cy="106" rx="30" ry="6" fill="#f97316" opacity="0.4" filter="url(#gp16glow)"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-2;0,0" dur="2.8s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 17 — Caballero Vampiro
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="cv17bg" cx="50%" cy="55%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="cv17armor" cx="35%" cy="25%"><stop offset="0%" stop-color="#6b7280"/><stop offset="50%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0c0a09"/></radialGradient>
-  <filter id="cv17glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="cv17sh"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,0,0.65)"/></filter>
-</defs>
-<ellipse cx="55" cy="80" rx="46" ry="25" fill="url(#cv17bg)"/>
-<ellipse cx="55" cy="107" rx="25" ry="6" fill="rgba(0,0,0,0.5)"/>
-<!-- Capa oscura de caballero -->
-<path d="M22 100 Q18 72 24 52 Q32 32 55 28 Q78 32 86 52 Q92 72 88 100Z" fill="#1e1b4b" filter="url(#cv17sh)"/>
-<!-- Ornamentos dorados en capa -->
-<path d="M24 52 Q28 70 26 90" stroke="#d97706" stroke-width="1.5" fill="none"/>
-<path d="M86 52 Q82 70 84 90" stroke="#d97706" stroke-width="1.5" fill="none"/>
-<!-- Armadura de pecho oscura con runa -->
-<path d="M36 56 Q55 48 74 56 Q72 72 55 76 Q38 72 36 56Z" fill="url(#cv17armor)" stroke="#7c3aed" stroke-width="1.5"/>
-<path d="M44 58 Q55 54 66 58 Q64 68 55 70 Q46 68 44 58Z" fill="#111827" stroke="#a78bfa" stroke-width="1"/>
-<!-- Joya en pecho -->
-<circle cx="55" cy="62" r="5" fill="#7c3aed" stroke="#c4b5fd" stroke-width="1" filter="url(#cv17glow)"/>
-<circle cx="55" cy="62" r="3" fill="#c4b5fd"/>
-<!-- Casco oscuro con visera -->
-<ellipse cx="55" cy="30" rx="18" ry="20" fill="url(#cv17armor)" filter="url(#cv17sh)"/>
-<path d="M38 26 Q55 18 72 26" fill="#111827" stroke="#374151" stroke-width="1.5"/>
-<!-- Cuernos del casco -->
-<polygon points="40,18 35,5 44,16" fill="#374151" stroke="#6b7280" stroke-width="1"/>
-<polygon points="70,18 75,5 66,16" fill="#374151" stroke="#6b7280" stroke-width="1"/>
-<!-- Visera con ranura luminosa -->
-<path d="M39 32 Q55 28 71 32" stroke="#4b5563" stroke-width="5" fill="none"/>
-<path d="M40 32 Q55 29 70 32" stroke="#7c3aed" stroke-width="2" fill="none" filter="url(#cv17glow)"/>
-<!-- Ojos vampíricos rojos en visera -->
-<ellipse cx="44" cy="36" rx="6" ry="4" fill="#0c0a09"/>
-<ellipse cx="44" cy="36" rx="4" ry="2.5" fill="#dc2626" filter="url(#cv17glow)"/>
-<ellipse cx="66" cy="36" rx="6" ry="4" fill="#0c0a09"/>
-<ellipse cx="66" cy="36" rx="4" ry="2.5" fill="#dc2626" filter="url(#cv17glow)"/>
-<!-- Espada oscura en mano derecha -->
-<line x1="78" y1="48" x2="98" y2="88" stroke="#374151" stroke-width="5" stroke-linecap="round" filter="url(#cv17sh)"/>
-<rect x="74" y="55" width="12" height="4" rx="1" fill="#d97706" transform="rotate(-30 80 57)"/>
-<ellipse cx="76" cy="50" rx="4" ry="6" fill="#6b7280"/>
-<!-- Escudo en mano izquierda -->
-<ellipse cx="24" cy="68" rx="10" ry="13" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1.5" filter="url(#cv17sh)"/>
-<ellipse cx="24" cy="68" rx="6" ry="9" fill="#111827"/>
-<circle cx="24" cy="68" r="3" fill="#7c3aed" filter="url(#cv17glow)"/>
-<!-- Piernas con armadura -->
-<ellipse cx="43" cy="92" rx="12" ry="13" fill="#1e1b4b" filter="url(#cv17sh)"/>
-<ellipse cx="67" cy="92" rx="12" ry="13" fill="#1e1b4b" filter="url(#cv17sh)"/>
-<!-- Botas con espuelas -->
-<ellipse cx="43" cy="103" rx="13" ry="5" fill="#374151"/>
-<ellipse cx="67" cy="103" rx="13" ry="5" fill="#374151"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-4;0,0" dur="2s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 18 — Golem de Fuego
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="gf18bg" cx="50%" cy="55%"><stop offset="0%" stop-color="#dc2626" stop-opacity="0.4"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="gf18body" cx="35%" cy="25%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="45%" stop-color="#dc2626"/><stop offset="100%" stop-color="#1c0000"/></radialGradient>
-  <filter id="gf18glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="gf18sh"><feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#f97316" flood-opacity="0.6"/></filter>
-</defs>
-<ellipse cx="55" cy="82" rx="48" ry="26" fill="url(#gf18bg)"/>
-<!-- Fuego en el suelo -->
-<ellipse cx="55" cy="106" rx="30" ry="7" fill="#f97316" opacity="0.5" filter="url(#gf18glow)"/>
-<path d="M35 106 Q38 98 36 92 Q40 98 42 106Z" fill="#fbbf24" filter="url(#gf18glow)"/>
-<path d="M55 106 Q58 97 56 90 Q61 97 63 106Z" fill="#f97316" filter="url(#gf18glow)"/>
-<path d="M73 106 Q76 98 74 91 Q78 98 80 106Z" fill="#fbbf24" filter="url(#gf18glow)"/>
-<!-- Cuerpo lava ardiente -->
-<ellipse cx="55" cy="66" rx="28" ry="32" fill="url(#gf18body)" filter="url(#gf18sh)"/>
-<!-- Grietas de fuego en cuerpo -->
-<path d="M42 48 Q46 58 44 70 Q48 78 46 86" stroke="#fef3c7" stroke-width="3" fill="none" filter="url(#gf18glow)"/>
-<path d="M65 50 Q62 60 64 72 Q60 80 62 88" stroke="#fef3c7" stroke-width="2.5" fill="none" filter="url(#gf18glow)"/>
-<path d="M50 55 Q55 60 60 55" stroke="#fbbf24" stroke-width="2" fill="none" filter="url(#gf18glow)"/>
-<!-- Núcleo de fuego en pecho -->
-<circle cx="55" cy="62" r="14" fill="#1c0000"/>
-<circle cx="55" cy="62" r="10" fill="#dc2626" filter="url(#gf18glow)"/>
-<circle cx="55" cy="62" r="6" fill="#f97316" filter="url(#gf18glow)"/>
-<circle cx="55" cy="62" r="3" fill="#fbbf24" filter="url(#gf18glow)"/>
-<circle cx="55" cy="62" r="1.5" fill="#fef9c3"/>
-<!-- Cabeza de fuego con llamas -->
-<ellipse cx="55" cy="32" rx="22" ry="22" fill="url(#gf18body)" filter="url(#gf18sh)"/>
-<!-- Llamas en cabeza -->
-<path d="M42 12 Q44 4 48 8 Q46 2 52 6 Q50 0 55 4 Q60 0 58 6 Q62 2 64 8 Q68 4 68 12 Q62 8 55 10 Q48 8 42 12Z" fill="#fbbf24" filter="url(#gf18glow)"/>
-<path d="M46 14 Q48 8 51 11 Q53 6 55 10 Q57 6 59 11 Q62 8 64 14" fill="#f97316" filter="url(#gf18glow)"/>
-<!-- Ojos de fuego/lava -->
-<circle cx="44" cy="32" r="7" fill="#1c0000"/>
-<circle cx="44" cy="32" r="5" fill="#f97316" filter="url(#gf18glow)"/>
-<circle cx="44" cy="32" r="3" fill="#fbbf24" filter="url(#gf18glow)"/>
-<circle cx="44" cy="32" r="1.5" fill="#fef9c3"/>
-<circle cx="66" cy="32" r="7" fill="#1c0000"/>
-<circle cx="66" cy="32" r="5" fill="#f97316" filter="url(#gf18glow)"/>
-<circle cx="66" cy="32" r="3" fill="#fbbf24" filter="url(#gf18glow)"/>
-<circle cx="66" cy="32" r="1.5" fill="#fef9c3"/>
-<!-- Boca de magma -->
-<path d="M40 46 Q55 55 70 46" fill="#1c0000" stroke="#f97316" stroke-width="1.5"/>
-<path d="M41 47 Q55 53 69 47" stroke="#fbbf24" stroke-width="2" fill="none" filter="url(#gf18glow)"/>
-<!-- Brazos de lava con llamas -->
-<ellipse cx="24" cy="68" rx="13" ry="20" fill="#dc2626" filter="url(#gf18sh)"/>
-<path d="M16 55 Q18 60 16 66 Q20 60 22 55Z" fill="#fbbf24" filter="url(#gf18glow)"/>
-<path d="M20 52 Q22 58 20 64 Q24 58 26 52Z" fill="#f97316" filter="url(#gf18glow)"/>
-<ellipse cx="86" cy="68" rx="13" ry="20" fill="#dc2626" filter="url(#gf18sh)"/>
-<path d="M94 55 Q92 60 94 66 Q90 60 88 55Z" fill="#fbbf24" filter="url(#gf18glow)"/>
-<!-- Puños ardientes -->
-<ellipse cx="22" cy="86" rx="12" ry="10" fill="#b91c1c" filter="url(#gf18sh)"/>
-<ellipse cx="88" cy="86" rx="12" ry="10" fill="#b91c1c" filter="url(#gf18sh)"/>
-<!-- Piernas de magma -->
-<ellipse cx="42" cy="95" rx="13" ry="13" fill="#991b1b" filter="url(#gf18sh)"/>
-<ellipse cx="68" cy="95" rx="13" ry="13" fill="#991b1b" filter="url(#gf18sh)"/>
-<animate attributeName="opacity" values="0.9;1;0.9" dur="0.8s" repeatCount="indefinite"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="1.5s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 19 — Demonio Ancestral (armadura negra con fuego)
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="da19bg" cx="50%" cy="55%"><stop offset="0%" stop-color="#dc2626" stop-opacity="0.5"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="da19body" cx="35%" cy="25%"><stop offset="0%" stop-color="#374151"/><stop offset="50%" stop-color="#1c1917"/><stop offset="100%" stop-color="#050505"/></radialGradient>
-  <filter id="da19glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="da19sh"><feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#f97316" flood-opacity="0.5"/></filter>
-</defs>
-<ellipse cx="55" cy="82" rx="48" ry="26" fill="url(#da19bg)"/>
-<!-- Lava en suelo -->
-<ellipse cx="55" cy="107" rx="32" ry="7" fill="#f97316" opacity="0.5" filter="url(#da19glow)"/>
-<path d="M30 107 Q34 99 32 93 Q37 100 39 107Z" fill="#fbbf24" filter="url(#da19glow)"/>
-<path d="M75 107 Q79 99 77 93 Q82 100 84 107Z" fill="#fbbf24" filter="url(#da19glow)"/>
-<!-- Armadura oscura del demonio -->
-<path d="M24 100 Q20 75 26 55 Q34 35 55 30 Q76 35 84 55 Q90 75 86 100Z" fill="url(#da19body)" filter="url(#da19sh)"/>
-<!-- Detalles de armadura con fuego -->
-<path d="M34 55 Q55 48 76 55 Q73 70 55 74 Q37 70 34 55Z" fill="#111827" stroke="#f97316" stroke-width="1.5"/>
-<!-- Grietas de fuego en armadura -->
-<path d="M38 58 Q44 65 40 72 Q45 78 42 84" stroke="#f97316" stroke-width="2.5" fill="none" filter="url(#da19glow)"/>
-<path d="M70 58 Q64 65 68 72 Q63 78 66 84" stroke="#f97316" stroke-width="2.5" fill="none" filter="url(#da19glow)"/>
-<path d="M48 62 Q55 58 62 62" stroke="#fbbf24" stroke-width="2" fill="none" filter="url(#da19glow)"/>
-<!-- Joya central del demonio -->
-<circle cx="55" cy="62" r="8" fill="#1c0000" stroke="#f97316" stroke-width="2"/>
-<circle cx="55" cy="62" r="5" fill="#dc2626" filter="url(#da19glow)"/>
-<circle cx="55" cy="62" r="2.5" fill="#fbbf24" filter="url(#da19glow)"/>
-<!-- Cabeza del demonio con cuernos de fuego -->
-<ellipse cx="55" cy="30" rx="20" ry="22" fill="url(#da19body)" filter="url(#da19sh)"/>
-<!-- Cuernos masivos con fuego -->
-<path d="M38 18 Q30 5 36 0 Q42 5 40 14 Q38 16 38 18Z" fill="#374151" stroke="#f97316" stroke-width="1.5"/>
-<path d="M72 18 Q80 5 74 0 Q68 5 70 14 Q72 16 72 18Z" fill="#374151" stroke="#f97316" stroke-width="1.5"/>
-<!-- Llamas en punta de cuernos -->
-<circle cx="33" cy="2" r="4" fill="#f97316" filter="url(#da19glow)"/>
-<circle cx="77" cy="2" r="4" fill="#f97316" filter="url(#da19glow)"/>
-<circle cx="33" cy="2" r="2" fill="#fbbf24" filter="url(#da19glow)"/>
-<circle cx="77" cy="2" r="2" fill="#fbbf24" filter="url(#da19glow)"/>
-<!-- Cuernos adicionales menores -->
-<polygon points="46,16 43,6 50,14" fill="#1c0000" stroke="#f97316" stroke-width="1"/>
-<polygon points="64,16 67,6 60,14" fill="#1c0000" stroke="#f97316" stroke-width="1"/>
-<!-- Ojos de fuego del demonio -->
-<ellipse cx="43" cy="30" rx="7" ry="8" fill="#050505"/>
-<circle cx="43" cy="30" r="5" fill="#f97316" filter="url(#da19glow)"/>
-<circle cx="43" cy="30" r="3" fill="#fbbf24" filter="url(#da19glow)"/>
-<circle cx="43" cy="30" r="1.5" fill="#fef9c3"/>
-<ellipse cx="67" cy="30" rx="7" ry="8" fill="#050505"/>
-<circle cx="67" cy="30" r="5" fill="#f97316" filter="url(#da19glow)"/>
-<circle cx="67" cy="30" r="3" fill="#fbbf24" filter="url(#da19glow)"/>
-<circle cx="67" cy="30" r="1.5" fill="#fef9c3"/>
-<!-- Boca con llamas internas -->
-<path d="M38 46 Q55 56 72 46" fill="#1c0000" stroke="#f97316" stroke-width="1.5"/>
-<path d="M40 48 Q55 54 70 48" stroke="#fbbf24" stroke-width="1.5" fill="none" filter="url(#da19glow)"/>
-<!-- Alas de armadura oscura -->
-<path d="M22 45 Q8 35 4 18 Q8 10 14 16 Q20 26 26 38" fill="#1c1917" stroke="#f97316" stroke-width="1" filter="url(#da19sh)"/>
-<path d="M88 45 Q102 35 106 18 Q102 10 96 16 Q90 26 84 38" fill="#1c1917" stroke="#f97316" stroke-width="1" filter="url(#da19sh)"/>
-<!-- Brazos con armadura oscura -->
-<ellipse cx="24" cy="68" rx="13" ry="20" fill="#1c1917" filter="url(#da19sh)"/>
-<path d="M18 55 Q20 62 18 70" stroke="#f97316" stroke-width="2" fill="none" filter="url(#da19glow)"/>
-<ellipse cx="86" cy="68" rx="13" ry="20" fill="#1c1917" filter="url(#da19sh)"/>
-<path d="M92 55 Q90 62 92 70" stroke="#f97316" stroke-width="2" fill="none" filter="url(#da19glow)"/>
-<!-- Piernas -->
-<ellipse cx="42" cy="94" rx="13" ry="14" fill="#111827" filter="url(#da19sh)"/>
-<ellipse cx="68" cy="94" rx="13" ry="14" fill="#111827" filter="url(#da19sh)"/>
-<animate attributeName="opacity" values="0.9;1;0.9" dur="1.2s" repeatCount="indefinite"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-4;0,0" dur="1.6s" repeatCount="indefinite"/>
-</svg>`; },
-    // Boss 20 — Hidra Legendaria (multi-cabeza)
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <radialGradient id="hi20bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.4"/><stop offset="100%" stop-color="transparent"/></radialGradient>
-  <radialGradient id="hi20body" cx="35%" cy="25%"><stop offset="0%" stop-color="#7c3aed"/><stop offset="50%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#0c0a09"/></radialGradient>
-  <filter id="hi20glow"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="hi20sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.65)"/></filter>
-</defs>
-<ellipse cx="55" cy="82" rx="50" ry="26" fill="url(#hi20bg)"/>
-<ellipse cx="55" cy="108" rx="28" ry="7" fill="rgba(0,0,0,0.5)"/>
-<!-- Cuerpo principal de la hidra -->
-<ellipse cx="55" cy="72" rx="28" ry="28" fill="url(#hi20body)" filter="url(#hi20sh)"/>
-<!-- Escamas en cuerpo -->
-<path d="M38 65 Q42 62 46 65 Q42 68 38 65Z" fill="#312e81" opacity="0.6"/>
-<path d="M46 60 Q50 57 54 60 Q50 63 46 60Z" fill="#312e81" opacity="0.6"/>
-<path d="M55 65 Q59 62 63 65 Q59 68 55 65Z" fill="#312e81" opacity="0.6"/>
-<path d="M62 58 Q66 55 70 58 Q66 61 62 58Z" fill="#312e81" opacity="0.6"/>
-<!-- Cola de hidra con espinas -->
-<path d="M75 78 Q88 72 96 60 Q102 50 96 44 Q90 38 84 48 Q76 62 72 74Z" fill="#1e3a5f" stroke="#7c3aed" stroke-width="1.5"/>
-<polygon points="96,44 100,38 94,42" fill="#a78bfa"/><polygon points="100,50 106,46 99,48" fill="#a78bfa"/>
-<!-- Cuello izquierdo -->
-<path d="M36 56 Q22 42 20 28 Q22 20 28 24 Q34 32 36 44 Q36 50 36 56Z" fill="#1e3a5f" stroke="#7c3aed" stroke-width="1.5" filter="url(#hi20sh)"/>
-<!-- Cuello central -->
-<path d="M55 52 Q55 35 52 22 Q54 14 58 18 Q62 26 60 38 Q58 46 55 52Z" fill="#1e3a5f" stroke="#7c3aed" stroke-width="1.5" filter="url(#hi20sh)"/>
-<!-- Cuello derecho -->
-<path d="M74 56 Q88 42 90 28 Q88 20 82 24 Q76 32 74 44 Q74 50 74 56Z" fill="#1e3a5f" stroke="#7c3aed" stroke-width="1.5" filter="url(#hi20sh)"/>
-<!-- Cabeza izquierda -->
-<ellipse cx="20" cy="20" rx="14" ry="12" fill="url(#hi20body)" filter="url(#hi20sh)"/>
-<polygon points="12,12 9,4 16,10" fill="#a78bfa"/><polygon points="28,12 31,4 24,10" fill="#a78bfa"/>
-<circle cx="15" cy="20" r="4" fill="#050505"/><circle cx="15" cy="20" r="2.5" fill="#a78bfa" filter="url(#hi20glow)"/>
-<circle cx="25" cy="20" r="4" fill="#050505"/><circle cx="25" cy="20" r="2.5" fill="#a78bfa" filter="url(#hi20glow)"/>
-<path d="M12 28 Q20 33 28 28" fill="#1e3a5f"/>
-<polygon points="14,28 16,34 12,34" fill="#86efac"/><polygon points="22,29 24,35 20,35" fill="#86efac"/><polygon points="26,28 28,34 24,34" fill="#86efac"/>
-<!-- Cabeza central (principal, más grande) -->
-<ellipse cx="55" cy="16" rx="16" ry="14" fill="url(#hi20body)" filter="url(#hi20sh)"/>
-<polygon points="46,8 43,0 50,6" fill="#a78bfa"/><polygon points="64,8 67,0 60,6" fill="#a78bfa"/>
-<circle cx="48" cy="16" r="5" fill="#050505"/><circle cx="48" cy="16" r="3.5" fill="#7c3aed" filter="url(#hi20glow)"/><circle cx="48" cy="15" r="1.5" fill="#c4b5fd"/>
-<circle cx="62" cy="16" r="5" fill="#050505"/><circle cx="62" cy="16" r="3.5" fill="#7c3aed" filter="url(#hi20glow)"/><circle cx="62" cy="15" r="1.5" fill="#c4b5fd"/>
-<path d="M42 24 Q55 30 68 24" fill="#1e3a5f"/>
-<polygon points="44,24 47,31 41,31" fill="#86efac"/><polygon points="52,25 55,32 49,32" fill="#86efac"/><polygon points="61,24 64,31 58,31" fill="#86efac"/>
-<!-- Cabeza derecha -->
-<ellipse cx="90" cy="20" rx="14" ry="12" fill="url(#hi20body)" filter="url(#hi20sh)"/>
-<polygon points="82,12 79,4 86,10" fill="#a78bfa"/><polygon points="98,12 101,4 94,10" fill="#a78bfa"/>
-<circle cx="85" cy="20" r="4" fill="#050505"/><circle cx="85" cy="20" r="2.5" fill="#a78bfa" filter="url(#hi20glow)"/>
-<circle cx="95" cy="20" r="4" fill="#050505"/><circle cx="95" cy="20" r="2.5" fill="#a78bfa" filter="url(#hi20glow)"/>
-<path d="M82 28 Q90 33 98 28" fill="#1e3a5f"/>
-<polygon points="84,28 86,34 82,34" fill="#86efac"/><polygon points="92,29 94,35 90,35" fill="#86efac"/>
-<!-- Alas de la hidra -->
-<path d="M26 68 Q12 58 8 44 Q12 36 18 42 Q24 52 28 62" fill="#312e81" stroke="#7c3aed" stroke-width="1" filter="url(#hi20sh)"/>
-<path d="M84 68 Q98 58 102 44 Q98 36 92 42 Q86 52 82 62" fill="#312e81" stroke="#7c3aed" stroke-width="1" filter="url(#hi20sh)"/>
-<!-- Piernas de hidra -->
-<ellipse cx="40" cy="96" rx="13" ry="14" fill="#1e3a5f" filter="url(#hi20sh)"/>
-<ellipse cx="70" cy="96" rx="13" ry="14" fill="#1e3a5f" filter="url(#hi20sh)"/>
-<!-- Garras -->
-<polygon points="30,104 28,110 34,107" fill="#a78bfa"/><polygon points="35,106 33,112 39,109" fill="#a78bfa"/>
-<polygon points="80,104 82,110 76,107" fill="#a78bfa"/><polygon points="75,106 77,112 71,109" fill="#a78bfa"/>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-3;0,0" dur="2s" repeatCount="indefinite"/>
-</svg>`; },
-];
-const BOSS_NAMES = ['T-Rex Primigenio','Pterodáctilo Cazador','Mosasaurio Profundo','Dragón Volcánico','Demonio Ancestral','Dios de la Sombra','Goblin del Caos','Lobo Zombie','Troll del Pantano','Oso Zombie','Espectro','Ghoul Devorador','Momia Ancestral','Hombre Lobo','Vampiro Noble','Gigante Maldito','Golem de Piedra','Caballero Vampiro','Golem de Fuego','Demonio Ancestral','Hidra Legendaria'];
+const BOSS_SVGS = [svgBoss0, svgBoss1, svgBoss2, svgBoss3, svgBoss4, svgBoss5];
+const BOSS_NAMES = ['T-Rex Primigenio','Pterodáctilo Cazador','Mosasaurio Profundo','Dragón Volcánico','Demonio Ancestral','Dios de la Sombra'];
 
 // ══════════════════════════════════════════════════════════════
 //  HÉROE SVG — personaje completo con equipo visual
@@ -22201,38 +21544,8 @@ ${eq.helm?`<!-- YELMO equipado -->
 window.drawBoss3D = function(containerId, bossIndex) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    // Mapeo directo: cada posición del array BOSSES tiene su SVG
-    // BOSSES[0]=Goblin, [1]=Lobo Zombie, [2]=Troll, [3]=Oso Zombie,
-    // [4]=Espectro, [5]=Ghoul, [6]=Momia, [7]=Hombre Lobo,
-    // [8]=Vampiro Noble, [9]=Gigante Maldito, [10]=Golem Piedra,
-    // [11]=Caballero Vampiro, [12]=Golem Fuego, [13]=Demonio Ancestral,
-    // [14]=Hidra, [15]=Dragón Verde, [16]=Demonio Oscuro,
-    // [17]=Dragón Azul, [18]=Dragón Rojo, [19]=Dragón Negro
-    const svgMap = [
-        6,  // 0 Goblin del Caos      → BOSS_SVGS[6]
-        7,  // 1 Lobo Zombie          → BOSS_SVGS[7]
-        8,  // 2 Troll del Pantano    → BOSS_SVGS[8]
-        9,  // 3 Oso Zombie           → BOSS_SVGS[9]
-        10, // 4 Espectro             → BOSS_SVGS[10]
-        11, // 5 Ghoul Devorador      → BOSS_SVGS[11]
-        12, // 6 Momia Ancestral      → BOSS_SVGS[12]
-        13, // 7 Hombre Lobo          → BOSS_SVGS[13]
-        14, // 8 Vampiro Noble        → BOSS_SVGS[14]
-        15, // 9 Gigante Maldito      → BOSS_SVGS[15]
-        16, // 10 Golem de Piedra     → BOSS_SVGS[16]
-        17, // 11 Caballero Vampiro   → BOSS_SVGS[17]
-        18, // 12 Golem de Fuego      → BOSS_SVGS[18]
-        19, // 13 Demonio Ancestral   → BOSS_SVGS[19]
-        20, // 14 Hidra Legendaria    → BOSS_SVGS[20]
-        3,  // 15 Dragón Verde        → BOSS_SVGS[3] (Dragón Volcánico)
-        19, // 16 Demonio Oscuro      → BOSS_SVGS[19] (Demonio Ancestral)
-        0,  // 17 Dragón Azul         → BOSS_SVGS[0] (T-Rex reusado)
-        2,  // 18 Dragón Rojo         → BOSS_SVGS[2]
-        4,  // 19 Dragón Negro        → BOSS_SVGS[4]
-    ];
-    const idx = Math.min(bossIndex || 0, svgMap.length - 1);
-    const svgIdx = Math.min(svgMap[idx], BOSS_SVGS.length - 1);
-    el.innerHTML = BOSS_SVGS[svgIdx]();
+    const idx = Math.min(bossIndex||0, 5);
+    el.innerHTML = BOSS_SVGS[idx]();
     el.style.display = 'flex';
     el.style.alignItems = 'center';
     el.style.justifyContent = 'center';
