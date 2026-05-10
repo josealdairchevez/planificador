@@ -19257,18 +19257,19 @@ function calcHabitStrength(h) {
     const log = new Set(h.log || []);
     const now = new Date();
     let score = 0, maxScore = 0;
-    const WINDOW = 66;
-    const localKey = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    const WINDOW = 66; // 66 días como Life Reset
 
     for (let i = 0; i < WINDOW; i++) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
-        const k = localKey(d);
-        const weight = 1 - (i / WINDOW) * 0.6;
+        const k = d.toISOString().split('T')[0];
+        // Peso decreciente: días recientes valen más
+        const weight = 1 - (i / WINDOW) * 0.6; // de 1.0 a 0.4
         maxScore += weight;
         if (log.has(k)) score += weight;
     }
     const raw = maxScore > 0 ? score / maxScore : 0;
+    // Aplicar curva: más difícil llegar a 100%
     return Math.round(Math.min(100, raw * 115));
 }
 
@@ -19491,7 +19492,7 @@ function renderCompoundBanner() {
           '<div class="hab-compound-milestone"><div class="hab-compound-m-val">'+v365+'</div><div class="hab-compound-m-lbl">1 año</div></div>' +
           '<div class="hab-compound-milestone"><div class="hab-compound-m-val">'+v1825+'</div><div class="hab-compound-m-lbl">5 años</div></div>' +
         '</div>' +
-        '<div style="font-size:0.55rem;color:#555;text-align:center;margin-top:4px;">Has completado hábitos <b style="color:#6366f1">'+(totalDone)+' veces</b> en total · Tu multiplicador actual: <b style="color:#22c55e">×'+xFactor+'</b></div>';
+        '<div style="font-size:0.55rem;color:#555;text-align:center;margin-top:4px;">Total de completaciones: '+totalDone+' hábito'+(totalDone===1?'':'s')+' · Equivale a '+(totalDone)+' días de 1 hábito/día</div>';
 }
 
 function renderStrengthList() {
@@ -19551,7 +19552,7 @@ function renderStrengthList() {
                 (done?'✓':'') + '</button>';
         }
 
-        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" style="--hab-card-color:'+(h.color||'#10b981')+';border-color:color-mix(in srgb,'+(h.color||'#10b981')+' 55%, transparent);box-shadow:0 0 10px color-mix(in srgb,'+(h.color||'#10b981')+' 15%, transparent);">' +
+        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'' style="--hab-card-color:'+(h.color||'#10b981')+';border-color:color-mix(in srgb,'+(h.color||'#10b981')+' 55%, transparent);box-shadow:0 0 10px color-mix(in srgb,'+(h.color||'#10b981')+' 15%, transparent);">' +
             '<div class="hab-card-top">' +
               renderStrengthRing(strength, sColor) +
               '<div class="hab-card-info">' +
@@ -19563,7 +19564,7 @@ function renderStrengthList() {
                 '<span style="font-size:0.6rem;cursor:pointer;color:#555;" onclick="event.stopPropagation();deleteHabit(\''+h.id+'\')">🗑️</span>' +
               '</div>' +
             '</div>' +
-            '<div class="hab-perf-bar" style="background:linear-gradient(90deg,'+(h.color||'#10b981')+','+(h.color||'#10b981')+'88);opacity:'+(strength>=70?'1':strength>=50?'0.8':strength>=30?'0.55':'0.35')+';"></div>' +
+            '<div class="hab-perf-bar perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'"></div>' +
             '</div>';
     }).join('');
 }
@@ -19586,53 +19587,48 @@ function renderWeekdayChart() {
     if (!el) return;
     const habits = loadHabits();
     const DAYS   = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const counts = [0,0,0,0,0,0,0]; // veces completado ese día de la semana
-    const weeks  = [0,0,0,0,0,0,0]; // cuántas veces ha ocurrido ese día de semana
+    const counts = [0,0,0,0,0,0,0];
+    const totals = [0,0,0,0,0,0,0];
     const now    = new Date();
-    const localKey = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 
-    // Analizar últimas 12 semanas
     for (let w = 0; w < 12; w++) {
         for (let d = 0; d < 7; d++) {
             const dd = new Date(now);
             dd.setDate(dd.getDate() - w*7 - ((now.getDay()+6)%7) + d);
             if (dd > now) continue;
-            const k = localKey(dd);
-            weeks[d]++;
+            const k = dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
             habits.forEach(h => {
+                totals[d]++;
                 if ((h.log||[]).includes(k)) counts[d]++;
             });
         }
     }
 
-    // Tasa = hábitos completados ese día / (semanas que ocurrió × hábitos activos)
-    const numHab = Math.max(habits.length, 1);
-    const rates  = weeks.map((w,i) => w>0 ? Math.min(1, counts[i]/(w*numHab)) : 0);
+    const rates  = totals.map((t,i) => t>0 ? counts[i]/t : 0);
     const maxR   = Math.max(...rates, 0.01);
     const bestI  = rates.indexOf(Math.max(...rates));
-    const nonZero = rates.filter(r=>r>0);
-    const worstI = nonZero.length ? rates.indexOf(Math.min(...nonZero)) : -1;
-    const todayDow = (new Date().getDay()+6)%7;
-    const totalLogs = counts.reduce((s,c)=>s+c,0);
+    const worstI = rates.indexOf(Math.min(...rates.filter(r=>r>0)));
+    const todayDow = (new Date().getDay()+6)%7; // 0=Lun … 6=Dom
+    const totalLogs = rates.reduce((s,r,i)=>s+counts[i],0);
 
+    // Si no hay datos, mostrar mensaje motivador
     if (totalLogs === 0) {
-        el.innerHTML = '<div style="width:100%;text-align:center;padding:18px 0;color:#555;font-size:0.7rem;">📊 Completa hábitos para ver tu actividad semanal</div>';
+        el.innerHTML = '<div style="width:100%;text-align:center;padding:18px 0;color:#555;font-size:0.7rem;">'+
+            '📊 Completa hábitos para ver tu actividad semanal</div>';
         return;
     }
 
-    el.innerHTML = DAYS.map((day,i) => {
+    el.innerHTML = DAYS.map((d,i) => {
         const pct  = Math.round(rates[i]*100);
-        // Altura mínima 12% si hay algún dato, para que la barra sea visible
-        const hPct = pct > 0 ? Math.max(Math.round((rates[i]/maxR)*100), 12) : 0;
+        const hPct = Math.max(Math.round((rates[i]/maxR)*100), pct>0?8:0);
         const isToday = i === todayDow;
-        const cls = i===bestI&&pct>0?'best':i===worstI&&pct>0?'worst':'';
-        const barColor = isToday && cls==='' ? 'background:linear-gradient(180deg,#a78bfa,#7c3aed);' : '';
+        let cls = i===bestI&&pct>0?'best':i===worstI&&rates[i]>0?'worst':'';
         return '<div class="hab-wdc-bar-col">' +
-            '<div class="hab-wdc-bar-track" style="'+(isToday?'background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.3);':'')+'">' +
-              '<div class="hab-wdc-bar-fill '+cls+'" style="height:'+hPct+'%;'+barColor+'" title="'+pct+'% los '+day+'"></div>' +
+            '<div class="hab-wdc-bar-track" style="'+(isToday?'background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);':'')+'">' +
+              '<div class="hab-wdc-bar-fill '+cls+'" style="height:'+hPct+'%;'+(isToday&&cls===''?'background:linear-gradient(180deg,#a78bfa,#7c3aed);':'')+'" title="'+d+': '+pct+'%"></div>' +
             '</div>' +
-            '<div class="hab-wdc-pct" style="'+(isToday?'color:#a78bfa;font-weight:800;':'')+(pct===0?'color:#383838;':'')+'">'+(pct>0?pct+'%':'-')+'</div>' +
-            '<div class="hab-wdc-label" style="'+(isToday?'color:#a78bfa;font-weight:900;':'')+'">'+day+'</div>' +
+            '<div class="hab-wdc-pct" style="'+(isToday?'color:#a78bfa;font-weight:800;':'')+(pct===0?'color:#444;':'')+'">'+pct+'%</div>' +
+            '<div class="hab-wdc-label" style="'+(isToday?'color:#a78bfa;font-weight:900;':'')+'">'+d+'</div>' +
             '</div>';
     }).join('');
 }
