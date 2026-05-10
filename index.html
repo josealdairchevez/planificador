@@ -14843,7 +14843,18 @@
             // También mantener localStorage legacy para compatibilidad
             updateData['localStorage'] = jchData;
 
+            // ── Incluir fcm_reminders en el mismo set ──────────────────
+            // Leer recordatorios de jch_rem_v4 y agregarlos al documento
+            try {
+                var _remData = JSON.parse(localStorage.getItem('jch_rem_v4') || '[]');
+                if (_remData.length > 0) {
+                    updateData['fcm_reminders'] = _remData;
+                    console.log('[JCH] syncToCloud: incluyendo ' + _remData.length + ' fcm_reminders');
+                }
+            } catch(eRem) {}
+
             await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
+            console.log('[JCH] ✅ syncToCloud completado con fcm_reminders');
 
             // Actualizar timestamp de sync exitoso
             localStorage.setItem('jch_cloud_loaded_uid', currentUser.uid);
@@ -17414,11 +17425,18 @@ window.saveHabit = function() {
 
     // ── Sync general a la nube y check inmediato ─────────────────────────────
     setTimeout(function() {
-        // 1. Subir hábitos a Firestore
-        if (typeof window.syncToCloud === 'function' && window._jchCurrentUser) {
-            window.syncToCloud(false).catch(function(){});
+        // 1. Reprogramar recordatorios (guarda en jch_rem_v4)
+        if (typeof rescheduleAllReminders === 'function') {
+            window._lastHabReschedule = 0;
+            rescheduleAllReminders(true);
         }
-        // 2. Reprogramar recordatorios Y subirlos a Firestore
+        // 2. Subir TODO a Firestore (incluye jch_rem_v4 → fcm_reminders)
+        setTimeout(function(){
+            if (typeof window.syncToCloud === 'function' && window._jchCurrentUser) {
+                window.syncToCloud(false).catch(function(){});
+                console.log('[JCH] saveHabit: syncToCloud ejecutado con fcm_reminders');
+            }
+        }, 800);
         if (typeof rescheduleAllReminders === 'function') {
             window._lastHabReschedule = 0;
             rescheduleAllReminders(true);
@@ -17482,12 +17500,19 @@ function scheduleHabitReminder(name, time, emoji) {
         localStorage.setItem('jch_rem_v4', JSON.stringify(clean));
 
         // Subir a Firestore (FCM background)
+        // Guardar en localStorage (dispara el observer que sube a Firestore)
+        localStorage.setItem('jch_rem_v4', JSON.stringify(clean));
+        console.log('[JCH] rescheduleAllReminders: '+clean.length+' recordatorios guardados en jch_rem_v4');
+        // También subir directamente a Firestore via syncToCloud (más confiable)
+        setTimeout(function(){
+            if (typeof window.syncToCloud === 'function' && window._jchCurrentUser) {
+                window.syncToCloud(false).catch(function(){});
+                console.log('[JCH] rescheduleAllReminders → syncToCloud ejecutado');
+            }
+        }, 500);
         var _stfR = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
         if (_stfR) {
             _stfR(clean);
-            console.log('[JCH] rescheduleAllReminders: '+clean.length+' recordatorios → Firestore');
-            // También guardar en localStorage para que el observer lo suba
-            localStorage.setItem('jch_rem_v4', JSON.stringify(clean));
             console.log('[JCH] scheduleHabitReminder: ' + title + ' → ' + new Date(fireAt).toLocaleString());
         }
     } catch(e) { console.warn('[JCH] scheduleHabitReminder error:', e); }
