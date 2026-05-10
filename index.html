@@ -19597,8 +19597,22 @@ function renderStrengthList() {
 
         let actionArea = '';
         if (isQty) {
-            // Usar buildHabControl — mismo diseño que panel HOY
-            actionArea = (window.buildHabControl||buildHabControl)(h, done) || '';
+            if (h.habitType === 'timer') {
+                actionArea = (window.buildHabControl||buildHabControl)(h, done);
+            } else {
+                actionArea =
+                '<div class="hab-qty-row">' +
+                  '<button class="hab-qty-btn hab-qty-minus" onclick="incrementQty(\''+h.id+'\',-1,'+target+')">−</button>' +
+                  '<div>' +
+                    '<div class="hab-qty-display"><span id="habQtyVal_'+h.id+'">'+curQty+'</span>/'+target+'</div>' +
+                    '<div class="hab-qty-unit">'+unit+'</div>' +
+                  '</div>' +
+                  '<button class="hab-qty-btn hab-qty-plus" onclick="incrementQty(\''+h.id+'\',1,'+target+')">+</button>' +
+                '</div>' +
+                '<div class="hab-qty-progress">' +
+                  '<div class="hab-qty-fill" id="habQtyFill_'+h.id+'" style="width:'+qtyPct+'%;background:'+(qtyPct>=100?'#22c55e':h.color||'#6366f1')+'"></div>' +
+                '</div>';
+            }
         } else {
             actionArea =
                 '<button class="hab-check-btn '+(done?'done':'')+'" onclick="toggleHabit(\''+h.id+'\')" ' +
@@ -19606,7 +19620,7 @@ function renderStrengthList() {
                 (done?'✓':'') + '</button>';
         }
 
-        return '<div class="hab-card '+(done?'completed-today':'')+'" id="habCard-'+h.id+'" style="--hab-card-color:'+(h.color||'#10b981')+';">' +
+        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" id="habCard-'+h.id+'" style="--hab-card-color:'+(h.color||'#10b981')+';">' +
             '<div class="hab-card-top">' +
               renderStrengthRing(strength, sColor) +
               '<div class="hab-card-info">' +
