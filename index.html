@@ -14734,8 +14734,11 @@
     async function loadFromCloud() {
         if (!currentUser) return;
 
-        const alreadyLoaded = sessionStorage.getItem('jch_cloud_loaded');
-        if (alreadyLoaded === currentUser.uid) {
+        // Usar localStorage (persiste entre aperturas del APK) + timestamp de 60s
+        const alreadyLoadedUid = localStorage.getItem('jch_cloud_loaded_uid');
+        const alreadyLoadedTs  = parseInt(localStorage.getItem('jch_cloud_loaded_ts') || '0');
+        const _nowCheck = Date.now();
+        if (alreadyLoadedUid === currentUser.uid && (_nowCheck - alreadyLoadedTs) < 60000) {
             setSyncStatus('✅ Sesión activa', 'synced');
             setTimeout(function() {
                 if (typeof rescheduleAllReminders === 'function') {
@@ -14764,7 +14767,8 @@
                         try { localStorage.setItem(k, v); } catch(e) {}
                     });
                     localStorage.setItem('jch_last_sync', String(deviceData.lastSync || Date.now()));
-                    sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                    localStorage.setItem('jch_cloud_loaded_uid', currentUser.uid);
+                    localStorage.setItem('jch_cloud_loaded_ts', String(Date.now()));
                     setSyncStatus('✅ Datos cargados', 'synced');
                     setTimeout(() => { location.reload(); }, 600);
                 } else if (legacyData && !deviceData) {
@@ -14777,22 +14781,26 @@
                         Object.entries(legacyData).forEach(([k, v]) => {
                             try { localStorage.setItem(k, v); } catch(e) {}
                         });
-                        sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                        localStorage.setItem('jch_cloud_loaded_uid', currentUser.uid);
+                        localStorage.setItem('jch_cloud_loaded_ts', String(Date.now()));
                         setSyncStatus('✅ Datos cargados', 'synced');
                         setTimeout(() => { location.reload(); }, 600);
                     } else {
                         // Ya hay datos locales — guardarlos como datos de este dispositivo
                         console.log('[JCH] loadFromCloud: guardando datos locales existentes para dispositivo:', deviceKey);
-                        sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                        localStorage.setItem('jch_cloud_loaded_uid', currentUser.uid);
+                        localStorage.setItem('jch_cloud_loaded_ts', String(Date.now()));
                         await syncToCloud(false);
                         setSyncStatus('✅ Datos sincronizados', 'synced');
                     }
                 } else {
-                    sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                    localStorage.setItem('jch_cloud_loaded_uid', currentUser.uid);
+                    localStorage.setItem('jch_cloud_loaded_ts', String(Date.now()));
                     setSyncStatus('✅ Cuenta nueva lista', 'synced');
                 }
             } else {
-                sessionStorage.setItem('jch_cloud_loaded', currentUser.uid);
+                localStorage.setItem('jch_cloud_loaded_uid', currentUser.uid);
+                localStorage.setItem('jch_cloud_loaded_ts', String(Date.now()));
                 await syncToCloud(false);
                 setSyncStatus('✅ Cuenta sincronizada', 'synced');
             }
@@ -14842,6 +14850,10 @@
             updateData['localStorage'] = jchData;
 
             await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
+
+            // Actualizar timestamp de sync exitoso
+            localStorage.setItem('jch_cloud_loaded_uid', currentUser.uid);
+            localStorage.setItem('jch_cloud_loaded_ts', String(Date.now()));
 
             if (showFeedback) {
                 setSyncStatus('✅ ¡Sincronizado!', 'synced');
