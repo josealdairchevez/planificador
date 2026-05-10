@@ -19573,6 +19573,7 @@ function renderStrengthList() {
         let actionArea = '';
         if (isQty) {
             actionArea = (window.buildHabControl||buildHabControl)(h, done) || '';
+            if (false) {
         } else {
             actionArea =
                 '<button class="hab-check-btn '+(done?'done':'')+'" onclick="toggleHabit(\''+h.id+'\')" ' +
