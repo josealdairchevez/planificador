@@ -15190,17 +15190,12 @@ function showNotif(title,body,tag){
 function saveToFirestore(list){
   var snapshot=list.slice();
   function doSave(user){
-    console.log('[JCH] saveToFirestore enviando '+snapshot.length+' recordatorios:', snapshot.map(function(r){return r.evId+'@'+new Date(r.fireAt).toLocaleString();}));
+    console.log('[JCH] saveToFirestore enviando '+snapshot.length+' recordatorios');
+    // Siempre usar set+merge:true — nunca destruye el documento
     firebase.firestore().collection('users').doc(user.uid)
-      .update({fcm_reminders: snapshot})
-      .then(function(){ console.log('[JCH] Firestore ACTUALIZADO: '+snapshot.length+' recordatorios'); })
-      .catch(function(e){
-        // Si el doc no existe, crearlo con set
-        firebase.firestore().collection('users').doc(user.uid)
-          .set({fcm_reminders:snapshot},{merge:false})
-          .then(function(){ console.log('[JCH] Firestore CREADO: '+snapshot.length+' recordatorios'); })
-          .catch(function(e2){ console.warn('[JCH] Firestore error:',e2); });
-      });
+      .set({fcm_reminders: snapshot}, {merge: true})
+      .then(function(){ console.log('[JCH] Firestore OK: '+snapshot.length+' recordatorios guardados'); })
+      .catch(function(e){ console.warn('[JCH] Firestore error en saveToFirestore:',e); });
   }
   function tryUpdate(){
     if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){
@@ -15386,7 +15381,15 @@ function check(){
   localStorage.setItem=function(k,v){
     _o(k,v);
     // Reaccionar al calendario Y a los hábitos
-    if(k==='jch_calendar_v1' || k==='jch_habits_v1'){
+    if(k==='jch_calendar_v1' || k==='jch_habits_v1' || k==='jch_rem_v4'){
+      // Si es jch_rem_v4, solo subir a Firestore (ya tiene la lista correcta)
+      if(k==='jch_rem_v4'){
+        try {
+          var _remList = JSON.parse(v||'[]');
+          saveToFirestore(_remList);
+        } catch(ex){}
+        return;
+      }
       try{
         // Leer lista de calendario
         var calData = [];
@@ -17399,9 +17402,11 @@ window.saveHabit = function() {
 
     // ── Sync general a la nube y check inmediato ─────────────────────────────
     setTimeout(function() {
+        // 1. Subir hábitos a Firestore
         if (typeof window.syncToCloud === 'function' && window._jchCurrentUser) {
-            window.syncToCloud(false);
+            window.syncToCloud(false).catch(function(){});
         }
+        // 2. Reprogramar recordatorios Y subirlos a Firestore
         if (typeof rescheduleAllReminders === 'function') {
             window._lastHabReschedule = 0;
             rescheduleAllReminders(true);
@@ -17468,7 +17473,9 @@ function scheduleHabitReminder(name, time, emoji) {
         var _stfR = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
         if (_stfR) {
             _stfR(clean);
-            console.log('[JCH] rescheduleAllReminders: enviando a Firestore '+clean.length+' recordatorios');
+            console.log('[JCH] rescheduleAllReminders: '+clean.length+' recordatorios → Firestore');
+            // También guardar en localStorage para que el observer lo suba
+            localStorage.setItem('jch_rem_v4', JSON.stringify(clean));
             console.log('[JCH] scheduleHabitReminder: ' + title + ' → ' + new Date(fireAt).toLocaleString());
         }
     } catch(e) { console.warn('[JCH] scheduleHabitReminder error:', e); }
