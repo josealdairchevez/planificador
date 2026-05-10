@@ -5023,22 +5023,6 @@
             background:rgba(239,68,68,0.2);border-color:#ef4444;color:#fca5a5;
         }
 
-        /* Selector de pilar en modal de crear hábito */
-        .hab-pillar-selector { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
-        .hab-pillar-opt {
-            display:flex; align-items:center; gap:5px;
-            padding:5px 10px; border-radius:20px; font-size:0.7rem;
-            border:1.5px solid rgba(255,255,255,0.1);
-            background:rgba(255,255,255,0.04); color:#aaa;
-            cursor:pointer; transition:all 0.2s; font-weight:500;
-        }
-        .hab-pillar-opt.selected {
-            border-color:var(--pc,#a78bfa);
-            background:color-mix(in srgb, var(--pc,#a78bfa) 18%, transparent);
-            color:#fff; box-shadow:0 0 8px color-mix(in srgb, var(--pc,#a78bfa) 30%, transparent);
-        }
-        .hab-pillar-opt .popt-icon { font-size:0.85rem; }
-
         /* Recordatorio por hábito */
         .hab-reminder-row {
             display:flex;align-items:center;gap:10px;margin-top:0.4rem;
@@ -6030,58 +6014,17 @@
 
         /* ── HABIT STRENGTH ─────────────────────────────────── */
         .hab-strength-ring {
-            width:54px;height:54px;flex-shrink:0;position:relative;cursor:pointer;
+            width:52px;height:52px;flex-shrink:0;position:relative;
         }
-        .hab-strength-ring:hover .hab-strength-ring-wrap { transform:scale(1.08); }
-        .hab-strength-ring-wrap {
-            width:100%;height:100%;position:relative;
-            transition:transform 0.2s ease;
-        }
-        .hab-strength-svg {
-            width:100%;height:100%;transform:rotate(-90deg);overflow:visible;
-        }
-        .hab-strength-bg  {
-            fill:none;stroke:rgba(255,255,255,0.06);stroke-width:4.5;
-        }
-        .hab-strength-arc {
-            fill:none;stroke-width:4.5;stroke-linecap:round;
-            transition:stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1);
-            filter:drop-shadow(0 0 4px #00e5ff) drop-shadow(0 0 8px #00b8d9);
-        }
-        .hab-strength-arc-glow {
-            fill:none;stroke-width:8;stroke-linecap:round;opacity:0.18;
-            transition:stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        .hab-strength-energy {
-            fill:none;stroke:#ffffff;stroke-width:4.5;
-            stroke-dasharray:12 125.6;stroke-linecap:round;opacity:0;
-            transition:opacity 0.4s;
-        }
-        .hab-strength-ring.elite .hab-strength-energy { opacity:1; }
-        .hab-strength-ring.elite .hab-strength-arc {
-            filter:drop-shadow(0 0 6px #00e5ff) drop-shadow(0 0 14px #00e5ff) drop-shadow(0 0 20px #00b8d9);
-        }
-        @keyframes habStrengthSpin { from{transform:rotate(-90deg);} to{transform:rotate(270deg);} }
-        .hab-strength-ring.elite .hab-strength-energy {
-            animation:habStrengthSpin 2s linear infinite;
-            transform-origin:24px 24px;
-        }
-        @keyframes habStrengthPulse { 0%,100%{opacity:1;} 50%{opacity:0.65;} }
-        .hab-strength-ring.active .hab-strength-ring-wrap {
-            animation:habStrengthPulse 2.5s ease-in-out infinite;
-        }
+        .hab-strength-svg { width:100%;height:100%;transform:rotate(-90deg); }
+        .hab-strength-bg  { fill:none;stroke:rgba(255,255,255,0.07);stroke-width:5; }
+        .hab-strength-arc { fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 0.8s ease; }
         .hab-strength-label {
             position:absolute;inset:0;display:flex;flex-direction:column;
-            align-items:center;justify-content:center;pointer-events:none;
+            align-items:center;justify-content:center;
         }
-        .hab-strength-pct {
-            font-size:0.62rem;font-weight:900;color:#00e5ff;line-height:1;
-            text-shadow:0 0 8px rgba(0,229,255,0.8);
-        }
-        .hab-strength-word {
-            font-size:0.36rem;color:#aaa;text-transform:uppercase;
-            letter-spacing:0.5px;margin-top:1px;
-        }
+        .hab-strength-pct  { font-size:0.6rem;font-weight:900;color:#fff;line-height:1; }
+        .hab-strength-word { font-size:0.38rem;color:#888;text-transform:uppercase;letter-spacing:0.5px; }
 
         /* ── TRACKER DE CANTIDAD ─────────────────────────────── */
         .hab-qty-row {
@@ -6146,27 +6089,23 @@
             text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;
         }
         .hab-wdc-bars {
-            display:flex;gap:5px;align-items:flex-end;height:90px;padding:4px 0;
+            display:flex;gap:4px;align-items:flex-end;height:80px;
         }
         .hab-wdc-bar-col {
             flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
         }
         .hab-wdc-bar-track {
-            flex:1;width:100%;border-radius:6px;background:rgba(255,255,255,0.06);
+            flex:1;width:100%;border-radius:4px;background:rgba(255,255,255,0.05);
             display:flex;align-items:flex-end;overflow:hidden;position:relative;
-            border:1px solid rgba(255,255,255,0.07);
-            min-height:60px;height:60px;
         }
         .hab-wdc-bar-fill {
-            width:100%;border-radius:5px 5px 0 0;
-            transition:height 0.8s cubic-bezier(0.34,1.56,0.64,1);
-            background:linear-gradient(180deg,#818cf8,#4f46e5);
-            position:absolute;bottom:0;left:0;right:0;
+            width:100%;border-radius:4px;transition:height 0.6s ease;
+            background:linear-gradient(180deg,#6366f1,#4f46e5);
         }
-        .hab-wdc-bar-fill.best  { background:linear-gradient(180deg,#4ade80,#16a34a); }
-        .hab-wdc-bar-fill.worst { background:linear-gradient(180deg,#f87171,#dc2626); }
-        .hab-wdc-label { font-size:0.52rem;color:#555;font-weight:800;letter-spacing:0.3px; }
-        .hab-wdc-pct   { font-size:0.55rem;color:#777;font-weight:600; }
+        .hab-wdc-bar-fill.best { background:linear-gradient(180deg,#22c55e,#16a34a); }
+        .hab-wdc-bar-fill.worst { background:linear-gradient(180deg,#ef4444,#dc2626); }
+        .hab-wdc-label { font-size:0.52rem;color:#555;font-weight:800; }
+        .hab-wdc-pct   { font-size:0.5rem;color:#888; }
 
         /* ── CRECIMIENTO COMPUESTO 1% ───────────────────────── */
         .hab-compound-banner {
@@ -15722,19 +15661,6 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                 </div>
 
                 <div class="hab-form-section">
-                    <label class="hab-form-label">⚡ Pilar de vida vinculado</label>
-                    <div class="hab-pillar-selector" id="habPillarSelector">
-                        <div class="hab-pillar-opt selected" data-pillar="none" style="--pc:#888;" onclick="selectHabPillar(this)"><span class="popt-icon">🚫</span> Ninguno</div>
-                        <div class="hab-pillar-opt" data-pillar="sleep"    style="--pc:#6366f1;" onclick="selectHabPillar(this)"><span class="popt-icon">😴</span> Sueño</div>
-                        <div class="hab-pillar-opt" data-pillar="water"    style="--pc:#0ea5e9;" onclick="selectHabPillar(this)"><span class="popt-icon">💧</span> Hidratación</div>
-                        <div class="hab-pillar-opt" data-pillar="exercise" style="--pc:#22c55e;" onclick="selectHabPillar(this)"><span class="popt-icon">💪</span> Ejercicio</div>
-                        <div class="hab-pillar-opt" data-pillar="mind"     style="--pc:#a78bfa;" onclick="selectHabPillar(this)"><span class="popt-icon">🧠</span> Mente</div>
-                        <div class="hab-pillar-opt" data-pillar="screen"   style="--pc:#f97316;" onclick="selectHabPillar(this)"><span class="popt-icon">📵</span> Pantallas</div>
-                        <div class="hab-pillar-opt" data-pillar="hygiene"  style="--pc:#ec4899;" onclick="selectHabPillar(this)"><span class="popt-icon">🚿</span> Hábitos</div>
-                    </div>
-                </div>
-
-                <div class="hab-form-section">
                     <label class="hab-form-label">🔔 Recordatorio diario</label>
                     <div class="hab-reminder-row">
                         <div class="hab-reminder-toggle" id="habReminderToggle" onclick="toggleHabReminder()"></div>
@@ -15805,26 +15731,12 @@ const COLORS = ['#10b981','#3b82f6','#f97316','#a78bfa','#f43f5e','#fbbf24','#06
 const DAYS_ES = ['L','M','X','J','V','S','D'];
 
 const BOSSES = [
-    { name:'Goblin del Caos',       emoji:'👺', maxHp:100,  reward:'⚔️ Espada de Inicio',           xpReward:50   },
-    { name:'Lobo Zombie',           emoji:'🐺', maxHp:180,  reward:'🦴 Colmillo Maldito',            xpReward:80   },
-    { name:'Troll del Pantano',     emoji:'🧌', maxHp:280,  reward:'🛡️ Escudo de Barro',             xpReward:120  },
-    { name:'Oso Zombie',            emoji:'🐻', maxHp:380,  reward:'🐾 Garra Putrefacta',            xpReward:160  },
-    { name:'Espectro',              emoji:'👻', maxHp:500,  reward:'🔮 Orbe Oscuro',                 xpReward:220  },
-    { name:'Ghoul Devorador',       emoji:'💀', maxHp:650,  reward:'🦷 Colmillo del Vacío',          xpReward:290  },
-    { name:'Momia Ancestral',       emoji:'🧟', maxHp:800,  reward:'📜 Pergamino Maldito',           xpReward:370  },
-    { name:'Hombre Lobo',           emoji:'🐺', maxHp:980,  reward:'🌕 Piedra Lunar',                xpReward:460  },
-    { name:'Vampiro Noble',         emoji:'🧛', maxHp:1150, reward:'🩸 Capa de Sangre',              xpReward:560  },
-    { name:'Gigante Maldito',       emoji:'👹', maxHp:1350, reward:'🪨 Roca del Titán',              xpReward:680  },
-    { name:'Golem de Piedra',       emoji:'🗿', maxHp:1550, reward:'⚙️ Núcleo Pétreo',              xpReward:820  },
-    { name:'Caballero Vampiro',     emoji:'🧛', maxHp:1780, reward:'🗡️ Espada Oscura',              xpReward:980  },
-    { name:'Golem de Fuego',        emoji:'🔥', maxHp:2050, reward:'💎 Gema del Campeón',            xpReward:1200 },
-    { name:'Demonio Ancestral',     emoji:'😈', maxHp:2400, reward:'🌟 Estrella Legendaria',         xpReward:1450 },
-    { name:'Hidra Legendaria',      emoji:'🐍', maxHp:2800, reward:'🏆 Escama de Hidra',             xpReward:1750 },
-    { name:'Dragón Verde',          emoji:'🐉', maxHp:3200, reward:'🌿 Corazón del Bosque',          xpReward:2100 },
-    { name:'Demonio Oscuro',        emoji:'👿', maxHp:3700, reward:'🔱 Tridente Infernal',           xpReward:2500 },
-    { name:'Dragón Azul',           emoji:'🐲', maxHp:4300, reward:'⚡ Escama Tormentosa',           xpReward:3000 },
-    { name:'Dragón Rojo',           emoji:'🐉', maxHp:5000, reward:'🔥 Corazón de Llamas',          xpReward:3600 },
-    { name:'Dragón Negro',          emoji:'🌑', maxHp:6000, reward:'👑 Corona del Campeón Eterno',   xpReward:4500 },
+    { name:'Goblin del Caos',    emoji:'👺', maxHp:100,  reward:'⚔️ Espada de Inicio',    xpReward:50  },
+    { name:'Troll del Pantano',  emoji:'🧌', maxHp:200,  reward:'🛡️ Escudo de Barro',     xpReward:100 },
+    { name:'Esqueleto Maldito',  emoji:'💀', maxHp:350,  reward:'🔮 Orbe Oscuro',          xpReward:150 },
+    { name:'Dragón de Hielo',    emoji:'🐉', maxHp:500,  reward:'👑 Corona del Guerrero',  xpReward:250 },
+    { name:'Demonio Ancestral',  emoji:'😈', maxHp:800,  reward:'💎 Gema del Campeón',     xpReward:400 },
+    { name:'Dios de la Sombra',  emoji:'🌑', maxHp:1200, reward:'🌟 Estrella Legendaria',  xpReward:700 },
 ];
 // Exponer BOSSES globalmente para que todos los módulos puedan accederlo
 window._HAB_BOSSES = BOSSES;
@@ -15848,12 +15760,10 @@ const ACHIEVEMENTS = [
     { id:'habits5',       cat:'progreso',   name:'Coleccionista',               desc:'Crea 5 hábitos distintos.',                        icon:'📦', cond: h => h.totalHabits >= 5 },
     { id:'habits10',      cat:'progreso',   name:'Arsenal de Hábitos',          desc:'Crea 10 hábitos distintos.',                       icon:'📚', cond: h => h.totalHabits >= 10 },
     // ── MISIONES & BOSSES ────────────────────────────────────────
-    { id:'boss1',         cat:'misiones',   name:'Cazador de Monstruos',        desc:'Derrota tu primer boss.',                          icon:'⚔️', cond: h => h.bossesDefeated >= 1  },
-    { id:'boss3',         cat:'misiones',   name:'Veterano de Batalla',         desc:'Derrota 3 bosses.',                                icon:'🗡️', cond: h => h.bossesDefeated >= 3  },
-    { id:'boss5',         cat:'misiones',   name:'Exterminador',                desc:'Derrota 5 bosses.',                                icon:'💀', cond: h => h.bossesDefeated >= 5  },
+    { id:'boss1',         cat:'misiones',   name:'Cazador de Monstruos',        desc:'Derrota tu primer boss.',                          icon:'⚔️', cond: h => h.bossesDefeated >= 1 },
+    { id:'boss3',         cat:'misiones',   name:'Veterano de Batalla',         desc:'Derrota 3 bosses.',                                icon:'🗡️', cond: h => h.bossesDefeated >= 3 },
+    { id:'boss5',         cat:'misiones',   name:'Exterminador',                desc:'Derrota 5 bosses.',                                icon:'💀', cond: h => h.bossesDefeated >= 5 },
     { id:'boss10',        cat:'misiones',   name:'Señor de la Guerra',          desc:'Derrota 10 bosses. ¡Imparable!',                   icon:'👹', cond: h => h.bossesDefeated >= 10 },
-    { id:'boss15',        cat:'misiones',   name:'Asesino de Dragones',         desc:'Derrota 15 bosses. ¡Leyenda!',                     icon:'🐉', cond: h => h.bossesDefeated >= 15 },
-    { id:'boss20',        cat:'misiones',   name:'Campeón Eterno',              desc:'¡Derrota los 20 bosses! Eres el máximo héroe.',     icon:'👑', cond: h => h.bossesDefeated >= 20 },
     { id:'quest_slime',   cat:'misiones',   name:'Domador de Limo',             desc:'Misión del Monstruo de Limo: acumula 50 hábitos completados.',  icon:'🟢', cond: h => h.totalDone >= 50 },
     { id:'quest_rock',    cat:'misiones',   name:'Roca Sólida',                 desc:'Misión de la Roca: mantén una racha de 14 días seguidos.',      icon:'🪨', cond: h => h.bestStreak >= 14 },
     { id:'quest_thread',  cat:'misiones',   name:'Hilo de Oro',                 desc:'Misión del Hilo: completa 30 hábitos en un mes.',               icon:'🧵', cond: h => h.monthDone >= 30 },
@@ -15900,10 +15810,10 @@ const ACHIEVEMENTS = [
     { id:'epic_tamer',    cat:'epicos',  name:'Domador de Bestias',             desc:'Ha encontrado las 90 mascotas: 700 completaciones.',                     icon:'🦁', cond: h => h.totalDone >= 700 },
     { id:'epic_mounts',   cat:'epicos',  name:'Maestro de Monturas',            desc:'Ha domado las 90 monturas: racha de 150 días.',                          icon:'🏇', cond: h => h.bestStreak >= 150 },
     { id:'epic_triple',   cat:'epicos',  name:'Triple Bingo',                   desc:'Mascotas, monturas y más: 1000 completaciones.',                         icon:'🎰', cond: h => h.totalDone >= 1000 },
-    { id:'epic_gear_heal',cat:'epicos',  name:'Equipo Máximo - Sanador',        desc:'Conjunto completo de Sanador: derrota 5 bosses.',                        icon:'💚', cond: h => h.bossesDefeated >= 5  },
-    { id:'epic_gear_rogue',cat:'epicos', name:'Equipo Máximo - Pícaro',         desc:'Conjunto completo de Pícaro: derrota 8 bosses.',                         icon:'🗡️', cond: h => h.bossesDefeated >= 8  },
-    { id:'epic_gear_war', cat:'epicos',  name:'Equipo Máximo - Guerrero',       desc:'Conjunto completo de Guerrero: derrota 12 bosses.',                      icon:'⚔️', cond: h => h.bossesDefeated >= 12 },
-    { id:'epic_gear_mage',cat:'epicos',  name:'Equipo Máximo - Mago',           desc:'Conjunto completo de Mago: derrota 16 bosses.',                          icon:'🔮', cond: h => h.bossesDefeated >= 16 },
+    { id:'epic_gear_heal',cat:'epicos',  name:'Equipo Máximo - Sanador',        desc:'Conjunto completo de Sanador: derrota 5 bosses.',                        icon:'💚', cond: h => h.bossesDefeated >= 5 },
+    { id:'epic_gear_rogue',cat:'epicos', name:'Equipo Máximo - Pícaro',         desc:'Conjunto completo de Pícaro: derrota 7 bosses.',                         icon:'🗡️', cond: h => h.bossesDefeated >= 7 },
+    { id:'epic_gear_war', cat:'epicos',  name:'Equipo Máximo - Guerrero',       desc:'Conjunto completo de Guerrero: derrota 9 bosses.',                       icon:'⚔️', cond: h => h.bossesDefeated >= 9 },
+    { id:'epic_gear_mage',cat:'epicos',  name:'Equipo Máximo - Mago',           desc:'Conjunto completo de Mago: derrota 12 bosses.',                          icon:'🔮', cond: h => h.bossesDefeated >= 12 },
     { id:'epic_season',   cat:'epicos',  name:'Especialista Estacional',        desc:'Todas las misiones estacionales completadas: racha 120 días.',           icon:'🌸', cond: h => h.bestStreak >= 120 },
     // ── ESPECIALES ───────────────────────────────────────────────
     { id:'sp_contributor',cat:'especiales', name:'Colaborador',                 desc:'Has contribuido al planificador mejorando o sugiriendo. ¡Gracias!',      icon:'🛠️', cond: h => h.totalDone >= 1 },
@@ -15921,8 +15831,6 @@ const CLASSES = [
 // ── Estado ───────────────────────────────────────────────────
 let habits = [];
 let hero   = {};
-let selectedPillar = 'none';
-
 let selectedEmoji  = EMOJIS[0];
 let selectedColor  = COLORS[0];
 let selectedFreq   = 'daily';
@@ -16375,8 +16283,6 @@ window.toggleHabit = function(id) {
     renderHabStats();
     renderHabHero();
     checkAndGrantAchievements();
-    // Actualizar gráfico semanal si panel FUERZA está abierto
-    if (document.getElementById('habWdcBars') && typeof renderWeekdayChart==='function') renderWeekdayChart();
 };
 
 // ── Animación flotante XP / Monedas / Daño / HP ──────────────
@@ -16802,8 +16708,6 @@ window.habRepInc = function(habitId, target) {
         if (typeof updateHabitBadge === 'function') updateHabitBadge();
         if (typeof renderHabStats   === 'function') renderHabStats();
         if (typeof renderHabHero    === 'function') renderHabHero();
-        // Actualizar gráfico semanal si FUERZA está abierto
-        if (document.getElementById('habWdcBars') && typeof renderWeekdayChart==='function') renderWeekdayChart();
 
         // Racha (igual que toggleHabit)
         try {
@@ -17140,9 +17044,9 @@ window.saveHabit = function() {
 
     if(editId){
         const h=habits.find(x=>x.id===editId);
-        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
+        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined}); }
     } else {
-        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
+        habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn,reminderTime,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined});
     }
     saveHabits();
 
@@ -17199,13 +17103,6 @@ window.saveHabit = function() {
     if(todayTab) switchHabTab('hoy',todayTab);
     (window.renderHabToday||renderHabToday)();
     renderHabStats(); renderHabHero();
-};
-
-// ── Selector de pilar ────────────────────────────────────────
-window.selectHabPillar = function(el) {
-    selectedPillar = el.dataset.pillar || 'none';
-    document.querySelectorAll('.hab-pillar-opt').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
 };
 
 // ── Recordatorio de hábito — igual que calendario ─────────────
@@ -17325,11 +17222,6 @@ window.editHabit = function(id) {
     selectedEmoji=h.emoji||EMOJIS[0]; selectedColor=h.color||COLORS[0];
     selectedFreq=h.freq||'daily'; selectedXP=h.xp||10;
     selectedDiff=h.diff||'easy'; selectedDays=[...(h.days||[0,1,2,3,4])];
-    selectedPillar=h.pillar||'none'; reminderOn=!!h.reminderOn;
-    // Restaurar pilar seleccionado en UI
-    document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
-        b.classList.toggle('selected', b.dataset.pillar===(h.pillar||'none'));
-    });
     selectedType=h.type||'positive'; reminderOn=!!h.reminderOn;
     if(h.reminderTime) document.getElementById('habReminderTime').value=h.reminderTime;
     const tog=document.getElementById('habReminderToggle');
@@ -17441,10 +17333,6 @@ window.selectHabColor = function(el,color) {
     el.classList.add('selected');
 };
 function resetHabForm() {
-    selectedPillar='none';
-    document.querySelectorAll('.hab-pillar-opt').forEach(b=>{
-        b.classList.toggle('selected', b.dataset.pillar==='none');
-    });
     selectedEmoji=EMOJIS[0]; selectedColor=COLORS[0];
     selectedFreq='daily'; selectedXP=10; selectedDiff='easy';
     selectedDays=[0,1,2,3,4]; selectedType='positive'; reminderOn=false;
@@ -18906,23 +18794,21 @@ const PILLARS = [
 
 function calcPillarScore(pillar) {
     const habits = loadHabits();
-    // Prioridad 1: hábitos vinculados explícitamente a este pilar
-    let related = habits.filter(h => h.pillar === pillar.id);
-    // Prioridad 2: hábitos sin pilar asignado que coincidan por nombre
+    const related = habits.filter(h => {
+        const name = (h.name||'').toLowerCase();
+        return pillar.habitKeys.some(k => name.includes(k));
+    });
     if (!related.length) {
-        related = habits.filter(h => {
-            if (h.pillar && h.pillar !== 'none') return false; // ya tiene pilar asignado a otro
-            const name = (h.name||'').toLowerCase();
-            return pillar.habitKeys.some(k => name.includes(k));
-        });
+        // Si no hay hábitos relacionados, score basado en completitud general
+        const all = loadHabits();
+        const totalDone = all.reduce((s,h)=>(s+(h.log||[]).length),0);
+        return Math.min(100, Math.round(totalDone * 1.5));
     }
-    // Si no hay ninguno relacionado, score 0 (no contaminar con completitud general)
-    if (!related.length) return 0;
     const now = new Date();
     let done=0, total=0;
     for (let i=0;i<14;i++) {
         const d=new Date(now); d.setDate(d.getDate()-i);
-        const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        const k=d.toISOString().split('T')[0];
         related.forEach(h=>{
             total++;
             if((h.log||[]).includes(k)) done++;
@@ -19301,18 +19187,19 @@ function calcHabitStrength(h) {
     const log = new Set(h.log || []);
     const now = new Date();
     let score = 0, maxScore = 0;
-    const WINDOW = 66;
-    const localKey = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    const WINDOW = 66; // 66 días como Life Reset
 
     for (let i = 0; i < WINDOW; i++) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
-        const k = localKey(d);
-        const weight = 1 - (i / WINDOW) * 0.6;
+        const k = d.toISOString().split('T')[0];
+        // Peso decreciente: días recientes valen más
+        const weight = 1 - (i / WINDOW) * 0.6; // de 1.0 a 0.4
         maxScore += weight;
         if (log.has(k)) score += weight;
     }
     const raw = maxScore > 0 ? score / maxScore : 0;
+    // Aplicar curva: más difícil llegar a 100%
     return Math.round(Math.min(100, raw * 115));
 }
 
@@ -19333,45 +19220,20 @@ function strengthColor(pct) {
     return '#ef4444';
 }
 
-// ── RENDER HABIT STRENGTH RING (SVG inline — Neon Cyan) ──────
+// ── RENDER HABIT STRENGTH RING (SVG inline) ───────────────────
 function renderStrengthRing(pct, color) {
     const r = 20, circ = 2 * Math.PI * r;
     const offset = circ * (1 - pct / 100);
     const label  = strengthLabel(pct);
-    // Siempre cyan brilloso independiente del nivel
-    const cyanColor = '#00e5ff';
-    const isElite   = pct >= 90;
-    const isActive  = pct >= 10;
-    const ringClass = 'hab-strength-ring' + (isElite?' elite':isActive?' active':'');
-    return '<div class="'+ringClass+'">' +
-        '<div class="hab-strength-ring-wrap">' +
-          '<svg class="hab-strength-svg" viewBox="0 0 48 48" style="overflow:visible;">' +
-            '<defs>' +
-              '<mask id="srMask_'+pct+'">' +
-                '<circle cx="24" cy="24" r="'+r+'" fill="none" stroke="white" stroke-width="4.5"' +
-                  ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"' +
-                  ' stroke-linecap="round"/>' +
-              '</mask>' +
-            '</defs>' +
-            '<circle class="hab-strength-bg" cx="24" cy="24" r="'+r+'"/>' +
-            '<circle class="hab-strength-arc-glow" cx="24" cy="24" r="'+r+'"' +
-              ' stroke="'+cyanColor+'"' +
-              ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"' +
-              ' stroke-linecap="round"/>' +
-            '<circle class="hab-strength-arc" cx="24" cy="24" r="'+r+'"' +
-              ' stroke="'+cyanColor+'"' +
-              ' stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>' +
-            (isElite ?
-              '<g mask="url(#srMask_'+pct+')">' +
-                '<circle cx="24" cy="24" r="'+r+'" class="hab-strength-energy">' +
-                  '<animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="2s" repeatCount="indefinite"/>' +
-                '</circle>' +
-              '</g>' : '') +
-          '</svg>' +
-          '<div class="hab-strength-label">' +
-            '<span class="hab-strength-pct">'+pct+'<span style="font-size:0.45rem;vertical-align:super;">%</span></span>' +
-            '<span class="hab-strength-word">'+label+'</span>' +
-          '</div>' +
+    return '<div class="hab-strength-ring">' +
+        '<svg class="hab-strength-svg" viewBox="0 0 48 48">' +
+          '<circle class="hab-strength-bg" cx="24" cy="24" r="'+r+'"/>' +
+          '<circle class="hab-strength-arc" cx="24" cy="24" r="'+r+'" stroke="'+color+'" ' +
+            'stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>' +
+        '</svg>' +
+        '<div class="hab-strength-label">' +
+          '<span class="hab-strength-pct" style="color:'+color+';">'+pct+'</span>' +
+          '<span class="hab-strength-word">'+label+'</span>' +
         '</div>' +
         '</div>';
 }
@@ -19522,45 +19384,32 @@ function renderCompoundBanner() {
     if (!el) return;
     const habits    = loadHabits();
     const totalDone = habits.reduce((s,h)=>s+(h.log||[]).length,0);
-    const todayK    = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
-    const doneToday = habits.filter(h=>(h.log||[]).includes(todayK)).length;
-
     // Crecimiento compuesto: (1.01)^totalDone
     const multiplier = Math.pow(1.01, totalDone);
     const xFactor    = multiplier.toFixed(2);
     const pctGrowth  = Math.round((multiplier-1)*100);
 
-    // Función para formatear números grandes
-    function fmtX(n) {
-        if (n >= 1e9) return '×'+(n/1e9).toFixed(1)+'B';
-        if (n >= 1e6) return '×'+(n/1e6).toFixed(1)+'M';
-        if (n >= 1e3) return '×'+(n/1e3).toFixed(1)+'K';
-        return '×'+Math.round(n*100)/100;
-    }
-
-    // Hitos proyectados (si completaras 1 hábito/día)
-    const v66   = fmtX(Math.pow(1.01, 66));
-    const v365  = fmtX(Math.pow(1.01, 365));
-    const v1825 = fmtX(Math.pow(1.01, 1825));
+    // Hitos
+    const days365  = Math.round(Math.pow(1.01,365)*100)/100;
+    const days66   = Math.round(Math.pow(1.01,66)*100)/100;
+    const days1825 = Math.round(Math.pow(1.01,1825)*100)/100;
 
     el.innerHTML =
         '<div class="hab-compound-header">' +
           '<div>' +
             '<div class="hab-compound-title">📈 Crecimiento Compuesto 1%</div>' +
-            '<div class="hab-compound-sub">Cada hábito completado acumula +1% · Hoy: <b style="color:#22c55e">'+(doneToday>0?'+'+doneToday+'%':'0 completados')+'</b></div>' +
+            '<div class="hab-compound-sub">Cada hábito completado te hace 1% mejor</div>' +
           '</div>' +
           '<div>' +
             '<div class="hab-compound-value">×'+xFactor+'</div>' +
-            '<div style="font-size:0.58rem;color:#22c55e;text-align:right;">+'+pctGrowth+'% acumulado</div>' +
+            '<div style="font-size:0.58rem;color:#22c55e;text-align:right;">+'+pctGrowth+'% total</div>' +
           '</div>' +
         '</div>' +
-        '<div style="font-size:0.58rem;color:#666;margin:4px 0 6px 0;padding:0 2px;">📊 Si completas 1 hábito diario, en...</div>' +
         '<div class="hab-compound-days-row">' +
-          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">'+v66+'</div><div class="hab-compound-m-lbl">66 días</div></div>' +
-          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">'+v365+'</div><div class="hab-compound-m-lbl">1 año</div></div>' +
-          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">'+v1825+'</div><div class="hab-compound-m-lbl">5 años</div></div>' +
-        '</div>' +
-        '<div style="font-size:0.55rem;color:#555;text-align:center;margin-top:4px;">Has completado hábitos <b style="color:#6366f1">'+(totalDone)+' veces</b> en total · Tu multiplicador actual: <b style="color:#22c55e">×'+xFactor+'</b></div>';
+          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">×'+days66+'</div><div class="hab-compound-m-lbl">66 días</div></div>' +
+          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">×'+days365+'</div><div class="hab-compound-m-lbl">1 año</div></div>' +
+          '<div class="hab-compound-milestone"><div class="hab-compound-m-val">×'+days1825+'</div><div class="hab-compound-m-lbl">5 años</div></div>' +
+        '</div>';
 }
 
 function renderStrengthList() {
@@ -19620,7 +19469,7 @@ function renderStrengthList() {
                 (done?'✓':'') + '</button>';
         }
 
-        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'" id="habCard-'+h.id+'" style="--hab-card-color:'+(h.color||'#10b981')+';">' +
+        return '<div class="hab-card '+(done?'completed-today':'')+' perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'">' +
             '<div class="hab-card-top">' +
               renderStrengthRing(strength, sColor) +
               '<div class="hab-card-info">' +
@@ -19632,18 +19481,17 @@ function renderStrengthList() {
                 '<span style="font-size:0.6rem;cursor:pointer;color:#555;" onclick="event.stopPropagation();deleteHabit(\''+h.id+'\')">🗑️</span>' +
               '</div>' +
             '</div>' +
-            '<div class="hab-perf-bar" style="background:linear-gradient(90deg,'+(h.color||'#10b981')+','+(h.color||'#10b981')+'88);opacity:'+(strength>=70?'1':strength>=50?'0.8':strength>=30?'0.55':'0.35')+';"></div>' +
+            '<div class="hab-perf-bar perf-'+(strength>=70?'great':strength>=50?'good':strength>=30?'bad':'danger')+'"></div>' +
             '</div>';
     }).join('');
 }
 
 function calcDiscStreak(h) {
     const log=new Set(h.log||[]); let s=0,d=new Date();
-    const localKey=function(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');};
-    const k0=localKey(d);
+    const k0=d.toISOString().split('T')[0];
     if(!log.has(k0)) d.setDate(d.getDate()-1);
     while(true){
-        const k=localKey(d);
+        const k=d.toISOString().split('T')[0];
         if(!log.has(k)) break; s++; d.setDate(d.getDate()-1); if(s>3650) break;
     }
     return s;
@@ -19655,70 +19503,40 @@ function renderWeekdayChart() {
     if (!el) return;
     const habits = loadHabits();
     const DAYS   = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const counts = [0,0,0,0,0,0,0]; // veces completado ese día de la semana
-    const weeks  = [0,0,0,0,0,0,0]; // cuántas veces ha ocurrido ese día de semana
+    const counts = [0,0,0,0,0,0,0];
+    const totals = [0,0,0,0,0,0,0];
     const now    = new Date();
-    const localKey = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 
-    // Analizar últimas 12 semanas — solo contar días donde el hábito ya existía
     for (let w = 0; w < 12; w++) {
         for (let d = 0; d < 7; d++) {
             const dd = new Date(now);
             dd.setDate(dd.getDate() - w*7 - ((now.getDay()+6)%7) + d);
             if (dd > now) continue;
-            const k = localKey(dd);
+            const k = dd.toISOString().split('T')[0];
             habits.forEach(h => {
-                // Solo contar si el hábito ya existía ese día
-                const created = new Date(h.createdAt || '2000-01-01');
-                if (dd < created) return;
-                weeks[d]++;
+                totals[d]++;
                 if ((h.log||[]).includes(k)) counts[d]++;
             });
         }
     }
 
-    // Tasa = completadas / oportunidades_reales (ya ajustado por fecha de creación)
-    const rates  = weeks.map((w,i) => w>0 ? Math.min(1, counts[i]/w) : 0);
+    const rates  = totals.map((t,i) => t>0 ? counts[i]/t : 0);
     const maxR   = Math.max(...rates, 0.01);
     const bestI  = rates.indexOf(Math.max(...rates));
-    const nonZero = rates.filter(r=>r>0);
-    const worstI = nonZero.length ? rates.indexOf(Math.min(...nonZero)) : -1;
-    const todayDow = (new Date().getDay()+6)%7;
-    const totalLogs = counts.reduce((s,c)=>s+c,0);
+    const worstI = rates.indexOf(Math.min(...rates.filter(r=>r>0)));
 
-    if (totalLogs === 0) {
-        el.innerHTML = '<div style="width:100%;text-align:center;padding:18px 0;color:#555;font-size:0.7rem;">📊 Completa hábitos para ver tu actividad semanal</div>';
-        return;
-    }
-
-    // Renderizar barras primero con height:0 para animar después
-    el.innerHTML = DAYS.map((day,i) => {
+    el.innerHTML = DAYS.map((d,i) => {
         const pct  = Math.round(rates[i]*100);
-        const isToday = i === todayDow;
-        const cls = i===bestI&&pct>0?'best':i===worstI&&pct>0?'worst':'';
-        const barColor = isToday && cls==='' ? 'background:linear-gradient(180deg,#a78bfa,#7c3aed);' : '';
-        const trackStyle = isToday ? 'background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.35);' : '';
+        const hPct = Math.round((rates[i]/maxR)*100);
+        const cls  = i===bestI?'best':i===worstI&&rates[i]>0?'worst':'';
         return '<div class="hab-wdc-bar-col">' +
-            '<div class="hab-wdc-bar-track" style="'+trackStyle+'">' +
-              '<div class="hab-wdc-bar-fill '+cls+'" data-pct="'+pct+'" data-maxr="'+Math.round(maxR*100)+'" style="height:0%;'+barColor+'" title="'+pct+'% los '+day+'"></div>' +
+            '<div class="hab-wdc-bar-track">' +
+              '<div class="hab-wdc-bar-fill '+cls+'" style="height:'+hPct+'%"></div>' +
             '</div>' +
-            '<div class="hab-wdc-pct" style="'+(isToday?'color:#a78bfa;font-weight:800;':'')+(pct===0?'color:#383838;':'')+'">'+(pct>0?pct+'%':'-')+'</div>' +
-            '<div class="hab-wdc-label" style="'+(isToday?'color:#a78bfa;font-weight:900;':'')+'">'+day+'</div>' +
+            '<div class="hab-wdc-pct">'+pct+'%</div>' +
+            '<div class="hab-wdc-label">'+d+'</div>' +
             '</div>';
     }).join('');
-
-    // Animar barras al siguiente frame para que la transición CSS sea visible
-    requestAnimationFrame(function() {
-        requestAnimationFrame(function() {
-            el.querySelectorAll('.hab-wdc-bar-fill').forEach(function(bar) {
-                const pct   = parseInt(bar.dataset.pct)||0;
-                const maxR  = parseInt(bar.dataset.maxr)||100;
-                // Altura relativa al máximo, mínimo 12% si hay datos
-                const hPct  = pct > 0 ? Math.max(Math.round((pct/maxR)*100), 12) : 0;
-                bar.style.height = hPct + '%';
-            });
-        });
-    });
 }
 
 // ── FILTRO DE RUTINA ──────────────────────────────────────────
@@ -21593,29 +21411,15 @@ window.renderHabHero = function() {
         {id:'healer',name:'Sanador',icon:'💚',bonus:'HP inmune',color:'#10b981'},
     ];
     const BOSSES = window._HAB_BOSSES||[
-        {name:'Goblin del Caos',     maxHp:100,  xpReward:50,   reward:'⚔️ Espada de Inicio'},
-        {name:'Lobo Zombie',         maxHp:180,  xpReward:80,   reward:'🦴 Colmillo Maldito'},
-        {name:'Troll del Pantano',   maxHp:280,  xpReward:120,  reward:'🛡️ Escudo de Barro'},
-        {name:'Oso Zombie',          maxHp:380,  xpReward:160,  reward:'🐾 Garra Putrefacta'},
-        {name:'Espectro',            maxHp:500,  xpReward:220,  reward:'🔮 Orbe Oscuro'},
-        {name:'Ghoul Devorador',     maxHp:650,  xpReward:290,  reward:'🦷 Colmillo del Vacío'},
-        {name:'Momia Ancestral',     maxHp:800,  xpReward:370,  reward:'📜 Pergamino Maldito'},
-        {name:'Hombre Lobo',         maxHp:980,  xpReward:460,  reward:'🌕 Piedra Lunar'},
-        {name:'Vampiro Noble',       maxHp:1150, xpReward:560,  reward:'🩸 Capa de Sangre'},
-        {name:'Gigante Maldito',     maxHp:1350, xpReward:680,  reward:'🪨 Roca del Titán'},
-        {name:'Golem de Piedra',     maxHp:1550, xpReward:820,  reward:'⚙️ Núcleo Pétreo'},
-        {name:'Caballero Vampiro',   maxHp:1780, xpReward:980,  reward:'🗡️ Espada Oscura'},
-        {name:'Golem de Fuego',      maxHp:2050, xpReward:1200, reward:'💎 Gema del Campeón'},
-        {name:'Demonio Ancestral',   maxHp:2400, xpReward:1450, reward:'🌟 Estrella Legendaria'},
-        {name:'Hidra Legendaria',    maxHp:2800, xpReward:1750, reward:'🏆 Escama de Hidra'},
-        {name:'Dragón Verde',        maxHp:3200, xpReward:2100, reward:'🌿 Corazón del Bosque'},
-        {name:'Demonio Oscuro',      maxHp:3700, xpReward:2500, reward:'🔱 Tridente Infernal'},
-        {name:'Dragón Azul',         maxHp:4300, xpReward:3000, reward:'⚡ Escama Tormentosa'},
-        {name:'Dragón Rojo',         maxHp:5000, xpReward:3600, reward:'🔥 Corazón de Llamas'},
-        {name:'Dragón Negro',        maxHp:6000, xpReward:4500, reward:'👑 Corona del Campeón Eterno'},
+        {name:'T-Rex Primigenio',maxHp:100,xpReward:50,reward:'⚔️ Espada de Inicio'},
+        {name:'Pterodáctilo Cazador',maxHp:200,xpReward:100,reward:'🛡️ Escudo Óseo'},
+        {name:'Mosasaurio Profundo',maxHp:350,xpReward:150,reward:'🔮 Orbe Marino'},
+        {name:'Dragón Volcánico',maxHp:500,xpReward:250,reward:'👑 Corona de Fuego'},
+        {name:'Demonio Ancestral',maxHp:800,xpReward:400,reward:'💎 Gema del Abismo'},
+        {name:'Dios de la Sombra',maxHp:1200,xpReward:700,reward:'🌟 Estrella Cósmica'},
     ];
     const cls  = CLASSES.find(c=>c.id===hero.class)||CLASSES[0];
-    const bossI= Math.min(hero.bossIndex||0,19);
+    const bossI= Math.min(hero.bossIndex||0,5);
     const boss = BOSSES[bossI];
     const hpPct= Math.max(0,Math.round(hero.hp/hero.maxHp*100));
     const xpPct= Math.round((hero.xp/hero.xpNext)*100);
@@ -21694,28 +21498,14 @@ window.renderHabHero = function() {
 window.renderBossMini = function() {
     const hero  = JSON.parse(localStorage.getItem('jch_hero_v1')||'null')||{bossIndex:0,bossHp:100};
     const BOSSES= window._HAB_BOSSES||[
-        {name:'Goblin del Caos',     maxHp:100,  xpReward:50,   reward:'⚔️ Espada de Inicio',         type:'Bestia',   lv:'Nv.1'},
-        {name:'Lobo Zombie',         maxHp:180,  xpReward:80,   reward:'🦴 Colmillo Maldito',          type:'No-muerto',lv:'Nv.2'},
-        {name:'Troll del Pantano',   maxHp:280,  xpReward:120,  reward:'🛡️ Escudo de Barro',           type:'Bestia',   lv:'Nv.3'},
-        {name:'Oso Zombie',          maxHp:380,  xpReward:160,  reward:'🐾 Garra Putrefacta',          type:'No-muerto',lv:'Nv.4'},
-        {name:'Espectro',            maxHp:500,  xpReward:220,  reward:'🔮 Orbe Oscuro',               type:'Espectral',lv:'Nv.5'},
-        {name:'Ghoul Devorador',     maxHp:650,  xpReward:290,  reward:'🦷 Colmillo del Vacío',        type:'No-muerto',lv:'Nv.6'},
-        {name:'Momia Ancestral',     maxHp:800,  xpReward:370,  reward:'📜 Pergamino Maldito',         type:'No-muerto',lv:'Nv.7'},
-        {name:'Hombre Lobo',         maxHp:980,  xpReward:460,  reward:'🌕 Piedra Lunar',              type:'Hombre-bestia',lv:'Nv.8'},
-        {name:'Vampiro Noble',       maxHp:1150, xpReward:560,  reward:'🩸 Capa de Sangre',            type:'No-muerto',lv:'Nv.9'},
-        {name:'Gigante Maldito',     maxHp:1350, xpReward:680,  reward:'🪨 Roca del Titán',            type:'Gigante',  lv:'Nv.10'},
-        {name:'Golem de Piedra',     maxHp:1550, xpReward:820,  reward:'⚙️ Núcleo Pétreo',            type:'Constructo',lv:'Nv.11'},
-        {name:'Caballero Vampiro',   maxHp:1780, xpReward:980,  reward:'🗡️ Espada Oscura',            type:'No-muerto',lv:'Nv.12'},
-        {name:'Golem de Fuego',      maxHp:2050, xpReward:1200, reward:'💎 Gema del Campeón',          type:'Constructo',lv:'Nv.13'},
-        {name:'Demonio Ancestral',   maxHp:2400, xpReward:1450, reward:'🌟 Estrella Legendaria',       type:'Demonio',  lv:'Nv.14'},
-        {name:'Hidra Legendaria',    maxHp:2800, xpReward:1750, reward:'🏆 Escama de Hidra',           type:'Bestia',   lv:'Nv.15'},
-        {name:'Dragón Verde',        maxHp:3200, xpReward:2100, reward:'🌿 Corazón del Bosque',        type:'Dragón',   lv:'Nv.16'},
-        {name:'Demonio Oscuro',      maxHp:3700, xpReward:2500, reward:'🔱 Tridente Infernal',         type:'Demonio',  lv:'Nv.17'},
-        {name:'Dragón Azul',         maxHp:4300, xpReward:3000, reward:'⚡ Escama Tormentosa',         type:'Dragón',   lv:'Nv.18'},
-        {name:'Dragón Rojo',         maxHp:5000, xpReward:3600, reward:'🔥 Corazón de Llamas',        type:'Dragón',   lv:'Nv.19'},
-        {name:'Dragón Negro',        maxHp:6000, xpReward:4500, reward:'👑 Corona del Campeón Eterno', type:'Dragón',   lv:'Nv.20'},
+        {name:'T-Rex Primigenio',    maxHp:100,  xpReward:50,  reward:'⚔️ Espada de Inicio',    type:'Bestia',    lv:'Nv.1'},
+        {name:'Pterodáctilo Cazador',maxHp:200,  xpReward:100, reward:'🛡️ Escudo Óseo',         type:'Volador',   lv:'Nv.2'},
+        {name:'Mosasaurio Profundo', maxHp:350,  xpReward:150, reward:'🔮 Orbe Marino',          type:'Acuático',  lv:'Nv.3'},
+        {name:'Dragón Volcánico',    maxHp:500,  xpReward:250, reward:'👑 Corona de Fuego',      type:'Dragón',    lv:'Nv.4'},
+        {name:'Demonio Ancestral',   maxHp:800,  xpReward:400, reward:'💎 Gema del Abismo',      type:'Demonio',   lv:'Nv.5'},
+        {name:'Dios de la Sombra',   maxHp:1200, xpReward:700, reward:'🌟 Estrella Cósmica',     type:'Cósmico',   lv:'Nv.6'},
     ];
-    const bossI = Math.min(hero.bossIndex||0,19);
+    const bossI = Math.min(hero.bossIndex||0,5);
     const boss  = BOSSES[bossI];
     // FIX: Clamp bossHp — si es mayor que maxHp o corrupto, resetear a maxHp
     const rawHp = parseFloat(hero.bossHp);
