@@ -15386,13 +15386,21 @@ function check(){
   var now=Date.now(), s=load();
   var fire=s.filter(function(r){
     if(_fired[r.evId+'_'+r.fireAt]) return false;
-    // Disparar si el fireAt ya pasó pero hace menos de 5 minutos (tolerancia)
-    // Eliminado el filtro _sessionStart que bloqueaba recordatorios creados en esta sesión
     return r.fireAt <= now && r.fireAt >= (now - 300000);
   });
   var rest=s.filter(function(r){ return r.fireAt > now; });
   fire.forEach(function(r){
     _fired[r.evId+'_'+r.fireAt]=true;
+    // Marcar en localStorage que ya se disparó localmente
+    // El SW onBackgroundMessage lo verifica para no duplicar
+    try {
+      var _firedLocal = JSON.parse(localStorage.getItem('jch_fired_local')||'{}');
+      _firedLocal[r.evId+'_'+r.fireAt] = Date.now();
+      // Limpiar entradas viejas (más de 10 minutos)
+      var _cutoff = Date.now() - 600000;
+      Object.keys(_firedLocal).forEach(function(k){ if(_firedLocal[k] < _cutoff) delete _firedLocal[k]; });
+      localStorage.setItem('jch_fired_local', JSON.stringify(_firedLocal));
+    } catch(e){}
     showNotif(r.title, r.body, 'jch-'+r.evId+'-'+r.fireAt);
     console.log('[JCH] check() disparó: '+r.title+' fireAt:'+new Date(r.fireAt).toLocaleTimeString());
   });
