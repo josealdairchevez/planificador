@@ -15361,7 +15361,7 @@ function reschedAll(){
           evId:'hab_'+baseName+(idx>0?'_'+idx:''),
           fireAt:fireAt,
           title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),
-          body:'¡Es hora de tu hábito diario!'
+          body:'⏰ '+new Date(fa).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}) + ' · ¡Es hora de tu hábito diario!'
         });
         console.log('[JCH] reschedAll hab: '+(h.name||'?')+' idx='+idx+' -> '+new Date(fireAt).toLocaleString());
       });
@@ -15446,7 +15446,7 @@ function check(){
             var tf=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
             var fa=tf.getTime()>(now+60000)?tf.getTime():tf.getTime()+86400000;
             var evId='hab_'+(h.name||'').replace(/\W+/g,'_')+(idx>0?'_'+idx:'');
-            list.push({evId:evId,fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'¡Es hora de tu hábito diario!'});
+            list.push({evId:evId,fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'⏰ '+new Date(fa).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+' · ¡Es hora de tu hábito diario!'});
         });
         save(list); saveToFirestore(list);
         // Enviar al SW para programación local offline
@@ -17376,7 +17376,7 @@ window.saveHabit = function() {
         try {
             var _now = Date.now(), _nowD = new Date();
             var _title = (selectedEmoji||'🌿') + ' ' + name;
-            var _body  = '¡Es hora de tu hábito diario!';
+            var _body  = '⏰ '+new Date(_fireAt).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+' · ¡Es hora de tu hábito diario!';
             var _rem   = [];
             try { _rem = JSON.parse(localStorage.getItem('jch_rem_v4')||'[]'); } catch(e){}
             // Eliminar todos los recordatorios anteriores de este hábito
@@ -17490,7 +17490,7 @@ function scheduleHabitReminder(name, time, emoji) {
 
         var evId  = 'hab_single_' + (name || '').replace(/\W+/g, '_');
         var title = (emoji || '🌿') + ' ' + (name || 'Hábito');
-        var body  = '¡Es hora de tu hábito diario!';
+        var body  = '⏰ '+new Date(fireAt).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+' · ¡Es hora de tu hábito diario!';
 
         // Leer lista compartida (misma que calendario: jch_rem_v4)
         var list = [];
@@ -17584,7 +17584,7 @@ function rescheduleAllReminders(force) {
                 evId:   'hab_' + (h.name || '').replace(/\W+/g, '_') + (idx > 0 ? '_' + idx : ''),
                 fireAt: fireAt,
                 title:  (h.emoji || '🌿') + ' ' + (h.name || 'Hábito'),
-                body:   '¡Es hora de tu hábito diario!'
+                body:   '⏰ '+new Date(_fireAt2).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+' · ¡Es hora de tu hábito diario!'
             };
             clean.push(entry);
             console.log('[JCH] Hábito programado: ' + entry.title + ' → ' + new Date(fireAt).toLocaleString());
@@ -23582,4 +23582,14 @@ window.openHabDetail = function(id) {
     ov.classList.remove('open');
     // 2. Inyectar HTML mientras overlay está invisible
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Esperar 30ms reales para
+    // 3. Esperar 30ms reales para que el browser móvil complete el reflow
+    //    antes de activar la transición — evita el flash transparente en Android
+    setTimeout(function() {
+        ov.classList.add('open');
+    }, 30);
+};
+
+})();
+</script>
+
+</html>
