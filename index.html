@@ -15391,17 +15391,10 @@ function check(){
   var rest=s.filter(function(r){ return r.fireAt > now; });
   fire.forEach(function(r){
     _fired[r.evId+'_'+r.fireAt]=true;
-    // Marcar en localStorage que ya se disparó localmente
-    // El SW onBackgroundMessage lo verifica para no duplicar
-    try {
-      var _firedLocal = JSON.parse(localStorage.getItem('jch_fired_local')||'{}');
-      _firedLocal[r.evId+'_'+r.fireAt] = Date.now();
-      // Limpiar entradas viejas (más de 10 minutos)
-      var _cutoff = Date.now() - 600000;
-      Object.keys(_firedLocal).forEach(function(k){ if(_firedLocal[k] < _cutoff) delete _firedLocal[k]; });
-      localStorage.setItem('jch_fired_local', JSON.stringify(_firedLocal));
-    } catch(e){}
-    showNotif(r.title, r.body, 'jch-'+r.evId+'-'+r.fireAt);
+    // Tag fijo basado en evId+fireAt: si FCM también dispara con el mismo tag,
+    // el browser muestra solo UNA notificación (la segunda reemplaza a la primera)
+    var _tag = 'jch-notif-'+r.evId+'-'+r.fireAt;
+    showNotif(r.title, r.body, _tag);
     console.log('[JCH] check() disparó: '+r.title+' fireAt:'+new Date(r.fireAt).toLocaleTimeString());
   });
   if(fire.length){ save(rest); saveToFirestore(rest); }
@@ -15469,17 +15462,20 @@ function check(){
 })();
 
 function setupFCMForeground(){
+  // onMessage() DESACTIVADO intencionalmente para evitar duplicados.
+  // Cuando la app está en foreground, check() ya maneja las notificaciones.
+  // Cuando la app está en background/cerrada, el SW (onBackgroundMessage) las maneja.
+  // Registrar el handler vacío para que FCM no muestre notificaciones del sistema
+  // encima de las nuestras cuando la app está abierta.
   var tryCount=0;
   function trySetup(){
     if(typeof firebase==='undefined'||!firebase.apps||!firebase.apps.length){if(++tryCount<20)setTimeout(trySetup,500);return;}
     try{
       var messaging=firebase.messaging();
+      // Handler vacío — previene que FCM muestre notificación duplicada en foreground
       messaging.onMessage(function(payload){
-        var title=payload.notification&&payload.notification.title||payload.data&&payload.data.title||'Planificador JCH';
-        var body=payload.notification&&payload.notification.body||payload.data&&payload.data.body||'Recordatorio';
-        var tag='jch-fcm-'+Date.now();
-        if(payload.data&&payload.data.evId&&payload.data.fireAt) tag='jch-'+payload.data.evId+'-'+payload.data.fireAt;
-        showNotif(title,body,tag);
+        console.log('[JCH] FCM foreground recibido — ignorado (check() lo maneja):', payload.data&&payload.data.evId);
+        // NO llamar showNotif aquí — check() ya lo hizo
       });
     }catch(e){}
   }
@@ -23586,14 +23582,4 @@ window.openHabDetail = function(id) {
     ov.classList.remove('open');
     // 2. Inyectar HTML mientras overlay está invisible
     if (typeof _origOpenHabDetail2 === 'function') _origOpenHabDetail2(id);
-    // 3. Esperar 30ms reales para que el browser móvil complete el reflow
-    //    antes de activar la transición — evita el flash transparente en Android
-    setTimeout(function() {
-        ov.classList.add('open');
-    }, 30);
-};
-
-})();
-</script>
-
-</html>
+    // 3. Esperar 30ms reales para
