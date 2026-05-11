@@ -6,7 +6,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 self.addEventListener('install', function(e) {
-    self.skipWaiting(); // ← CRÍTICO: activar SW inmediatamente sin esperar
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', function(e) {
@@ -44,9 +44,6 @@ messaging.onBackgroundMessage(function(payload) {
 
     const isHabit     = evId.startsWith('hab_');
     const actionLabel = isHabit ? '✅ Marcar hecho' : '📋 Ver tarea';
-
-    // ── Tag único — usa timestamp actual para SIEMPRE mostrar ──
-    // No usar fireAt en el tag porque Android suprime si el tag ya existe
     const tag = 'jch-' + evId + '-' + Date.now();
 
     return self.registration.showNotification(title, {
@@ -81,19 +78,14 @@ self.addEventListener('notificationclick', function(e) {
     );
 });
 
-// ── CRÍTICO: mantener SW activo para mensajes data-only ──
-self.addEventListener('fetch', function(e) {
-    // No interceptar — solo mantener el SW vivo en Android
-});
+// ── CRÍTICO: mantener SW activo ──
+self.addEventListener('fetch', function(e) {});
 
-// ── Push directo (fallback si onBackgroundMessage no dispara) ─
+// ── Push directo (fallback) ───────────────────────────────
 self.addEventListener('push', function(e) {
     if (!e.data) return;
     var data = {};
     try { data = e.data.json(); } catch(err) { return; }
-
-    // Si onBackgroundMessage ya maneja, no duplicar
-    // Solo actuar si viene como data-only (sin notification block)
     if (data.notification) return;
 
     var d     = data.data || {};
