@@ -2,10 +2,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 self.addEventListener('install', function(e) { self.skipWaiting(); });
-
-self.addEventListener('activate', function(e) {
-    e.waitUntil(self.clients.claim());
-});
+self.addEventListener('activate', function(e) { e.waitUntil(self.clients.claim()); });
 
 firebase.initializeApp({
     apiKey: "AIzaSyAKsILLuBeu6AXGzMICQtfIULL6-tMs5IE",
@@ -18,19 +15,34 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Helper: formatear timestamp a hora local
+function fmtHora(fireAt) {
+    if (!fireAt) return '';
+    try {
+        var d = new Date(parseInt(fireAt));
+        var h = String(d.getHours()).padStart(2,'0');
+        var m = String(d.getMinutes()).padStart(2,'0');
+        return h + ':' + m;
+    } catch(e) { return ''; }
+}
+
 messaging.onBackgroundMessage(function(payload) {
     console.log('[SW] onBackgroundMessage:', payload.data && payload.data.evId);
 
-    const title  = (payload.data && payload.data.title) || 'Planificador JCH';
-    const body   = (payload.data && payload.data.body)  || 'Tienes un recordatorio';
-    const evId   = (payload.data && payload.data.evId)  || '';
-    const fireAt = (payload.data && payload.data.fireAt)|| '';
-    const isHabit = evId.startsWith('hab_');
+    var title  = (payload.data && payload.data.title) || 'Planificador JCH';
+    var body   = (payload.data && payload.data.body)  || 'Tienes un recordatorio';
+    var evId   = (payload.data && payload.data.evId)  || '';
+    var fireAt = (payload.data && payload.data.fireAt)|| '';
+    var isHabit = evId.startsWith('hab_');
 
-    // Tag FIJO = mismo que check() en el HTML
-    // Si check() ya mostró la notificación con este tag,
-    // esta la reemplazará silenciosamente en vez de duplicarse
-    const tag = 'jch-notif-' + evId + '-' + fireAt;
+    // Agregar hora al body si es hábito y el body no tiene ya la hora
+    if (isHabit && fireAt && body.indexOf('⏰') === -1) {
+        var hora = fmtHora(fireAt);
+        if (hora) body = '⏰ ' + hora + ' · ' + body;
+    }
+
+    // Tag fijo para deduplicar con check() del HTML
+    var tag = 'jch-notif-' + evId + '-' + fireAt;
 
     return self.registration.showNotification(title, {
         body:    body,
@@ -78,7 +90,12 @@ self.addEventListener('push', function(e) {
     var fireAt = d.fireAt || '';
     var isHabit = evId.startsWith('hab_');
 
-    // Mismo tag fijo para deduplicar
+    // Agregar hora si no la tiene
+    if (isHabit && fireAt && body.indexOf('⏰') === -1) {
+        var hora = fmtHora(fireAt);
+        if (hora) body = '⏰ ' + hora + ' · ' + body;
+    }
+
     var tag = fireAt ? ('jch-notif-' + evId + '-' + fireAt) : ('jch-push-' + evId + '-' + Date.now());
 
     e.waitUntil(
