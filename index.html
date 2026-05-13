@@ -5505,6 +5505,40 @@
             border:1px solid rgba(255,255,255,0.06);margin-bottom:4px;font-size:0.68rem;
         }
 
+        /* ── DETALLE DE SESIÓN INLINE ────────────────────────── */
+        #cronoSessionDetail {
+            margin-top:10px;
+            background:linear-gradient(160deg,rgba(14,8,30,0.98),rgba(8,18,40,0.98));
+            border:1.5px solid rgba(167,139,250,0.4);border-radius:14px;
+            padding:14px 12px 16px;
+            animation:slideDown 0.25s ease;
+        }
+        @keyframes slideDown {
+            from{opacity:0;transform:translateY(-8px);}
+            to{opacity:1;transform:translateY(0);}
+        }
+        .csd-header {
+            display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+        }
+        .csd-title { font-size:0.68rem;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:1.5px; }
+        .csd-date  { font-size:0.58rem;color:#555;margin-top:1px; }
+        .csd-close {
+            background:rgba(255,255,255,0.06);border:none;color:#666;
+            border-radius:50%;width:24px;height:24px;font-size:0.85rem;
+            cursor:pointer;display:flex;align-items:center;justify-content:center;
+            transition:all 0.2s;flex-shrink:0;
+        }
+        .csd-close:hover { background:rgba(239,68,68,0.2);color:#f87171; }
+        .csd-stats { display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px; }
+        .csd-stat {
+            background:rgba(255,255,255,0.04);border-radius:10px;
+            padding:7px 4px;text-align:center;border:1px solid rgba(167,139,250,0.1);
+        }
+        .csd-stat-val { font-size:0.9rem;font-weight:900;color:#a78bfa; }
+        .csd-stat-lbl { font-size:0.5rem;color:#555;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px; }
+        .csd-chart { width:100%;height:90px;overflow:visible;margin-bottom:10px;display:block; }
+        .csd-laps-title { font-size:0.55rem;font-weight:900;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px; }
+
         /* ── CRONO CHART TOOLTIPS & SESSION MODAL ───────────── */
         .crono-chart-dot { cursor:pointer;transition:r 0.15s ease; }
         .crono-chart-dot:hover { r:6; }
@@ -5532,56 +5566,6 @@
             margin-left:auto;color:#555;font-size:0.65rem;transition:color 0.2s;
         }
         .hab-crono-history-item:hover .hi-arrow { color:#a78bfa; }
-        /* Modal de detalle de sesión */
-        #cronoSessionModalOverlay {
-            position:fixed;inset:0;z-index:999999;
-            background:rgba(0,0,0,0.88);
-            display:flex;align-items:flex-end;justify-content:center;
-            opacity:0;pointer-events:none;
-            transition:opacity 0.25s ease;
-        }
-        #cronoSessionModalOverlay.show {
-            opacity:1;pointer-events:all;
-        }
-        #cronoSessionModal {
-            width:100%;max-width:480px;max-height:86vh;overflow-y:auto;
-            background:linear-gradient(160deg,rgba(14,8,30,0.99),rgba(8,18,40,0.99));
-            border:1.5px solid rgba(167,139,250,0.35);border-radius:22px 22px 0 0;
-            padding:20px 16px 36px;
-            transform:translateY(40px);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        #cronoSessionModal::-webkit-scrollbar { width:4px; }
-        #cronoSessionModal::-webkit-scrollbar-thumb { background:#a78bfa;border-radius:4px; }
-        #cronoSessionModalOverlay.show #cronoSessionModal { transform:translateY(0); }
-        .csm-header {
-            display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
-        }
-        .csm-title {
-            font-size:0.75rem;font-weight:900;color:#a78bfa;
-            text-transform:uppercase;letter-spacing:1.5px;
-        }
-        .csm-date { font-size:0.62rem;color:#555;margin-top:2px; }
-        .csm-close {
-            width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);
-            border:none;color:#888;font-size:1rem;cursor:pointer;
-            display:flex;align-items:center;justify-content:center;
-            transition:all 0.2s;
-        }
-        .csm-close:hover { background:rgba(239,68,68,0.2);color:#f87171; }
-        .csm-stats {
-            display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;
-        }
-        .csm-stat {
-            background:rgba(255,255,255,0.04);border-radius:10px;
-            padding:8px;text-align:center;border:1px solid rgba(167,139,250,0.12);
-        }
-        .csm-stat-val { font-size:0.85rem;font-weight:900;color:#a78bfa; }
-        .csm-stat-lbl { font-size:0.52rem;color:#555;margin-top:2px; }
-        .csm-chart-svg { width:100%;height:100px;overflow:visible;margin-bottom:10px; }
-        .csm-laps-title {
-            font-size:0.6rem;font-weight:900;color:#666;text-transform:uppercase;
-            letter-spacing:1px;margin-bottom:6px;
-        }
 
         /* ── POMODORO TIMER ─────────────────────────────────── */
         .hab-pomodoro {
@@ -16078,6 +16062,8 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                     </div>
                     <!-- Historial de sesiones anteriores -->
                     <div id="habCronoHistory"></div>
+                    <!-- Detalle de sesión inline (reemplaza el modal externo) -->
+                    <div id="cronoSessionDetail" style="display:none;"></div>
                 </div>
 
             </div>
@@ -18823,25 +18809,10 @@ window._hrInit = function() {
 };
 </script>
 <!-- Tooltip flotante para gráficos del cronómetro -->
+<!-- Tooltip flotante para gráficos del cronómetro -->
 <div class="crono-tooltip" id="cronoTooltip">
     <div class="crono-tooltip-time" id="cronoTooltipTime"></div>
     <div class="crono-tooltip-label" id="cronoTooltipLabel"></div>
-</div>
-<!-- Modal detalle de sesión — directo en body, fuera de cualquier stacking context -->
-<div id="cronoSessionModalOverlay" style="display:none;" onclick="closeCronoSessionModal(event)">
-    <div id="cronoSessionModal">
-        <div class="csm-header">
-            <div>
-                <div class="csm-title" id="csmTitle">Detalle de sesión</div>
-                <div class="csm-date" id="csmDate"></div>
-            </div>
-            <button class="csm-close" onclick="closeCronoSessionModal()">✕</button>
-        </div>
-        <div class="csm-stats" id="csmStats"></div>
-        <svg class="csm-chart-svg" id="csmChartSVG" viewBox="0 0 300 100" preserveAspectRatio="none"></svg>
-        <div class="csm-laps-title">🏁 Tomas de la sesión</div>
-        <div id="csmLaps"></div>
-    </div>
 </div>
 </body>
 
@@ -24453,7 +24424,7 @@ window.hideCronoTooltipDelay = function() {
 // ══════════════════════════════════════════════════════════
 window.openCronoSessionModal = function(sessionIdx, habitId) {
     hideCronoTooltip();
-    // Siempre cargar directo desde localStorage con el habitId correcto
+    // Cargar siempre desde localStorage con el habitId exacto
     var hId = habitId || _cronoState.habitId || '';
     if (!hId) return;
     var hist = {};
@@ -24461,99 +24432,92 @@ window.openCronoSessionModal = function(sessionIdx, habitId) {
     var sessions = hist[hId] || [];
     if (!sessions[sessionIdx]) return;
     var s     = sessions[sessionIdx];
-    var color = _cronoState.habitColor || '#a78bfa';
+    var color = '#a78bfa';
     var laps  = s.laps || [];
 
-    // Título y fecha
-    document.getElementById('csmTitle').textContent = '📊 Detalle de sesión';
-    document.getElementById('csmDate').textContent  = s.date + ' · ' + s.count + ' tomas';
-
-    // Mini stats
     var avg   = laps.length ? laps.reduce(function(a,b){return a+b;},0)/laps.length : s.avg;
     var best  = laps.length ? Math.min.apply(null,laps) : s.best;
     var worst = laps.length ? Math.max.apply(null,laps) : 0;
-    document.getElementById('csmStats').innerHTML =
-        '<div class="csm-stat"><div class="csm-stat-val">'+s.count+'</div><div class="csm-stat-lbl">Tomas</div></div>' +
-        '<div class="csm-stat"><div class="csm-stat-val" style="color:#a78bfa;">'+fmtMsShort(Math.round(avg))+'</div><div class="csm-stat-lbl">Promedio ↕</div></div>' +
-        '<div class="csm-stat"><div class="csm-stat-val" style="color:#4ade80;">'+fmtMsShort(best)+'</div><div class="csm-stat-lbl">Mejor toma</div></div>';
 
-    // Gráfico de tomas de la sesión
-    var chartSvg = document.getElementById('csmChartSVG');
+    // Gráfico SVG de tomas
+    var chartHtml = '';
     if (laps.length >= 2) {
-        var W=300,H=90,PAD=14;
+        var W=280,H=80,PAD=12;
         var minV=Math.min.apply(null,laps), maxV=Math.max.apply(null,laps), rng=maxV-minV||1;
         var pts=laps.map(function(v,i){
-            return {
-                x: PAD+(i/(laps.length-1))*(W-PAD*2),
-                y: H-PAD-((v-minV)/rng)*(H-PAD*2),
-                v: v
-            };
+            return { x:PAD+(i/(laps.length-1))*(W-PAD*2), y:H-PAD-((v-minV)/rng)*(H-PAD*2), v:v };
         });
-        var areaP='M '+pts[0].x+' '+H+' '+pts.map(function(p){return 'L '+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ')+' L '+pts[pts.length-1].x+' '+H+' Z';
-        var lineP=pts.map(function(p,i){return (i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ');
-        var avgV=avg, avgY=H-PAD-((avgV-minV)/rng)*(H-PAD*2);
-        var gId='csm_'+Date.now();
-        chartSvg.style.display='';
-        chartSvg.innerHTML=
+        var area='M '+pts[0].x+' '+H+' '+pts.map(function(p){return 'L '+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ')+' L '+pts[pts.length-1].x+' '+H+' Z';
+        var line=pts.map(function(p,i){return (i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ');
+        var gId='csd_'+Date.now();
+        var avgY=H-PAD-((avg-minV)/rng)*(H-PAD*2);
+        chartHtml = '<svg class="csd-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
             '<defs><linearGradient id="'+gId+'" x1="0" y1="0" x2="0" y2="1">'+
               '<stop offset="0%" stop-color="'+color+'" stop-opacity="0.3"/>'+
               '<stop offset="100%" stop-color="'+color+'" stop-opacity="0.02"/>'+
             '</linearGradient></defs>'+
-            '<path d="'+areaP+'" fill="url(#'+gId+')"/>'+
-            '<line x1="'+PAD+'" y1="'+avgY.toFixed(1)+'" x2="'+(W-PAD)+'" y2="'+avgY.toFixed(1)+'" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,3"/>'+
-            '<path d="'+lineP+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
+            '<path d="'+area+'" fill="url(#'+gId+')"/>'+
+            '<line x1="'+PAD+'" y1="'+avgY.toFixed(1)+'" x2="'+(W-PAD)+'" y2="'+avgY.toFixed(1)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4,3"/>'+
+            '<path d="'+line+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
             pts.map(function(p,i){
                 var isMn=laps[i]===minV, isMx=laps[i]===maxV&&laps.length>1;
                 var f=isMn?'#4ade80':isMx?'#f87171':color;
-                var r=isMn||isMx?5:4;
-                var lbl=isMn&&laps.length>1?'🏆 Mejor':'Toma #'+(i+1);
-                return '<circle class="crono-chart-dot" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="'+f+'" stroke="#1a1a2e" stroke-width="1.5"'+
-                    ' onmouseenter="showCronoTooltip(event,\''+fmtMs(laps[i])+'\',\''+lbl+'\')"'+
-                    ' ontouchstart="showCronoTooltip(event,\''+fmtMs(laps[i])+'\',\''+lbl+'\')"'+
-                    ' onmouseleave="hideCronoTooltip()"'+
-                    ' ontouchend="hideCronoTooltipDelay()"'+
-                    '/>';
+                return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(isMn||isMx?5:3.5)+'" fill="'+f+'" stroke="#0a0820" stroke-width="1.5"/>'+
+                    '<text x="'+p.x.toFixed(1)+'" y="'+(H-1)+'" text-anchor="middle" font-size="7" fill="#444">#'+(i+1)+'</text>';
             }).join('')+
-            pts.map(function(p,i){return '<text x="'+p.x.toFixed(1)+'" y="'+(H-2)+'" text-anchor="middle" font-size="8" fill="#555">#'+(i+1)+'</text>';}).join('');
-    } else {
-        chartSvg.style.display = 'none';
+            '</svg>';
     }
 
     // Lista de tomas
-    var lapsEl = document.getElementById('csmLaps');
+    var lapsHtml = '';
     if (laps.length) {
         var minL=Math.min.apply(null,laps), maxL=Math.max.apply(null,laps);
-        lapsEl.innerHTML = laps.map(function(t,i){
+        lapsHtml = laps.map(function(t,i){
             var diff=t-avg;
             var cls=t===minL&&laps.length>1?'hab-crono-lap-best':t===maxL&&laps.length>1?'hab-crono-lap-worst':'';
             var badge=t===minL&&laps.length>1?' 🏆':t===maxL&&laps.length>1?' 🐢':'';
-            var diffStr=diff>=0?'+'+fmtMsShort(diff):'-'+fmtMsShort(Math.abs(diff));
+            var diffStr=diff>=0?'+'+fmtMsShort(Math.abs(diff)):'-'+fmtMsShort(Math.abs(diff));
             return '<div class="hab-crono-lap-item '+cls+'">'+
                 '<span class="hab-crono-lap-num">#'+(i+1)+badge+'</span>'+
                 '<span class="hab-crono-lap-time">'+fmtMs(t)+'</span>'+
                 '<span class="hab-crono-lap-avg" style="color:'+(diff>0?'#f87171':diff<0?'#4ade80':'#888')+'">'+
-                (laps.length>1?diffStr+' vs prom.':'Primera toma')+'</span>'+
+                (laps.length>1?diffStr+' vs prom.':'Única toma')+'</span>'+
                 '</div>';
         }).reverse().join('');
-    } else {
-        lapsEl.innerHTML = '<div style="color:#555;font-size:0.65rem;text-align:center;padding:12px;">Sin datos de tomas individuales</div>';
     }
 
-    // Mostrar modal — position:fixed directo en body, z-index:999999
-    var ov = document.getElementById('cronoSessionModalOverlay');
-    if (ov) {
-        ov.style.display = 'flex';
-        requestAnimationFrame(function(){ ov.classList.add('show'); });
-    }
+    var detail = document.getElementById('cronoSessionDetail');
+    if (!detail) return;
+    detail.innerHTML =
+        '<div class="csd-header">'+
+            '<div>'+
+                '<div class="csd-title">📊 Detalle de sesión</div>'+
+                '<div class="csd-date">'+s.date+' · '+s.count+' tomas</div>'+
+            '</div>'+
+            '<button class="csd-close" onclick="closeCronoSessionDetail()">✕</button>'+
+        '</div>'+
+        '<div class="csd-stats">'+
+            '<div class="csd-stat"><div class="csd-stat-val">'+s.count+'</div><div class="csd-stat-lbl">Tomas</div></div>'+
+            '<div class="csd-stat"><div class="csd-stat-val" style="color:#a78bfa;">'+fmtMsShort(Math.round(avg))+'</div><div class="csd-stat-lbl">Promedio</div></div>'+
+            '<div class="csd-stat"><div class="csd-stat-val" style="color:#4ade80;">'+fmtMsShort(best)+'</div><div class="csd-stat-lbl">Mejor</div></div>'+
+        '</div>'+
+        (laps.length >= 2 ? chartHtml : '')+
+        '<div class="csd-laps-title">🏁 Tomas</div>'+
+        lapsHtml;
+
+    detail.style.display = 'block';
+    // Scroll suave al detalle
+    setTimeout(function(){
+        detail.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }, 50);
 };
 
-window.closeCronoSessionModal = function(e) {
-    if (e && e.target !== document.getElementById('cronoSessionModalOverlay')) return;
-    var ov = document.getElementById('cronoSessionModalOverlay');
-    if (!ov) return;
-    ov.classList.remove('show');
-    setTimeout(function(){ ov.style.display='none'; }, 280);
+window.closeCronoSessionDetail = function() {
+    var d = document.getElementById('cronoSessionDetail');
+    if (d) { d.style.display='none'; d.innerHTML=''; }
 };
+
+
 </script>
 
 </html>
