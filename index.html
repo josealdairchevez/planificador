@@ -5534,10 +5534,11 @@
         .hab-crono-history-item:hover .hi-arrow { color:#a78bfa; }
         /* Modal de detalle de sesión */
         .crono-session-modal-overlay {
-            position:fixed;inset:0;z-index:99990;
-            background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);
+            position:absolute;inset:0;z-index:9999;
+            background:rgba(0,0,0,0.82);
             display:flex;align-items:flex-end;justify-content:center;
             opacity:0;pointer-events:none;transition:opacity 0.25s ease;
+            border-radius:22px;
         }
         .crono-session-modal-overlay.show {
             opacity:1;pointer-events:all;
@@ -16280,6 +16281,23 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
     <!-- Toast de racha -->
     <div class="hab-streak-toast" id="habStreakToast"></div>
 
+    <!-- Modal detalle de sesión del cronómetro — DENTRO del habitModal -->
+    <div class="crono-session-modal-overlay" id="cronoSessionModalOverlay" style="display:none;position:absolute;border-radius:22px;" onclick="closeCronoSessionModal(event)">
+        <div class="crono-session-modal" id="cronoSessionModal">
+            <div class="csm-header">
+                <div>
+                    <div class="csm-title" id="csmTitle">Detalle de sesión</div>
+                    <div class="csm-date" id="csmDate"></div>
+                </div>
+                <button class="csm-close" onclick="closeCronoSessionModal()">✕</button>
+            </div>
+            <div class="csm-stats" id="csmStats"></div>
+            <svg class="csm-chart-svg" id="csmChartSVG" viewBox="0 0 300 100" preserveAspectRatio="none"></svg>
+            <div class="csm-laps-title">🏁 Tomas de la sesión</div>
+            <div id="csmLaps"></div>
+        </div>
+    </div>
+
 
 
 <script>
@@ -18820,22 +18838,6 @@ window._hrInit = function() {
     _hrRenderHoy();
 };
 </script>
-<!-- Modal detalle de sesión del cronómetro -->
-<div class="crono-session-modal-overlay" id="cronoSessionModalOverlay" style="display:none;" onclick="closeCronoSessionModal(event)">
-    <div class="crono-session-modal" id="cronoSessionModal">
-        <div class="csm-header">
-            <div>
-                <div class="csm-title" id="csmTitle">Detalle de sesión</div>
-                <div class="csm-date" id="csmDate"></div>
-            </div>
-            <button class="csm-close" onclick="closeCronoSessionModal()">✕</button>
-        </div>
-        <div class="csm-stats" id="csmStats"></div>
-        <svg class="csm-chart-svg" id="csmChartSVG" viewBox="0 0 300 100" preserveAspectRatio="none"></svg>
-        <div class="csm-laps-title">🏁 Tomas de la sesión</div>
-        <div id="csmLaps"></div>
-    </div>
-</div>
 <!-- Tooltip flotante para gráficos del cronómetro -->
 <div class="crono-tooltip" id="cronoTooltip">
     <div class="crono-tooltip-time" id="cronoTooltipTime"></div>
@@ -24542,9 +24544,15 @@ window.openCronoSessionModal = function(sessionIdx) {
         lapsEl.innerHTML = '<div style="color:#555;font-size:0.65rem;text-align:center;padding:12px;">Sin datos de tomas individuales</div>';
     }
 
-    // Mostrar modal
+    // Mostrar modal — position:absolute dentro de #habitModal
     var ov = document.getElementById('cronoSessionModalOverlay');
-    if (ov) { ov.style.display='flex'; requestAnimationFrame(function(){ ov.classList.add('show'); }); }
+    if (ov) {
+        ov.style.display = 'flex';
+        // Forzar scroll del habitModal al top para que el overlay cubra todo
+        var habBody = document.querySelector('#habitModal .hab-body') || document.querySelector('#habitModal');
+        if (habBody) habBody.scrollTop = 0;
+        requestAnimationFrame(function(){ ov.classList.add('show'); });
+    }
 };
 
 window.closeCronoSessionModal = function(e) {
