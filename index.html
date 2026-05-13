@@ -5533,28 +5533,26 @@
         }
         .hab-crono-history-item:hover .hi-arrow { color:#a78bfa; }
         /* Modal de detalle de sesión */
-        .crono-session-modal-overlay {
-            position:absolute;inset:0;z-index:9999;
-            background:rgba(0,0,0,0.82);
+        #cronoSessionModalOverlay {
+            position:fixed;inset:0;z-index:999999;
+            background:rgba(0,0,0,0.88);
             display:flex;align-items:flex-end;justify-content:center;
-            opacity:0;pointer-events:none;transition:opacity 0.25s ease;
-            border-radius:22px;
+            opacity:0;pointer-events:none;
+            transition:opacity 0.25s ease;
         }
-        .crono-session-modal-overlay.show {
+        #cronoSessionModalOverlay.show {
             opacity:1;pointer-events:all;
         }
-        .crono-session-modal {
-            width:100%;max-width:480px;max-height:88vh;overflow-y:auto;
+        #cronoSessionModal {
+            width:100%;max-width:480px;max-height:86vh;overflow-y:auto;
             background:linear-gradient(160deg,rgba(14,8,30,0.99),rgba(8,18,40,0.99));
             border:1.5px solid rgba(167,139,250,0.35);border-radius:22px 22px 0 0;
-            padding:20px 16px 32px;
-            transform:translateY(30px);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            padding:20px 16px 36px;
+            transform:translateY(40px);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
         }
-        .crono-session-modal-overlay.show .crono-session-modal {
-            transform:translateY(0);
-        }
-        .crono-session-modal::-webkit-scrollbar { width:4px; }
-        .crono-session-modal::-webkit-scrollbar-thumb { background:#a78bfa;border-radius:4px; }
+        #cronoSessionModal::-webkit-scrollbar { width:4px; }
+        #cronoSessionModal::-webkit-scrollbar-thumb { background:#a78bfa;border-radius:4px; }
+        #cronoSessionModalOverlay.show #cronoSessionModal { transform:translateY(0); }
         .csm-header {
             display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
         }
@@ -5605,8 +5603,9 @@
             filter:drop-shadow(0 0 18px rgba(16,185,129,0.45));
         }
         .hab-pomo-svg {
-            position:absolute;inset:0;transform:rotate(-90deg);
-            border-radius:50%;
+            position:absolute;top:0;left:0;
+            width:150px;height:150px;
+            transform:rotate(-90deg);
         }
         .hab-pomo-circle {
             fill:none;stroke:rgba(255,255,255,0.07);stroke-width:10;
@@ -16281,23 +16280,6 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
     <!-- Toast de racha -->
     <div class="hab-streak-toast" id="habStreakToast"></div>
 
-    <!-- Modal detalle de sesión del cronómetro — DENTRO del habitModal -->
-    <div class="crono-session-modal-overlay" id="cronoSessionModalOverlay" style="display:none;position:absolute;border-radius:22px;" onclick="closeCronoSessionModal(event)">
-        <div class="crono-session-modal" id="cronoSessionModal">
-            <div class="csm-header">
-                <div>
-                    <div class="csm-title" id="csmTitle">Detalle de sesión</div>
-                    <div class="csm-date" id="csmDate"></div>
-                </div>
-                <button class="csm-close" onclick="closeCronoSessionModal()">✕</button>
-            </div>
-            <div class="csm-stats" id="csmStats"></div>
-            <svg class="csm-chart-svg" id="csmChartSVG" viewBox="0 0 300 100" preserveAspectRatio="none"></svg>
-            <div class="csm-laps-title">🏁 Tomas de la sesión</div>
-            <div id="csmLaps"></div>
-        </div>
-    </div>
-
 
 
 <script>
@@ -18842,6 +18824,22 @@ window._hrInit = function() {
 <div class="crono-tooltip" id="cronoTooltip">
     <div class="crono-tooltip-time" id="cronoTooltipTime"></div>
     <div class="crono-tooltip-label" id="cronoTooltipLabel"></div>
+</div>
+<!-- Modal detalle de sesión — directo en body, fuera de cualquier stacking context -->
+<div id="cronoSessionModalOverlay" style="display:none;" onclick="closeCronoSessionModal(event)">
+    <div id="cronoSessionModal">
+        <div class="csm-header">
+            <div>
+                <div class="csm-title" id="csmTitle">Detalle de sesión</div>
+                <div class="csm-date" id="csmDate"></div>
+            </div>
+            <button class="csm-close" onclick="closeCronoSessionModal()">✕</button>
+        </div>
+        <div class="csm-stats" id="csmStats"></div>
+        <svg class="csm-chart-svg" id="csmChartSVG" viewBox="0 0 300 100" preserveAspectRatio="none"></svg>
+        <div class="csm-laps-title">🏁 Tomas de la sesión</div>
+        <div id="csmLaps"></div>
+    </div>
 </div>
 </body>
 
@@ -24544,13 +24542,10 @@ window.openCronoSessionModal = function(sessionIdx) {
         lapsEl.innerHTML = '<div style="color:#555;font-size:0.65rem;text-align:center;padding:12px;">Sin datos de tomas individuales</div>';
     }
 
-    // Mostrar modal — position:absolute dentro de #habitModal
+    // Mostrar modal — position:fixed directo en body, z-index:999999
     var ov = document.getElementById('cronoSessionModalOverlay');
     if (ov) {
         ov.style.display = 'flex';
-        // Forzar scroll del habitModal al top para que el overlay cubra todo
-        var habBody = document.querySelector('#habitModal .hab-body') || document.querySelector('#habitModal');
-        if (habBody) habBody.scrollTop = 0;
         requestAnimationFrame(function(){ ov.classList.add('show'); });
     }
 };
