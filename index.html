@@ -5623,11 +5623,11 @@
         .hab-pomo-inner {
             position:relative;z-index:2;
             display:flex;flex-direction:column;align-items:center;justify-content:center;
-            width:100px;height:100px;
+            width:88px;height:88px;
             pointer-events:none;
         }
         .hab-pomo-time {
-            font-size:1.7rem;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;
+            font-size:1.45rem;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;
             line-height:1;letter-spacing:1px;
             text-shadow:0 0 16px rgba(239,68,68,0.7);
             transition:text-shadow 0.5s ease;
@@ -15993,7 +15993,7 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                     </div>
                     <!-- ANILLO POMODORO PREMIUM -->
                     <div class="hab-pomo-ring" id="habPomoRing">
-                        <svg class="hab-pomo-svg" viewBox="0 0 150 150">
+                        <svg class="hab-pomo-svg" viewBox="0 0 150 150" width="150" height="150">
                             <circle class="hab-pomo-circle-glow" cx="75" cy="75" r="60"/>
                             <circle class="hab-pomo-circle" cx="75" cy="75" r="60"/>
                             <circle class="hab-pomo-progress" id="habPomoCircle" cx="75" cy="75" r="60"
@@ -18403,6 +18403,7 @@ function habCronoRenderHistory() {
 
     // Guardar referencia a las sesiones para el modal
     window._cronoHistSessions = sessions;
+    window._cronoHistSessions._habitId = _cronoState.habitId;
     window._cronoHistColor    = color;
 }
 
@@ -18820,7 +18821,7 @@ window._hrInit = function() {
 };
 </script>
 <!-- Modal detalle de sesión del cronómetro -->
-<div class="crono-session-modal-overlay" id="cronoSessionModalOverlay" onclick="closeCronoSessionModal(event)">
+<div class="crono-session-modal-overlay" id="cronoSessionModalOverlay" style="display:none;" onclick="closeCronoSessionModal(event)">
     <div class="crono-session-modal" id="cronoSessionModal">
         <div class="csm-header">
             <div>
@@ -24450,10 +24451,20 @@ window.hideCronoTooltipDelay = function() {
 // ══════════════════════════════════════════════════════════
 window.openCronoSessionModal = function(sessionIdx) {
     hideCronoTooltip();
+    // Intentar desde memoria primero, luego cargar directo desde localStorage
     var sessions = window._cronoHistSessions;
+    if (!sessions || !sessions[sessionIdx]) {
+        var habitId = _cronoState.habitId || '';
+        if (habitId) {
+            var hist = {};
+            try { hist = JSON.parse(localStorage.getItem('jch_crono_history_v1')||'{}'); } catch(e){}
+            sessions = hist[habitId] || [];
+            window._cronoHistSessions = sessions;
+        }
+    }
     if (!sessions || !sessions[sessionIdx]) return;
     var s     = sessions[sessionIdx];
-    var color = window._cronoHistColor || '#a78bfa';
+    var color = window._cronoHistColor || _cronoState.habitColor || '#a78bfa';
     var laps  = s.laps || [];
 
     // Título y fecha
