@@ -5529,7 +5529,7 @@
             transition:all 0.2s;flex-shrink:0;
         }
         .csd-close:hover { background:rgba(239,68,68,0.2);color:#f87171; }
-        .csd-stats { display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px; }
+        .csd-stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:6px;margin-bottom:10px; }
         .csd-stat {
             background:rgba(255,255,255,0.04);border-radius:10px;
             padding:7px 4px;text-align:center;border:1px solid rgba(167,139,250,0.1);
@@ -5557,13 +5557,15 @@
         /* History item clickeable */
         .hab-crono-history-item {
             cursor:pointer;transition:all 0.2s;
+            position:relative;
         }
+        .hab-crono-history-item > span { pointer-events:none; }
         .hab-crono-history-item:hover {
             background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.35);
             transform:translateX(3px);
         }
         .hab-crono-history-item .hi-arrow {
-            margin-left:auto;color:#555;font-size:0.65rem;transition:color 0.2s;
+            margin-left:auto;color:#555;font-size:0.65rem;transition:color 0.2s;pointer-events:none;
         }
         .hab-crono-history-item:hover .hi-arrow { color:#a78bfa; }
 
@@ -5578,60 +5580,57 @@
             text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;
         }
         .hab-pomo-ring {
-            width:120px;height:120px;border-radius:50%;margin:10px auto 14px;
-            position:relative;display:flex;align-items:center;justify-content:center;
+            width:140px;height:140px;
+            margin:10px auto 14px;
+            display:grid;place-items:center;
             flex-shrink:0;
-            filter:drop-shadow(0 0 14px rgba(239,68,68,0.45));
-            transition:filter 0.6s ease;
-        }
-        .hab-pomo-ring.break-mode {
-            filter:drop-shadow(0 0 14px rgba(16,185,129,0.45));
         }
         .hab-pomo-svg {
-            position:absolute;top:0;left:0;
-            width:120px;height:120px;
+            grid-area:1/1;
+            width:140px;height:140px;
             transform:rotate(-90deg);
-            overflow:visible;
         }
         .hab-pomo-circle {
-            fill:none;stroke:rgba(255,255,255,0.07);stroke-width:9;
+            fill:none;stroke:rgba(255,255,255,0.08);stroke-width:8;
         }
-        .hab-pomo-circle-glow {
-            fill:none;stroke:rgba(239,68,68,0.07);stroke-width:18;
-        }
+        .hab-pomo-circle-glow { display:none; }
         .hab-pomo-progress {
-            fill:none;stroke:#ef4444;stroke-width:9;stroke-linecap:round;
+            fill:none;stroke:#ef4444;stroke-width:8;stroke-linecap:round;
             transition:stroke-dashoffset 1s linear, stroke 0.5s ease;
-            filter:drop-shadow(0 0 5px #ef4444);
+            filter:drop-shadow(0 0 4px #ef4444);
         }
-        .hab-pomo-progress.work  { stroke:#ef4444; filter:drop-shadow(0 0 5px #ef4444); }
-        .hab-pomo-progress.break { stroke:#10b981; filter:drop-shadow(0 0 5px #10b981); }
+        .hab-pomo-progress.work  { stroke:#ef4444;filter:drop-shadow(0 0 4px #ef4444); }
+        .hab-pomo-progress.break { stroke:#10b981;filter:drop-shadow(0 0 4px #10b981); }
         .hab-pomo-inner {
-            position:relative;z-index:2;
+            grid-area:1/1;z-index:2;
             display:flex;flex-direction:column;align-items:center;justify-content:center;
-            width:78px;height:78px;
-            pointer-events:none;
+            width:100px;height:100px;pointer-events:none;
         }
         .hab-pomo-time {
-            font-size:1.25rem;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;
+            font-size:1.4rem;font-weight:900;color:#fff;
+            font-variant-numeric:tabular-nums;
             line-height:1;letter-spacing:0.5px;
-            text-shadow:0 0 12px rgba(239,68,68,0.7);
+            text-shadow:0 0 10px rgba(239,68,68,0.5);
             transition:text-shadow 0.5s ease;
         }
-        .hab-pomo-time.break-mode { text-shadow:0 0 12px rgba(16,185,129,0.7); }
+        .hab-pomo-time.break-mode { text-shadow:0 0 10px rgba(16,185,129,0.5); }
         .hab-pomo-phase {
-            font-size:0.52rem;font-weight:800;color:#bbb;
-            text-transform:uppercase;letter-spacing:1px;margin-top:3px;
+            font-size:0.52rem;font-weight:800;color:#aaa;
+            text-transform:uppercase;letter-spacing:1px;margin-top:4px;
         }
-        @keyframes pomoRingPulse {
-            0%,100%{ filter:drop-shadow(0 0 18px rgba(239,68,68,0.45)); }
-            50%    { filter:drop-shadow(0 0 32px rgba(239,68,68,0.85)); }
+        .hab-pomo-ring.running .hab-pomo-svg {
+            animation:pomoGlow 2s ease-in-out infinite;
         }
-        .hab-pomo-ring.running { animation:pomoRingPulse 2s ease-in-out infinite; }
-        .hab-pomo-ring.running.break-mode { animation:pomoRingPulseGreen 2s ease-in-out infinite; }
-        @keyframes pomoRingPulseGreen {
-            0%,100%{ filter:drop-shadow(0 0 18px rgba(16,185,129,0.45)); }
-            50%    { filter:drop-shadow(0 0 32px rgba(16,185,129,0.85)); }
+        @keyframes pomoGlow {
+            0%,100%{ filter:drop-shadow(0 0 4px rgba(239,68,68,0.5)); }
+            50%    { filter:drop-shadow(0 0 12px rgba(239,68,68,1)); }
+        }
+        .hab-pomo-ring.running.break-mode .hab-pomo-svg {
+            animation:pomoGlowGreen 2s ease-in-out infinite;
+        }
+        @keyframes pomoGlowGreen {
+            0%,100%{ filter:drop-shadow(0 0 4px rgba(16,185,129,0.5)); }
+            50%    { filter:drop-shadow(0 0 12px rgba(16,185,129,1)); }
         }
         .hab-pomo-controls { display:flex;gap:8px;justify-content:center;margin-top:8px; }
         .hab-pomo-btn {
@@ -5740,7 +5739,8 @@
 
         @media (max-width:768px) {
             .hab-battle-popup { min-width:200px;padding:16px 20px; }
-            .hab-pomo-ring { width:90px;height:90px; }
+            .hab-pomo-ring { width:130px;height:130px; }
+            .hab-pomo-svg  { width:130px;height:130px; }
             .hab-pomo-time { font-size:1.3rem; }
             .hab-zone-grid { grid-template-columns:repeat(3,1fr); }
         }
@@ -15979,11 +15979,11 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                     </div>
                     <!-- ANILLO POMODORO PREMIUM -->
                     <div class="hab-pomo-ring" id="habPomoRing">
-                        <svg class="hab-pomo-svg" viewBox="0 0 120 120" width="120" height="120">
-                            <circle class="hab-pomo-circle-glow" cx="60" cy="60" r="46"/>
-                            <circle class="hab-pomo-circle"      cx="60" cy="60" r="46"/>
-                            <circle class="hab-pomo-progress" id="habPomoCircle" cx="60" cy="60" r="46"
-                                stroke-dasharray="289" stroke-dashoffset="0"/>
+                        <svg class="hab-pomo-svg" viewBox="0 0 140 140" width="140" height="140">
+                            <circle class="hab-pomo-circle-glow" cx="70" cy="70" r="56"/>
+                            <circle class="hab-pomo-circle"      cx="70" cy="70" r="56"/>
+                            <circle class="hab-pomo-progress" id="habPomoCircle" cx="70" cy="70" r="56"
+                                stroke-dasharray="352" stroke-dashoffset="0"/>
                         </svg>
                         <div class="hab-pomo-inner">
                             <div class="hab-pomo-time" id="habPomoTime">25:00</div>
@@ -18354,14 +18354,14 @@ function habCronoRenderHistory() {
             ' ontouchstart="showCronoTooltip(event,\''+fmtMsShort(avgs[i])+' prom.\',\''+label+'\')"' +
             ' onmouseleave="hideCronoTooltip()"' +
             ' ontouchend="hideCronoTooltipDelay()"' +
-            ' onclick="openCronoSessionModal('+i+',\''+hId+'\')"' +
+            ' data-sidx="'+i+'" data-hid="'+hId+'" onclick="openCronoSessionModal(+this.dataset.sidx, this.dataset.hid)"' +
             '/>';
     }).join('');
 
-    // Recuadros del historial (clickeables)
+    // Recuadros del historial (clickeables) — data attributes para evitar problemas de escape
     var itemsHtml = sessions.slice().reverse().slice(0,5).map(function(s, ri) {
         var realIdx = sessions.length - 1 - ri;
-        return '<div class="hab-crono-history-item" onclick="openCronoSessionModal('+realIdx+',\''+hId+'\')">' +
+        return '<div class="hab-crono-history-item" data-sidx="'+realIdx+'" data-hid="'+hId+'" onclick="openCronoSessionModal(+this.dataset.sidx, this.dataset.hid)">' +
             '<span style="color:#555;min-width:70px;">' + s.date + '</span>' +
             '<span style="color:#fff;font-weight:600;">' + fmtMsShort(s.avg) + ' prom.</span>' +
             '<span style="color:#4ade80;margin-left:auto;">' + fmtMsShort(s.best) + ' mejor</span>' +
@@ -19889,7 +19889,7 @@ function updatePomoDisplay() {
         const workMins  = parseInt(document.getElementById('habPomoWork')?.value  || 25);
         const breakMins = parseInt(document.getElementById('habPomoBreak')?.value || 5);
         const total = (_pomoState.phase==='work' ? workMins : breakMins) * 60;
-        const circumference = 2 * Math.PI * 46;
+        const circumference = 2 * Math.PI * 56;
         const pct = _pomoState.remaining / total;
         circEl.style.strokeDasharray  = circumference;
         circEl.style.strokeDashoffset = circumference * (1-pct);
@@ -24420,96 +24420,127 @@ window.hideCronoTooltipDelay = function() {
 };
 
 // ══════════════════════════════════════════════════════════
-// CRONO: Modal de detalle de sesión histórica
+// CRONO: Detalle de sesión histórica — renderizado inline
 // ══════════════════════════════════════════════════════════
 window.openCronoSessionModal = function(sessionIdx, habitId) {
-    hideCronoTooltip();
-    // Cargar siempre desde localStorage con el habitId exacto
-    var hId = habitId || _cronoState.habitId || '';
-    if (!hId) return;
+    if (typeof hideCronoTooltip === 'function') hideCronoTooltip();
+
+    // 1. Obtener habitId — desde argumento, dataset o estado actual
+    var hId = String(habitId || _cronoState.habitId || '').trim();
+    if (!hId) { console.warn('CRONO: habitId vacío'); return; }
+
+    // 2. Leer sesiones desde localStorage
     var hist = {};
-    try { hist = JSON.parse(localStorage.getItem('jch_crono_history_v1')||'{}'); } catch(e){}
+    try { hist = JSON.parse(localStorage.getItem('jch_crono_history_v1') || '{}'); } catch(e) {}
     var sessions = hist[hId] || [];
-    if (!sessions[sessionIdx]) return;
-    var s     = sessions[sessionIdx];
-    var color = '#a78bfa';
-    var laps  = s.laps || [];
+    var idx = parseInt(sessionIdx, 10);
+    if (!sessions[idx]) { console.warn('CRONO: sesión no encontrada idx='+idx+' hId='+hId); return; }
 
-    var avg   = laps.length ? laps.reduce(function(a,b){return a+b;},0)/laps.length : s.avg;
-    var best  = laps.length ? Math.min.apply(null,laps) : s.best;
-    var worst = laps.length ? Math.max.apply(null,laps) : 0;
+    var s    = sessions[idx];
+    var laps = Array.isArray(s.laps) ? s.laps : [];
+    var avg  = laps.length ? laps.reduce(function(a,b){return a+b;},0)/laps.length : (s.avg||0);
+    var best = laps.length ? Math.min.apply(null,laps) : (s.best||0);
+    var worst= laps.length ? Math.max.apply(null,laps) : 0;
+    var col  = '#a78bfa';
 
-    // Gráfico SVG de tomas
+    // 3. Mini stats
+    var statsHtml =
+        '<div class="csd-stats">'+
+            '<div class="csd-stat">'+
+                '<div class="csd-stat-val">'+s.count+'</div>'+
+                '<div class="csd-stat-lbl">Tomas</div>'+
+            '</div>'+
+            '<div class="csd-stat">'+
+                '<div class="csd-stat-val" style="color:#a78bfa;">'+fmtMsShort(Math.round(avg))+'</div>'+
+                '<div class="csd-stat-lbl">Promedio</div>'+
+            '</div>'+
+            '<div class="csd-stat">'+
+                '<div class="csd-stat-val" style="color:#4ade80;">'+fmtMsShort(best)+'</div>'+
+                '<div class="csd-stat-lbl">Mejor</div>'+
+            '</div>'+
+            (worst && laps.length>1 ?
+            '<div class="csd-stat">'+
+                '<div class="csd-stat-val" style="color:#f87171;">'+fmtMsShort(worst)+'</div>'+
+                '<div class="csd-stat-lbl">Más lenta</div>'+
+            '</div>' : '')+
+        '</div>';
+
+    // 4. Gráfico SVG
     var chartHtml = '';
     if (laps.length >= 2) {
-        var W=280,H=80,PAD=12;
+        var W=280,H=80,PAD=14;
         var minV=Math.min.apply(null,laps), maxV=Math.max.apply(null,laps), rng=maxV-minV||1;
         var pts=laps.map(function(v,i){
-            return { x:PAD+(i/(laps.length-1))*(W-PAD*2), y:H-PAD-((v-minV)/rng)*(H-PAD*2), v:v };
+            return { x:PAD+(i/(laps.length-1))*(W-PAD*2), y:H-PAD-((v-minV)/rng)*(H-PAD*2) };
         });
-        var area='M '+pts[0].x+' '+H+' '+pts.map(function(p){return 'L '+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ')+' L '+pts[pts.length-1].x+' '+H+' Z';
+        var area='M '+pts[0].x+' '+H+pts.map(function(p){return ' L '+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join('')+' L '+pts[pts.length-1].x+' '+H+' Z';
         var line=pts.map(function(p,i){return (i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ');
-        var gId='csd_'+Date.now();
         var avgY=H-PAD-((avg-minV)/rng)*(H-PAD*2);
-        chartHtml = '<svg class="csd-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+        var gId='csdg'+Date.now();
+        chartHtml='<svg class="csd-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
             '<defs><linearGradient id="'+gId+'" x1="0" y1="0" x2="0" y2="1">'+
-              '<stop offset="0%" stop-color="'+color+'" stop-opacity="0.3"/>'+
-              '<stop offset="100%" stop-color="'+color+'" stop-opacity="0.02"/>'+
+            '<stop offset="0%" stop-color="'+col+'" stop-opacity="0.3"/>'+
+            '<stop offset="100%" stop-color="'+col+'" stop-opacity="0.02"/>'+
             '</linearGradient></defs>'+
             '<path d="'+area+'" fill="url(#'+gId+')"/>'+
             '<line x1="'+PAD+'" y1="'+avgY.toFixed(1)+'" x2="'+(W-PAD)+'" y2="'+avgY.toFixed(1)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4,3"/>'+
-            '<path d="'+line+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
+            '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
             pts.map(function(p,i){
-                var isMn=laps[i]===minV, isMx=laps[i]===maxV&&laps.length>1;
-                var f=isMn?'#4ade80':isMx?'#f87171':color;
-                return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(isMn||isMx?5:3.5)+'" fill="'+f+'" stroke="#0a0820" stroke-width="1.5"/>'+
-                    '<text x="'+p.x.toFixed(1)+'" y="'+(H-1)+'" text-anchor="middle" font-size="7" fill="#444">#'+(i+1)+'</text>';
+                var mn=laps[i]===minV, mx=laps[i]===maxV&&laps.length>1;
+                return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(mn||mx?5:3.5)+'" fill="'+(mn?'#4ade80':mx?'#f87171':col)+'" stroke="#0a0820" stroke-width="1.5"/>'+
+                       '<text x="'+p.x.toFixed(1)+'" y="'+(H-1)+'" text-anchor="middle" font-size="7" fill="#555">#'+(i+1)+'</text>';
             }).join('')+
             '</svg>';
     }
 
-    // Lista de tomas
-    var lapsHtml = '';
+    // 5. Lista de tomas (más reciente primero)
+    var lapsHtml = '<div class="csd-laps-title">🏁 Tomas de la sesión</div>';
     if (laps.length) {
         var minL=Math.min.apply(null,laps), maxL=Math.max.apply(null,laps);
-        lapsHtml = laps.map(function(t,i){
+        lapsHtml += laps.slice().reverse().map(function(t,ri){
+            var i = laps.length-1-ri;
             var diff=t-avg;
-            var cls=t===minL&&laps.length>1?'hab-crono-lap-best':t===maxL&&laps.length>1?'hab-crono-lap-worst':'';
-            var badge=t===minL&&laps.length>1?' 🏆':t===maxL&&laps.length>1?' 🐢':'';
-            var diffStr=diff>=0?'+'+fmtMsShort(Math.abs(diff)):'-'+fmtMsShort(Math.abs(diff));
+            var isBest=t===minL&&laps.length>1, isWorst=t===maxL&&laps.length>1;
+            var cls=isBest?'hab-crono-lap-best':isWorst?'hab-crono-lap-worst':'';
+            var badge=isBest?' 🏆':isWorst?' 🐢':'';
+            var diffStr=(diff>=0?'+':'-')+fmtMsShort(Math.abs(diff));
             return '<div class="hab-crono-lap-item '+cls+'">'+
                 '<span class="hab-crono-lap-num">#'+(i+1)+badge+'</span>'+
                 '<span class="hab-crono-lap-time">'+fmtMs(t)+'</span>'+
-                '<span class="hab-crono-lap-avg" style="color:'+(diff>0?'#f87171':diff<0?'#4ade80':'#888')+'">'+
-                (laps.length>1?diffStr+' vs prom.':'Única toma')+'</span>'+
+                (laps.length>1?'<span class="hab-crono-lap-avg" style="color:'+(diff>0?'#f87171':'#4ade80')+'">'+diffStr+' vs prom.</span>':'<span class="hab-crono-lap-avg" style="color:#888">Única toma</span>')+
                 '</div>';
-        }).reverse().join('');
+        }).join('');
+    } else {
+        lapsHtml += '<div style="color:#555;font-size:0.65rem;text-align:center;padding:8px;">Sin datos de tomas individuales guardados</div>';
     }
 
+    // 6. Inyectar en el DOM — buscar el div o crearlo si no existe
     var detail = document.getElementById('cronoSessionDetail');
-    if (!detail) return;
+    if (!detail) {
+        // Crearlo dinámicamente junto al habCronoHistory
+        var histEl = document.getElementById('habCronoHistory');
+        if (!histEl) { console.warn('CRONO: #habCronoHistory no encontrado'); return; }
+        detail = document.createElement('div');
+        detail.id = 'cronoSessionDetail';
+        histEl.parentNode.insertBefore(detail, histEl.nextSibling);
+    }
+
     detail.innerHTML =
         '<div class="csd-header">'+
             '<div>'+
-                '<div class="csd-title">📊 Detalle de sesión</div>'+
-                '<div class="csd-date">'+s.date+' · '+s.count+' tomas</div>'+
+                '<div class="csd-title">📊 Detalle · '+s.date+'</div>'+
+                '<div class="csd-date">'+s.count+' toma'+(s.count!==1?'s':'')+' registrada'+(s.count!==1?'s':'')+'</div>'+
             '</div>'+
             '<button class="csd-close" onclick="closeCronoSessionDetail()">✕</button>'+
         '</div>'+
-        '<div class="csd-stats">'+
-            '<div class="csd-stat"><div class="csd-stat-val">'+s.count+'</div><div class="csd-stat-lbl">Tomas</div></div>'+
-            '<div class="csd-stat"><div class="csd-stat-val" style="color:#a78bfa;">'+fmtMsShort(Math.round(avg))+'</div><div class="csd-stat-lbl">Promedio</div></div>'+
-            '<div class="csd-stat"><div class="csd-stat-val" style="color:#4ade80;">'+fmtMsShort(best)+'</div><div class="csd-stat-lbl">Mejor</div></div>'+
-        '</div>'+
-        (laps.length >= 2 ? chartHtml : '')+
-        '<div class="csd-laps-title">🏁 Tomas</div>'+
+        statsHtml+
+        chartHtml+
         lapsHtml;
 
     detail.style.display = 'block';
-    // Scroll suave al detalle
     setTimeout(function(){
-        detail.scrollIntoView({behavior:'smooth', block:'nearest'});
-    }, 50);
+        detail.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }, 60);
 };
 
 window.closeCronoSessionDetail = function() {
