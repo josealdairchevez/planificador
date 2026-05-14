@@ -5505,6 +5505,27 @@
             border:1px solid rgba(255,255,255,0.06);margin-bottom:4px;font-size:0.68rem;
         }
 
+        /* ── BOTONES DE SESIÓN HISTÓRICA ────────────────────── */
+        .crono-sess-btn {
+            display:flex;align-items:center;gap:8px;width:100%;
+            padding:8px 12px;margin-bottom:5px;
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(167,139,250,0.2);
+            border-radius:10px;cursor:pointer;
+            font-size:0.68rem;color:#fff;text-align:left;
+            transition:background 0.2s,border-color 0.2s;
+        }
+        .crono-sess-btn:active,
+        .crono-sess-btn:hover {
+            background:rgba(167,139,250,0.15);
+            border-color:rgba(167,139,250,0.5);
+        }
+        .csb-date  { color:#555;min-width:72px;flex-shrink:0; }
+        .csb-avg   { color:#fff;font-weight:700; }
+        .csb-best  { color:#4ade80;margin-left:auto; }
+        .csb-count { color:#888;margin-left:8px;flex-shrink:0; }
+        .csb-arrow { color:#a78bfa;margin-left:6px;font-size:1rem;flex-shrink:0; }
+
         /* ── DETALLE DE SESIÓN INLINE ────────────────────────── */
         #cronoSessionDetail {
             margin-top:10px;
@@ -18330,73 +18351,65 @@ function habCronoRenderHistory() {
     var pts2  = avgs.map(function(v, i) {
         return {
             x: P2 + (i / Math.max(avgs.length-1,1)) * (W2-P2*2),
-            y: H2 - P2 - ((v-minA)/range)*(H2-P2*2),
-            v: v,
-            s: sessions[i]
+            y: H2 - P2 - ((v-minA)/range)*(H2-P2*2)
         };
     });
     var line2 = pts2.map(function(p,i){ return (i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1); }).join(' ');
     var area2 = 'M '+pts2[0].x+' '+H2+' '+pts2.map(function(p){ return 'L '+p.x.toFixed(1)+' '+p.y.toFixed(1); }).join(' ')+' L '+pts2[pts2.length-1].x+' '+H2+' Z';
     var gId2  = 'crhist_' + Date.now();
-
     var trend = avgs.length > 1 ? (avgs[avgs.length-1] < avgs[0] ? '📈 Mejorando' : '📉 Más lento') : '';
 
-    // Puntos interactivos del historial
-    var hId = _cronoState.habitId;
+    // Puntos del gráfico (sin interacción para evitar conflictos)
     var dotsHtml = pts2.map(function(p, i) {
         var isMin = avgs[i] === minA && avgs.length > 1;
         var isMax = avgs[i] === maxA && avgs.length > 1;
         var fill  = isMin ? '#4ade80' : isMax ? '#f87171' : color;
-        var label = 'Sesión ' + sessions[i].date;
-        var r = isMin || isMax ? 5 : 4;
-        return '<circle class="crono-chart-dot" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="'+fill+'" stroke="#1a1a2e" stroke-width="1.5"' +
-            ' onmouseenter="showCronoTooltip(event,\''+fmtMsShort(avgs[i])+' prom.\',\''+label+'\')"' +
-            ' ontouchstart="showCronoTooltip(event,\''+fmtMsShort(avgs[i])+' prom.\',\''+label+'\')"' +
-            ' onmouseleave="hideCronoTooltip()"' +
-            ' ontouchend="hideCronoTooltipDelay()"' +
-            ' data-sidx="'+i+'" data-hid="'+hId+'"' +
-            '/>';
+        return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4" fill="'+fill+'" stroke="#1a1a2e" stroke-width="1.5"/>';
     }).join('');
 
+    // Guardar sesiones para acceso directo desde los botones
+    window._cronoSessions = sessions;
+    window._cronoHid      = _cronoState.habitId;
 
-    // Guardar habitId en global — el onclick solo usa índice numérico
-    window._cronoCurrentHid = hId;
-
-    // Recuadros del historial
+    // Botones de sesión — elemento <button> nativo, sin onclick inline complejo
     var itemsHtml = sessions.slice().reverse().slice(0,5).map(function(s, ri) {
         var realIdx = sessions.length - 1 - ri;
-        return '<div class="hab-crono-history-item" style="cursor:pointer;" onclick="_cronoOpenSess(' + realIdx + ')">' +
-            '<span style="color:#555;min-width:70px;pointer-events:none;">' + s.date + '</span>' +
-            '<span style="color:#fff;font-weight:600;pointer-events:none;">' + fmtMsShort(s.avg) + ' prom.</span>' +
-            '<span style="color:#4ade80;margin-left:auto;pointer-events:none;">' + fmtMsShort(s.best) + ' mejor</span>' +
-            '<span style="color:#888;margin-left:8px;pointer-events:none;">' + s.count + ' tomas</span>' +
-            '<span style="pointer-events:none;color:#a78bfa;font-size:0.9rem;margin-left:6px;">›</span>' +
-            '</div>';
+        return '<button class="crono-sess-btn" data-idx="'+realIdx+'">' +
+            '<span class="csb-date">'+s.date+'</span>' +
+            '<span class="csb-avg">'+fmtMsShort(s.avg)+' prom.</span>' +
+            '<span class="csb-best">'+fmtMsShort(s.best)+' mejor</span>' +
+            '<span class="csb-count">'+s.count+' tomas</span>' +
+            '<span class="csb-arrow">›</span>' +
+        '</button>';
     }).join('');
 
     el.innerHTML =
         '<div class="hab-crono-chart-wrap" style="margin-top:10px;">' +
             '<div class="hab-crono-chart-title">' +
-                '<span>🗓 Historial de sesiones (' + sessions.length + ')</span>' +
-                '<span style="color:' + (trend.includes('Mejorando')?'#4ade80':'#f87171') + ';">' + trend + '</span>' +
+                '<span>🗓 Historial de sesiones ('+sessions.length+')</span>' +
+                '<span style="color:'+(trend.includes('Mejorando')?'#4ade80':'#f87171')+';">'+trend+'</span>' +
             '</div>' +
             (avgs.length >= 2 ?
-            '<svg class="hab-crono-chart-svg" viewBox="0 0 ' + W2 + ' ' + H2 + '" preserveAspectRatio="none" style="overflow:visible;">' +
-                '<defs><linearGradient id="' + gId2 + '" x1="0" y1="0" x2="0" y2="1">' +
-                    '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.25"/>' +
-                    '<stop offset="100%" stop-color="' + color + '" stop-opacity="0.02"/>' +
+            '<svg class="hab-crono-chart-svg" viewBox="0 0 '+W2+' '+H2+'" preserveAspectRatio="none">' +
+                '<defs><linearGradient id="'+gId2+'" x1="0" y1="0" x2="0" y2="1">' +
+                    '<stop offset="0%" stop-color="'+color+'" stop-opacity="0.25"/>' +
+                    '<stop offset="100%" stop-color="'+color+'" stop-opacity="0.02"/>' +
                 '</linearGradient></defs>' +
-                '<path d="' + area2 + '" fill="url(#' + gId2 + ')"/>' +
-                '<path d="' + line2 + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+                '<path d="'+area2+'" fill="url(#'+gId2+')"/>' +
+                '<path d="'+line2+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
                 dotsHtml +
             '</svg>' : '') +
-            '<div style="margin-top:8px;">' + itemsHtml + '</div>' +
+            '<div id="cronoSessBtns" style="margin-top:8px;">'+itemsHtml+'</div>' +
         '</div>';
 
-    // Guardar referencia a las sesiones para el modal
-    window._cronoHistSessions = sessions;
-    window._cronoHistSessions._habitId = _cronoState.habitId;
-    window._cronoHistColor    = color;
+    // Adjuntar eventos a los botones DESPUÉS de insertarlos en el DOM
+    var btns = el.querySelectorAll('.crono-sess-btn');
+    btns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var idx = parseInt(btn.getAttribute('data-idx'), 10);
+            _cronoShowDetail(idx);
+        });
+    });
 }
 
 // ── Guardar sesión al cambiar de hábito o al reset final ──
@@ -18413,47 +18426,6 @@ window.refreshCronoHabitList = function() {
     if (_cronoState.habitId) habCronoRenderHistory();
 };
 
-})();
-
-// ── Event listener delegado para recuadros de sesión ─────
-(function() {
-    function handleCronoHistClick(e) {
-        var el = e.target;
-        while (el && !el.classList.contains('hab-crono-history-item')) {
-            el = el.parentElement;
-        }
-        if (!el) return;
-        var sidx = el.getAttribute('data-sidx');
-        var hid  = el.getAttribute('data-hid');
-        if (sidx === null || !hid) return;
-        e.preventDefault();
-        e.stopPropagation();
-        window.openCronoSessionModal(parseInt(sidx, 10), hid);
-    }
-
-    function attachListener() {
-        var hist = document.getElementById('habCronoHistory');
-        if (!hist) { setTimeout(attachListener, 400); return; }
-        // Remover listeners previos para evitar duplicados
-        hist.removeEventListener('click',    handleCronoHistClick, true);
-        hist.removeEventListener('touchend', handleCronoHistClick, true);
-        hist.addEventListener('click',    handleCronoHistClick, true);
-        hist.addEventListener('touchend', handleCronoHistClick, true);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', attachListener);
-    } else {
-        attachListener();
-    }
-    // También re-adjuntar cuando se renderice el historial
-    var _origRender = window.habCronoRenderHistory;
-    if (typeof _origRender === 'function') {
-        window.habCronoRenderHistory = function() {
-            _origRender.apply(this, arguments);
-            attachListener();
-        };
-    }
 })();
 
 // ── Selectores form ───────────────────────────────────────────
@@ -24465,17 +24437,93 @@ window.hideCronoTooltipDelay = function() {
 };
 
 // ══════════════════════════════════════════════════════════
-// CRONO: Función puente global para onclick inline
-// ══════════════════════════════════════════════════════════
-window._cronoOpenSess = function(idx) {
-    var hId = window._cronoCurrentHid || _cronoState.habitId || '';
-    window.openCronoSessionModal(parseInt(idx, 10), hId);
-};
-
-// ══════════════════════════════════════════════════════════
 // CRONO: Detalle de sesión histórica — renderizado inline
 // ══════════════════════════════════════════════════════════
-window.openCronoSessionModal = function(sessionIdx, habitId) {
+window._cronoShowDetail = function(idx) {
+    var sessions = window._cronoSessions || [];
+    var hId      = window._cronoHid || _cronoState.habitId || '';
+    if (!sessions.length && hId) {
+        var h = {};
+        try { h = JSON.parse(localStorage.getItem('jch_crono_history_v1')||'{}'); } catch(e){}
+        sessions = h[hId] || [];
+    }
+    var s = sessions[idx];
+    if (!s) return;
+
+    var laps  = Array.isArray(s.laps) ? s.laps : [];
+    var avg   = laps.length ? laps.reduce(function(a,b){return a+b;},0)/laps.length : (s.avg||0);
+    var best  = laps.length ? Math.min.apply(null,laps) : (s.best||0);
+    var worst = laps.length > 1 ? Math.max.apply(null,laps) : 0;
+    var col   = '#a78bfa';
+
+    var statsHtml =
+        '<div class="csd-stats">'+
+            '<div class="csd-stat"><div class="csd-stat-val">'+s.count+'</div><div class="csd-stat-lbl">Tomas</div></div>'+
+            '<div class="csd-stat"><div class="csd-stat-val" style="color:#a78bfa;">'+fmtMsShort(Math.round(avg))+'</div><div class="csd-stat-lbl">Promedio</div></div>'+
+            '<div class="csd-stat"><div class="csd-stat-val" style="color:#4ade80;">'+fmtMsShort(best)+'</div><div class="csd-stat-lbl">Mejor</div></div>'+
+            (worst?'<div class="csd-stat"><div class="csd-stat-val" style="color:#f87171;">'+fmtMsShort(worst)+'</div><div class="csd-stat-lbl">Más lenta</div></div>':'')+
+        '</div>';
+
+    var chartHtml = '';
+    if (laps.length >= 2) {
+        var W=280,H=80,PAD=14;
+        var minV=Math.min.apply(null,laps),maxV=Math.max.apply(null,laps),rng=maxV-minV||1;
+        var pts=laps.map(function(v,i){ return {x:PAD+(i/(laps.length-1))*(W-PAD*2),y:H-PAD-((v-minV)/rng)*(H-PAD*2)}; });
+        var area='M '+pts[0].x+' '+H+pts.map(function(p){return ' L '+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join('')+' L '+pts[pts.length-1].x+' '+H+' Z';
+        var line=pts.map(function(p,i){return (i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ');
+        var avgY=H-PAD-((avg-minV)/rng)*(H-PAD*2);
+        var gId='csdg'+Date.now();
+        chartHtml='<svg class="csd-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+            '<defs><linearGradient id="'+gId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+col+'" stop-opacity="0.3"/><stop offset="100%" stop-color="'+col+'" stop-opacity="0.02"/></linearGradient></defs>'+
+            '<path d="'+area+'" fill="url(#'+gId+')"/>'+
+            '<line x1="'+PAD+'" y1="'+avgY.toFixed(1)+'" x2="'+(W-PAD)+'" y2="'+avgY.toFixed(1)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4,3"/>'+
+            '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
+            pts.map(function(p,i){
+                var mn=laps[i]===minV,mx=laps[i]===maxV&&laps.length>1;
+                return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(mn||mx?5:3.5)+'" fill="'+(mn?'#4ade80':mx?'#f87171':col)+'" stroke="#0a0820" stroke-width="1.5"/>'+
+                       '<text x="'+p.x.toFixed(1)+'" y="'+(H-1)+'" text-anchor="middle" font-size="7" fill="#555">#'+(i+1)+'</text>';
+            }).join('')+'</svg>';
+    }
+
+    var lapsHtml = '<div class="csd-laps-title">🏁 Tomas de la sesión</div>';
+    if (laps.length) {
+        var minL=Math.min.apply(null,laps),maxL=Math.max.apply(null,laps);
+        lapsHtml += laps.slice().reverse().map(function(t,ri){
+            var i=laps.length-1-ri, diff=t-avg;
+            var isBest=t===minL&&laps.length>1, isWorst=t===maxL&&laps.length>1;
+            return '<div class="hab-crono-lap-item '+(isBest?'hab-crono-lap-best':isWorst?'hab-crono-lap-worst':'')+'">'+
+                '<span class="hab-crono-lap-num">#'+(i+1)+(isBest?' 🏆':isWorst?' 🐢':'')+'</span>'+
+                '<span class="hab-crono-lap-time">'+fmtMs(t)+'</span>'+
+                '<span class="hab-crono-lap-avg" style="color:'+(diff>0?'#f87171':'#4ade80')+'">'+(laps.length>1?(diff>=0?'+':'-')+fmtMsShort(Math.abs(diff))+' vs prom.':'Única toma')+'</span>'+
+                '</div>';
+        }).join('');
+    } else {
+        lapsHtml += '<div style="color:#555;font-size:0.65rem;text-align:center;padding:8px;">Sin datos de tomas</div>';
+    }
+
+    var detail = document.getElementById('cronoSessionDetail');
+    if (!detail) {
+        detail = document.createElement('div');
+        detail.id = 'cronoSessionDetail';
+        var histEl = document.getElementById('habCronoHistory');
+        if (!histEl) return;
+        histEl.parentNode.insertBefore(detail, histEl.nextSibling);
+    }
+    detail.style.cssText = 'display:block;margin-top:10px;background:linear-gradient(160deg,rgba(14,8,30,0.98),rgba(8,18,40,0.98));border:1.5px solid rgba(167,139,250,0.4);border-radius:14px;padding:14px 12px 16px;';
+    detail.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'+
+            '<div><div style="font-size:0.68rem;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:1.5px;">📊 Sesión · '+s.date+'</div>'+
+            '<div style="font-size:0.58rem;color:#555;margin-top:1px;">'+s.count+' toma'+(s.count!==1?'s':'')+' registrada'+(s.count!==1?'s':'')+'</div></div>'+
+            '<button onclick="var d=document.getElementById(\'cronoSessionDetail\');if(d){d.style.display=\'none\';}" style="background:rgba(255,255,255,0.06);border:none;color:#666;border-radius:50%;width:26px;height:26px;font-size:0.85rem;cursor:pointer;">✕</button>'+
+        '</div>'+
+        statsHtml+chartHtml+lapsHtml;
+
+    setTimeout(function(){ detail.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 80);
+};
+
+</script>
+
+</html>
     if (typeof hideCronoTooltip === 'function') hideCronoTooltip();
 
     // 1. Obtener habitId — desde argumento, dataset o estado actual
@@ -24569,38 +24617,6 @@ window.openCronoSessionModal = function(sessionIdx, habitId) {
 
     // 6. Inyectar en el DOM — buscar el div o crearlo si no existe
     var detail = document.getElementById('cronoSessionDetail');
-    if (!detail) {
-        // Crearlo dinámicamente junto al habCronoHistory
-        var histEl = document.getElementById('habCronoHistory');
-        if (!histEl) { console.warn('CRONO: #habCronoHistory no encontrado'); return; }
-        detail = document.createElement('div');
-        detail.id = 'cronoSessionDetail';
-        histEl.parentNode.insertBefore(detail, histEl.nextSibling);
-    }
-
-    detail.innerHTML =
-        '<div class="csd-header">'+
-            '<div>'+
-                '<div class="csd-title">📊 Detalle · '+s.date+'</div>'+
-                '<div class="csd-date">'+s.count+' toma'+(s.count!==1?'s':'')+' registrada'+(s.count!==1?'s':'')+'</div>'+
-            '</div>'+
-            '<button class="csd-close" onclick="closeCronoSessionDetail()">✕</button>'+
-        '</div>'+
-        statsHtml+
-        chartHtml+
-        lapsHtml;
-
-    detail.style.display = 'block';
-    setTimeout(function(){
-        detail.scrollIntoView({ behavior:'smooth', block:'nearest' });
-    }, 60);
-};
-
-window.closeCronoSessionDetail = function() {
-    var d = document.getElementById('cronoSessionDetail');
-    if (d) { d.style.display='none'; d.innerHTML=''; }
-};
-
 
 </script>
 
