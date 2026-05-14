@@ -18358,15 +18358,19 @@ function habCronoRenderHistory() {
             '/>';
     }).join('');
 
-    // Recuadros del historial — solo data attributes, sin onclick inline
+
+    // Guardar habitId en global — el onclick solo usa índice numérico
+    window._cronoCurrentHid = hId;
+
+    // Recuadros del historial
     var itemsHtml = sessions.slice().reverse().slice(0,5).map(function(s, ri) {
         var realIdx = sessions.length - 1 - ri;
-        return '<div class="hab-crono-history-item" data-sidx="'+realIdx+'" data-hid="'+hId+'">' +
+        return '<div class="hab-crono-history-item" style="cursor:pointer;" onclick="_cronoOpenSess(' + realIdx + ')">' +
             '<span style="color:#555;min-width:70px;pointer-events:none;">' + s.date + '</span>' +
             '<span style="color:#fff;font-weight:600;pointer-events:none;">' + fmtMsShort(s.avg) + ' prom.</span>' +
             '<span style="color:#4ade80;margin-left:auto;pointer-events:none;">' + fmtMsShort(s.best) + ' mejor</span>' +
             '<span style="color:#888;margin-left:8px;pointer-events:none;">' + s.count + ' tomas</span>' +
-            '<span class="hi-arrow" style="pointer-events:none;">›</span>' +
+            '<span style="pointer-events:none;color:#a78bfa;font-size:0.9rem;margin-left:6px;">›</span>' +
             '</div>';
     }).join('');
 
@@ -24458,6 +24462,14 @@ window.hideCronoTooltip = function() {
 
 window.hideCronoTooltipDelay = function() {
     _cronoTooltipTimer = setTimeout(window.hideCronoTooltip, 1200);
+};
+
+// ══════════════════════════════════════════════════════════
+// CRONO: Función puente global para onclick inline
+// ══════════════════════════════════════════════════════════
+window._cronoOpenSess = function(idx) {
+    var hId = window._cronoCurrentHid || _cronoState.habitId || '';
+    window.openCronoSessionModal(parseInt(idx, 10), hId);
 };
 
 // ══════════════════════════════════════════════════════════
