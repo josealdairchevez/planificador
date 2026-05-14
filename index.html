@@ -18354,19 +18354,19 @@ function habCronoRenderHistory() {
             ' ontouchstart="showCronoTooltip(event,\''+fmtMsShort(avgs[i])+' prom.\',\''+label+'\')"' +
             ' onmouseleave="hideCronoTooltip()"' +
             ' ontouchend="hideCronoTooltipDelay()"' +
-            ' data-sidx="'+i+'" data-hid="'+hId+'" onclick="openCronoSessionModal(+this.dataset.sidx, this.dataset.hid)"' +
+            ' data-sidx="'+i+'" data-hid="'+hId+'"' +
             '/>';
     }).join('');
 
-    // Recuadros del historial (clickeables) — data attributes para evitar problemas de escape
+    // Recuadros del historial — solo data attributes, sin onclick inline
     var itemsHtml = sessions.slice().reverse().slice(0,5).map(function(s, ri) {
         var realIdx = sessions.length - 1 - ri;
-        return '<div class="hab-crono-history-item" data-sidx="'+realIdx+'" data-hid="'+hId+'" onclick="openCronoSessionModal(+this.dataset.sidx, this.dataset.hid)">' +
-            '<span style="color:#555;min-width:70px;">' + s.date + '</span>' +
-            '<span style="color:#fff;font-weight:600;">' + fmtMsShort(s.avg) + ' prom.</span>' +
-            '<span style="color:#4ade80;margin-left:auto;">' + fmtMsShort(s.best) + ' mejor</span>' +
-            '<span style="color:#888;margin-left:8px;">' + s.count + ' tomas</span>' +
-            '<span class="hi-arrow">›</span>' +
+        return '<div class="hab-crono-history-item" data-sidx="'+realIdx+'" data-hid="'+hId+'">' +
+            '<span style="color:#555;min-width:70px;pointer-events:none;">' + s.date + '</span>' +
+            '<span style="color:#fff;font-weight:600;pointer-events:none;">' + fmtMsShort(s.avg) + ' prom.</span>' +
+            '<span style="color:#4ade80;margin-left:auto;pointer-events:none;">' + fmtMsShort(s.best) + ' mejor</span>' +
+            '<span style="color:#888;margin-left:8px;pointer-events:none;">' + s.count + ' tomas</span>' +
+            '<span class="hi-arrow" style="pointer-events:none;">›</span>' +
             '</div>';
     }).join('');
 
@@ -18409,6 +18409,47 @@ window.refreshCronoHabitList = function() {
     if (_cronoState.habitId) habCronoRenderHistory();
 };
 
+})();
+
+// ── Event listener delegado para recuadros de sesión ─────
+(function() {
+    function handleCronoHistClick(e) {
+        var el = e.target;
+        while (el && !el.classList.contains('hab-crono-history-item')) {
+            el = el.parentElement;
+        }
+        if (!el) return;
+        var sidx = el.getAttribute('data-sidx');
+        var hid  = el.getAttribute('data-hid');
+        if (sidx === null || !hid) return;
+        e.preventDefault();
+        e.stopPropagation();
+        window.openCronoSessionModal(parseInt(sidx, 10), hid);
+    }
+
+    function attachListener() {
+        var hist = document.getElementById('habCronoHistory');
+        if (!hist) { setTimeout(attachListener, 400); return; }
+        // Remover listeners previos para evitar duplicados
+        hist.removeEventListener('click',    handleCronoHistClick, true);
+        hist.removeEventListener('touchend', handleCronoHistClick, true);
+        hist.addEventListener('click',    handleCronoHistClick, true);
+        hist.addEventListener('touchend', handleCronoHistClick, true);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachListener);
+    } else {
+        attachListener();
+    }
+    // También re-adjuntar cuando se renderice el historial
+    var _origRender = window.habCronoRenderHistory;
+    if (typeof _origRender === 'function') {
+        window.habCronoRenderHistory = function() {
+            _origRender.apply(this, arguments);
+            attachListener();
+        };
+    }
 })();
 
 // ── Selectores form ───────────────────────────────────────────
