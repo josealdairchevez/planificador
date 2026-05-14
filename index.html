@@ -18407,7 +18407,9 @@ function habCronoRenderHistory() {
     btns.forEach(function(btn) {
         btn.addEventListener('click', function() {
             var idx = parseInt(btn.getAttribute('data-idx'), 10);
-            _cronoShowDetail(idx);
+            if (typeof window._cronoShowDetail === 'function') {
+                window._cronoShowDetail(idx);
+            }
         });
     });
 }
@@ -24520,103 +24522,6 @@ window._cronoShowDetail = function(idx) {
 
     setTimeout(function(){ detail.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 80);
 };
-
-</script>
-
-</html>
-    if (typeof hideCronoTooltip === 'function') hideCronoTooltip();
-
-    // 1. Obtener habitId — desde argumento, dataset o estado actual
-    var hId = String(habitId || _cronoState.habitId || '').trim();
-    if (!hId) { console.warn('CRONO: habitId vacío'); return; }
-
-    // 2. Leer sesiones desde localStorage
-    var hist = {};
-    try { hist = JSON.parse(localStorage.getItem('jch_crono_history_v1') || '{}'); } catch(e) {}
-    var sessions = hist[hId] || [];
-    var idx = parseInt(sessionIdx, 10);
-    if (!sessions[idx]) { console.warn('CRONO: sesión no encontrada idx='+idx+' hId='+hId); return; }
-
-    var s    = sessions[idx];
-    var laps = Array.isArray(s.laps) ? s.laps : [];
-    var avg  = laps.length ? laps.reduce(function(a,b){return a+b;},0)/laps.length : (s.avg||0);
-    var best = laps.length ? Math.min.apply(null,laps) : (s.best||0);
-    var worst= laps.length ? Math.max.apply(null,laps) : 0;
-    var col  = '#a78bfa';
-
-    // 3. Mini stats
-    var statsHtml =
-        '<div class="csd-stats">'+
-            '<div class="csd-stat">'+
-                '<div class="csd-stat-val">'+s.count+'</div>'+
-                '<div class="csd-stat-lbl">Tomas</div>'+
-            '</div>'+
-            '<div class="csd-stat">'+
-                '<div class="csd-stat-val" style="color:#a78bfa;">'+fmtMsShort(Math.round(avg))+'</div>'+
-                '<div class="csd-stat-lbl">Promedio</div>'+
-            '</div>'+
-            '<div class="csd-stat">'+
-                '<div class="csd-stat-val" style="color:#4ade80;">'+fmtMsShort(best)+'</div>'+
-                '<div class="csd-stat-lbl">Mejor</div>'+
-            '</div>'+
-            (worst && laps.length>1 ?
-            '<div class="csd-stat">'+
-                '<div class="csd-stat-val" style="color:#f87171;">'+fmtMsShort(worst)+'</div>'+
-                '<div class="csd-stat-lbl">Más lenta</div>'+
-            '</div>' : '')+
-        '</div>';
-
-    // 4. Gráfico SVG
-    var chartHtml = '';
-    if (laps.length >= 2) {
-        var W=280,H=80,PAD=14;
-        var minV=Math.min.apply(null,laps), maxV=Math.max.apply(null,laps), rng=maxV-minV||1;
-        var pts=laps.map(function(v,i){
-            return { x:PAD+(i/(laps.length-1))*(W-PAD*2), y:H-PAD-((v-minV)/rng)*(H-PAD*2) };
-        });
-        var area='M '+pts[0].x+' '+H+pts.map(function(p){return ' L '+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join('')+' L '+pts[pts.length-1].x+' '+H+' Z';
-        var line=pts.map(function(p,i){return (i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ');
-        var avgY=H-PAD-((avg-minV)/rng)*(H-PAD*2);
-        var gId='csdg'+Date.now();
-        chartHtml='<svg class="csd-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
-            '<defs><linearGradient id="'+gId+'" x1="0" y1="0" x2="0" y2="1">'+
-            '<stop offset="0%" stop-color="'+col+'" stop-opacity="0.3"/>'+
-            '<stop offset="100%" stop-color="'+col+'" stop-opacity="0.02"/>'+
-            '</linearGradient></defs>'+
-            '<path d="'+area+'" fill="url(#'+gId+')"/>'+
-            '<line x1="'+PAD+'" y1="'+avgY.toFixed(1)+'" x2="'+(W-PAD)+'" y2="'+avgY.toFixed(1)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4,3"/>'+
-            '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
-            pts.map(function(p,i){
-                var mn=laps[i]===minV, mx=laps[i]===maxV&&laps.length>1;
-                return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(mn||mx?5:3.5)+'" fill="'+(mn?'#4ade80':mx?'#f87171':col)+'" stroke="#0a0820" stroke-width="1.5"/>'+
-                       '<text x="'+p.x.toFixed(1)+'" y="'+(H-1)+'" text-anchor="middle" font-size="7" fill="#555">#'+(i+1)+'</text>';
-            }).join('')+
-            '</svg>';
-    }
-
-    // 5. Lista de tomas (más reciente primero)
-    var lapsHtml = '<div class="csd-laps-title">🏁 Tomas de la sesión</div>';
-    if (laps.length) {
-        var minL=Math.min.apply(null,laps), maxL=Math.max.apply(null,laps);
-        lapsHtml += laps.slice().reverse().map(function(t,ri){
-            var i = laps.length-1-ri;
-            var diff=t-avg;
-            var isBest=t===minL&&laps.length>1, isWorst=t===maxL&&laps.length>1;
-            var cls=isBest?'hab-crono-lap-best':isWorst?'hab-crono-lap-worst':'';
-            var badge=isBest?' 🏆':isWorst?' 🐢':'';
-            var diffStr=(diff>=0?'+':'-')+fmtMsShort(Math.abs(diff));
-            return '<div class="hab-crono-lap-item '+cls+'">'+
-                '<span class="hab-crono-lap-num">#'+(i+1)+badge+'</span>'+
-                '<span class="hab-crono-lap-time">'+fmtMs(t)+'</span>'+
-                (laps.length>1?'<span class="hab-crono-lap-avg" style="color:'+(diff>0?'#f87171':'#4ade80')+'">'+diffStr+' vs prom.</span>':'<span class="hab-crono-lap-avg" style="color:#888">Única toma</span>')+
-                '</div>';
-        }).join('');
-    } else {
-        lapsHtml += '<div style="color:#555;font-size:0.65rem;text-align:center;padding:8px;">Sin datos de tomas individuales guardados</div>';
-    }
-
-    // 6. Inyectar en el DOM — buscar el div o crearlo si no existe
-    var detail = document.getElementById('cronoSessionDetail');
 
 </script>
 
