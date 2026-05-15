@@ -15479,6 +15479,8 @@ function saveToFirestore(list){
   var attempts = 0;
 
   function doSave(user){
+    // ── Inyectar uid en cada recordatorio para que el SW pueda reprogramar diariamente ──
+    snapshot = snapshot.map(function(r){ return Object.assign({}, r, { uid: user.uid }); });
     console.log('[JCH] saveToFirestore: guardando '+snapshot.length+' recordatorios para uid='+user.uid);
     firebase.firestore().collection('users').doc(user.uid)
       .set({fcm_reminders: snapshot}, {merge: true})
@@ -18420,10 +18422,26 @@ function habCronoRenderHistory() {
             '<div id="cronoSessBtns" style="margin-top:8px;">'+itemsHtml+'</div>' +
         '</div>';
 
-    // Adjuntar eventos — for loop para compatibilidad con Android WebView
+    // Adjuntar eventos con addEventListener — funciona en Android WebView y todos los browsers
     var btns = el.querySelectorAll('.crono-sess-btn');
     for (var bi = 0; bi < btns.length; bi++) {
-        btns[bi].setAttribute('onclick', '_cronoShowDetail(' + btns[bi].getAttribute('data-idx') + ')');
+        (function(btn) {
+            var idx = parseInt(btn.getAttribute('data-idx'), 10);
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (typeof window._cronoShowDetail === 'function') {
+                    window._cronoShowDetail(idx);
+                }
+            });
+            // Soporte táctil explícito para Android
+            btn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window._cronoShowDetail === 'function') {
+                    window._cronoShowDetail(idx);
+                }
+            });
+        })(btns[bi]);
     }
 }
 
@@ -24617,7 +24635,7 @@ window._cronoShowDetail = function(idx) {
         chartHtml +
         lapsHtml;
 
-    // Cerrar al hacer click en el backdrop
+    // Cerrar al hacer click/tap en el backdrop
     dlg.onclick = function(e) {
         var r = dlg.getBoundingClientRect();
         if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
@@ -24625,7 +24643,26 @@ window._cronoShowDetail = function(idx) {
         }
     };
 
-    dlg.showModal();
+    // showModal con fallback para Android WebView que no lo soporta
+    try {
+        if (typeof dlg.showModal === 'function') {
+            dlg.showModal();
+        } else {
+            // Fallback: mostrar como overlay fijo
+            dlg.setAttribute('open', '');
+            dlg.style.cssText += ';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;display:block;';
+            var overlay = document.getElementById('_cronoOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = '_cronoOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99998;';
+                overlay.onclick = function(){ dlg.removeAttribute('open'); overlay.remove(); };
+                document.body.appendChild(overlay);
+            }
+        }
+    } catch(err) {
+        dlg.setAttribute('open', '');
+    }
 };
     var sessions = window._cronoSessions || [];
     var hId      = window._cronoHid || _cronoState.habitId || '';
