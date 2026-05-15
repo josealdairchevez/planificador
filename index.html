@@ -18379,12 +18379,20 @@ function habCronoRenderHistory() {
     var gId2  = 'crhist_' + Date.now();
     var trend = avgs.length > 1 ? (avgs[avgs.length-1] < avgs[0] ? '📈 Mejorando' : '📉 Más lento') : '';
 
-    // Puntos del gráfico (sin interacción para evitar conflictos)
+    // Puntos del gráfico con tooltip al tocar
     var dotsHtml = pts2.map(function(p, i) {
         var isMin = avgs[i] === minA && avgs.length > 1;
         var isMax = avgs[i] === maxA && avgs.length > 1;
         var fill  = isMin ? '#4ade80' : isMax ? '#f87171' : color;
-        return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4" fill="'+fill+'" stroke="#1a1a2e" stroke-width="1.5"/>';
+        var label = isMin ? '🏆 Mejor sesión' : isMax ? '🐢 Más lenta' : 'Sesión #'+(i+1);
+        var val   = fmtMsShort(avgs[i]);
+        return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(isMin||isMax?6:5)+'" fill="'+fill+'" stroke="#1a1a2e" stroke-width="2"' +
+            ' style="cursor:pointer;"' +
+            ' onmouseenter="showCronoTooltip(event,\''+val+'\',\''+label+'\')"' +
+            ' ontouchstart="showCronoTooltip(event,\''+val+'\',\''+label+'\')"' +
+            ' onmouseleave="hideCronoTooltip()"' +
+            ' ontouchend="hideCronoTooltipDelay()"' +
+            '/>';
     }).join('');
 
     // Guardar sesiones para acceso directo desde los botones
