@@ -18314,10 +18314,10 @@ function habCronoRenderChart() {
             var fill = isMin ? '#4ade80' : isMax ? '#f87171' : color;
             var label = isMin && laps.length>1 ? '🏆 Mejor toma' : isMax && laps.length>1 ? '🐢 Más lenta' : 'Toma #'+(i+1);
             return '<circle class="crono-chart-dot" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '" fill="' + fill + '" stroke="#1a1a2e" stroke-width="1.5"' +
-                ' onmouseenter="showCronoTooltip(event,\'' + fmtMs(laps[i]) + '\',\'' + label + '\')"' +
-                ' ontouchstart="showCronoTooltip(event,\'' + fmtMs(laps[i]) + '\',\'' + label + '\')"' +
-                ' onmouseleave="hideCronoTooltip()"' +
-                ' ontouchend="hideCronoTooltipDelay()"' +
+                ' onmouseenter="window.showCronoTooltip(event,\'' + fmtMs(laps[i]) + '\',\'' + label + '\')"' +
+                ' ontouchstart="window.showCronoTooltip(event,\'' + fmtMs(laps[i]) + '\',\'' + label + '\')"' +
+                ' onmouseleave="window.hideCronoTooltip()"' +
+                ' ontouchend="window.hideCronoTooltipDelay()"' +
                 '/>';
         }).join('') +
         // Labels eje X
@@ -24601,6 +24601,8 @@ window._cronoShowDetail = function(idx) {
     setTimeout(function(){ detail.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 80);
 };
 
+
+})();
 </script>
 
 </html>
