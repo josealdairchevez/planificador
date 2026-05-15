@@ -24567,15 +24567,9 @@ window._cronoShowDetail = function(idx) {
         lapsHtml += '<div style="color:#6b7280;font-size:0.65rem;text-align:center;padding:8px;">Sin datos de tomas</div>';
     }
 
-    // Obtener o crear el panel expandible
+    // Obtener el panel — ya existe en el HTML estático, no mover
     var detail = document.getElementById('cronoSessionDetail');
-    if (!detail) {
-        detail = document.createElement('div');
-        detail.id = 'cronoSessionDetail';
-        var histEl = document.getElementById('habCronoHistory');
-        if (!histEl) return;
-        histEl.parentNode.insertBefore(detail, histEl.nextSibling);
-    }
+    if (!detail) return;
 
     // Si ya est\u00E1 mostrando esta misma sesi\u00F3n, cerrar (toggle)
     if (detail.getAttribute('data-open-idx') === String(idx) && detail.style.display !== 'none') {
