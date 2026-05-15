@@ -18367,7 +18367,7 @@ function habCronoRenderHistory() {
     var minA  = Math.min.apply(null, avgs);
     var maxA  = Math.max.apply(null, avgs);
     var range = maxA - minA || 1;
-    var W2=300, H2=80, P2=12;
+    var W2=300, H2=95, P2=18;
     var pts2  = avgs.map(function(v, i) {
         return {
             x: P2 + (i / Math.max(avgs.length-1,1)) * (W2-P2*2),
@@ -18379,20 +18379,18 @@ function habCronoRenderHistory() {
     var gId2  = 'crhist_' + Date.now();
     var trend = avgs.length > 1 ? (avgs[avgs.length-1] < avgs[0] ? '📈 Mejorando' : '📉 Más lento') : '';
 
-    // Puntos del gráfico con tooltip al tocar
+    // Puntos con etiqueta de tiempo fija encima — sin eventos, siempre visible
     var dotsHtml = pts2.map(function(p, i) {
         var isMin = avgs[i] === minA && avgs.length > 1;
         var isMax = avgs[i] === maxA && avgs.length > 1;
         var fill  = isMin ? '#4ade80' : isMax ? '#f87171' : color;
-        var label = isMin ? '🏆 Mejor sesión' : isMax ? '🐢 Más lenta' : 'Sesión #'+(i+1);
+        var r     = isMin || isMax ? 6 : 5;
         var val   = fmtMsShort(avgs[i]);
-        return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(isMin||isMax?6:5)+'" fill="'+fill+'" stroke="#1a1a2e" stroke-width="2"' +
-            ' style="cursor:pointer;"' +
-            ' onmouseenter="showCronoTooltip(event,\''+val+'\',\''+label+'\')"' +
-            ' ontouchstart="showCronoTooltip(event,\''+val+'\',\''+label+'\')"' +
-            ' onmouseleave="hideCronoTooltip()"' +
-            ' ontouchend="hideCronoTooltipDelay()"' +
-            '/>';
+        // Etiqueta arriba del punto: alternar arriba/abajo si hay puntos muy juntos
+        var labelY = p.y - r - 5;
+        if (labelY < 8) labelY = p.y + r + 10; // si no cabe arriba, poner abajo
+        return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="'+fill+'" stroke="#1a1a2e" stroke-width="2"/>'+
+               '<text x="'+p.x.toFixed(1)+'" y="'+labelY.toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="bold" fill="'+fill+'">'+val+'</text>';
     }).join('');
 
     // Guardar sesiones para acceso directo desde los botones
