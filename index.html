@@ -18833,6 +18833,22 @@ window._hrInit = function() {
     <div class="crono-tooltip-time" id="cronoTooltipTime"></div>
     <div class="crono-tooltip-label" id="cronoTooltipLabel"></div>
 </div>
+
+<!-- Ventana emergente de detalle de sesión -->
+<dialog id="cronoDialog" style="
+    border:none;border-radius:18px;padding:0;
+    background:linear-gradient(160deg,#0e081e,#081228);
+    width:92vw;max-width:420px;max-height:85vh;
+    overflow-y:auto;outline:none;
+    box-shadow:0 20px 60px rgba(0,0,0,0.9);
+">
+    <div id="cronoDialogBody" style="padding:18px 14px 24px;"></div>
+</dialog>
+<style>
+    dialog::backdrop { background:rgba(0,0,0,0.75); }
+    dialog::-webkit-scrollbar { width:4px; }
+    dialog::-webkit-scrollbar-thumb { background:#a78bfa;border-radius:4px; }
+</style>
 </body>
 
 <script>
@@ -24439,9 +24455,118 @@ window.hideCronoTooltipDelay = function() {
 };
 
 // ══════════════════════════════════════════════════════════
-// CRONO: Detalle de sesión histórica — renderizado inline
+// CRONO: Ventana emergente de detalle de sesión
 // ══════════════════════════════════════════════════════════
 window._cronoShowDetail = function(idx) {
+    var sessions = window._cronoSessions || [];
+    var hId = window._cronoHid || _cronoState.habitId || '';
+    if (!sessions.length && hId) {
+        var h = {};
+        try { h = JSON.parse(localStorage.getItem('jch_crono_history_v1')||'{}'); } catch(e){}
+        sessions = h[hId] || [];
+    }
+    var s = sessions[idx];
+    if (!s) return;
+
+    var laps  = Array.isArray(s.laps) ? s.laps : [];
+    var avg   = laps.length ? laps.reduce(function(a,b){return a+b;},0)/laps.length : (s.avg||0);
+    var best  = laps.length ? Math.min.apply(null,laps) : (s.best||0);
+    var worst = laps.length > 1 ? Math.max.apply(null,laps) : 0;
+    var col   = '#a78bfa';
+
+    // Stats
+    var statsHtml =
+        '<div style="display:grid;grid-template-columns:repeat('+(worst?4:3)+',1fr);gap:6px;margin-bottom:14px;">'+
+            '<div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:8px 4px;text-align:center;">'+
+                '<div style="font-size:1rem;font-weight:900;color:#fff;">'+s.count+'</div>'+
+                '<div style="font-size:0.5rem;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">Tomas</div>'+
+            '</div>'+
+            '<div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:8px 4px;text-align:center;">'+
+                '<div style="font-size:1rem;font-weight:900;color:#a78bfa;">'+fmtMsShort(Math.round(avg))+'</div>'+
+                '<div style="font-size:0.5rem;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">Promedio</div>'+
+            '</div>'+
+            '<div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:8px 4px;text-align:center;">'+
+                '<div style="font-size:1rem;font-weight:900;color:#4ade80;">'+fmtMsShort(best)+'</div>'+
+                '<div style="font-size:0.5rem;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">Mejor</div>'+
+            '</div>'+
+            (worst?'<div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:8px 4px;text-align:center;">'+
+                '<div style="font-size:1rem;font-weight:900;color:#f87171;">'+fmtMsShort(worst)+'</div>'+
+                '<div style="font-size:0.5rem;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">Más lenta</div>'+
+            '</div>':'')+
+        '</div>';
+
+    // Gráfico
+    var chartHtml = '';
+    if (laps.length >= 2) {
+        var W=280,H=90,PAD=14;
+        var minV=Math.min.apply(null,laps),maxV=Math.max.apply(null,laps),rng=maxV-minV||1;
+        var pts=laps.map(function(v,i){return {x:PAD+(i/(laps.length-1))*(W-PAD*2),y:H-PAD-((v-minV)/rng)*(H-PAD*2)};});
+        var area='M '+pts[0].x+' '+H+pts.map(function(p){return ' L '+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join('')+' L '+pts[pts.length-1].x+' '+H+' Z';
+        var line=pts.map(function(p,i){return (i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' ');
+        var avgY=H-PAD-((avg-minV)/rng)*(H-PAD*2);
+        var gId='csdg'+Date.now();
+        chartHtml='<div style="margin-bottom:14px;">'+
+            '<svg width="100%" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="display:block;height:90px;">'+
+            '<defs><linearGradient id="'+gId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+col+'" stop-opacity="0.3"/><stop offset="100%" stop-color="'+col+'" stop-opacity="0.02"/></linearGradient></defs>'+
+            '<path d="'+area+'" fill="url(#'+gId+')"/>'+
+            '<line x1="'+PAD+'" y1="'+avgY.toFixed(1)+'" x2="'+(W-PAD)+'" y2="'+avgY.toFixed(1)+'" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,3"/>'+
+            '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+
+            pts.map(function(p,i){
+                var mn=laps[i]===minV,mx=laps[i]===maxV&&laps.length>1;
+                return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(mn||mx?6:4)+'" fill="'+(mn?'#4ade80':mx?'#f87171':col)+'" stroke="#0a0820" stroke-width="2"/>'+
+                       '<text x="'+p.x.toFixed(1)+'" y="'+(H-2)+'" text-anchor="middle" font-size="8" fill="#666">#'+(i+1)+'</text>';
+            }).join('')+
+            '</svg></div>';
+    }
+
+    // Lista de tomas
+    var lapsHtml = '<div style="font-size:0.6rem;font-weight:900;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🏁 Tomas</div>';
+    if (laps.length) {
+        var minL=Math.min.apply(null,laps),maxL=Math.max.apply(null,laps);
+        lapsHtml += laps.slice().reverse().map(function(t,ri){
+            var i=laps.length-1-ri,diff=t-avg;
+            var isBest=t===minL&&laps.length>1,isWorst=t===maxL&&laps.length>1;
+            var bg=isBest?'rgba(74,222,128,0.08)':isWorst?'rgba(248,113,113,0.08)':'rgba(255,255,255,0.03)';
+            var border=isBest?'rgba(74,222,128,0.3)':isWorst?'rgba(248,113,113,0.3)':'rgba(255,255,255,0.06)';
+            var badge=isBest?' 🏆':isWorst?' 🐢':'';
+            var diffStr=(diff>=0?'+':'-')+fmtMsShort(Math.abs(diff));
+            return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:4px;background:'+bg+';border:1px solid '+border+';border-radius:8px;">'+
+                '<span style="font-size:0.65rem;font-weight:900;color:#a78bfa;min-width:28px;">#'+(i+1)+badge+'</span>'+
+                '<span style="font-size:0.75rem;font-weight:700;color:#fff;">'+fmtMs(t)+'</span>'+
+                (laps.length>1?'<span style="margin-left:auto;font-size:0.6rem;font-weight:700;color:'+(diff>0?'#f87171':'#4ade80')+';">'+diffStr+' vs prom.</span>':'<span style="margin-left:auto;font-size:0.6rem;color:#666;">Única toma</span>')+
+                '</div>';
+        }).join('');
+    } else {
+        lapsHtml += '<div style="color:#555;font-size:0.65rem;text-align:center;padding:10px;">Sin datos de tomas individuales</div>';
+    }
+
+    // Construir contenido del dialog
+    var dlg = document.getElementById('cronoDialog');
+    var body = document.getElementById('cronoDialogBody');
+    if (!dlg || !body) return;
+
+    body.innerHTML =
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">'+
+            '<div>'+
+                '<div style="font-size:0.72rem;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:1.5px;">📊 Sesión</div>'+
+                '<div style="font-size:0.62rem;color:#555;margin-top:3px;">'+s.date+' · '+s.count+' toma'+(s.count!==1?'s':'')+' registrada'+(s.count!==1?'s':'')+'</div>'+
+            '</div>'+
+            '<button onclick="document.getElementById(\'cronoDialog\').close()" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.1);color:#aaa;border-radius:50%;width:30px;height:30px;font-size:1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-left:10px;">✕</button>'+
+        '</div>'+
+        statsHtml+
+        chartHtml+
+        lapsHtml;
+
+    // Cerrar al hacer click en el backdrop
+    dlg.onclick = function(e) {
+        var r = dlg.getBoundingClientRect();
+        if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
+            dlg.close();
+        }
+    };
+
+    dlg.showModal();
+};
     var sessions = window._cronoSessions || [];
     var hId      = window._cronoHid || _cronoState.habitId || '';
     if (!sessions.length && hId) {
