@@ -18877,7 +18877,28 @@ window._hrInit = function() {
     dialog::-webkit-scrollbar { width:4px; }
     dialog::-webkit-scrollbar-thumb { background:#a78bfa;border-radius:4px; }
 </style>
-</body>
+<!-- BOTÓN OCULTO: forzar reprogramación de recordatorios -->
+<div id="_jchReschedBtn" style="position:fixed;bottom:80px;right:12px;z-index:99999;display:none;">
+    <button onclick="
+        window._lastHabReschedule=0;
+        if(typeof rescheduleAllReminders==='function'){
+            rescheduleAllReminders(true);
+            this.textContent='✅ Reprogramado';
+            this.style.background='#4ade80';
+            setTimeout(function(){document.getElementById('_jchReschedBtn').style.display='none';},3000);
+        } else {
+            this.textContent='❌ Error';
+        }
+    " style="background:#a78bfa;color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:0.8rem;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+        🔔 Forzar recordatorios
+    </button>
+</div>
+<script>
+// Mostrar botón solo si se accede con ?reschedule=1 en la URL
+if (window.location.search.includes('reschedule=1')) {
+    document.getElementById('_jchReschedBtn').style.display = 'block';
+}
+</script>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
