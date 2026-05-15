@@ -18391,14 +18391,14 @@ function habCronoRenderHistory() {
     window._cronoSessions = sessions;
     window._cronoHid      = _cronoState.habitId;
 
-    // Botones de sesión — elemento <button> nativo, sin onclick inline complejo
+    // Botones de sesión — onclick directo (PWA Android compatible)
     var itemsHtml = sessions.slice().reverse().slice(0,5).map(function(s, ri) {
         var realIdx = sessions.length - 1 - ri;
-        return '<button class="crono-sess-btn" data-idx="'+realIdx+'">' +
-            '<span class="csb-date">'+s.date+'</span>' +
-            '<span class="csb-avg">'+fmtMsShort(s.avg)+' prom.</span>' +
-            '<span class="csb-best">'+fmtMsShort(s.best)+' mejor</span>' +
-            '<span class="csb-count">'+s.count+' tomas</span>' +
+        return '<button class="crono-sess-btn" onclick="window._cronoShowDetail(' + realIdx + ')">' +
+            '<span class="csb-date">' + s.date + '</span>' +
+            '<span class="csb-avg">' + fmtMsShort(s.avg) + ' prom.</span>' +
+            '<span class="csb-best">' + fmtMsShort(s.best) + ' mejor</span>' +
+            '<span class="csb-count">' + s.count + ' tomas</span>' +
             '<span class="csb-arrow">›</span>' +
         '</button>';
     }).join('');
@@ -18406,43 +18406,21 @@ function habCronoRenderHistory() {
     el.innerHTML =
         '<div class="hab-crono-chart-wrap" style="margin-top:10px;">' +
             '<div class="hab-crono-chart-title">' +
-                '<span>🗓 Historial de sesiones ('+sessions.length+')</span>' +
-                '<span style="color:'+(trend.includes('Mejorando')?'#4ade80':'#f87171')+';">'+trend+'</span>' +
+                '<span>📅 Historial de sesiones (' + sessions.length + ')</span>' +
+                '<span style="color:' + (trend.includes('Mejorando') ? '#4ade80' : '#f87171') + ';">' + trend + '</span>' +
             '</div>' +
             (avgs.length >= 2 ?
-            '<svg class="hab-crono-chart-svg" viewBox="0 0 '+W2+' '+H2+'" preserveAspectRatio="none">' +
-                '<defs><linearGradient id="'+gId2+'" x1="0" y1="0" x2="0" y2="1">' +
-                    '<stop offset="0%" stop-color="'+color+'" stop-opacity="0.25"/>' +
-                    '<stop offset="100%" stop-color="'+color+'" stop-opacity="0.02"/>' +
+            '<svg class="hab-crono-chart-svg" viewBox="0 0 ' + W2 + ' ' + H2 + '" preserveAspectRatio="none">' +
+                '<defs><linearGradient id="' + gId2 + '" x1="0" y1="0" x2="0" y2="1">' +
+                    '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.25"/>' +
+                    '<stop offset="100%" stop-color="' + color + '" stop-opacity="0.02"/>' +
                 '</linearGradient></defs>' +
-                '<path d="'+area2+'" fill="url(#'+gId2+')"/>' +
-                '<path d="'+line2+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+                '<path d="' + area2 + '" fill="url(#' + gId2 + ')"/>' +
+                '<path d="' + line2 + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
                 dotsHtml +
             '</svg>' : '') +
-            '<div id="cronoSessBtns" style="margin-top:8px;">'+itemsHtml+'</div>' +
+            '<div id="cronoSessBtns" style="margin-top:8px;">' + itemsHtml + '</div>' +
         '</div>';
-
-    // Adjuntar eventos con addEventListener — funciona en Android WebView y todos los browsers
-    var btns = el.querySelectorAll('.crono-sess-btn');
-    for (var bi = 0; bi < btns.length; bi++) {
-        (function(btn) {
-            var idx = parseInt(btn.getAttribute('data-idx'), 10);
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (typeof window._cronoShowDetail === 'function') {
-                    window._cronoShowDetail(idx);
-                }
-            });
-            // Soporte táctil explícito para Android
-            btn.addEventListener('touchend', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (typeof window._cronoShowDetail === 'function') {
-                    window._cronoShowDetail(idx);
-                }
-            });
-        })(btns[bi]);
-    }
 }
 
 // ── Guardar sesión al cambiar de hábito o al reset final ──
