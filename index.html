@@ -18038,16 +18038,18 @@ window.deleteHabit = function(id) {
 
 var _cronoState = {
     running:    false,
-    startTs:    0,       // timestamp cuando empezó la toma actual
-    elapsed:    0,       // ms acumulados en la toma actual
-    laps:       [],      // ms de cada toma completada
+    startTs:    0,
+    elapsed:    0,
+    laps:       [],
     habitId:    '',
     habitName:  '',
     habitColor: '#a78bfa',
     interval:   null,
 };
+window._cronoState = _cronoState;
 
 var CRONO_KEY = 'jch_crono_history_v1';
+window.CRONO_KEY = CRONO_KEY;
 
 // ── Formato de tiempo ─────────────────────────────────────
 function fmtMs(ms) {
@@ -18064,6 +18066,9 @@ function fmtMsShort(ms) {
     if (m > 0) return m + 'm ' + String(s).padStart(2,'0') + 's';
     return s + '.' + Math.floor((ms%1000)/100) + 's';
 }
+// Exponer como globales para uso fuera del IIFE
+window.fmtMs      = fmtMs;
+window.fmtMsShort = fmtMsShort;
 
 // ── Poblar select de hábitos ──────────────────────────────
 function habCronoRefreshSelect() {
@@ -18402,16 +18407,11 @@ function habCronoRenderHistory() {
             '<div id="cronoSessBtns" style="margin-top:8px;">'+itemsHtml+'</div>' +
         '</div>';
 
-    // Adjuntar eventos a los botones DESPUÉS de insertarlos en el DOM
+    // Adjuntar eventos — for loop para compatibilidad con Android WebView
     var btns = el.querySelectorAll('.crono-sess-btn');
-    btns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var idx = parseInt(btn.getAttribute('data-idx'), 10);
-            if (typeof window._cronoShowDetail === 'function') {
-                window._cronoShowDetail(idx);
-            }
-        });
-    });
+    for (var bi = 0; bi < btns.length; bi++) {
+        btns[bi].setAttribute('onclick', '_cronoShowDetail(' + btns[bi].getAttribute('data-idx') + ')');
+    }
 }
 
 // ── Guardar sesión al cambiar de hábito o al reset final ──
