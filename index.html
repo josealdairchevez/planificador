@@ -15465,7 +15465,9 @@ function saveToFirestore(list){
   var snapshot = list.slice();
   var attempts = 0;
 
-  function doSave(user){
+function doSave(user){
+    // ── Inyectar uid en cada recordatorio para que el SW pueda reprogramar ──
+    snapshot = snapshot.map(function(r){ return Object.assign({}, r, { uid: user.uid }); });
     console.log('[JCH] saveToFirestore: guardando '+snapshot.length+' recordatorios para uid='+user.uid);
     firebase.firestore().collection('users').doc(user.uid)
       .set({fcm_reminders: snapshot}, {merge: true})
