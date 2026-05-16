@@ -18908,11 +18908,18 @@ window._hrInit = function() {
 <script>
 if (window.location.search.includes('reschedule=1')) {
     // Esperar a que todo cargue antes de mostrar el botón
+    function _tryShowReschedBtn(attempts) {
+        var fn = window.rescheduleAllReminders || (typeof rescheduleAllReminders === 'function' ? rescheduleAllReminders : null);
+        var btn = document.getElementById('_jchReschedBtn');
+        if (!btn) return;
+        if (fn || attempts <= 0) {
+            btn.style.display = 'block';
+        } else {
+            setTimeout(function(){ _tryShowReschedBtn(attempts - 1); }, 1000);
+        }
+    }
     window.addEventListener('load', function() {
-        setTimeout(function() {
-            var btn = document.getElementById('_jchReschedBtn');
-            if (btn) btn.style.display = 'block';
-        }, 3000);
+        setTimeout(function(){ _tryShowReschedBtn(10); }, 2000);
     });
 }
 </script>
