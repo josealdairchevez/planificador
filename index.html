@@ -16849,6 +16849,7 @@ window.toggleHabit = function(id) {
         hero.coins += Math.round(coinGain);
 
         // Daño al boss (depende de dificultad y clase)
+        const boss = BOSSES[hero.bossIndex||0];
         const dmg = (h.diff==='hard'?15:h.diff==='medium'?8:4) * (hero.class==='warrior'?1.3:1);
         hero.bossHp = Math.round(((hero.bossHp != null) ? hero.bossHp : boss.maxHp) - dmg);
 
@@ -16864,7 +16865,6 @@ window.toggleHabit = function(id) {
         if(dmgEl){ dmgEl.textContent=`-${Math.round(dmg)}`; dmgEl.classList.add('show'); setTimeout(()=>dmgEl.classList.remove('show'),900); }
 
         // Boss derrotado
-        const boss=BOSSES[hero.bossIndex||0];
         if(hero.bossHp<=0){
             hero.bossesDefeated=(hero.bossesDefeated||0)+1;
             hero.xp += boss.xpReward;
