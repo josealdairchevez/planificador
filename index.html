@@ -18879,24 +18879,41 @@ window._hrInit = function() {
 </style>
 <!-- BOTÓN OCULTO: forzar reprogramación de recordatorios -->
 <div id="_jchReschedBtn" style="position:fixed;bottom:80px;right:12px;z-index:99999;display:none;">
-    <button onclick="
-        window._lastHabReschedule=0;
-        if(typeof rescheduleAllReminders==='function'){
-            rescheduleAllReminders(true);
-            this.textContent='✅ Reprogramado';
-            this.style.background='#4ade80';
-            setTimeout(function(){document.getElementById('_jchReschedBtn').style.display='none';},3000);
+    <button id="_jchReschedBtnInner" onclick="
+        var btn = document.getElementById('_jchReschedBtnInner');
+        btn.textContent = '⏳ Ejecutando...';
+        btn.style.background = '#6366f1';
+        window._lastHabReschedule = 0;
+        var fn = window.rescheduleAllReminders || (typeof rescheduleAllReminders === 'function' ? rescheduleAllReminders : null);
+        if (fn) {
+            try {
+                fn(true);
+                setTimeout(function(){
+                    btn.textContent = '✅ Listo! Cierra esta pestaña';
+                    btn.style.background = '#4ade80';
+                    btn.style.color = '#000';
+                }, 2000);
+            } catch(e) {
+                btn.textContent = '❌ Error: ' + e.message;
+                btn.style.background = '#ef4444';
+            }
         } else {
-            this.textContent='❌ Error';
+            btn.textContent = '❌ Función no encontrada';
+            btn.style.background = '#ef4444';
         }
-    " style="background:#a78bfa;color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:0.8rem;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+    " style="background:#a78bfa;color:#fff;border:none;border-radius:12px;padding:12px 18px;font-size:0.85rem;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
         🔔 Forzar recordatorios
     </button>
 </div>
 <script>
-// Mostrar botón solo si se accede con ?reschedule=1 en la URL
 if (window.location.search.includes('reschedule=1')) {
-    document.getElementById('_jchReschedBtn').style.display = 'block';
+    // Esperar a que todo cargue antes de mostrar el botón
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            var btn = document.getElementById('_jchReschedBtn');
+            if (btn) btn.style.display = 'block';
+        }, 3000);
+    });
 }
 </script>
 
