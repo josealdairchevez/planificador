@@ -2,19 +2,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 self.addEventListener('install', function(e) { self.skipWaiting(); });
-
-self.addEventListener('activate', function(e) {
-    e.waitUntil(
-        self.clients.claim().then(function() {
-            return self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
-                .then(function(clients) {
-                    clients.forEach(function(client) {
-                        client.postMessage({ type: 'REGISTER_NOTIFICATION_CHANNEL' });
-                    });
-                });
-        })
-    );
-});
+self.addEventListener('activate', function(e) { e.waitUntil(self.clients.claim()); });
 
 firebase.initializeApp({
     apiKey: "AIzaSyAKsILLuBeu6AXGzMICQtfIULL6-tMs5IE",
@@ -27,28 +15,46 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ── onBackgroundMessage maneja TODAS las notificaciones ──
+// Helper: formatear timestamp a hora local
+function fmtHora(fireAt) {
+    if (!fireAt) return '';
+    try {
+        var d = new Date(parseInt(fireAt));
+        var h = String(d.getHours()).padStart(2,'0');
+        var m = String(d.getMinutes()).padStart(2,'0');
+        return h + ':' + m;
+    } catch(e) { return ''; }
+}
+
 messaging.onBackgroundMessage(function(payload) {
     console.log('[SW] onBackgroundMessage:', payload.data && payload.data.evId);
 
-    const title   = (payload.data && payload.data.title) || 'Planificador JCH';
-    const body    = (payload.data && payload.data.body)  || 'Tienes un recordatorio';
-    const evId    = (payload.data && payload.data.evId)  || '';
-    const fireAt  = (payload.data && payload.data.fireAt)|| '';
-    const isHabit = evId.startsWith('hab_');
-    const tag     = 'jch-' + evId + '-' + Date.now();
+    var title  = (payload.data && payload.data.title) || 'Planificador JCH';
+    var body   = (payload.data && payload.data.body)  || 'Tienes un recordatorio';
+    var evId   = (payload.data && payload.data.evId)  || '';
+    var fireAt = (payload.data && payload.data.fireAt)|| '';
+    var isHabit = evId.startsWith('hab_');
+
+    // Agregar hora al body si es hábito y el body no tiene ya la hora
+    if (isHabit && fireAt && body.indexOf('⏰') === -1) {
+        var hora = fmtHora(fireAt);
+        if (hora) body = '⏰ ' + hora + ' · ' + body;
+    }
+
+    // Tag fijo para deduplicar con check() del HTML
+    var tag = 'jch-notif-' + evId + '-' + fireAt;
 
     return self.registration.showNotification(title, {
-        body:               body,
-        icon:               './icon-192.png',
-        badge:              './icon-192.png',
-        vibrate:            [500, 200, 500, 200, 500, 200, 800],
+        body:    body,
+        icon:    './icon-192.png',
+        badge:   './icon-192.png',
+        vibrate: [500, 200, 500, 200, 500, 200, 800],
         requireInteraction: true,
-        tag:                tag,
-        renotify:           true,
-        silent:             false,
-        timestamp:          Date.now(),
-        data:               { url: './index.html', evId: evId, fireAt: fireAt },
+        tag:     tag,
+        renotify: false,
+        silent:  false,
+        timestamp: Date.now(),
+        data:    { url: './index.html', evId: evId, fireAt: fireAt },
         actions: [
             { action: 'open',    title: isHabit ? '✅ Marcar hecho' : '📋 Ver tarea' },
             { action: 'dismiss', title: '✕ Cerrar' }
@@ -70,3 +76,43 @@ self.addEventListener('notificationclick', function(e) {
 });
 
 self.addEventListener('fetch', function(e) {});
+
+self.addEventListener('push', function(e) {
+    if (!e.data) return;
+    var data = {};
+    try { data = e.data.json(); } catch(err) { return; }
+    if (data.notification) return;
+
+    var d      = data.data || {};
+    var title  = d.title  || 'Planificador JCH';
+    var body   = d.body   || 'Tienes un recordatorio';
+    var evId   = d.evId   || '';
+    var fireAt = d.fireAt || '';
+    var isHabit = evId.startsWith('hab_');
+
+    // Agregar hora si no la tiene
+    if (isHabit && fireAt && body.indexOf('⏰') === -1) {
+        var hora = fmtHora(fireAt);
+        if (hora) body = '⏰ ' + hora + ' · ' + body;
+    }
+
+    var tag = fireAt ? ('jch-notif-' + evId + '-' + fireAt) : ('jch-push-' + evId + '-' + Date.now());
+
+    e.waitUntil(
+        self.registration.showNotification(title, {
+            body:    body,
+            icon:    './icon-192.png',
+            badge:   './icon-192.png',
+            vibrate: [500, 200, 500, 200, 800],
+            requireInteraction: true,
+            tag:     tag,
+            renotify: false,
+            silent:  false,
+            data:    { url: './index.html', evId: evId },
+            actions: [
+                { action: 'open',    title: isHabit ? '✅ Marcar hecho' : '📋 Ver tarea' },
+                { action: 'dismiss', title: '✕ Cerrar' }
+            ]
+        })
+    );
+});
