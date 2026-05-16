@@ -17878,6 +17878,7 @@ function scheduleHabitReminder(name, time, emoji) {
 
 // Re-programar todos los recordatorios al abrir
 function rescheduleAllReminders(force) {
+    window.rescheduleAllReminders = rescheduleAllReminders; // exponer globalmente
     // Throttle: máximo una vez por hora (salvo force=true desde saveHabit)
     const now = Date.now();
     if (!force && window._lastHabReschedule && (now - window._lastHabReschedule) < 3600000) return;
