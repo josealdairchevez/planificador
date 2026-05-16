@@ -16903,12 +16903,18 @@ window.toggleHabit = function(id) {
     }
 
     saveHabits(); saveHero();
+    // Sincronizar inmediatamente a la nube para que los cambios persistan
+    if (typeof window.syncToCloud === 'function' && typeof currentUser !== 'undefined' && currentUser) {
+        setTimeout(function(){ window.syncToCloud(false); }, 500);
+    }
     updateHabitBadge();
-    (window.renderHabToday||renderHabToday)();
-    renderHabStats();
-    renderHabHero();
-    checkAndGrantAchievements();
-    if (document.getElementById('habWdcBars') && typeof renderWeekdayChart==='function') renderWeekdayChart();
+    setTimeout(function() {
+        (window.renderHabToday||renderHabToday)();
+        renderHabStats();
+        renderHabHero();
+        checkAndGrantAchievements();
+        if (document.getElementById('habWdcBars') && typeof renderWeekdayChart==='function') renderWeekdayChart();
+    }, 50);
 };
 
 // ── Animación flotante XP / Monedas / Daño / HP ──────────────
