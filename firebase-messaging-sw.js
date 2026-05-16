@@ -27,13 +27,9 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ── onBackgroundMessage maneja TODO — push no debe duplicar ──
-var _fcmHandled = false;
-
+// ── onBackgroundMessage maneja TODAS las notificaciones ──
 messaging.onBackgroundMessage(function(payload) {
-    console.log('[SW] onBackgroundMessage recibido:', JSON.stringify(payload));
-    _fcmHandled = true;
-    setTimeout(function(){ _fcmHandled = false; }, 3000);
+    console.log('[SW] onBackgroundMessage:', payload.data && payload.data.evId);
 
     const title   = (payload.data && payload.data.title) || 'Planificador JCH';
     const body    = (payload.data && payload.data.body)  || 'Tienes un recordatorio';
@@ -74,36 +70,3 @@ self.addEventListener('notificationclick', function(e) {
 });
 
 self.addEventListener('fetch', function(e) {});
-
-// ── push solo actúa si onBackgroundMessage NO lo manejó ──
-self.addEventListener('push', function(e) {
-    if (_fcmHandled) return; // ya fue manejado por onBackgroundMessage
-    if (!e.data) return;
-    var data = {};
-    try { data = e.data.json(); } catch(err) { return; }
-    if (data.notification) return;
-
-    var d       = data.data || {};
-    var title   = d.title || 'Planificador JCH';
-    var body    = d.body  || 'Tienes un recordatorio';
-    var evId    = d.evId  || '';
-    var isHabit = evId.startsWith('hab_');
-
-    e.waitUntil(
-        self.registration.showNotification(title, {
-            body:               body,
-            icon:               './icon-192.png',
-            badge:              './icon-192.png',
-            vibrate:            [500, 200, 500, 200, 800],
-            requireInteraction: true,
-            tag:                'jch-push-' + evId + '-' + Date.now(),
-            renotify:           true,
-            silent:             false,
-            data:               { url: './index.html', evId: evId },
-            actions: [
-                { action: 'open',    title: isHabit ? '✅ Marcar hecho' : '📋 Ver tarea' },
-                { action: 'dismiss', title: '✕ Cerrar' }
-            ]
-        })
-    );
-});
