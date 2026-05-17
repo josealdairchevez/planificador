@@ -15611,6 +15611,7 @@ function reschedAll(){
     var evs=JSON.parse(localStorage.getItem('jch_calendar_v1'))||[];
     var list=buildList(evs);
     var now=Date.now(), nowDate=new Date();
+    var _nowLima=new Date(nowDate.toLocaleString('en-US',{timeZone:'America/Lima'}));
     var allH=[];
     try{ allH=JSON.parse(localStorage.getItem('jch_habits_v1')||'[]'); }catch(ex){}
     // Expandir hábitos con múltiples recordatorios
@@ -15641,7 +15642,7 @@ function reschedAll(){
         _habIdx[baseName]++;
         var parts=(h.reminderTime||'08:00').split(':').map(Number);
         var hr=parts[0]||8, mn=parts[1]||0;
-        var todayFire=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
+        var todayFire=new Date(_nowLima.getFullYear(),_nowLima.getMonth(),_nowLima.getDate(),hr,mn,0);
         var fireAt=todayFire.getTime()>(now+60000)?todayFire.getTime():todayFire.getTime()+86400000;
         list.push({
           evId:'hab_'+baseName+(idx>0?'_'+idx:''),
@@ -15706,6 +15707,7 @@ function check(){
         try { calData = JSON.parse(localStorage.getItem('jch_calendar_v1')||'[]'); } catch(ex) {}
         var list = buildList(calData);
         var now = Date.now(), nowDate = new Date();
+        var _nowLima=new Date(nowDate.toLocaleString('en-US',{timeZone:'America/Lima'}));
         // Leer hábitos — si estamos reaccionando a jch_habits_v1, usar el valor nuevo
         var allH = [];
         try { allH = JSON.parse(k==='jch_habits_v1' ? v : (localStorage.getItem('jch_habits_v1')||'[]')); } catch(ex) {}
@@ -15734,7 +15736,7 @@ function check(){
             var h = item.h, t = item.time, idx = item.idx;
             var parts = (t||'08:00').split(':').map(Number);
             var hr=parts[0]||8, mn=parts[1]||0;
-            var tf=new Date(nowDate.getFullYear(),nowDate.getMonth(),nowDate.getDate(),hr,mn,0);
+            var tf=new Date(_nowLima.getFullYear(),_nowLima.getMonth(),_nowLima.getDate(),hr,mn,0);
             var fa=tf.getTime()>(now+60000)?tf.getTime():tf.getTime()+86400000;
             var evId='hab_'+(h.name||'').replace(/\W+/g,'_')+(idx>0?'_'+idx:'');
             list.push({evId:evId,fireAt:fa,title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),body:'⏰ '+new Date(fa).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+' · ¡Es hora de tu hábito diario!'});
@@ -17843,7 +17845,8 @@ function scheduleHabitReminder(name, time, emoji) {
         var h = parts[0] || 8, m = parts[1] || 0;
         var now     = Date.now();
         var nowDate = new Date();
-        var todayFire = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), h, m, 0);
+        var _nowLima5=new Date(nowDate.toLocaleString('en-US',{timeZone:'America/Lima'}));
+        var todayFire = new Date(_nowLima5.getFullYear(), _nowLima5.getMonth(), _nowLima5.getDate(), h, m, 0);
         var fireAt    = todayFire.getTime() > (now + 60000)
             ? todayFire.getTime()
             : todayFire.getTime() + 86400000;
@@ -17922,6 +17925,8 @@ function rescheduleAllReminders(force) {
         });
 
         const nowDate = new Date();
+        // Forzar fecha en zona horaria Lima (UTC-5) para calcular fireAt correctamente
+        const nowLima = new Date(nowDate.toLocaleString('en-US', {timeZone: 'America/Lima'}));
         // Expandir hábitos con múltiples recordatorios
         var habEntries = [];
         habsWithReminder.forEach(function(h) {
@@ -17937,7 +17942,7 @@ function rescheduleAllReminders(force) {
             var h = item.h, t = item.time, idx = item.idx;
             var parts    = (t || '08:00').split(':').map(Number);
             var hr = parts[0] || 8, mn = parts[1] || 0;
-            var todayFire = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), hr, mn, 0);
+            var todayFire = new Date(nowLima.getFullYear(), nowLima.getMonth(), nowLima.getDate(), hr, mn, 0);
             var fireAt    = todayFire.getTime() > (now + 60000)
                 ? todayFire.getTime()
                 : todayFire.getTime() + 86400000;
@@ -19092,6 +19097,7 @@ window.habitPlus = function(id, evt) {
     }
 
     localStorage.setItem('jch_hero_v1', JSON.stringify(hero));
+    console.log('[DEBUG habitPlus] hero guardado: xp='+hero.xp+' coins='+hero.coins+' bossHp='+hero.bossHp+' dmg='+dmg);
     if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
     if (typeof playSparkleSound === 'function') playSparkleSound();
 
