@@ -17965,17 +17965,30 @@ function rescheduleAllReminders(force) {
         });
         localStorage.setItem('jch_rem_v4', JSON.stringify(deduped));
 
-        // Subir fcm_reminders a Firestore usando la función expuesta globalmente
-        var _stf = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
-        if (_stf) {
-            _stf(deduped);
-            console.log('[JCH] rescheduleAllReminders: ' + deduped.length + ' recordatorios → Firestore (' + habsWithReminder.length + ' hábitos)');
+        // Solo subir a Firestore si hay cambios reales en los fireAt
+        // Comparar con lo que ya hay en localStorage para evitar sobreescribir Firestore innecesariamente
+        var prevList = [];
+        try { prevList = JSON.parse(localStorage.getItem('jch_rem_v4_prev') || '[]'); } catch(e) {}
+        var haycambios = deduped.length !== prevList.length || deduped.some(function(r) {
+            var prev = prevList.find(function(p){ return p.evId === r.evId; });
+            return !prev || Math.abs(prev.fireAt - r.fireAt) > 120000; // diferencia mayor a 2 minutos
+        });
+
+        if (haycambios || force) {
+            localStorage.setItem('jch_rem_v4_prev', JSON.stringify(deduped));
+            var _stf = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
+            if (_stf) {
+                _stf(deduped);
+                console.log('[JCH] rescheduleAllReminders: ' + deduped.length + ' recordatorios → Firestore (' + habsWithReminder.length + ' hábitos)');
+            } else {
+                console.warn('[JCH] saveToFirestore no disponible — reintentando en 3s');
+                setTimeout(function() {
+                    var _stf2 = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
+                    if (_stf2) _stf2(deduped);
+                }, 3000);
+            }
         } else {
-            console.warn('[JCH] saveToFirestore no disponible — reintentando en 3s');
-            setTimeout(function() {
-                var _stf2 = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
-                if (_stf2) _stf2(deduped);
-            }, 3000);
+            console.log('[JCH] rescheduleAllReminders: sin cambios en fireAt, no se sobreescribe Firestore');
         }
 
     } catch(e) { console.warn('[JCH] rescheduleAllReminders error:', e); }
