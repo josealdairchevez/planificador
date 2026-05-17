@@ -19042,14 +19042,16 @@ window.renderHabitCardHabitica = function(h, showEdit) {
 
 // ── Botón + (hábito positivo) ─────────────────────────────────
 window.habitPlus = function(id, evt) {
-    const hero    = loadHero();
-    const habits  = loadHabits();
+    const HERO_KEY_EXT = 'jch_hero_v1';
+    const HABITS_KEY_EXT = 'jch_habits_v1';
+    const hero    = JSON.parse(localStorage.getItem(HERO_KEY_EXT)||'null') || {name:'Héroe JCH',class:'warrior',level:1,hp:100,maxHp:100,xp:0,xpNext:100,coins:0,bossIndex:0,bossHp:100,bossesDefeated:0,unlockedAchievements:[],inventory:[]};
+    const habits  = JSON.parse(localStorage.getItem(HABITS_KEY_EXT)||'[]');
     const h = habits.find(x => x.id === id);
     if (!h) return;
 
     h.log = h.log || [];
     h.log.push(todayKey());
-    localStorage.setItem(HABITS_KEY, JSON.stringify(habits));
+    localStorage.setItem(HABITS_KEY_EXT, JSON.stringify(habits));
 
     // Stats del equipo
     const atk  = (hero.stats?.atk || 5);
@@ -19089,7 +19091,7 @@ window.habitPlus = function(id, evt) {
         if (typeof showBossDefeated === 'function') showBossDefeated(boss);
     }
 
-    saveHero(hero);
+    localStorage.setItem('jch_hero_v1', JSON.stringify(hero));
     if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
     if (typeof playSparkleSound === 'function') playSparkleSound();
 
@@ -19109,8 +19111,9 @@ window.habitPlus = function(id, evt) {
 
 // ── Botón − (hábito negativo / penalización) ──────────────────
 window.habitMinus = function(id, evt) {
-    const hero   = loadHero();
-    const habits = loadHabits();
+    const HERO_KEY_EXT = 'jch_hero_v1';
+    const hero   = JSON.parse(localStorage.getItem(HERO_KEY_EXT)||'null') || {name:'Héroe JCH',class:'warrior',level:1,hp:100,maxHp:100,xp:0,xpNext:100,coins:0,bossIndex:0,bossHp:100,bossesDefeated:0,unlockedAchievements:[],inventory:[]};
+    const habits = JSON.parse(localStorage.getItem('jch_habits_v1')||'[]');
     const h = habits.find(x => x.id === id);
     if (!h) return;
 
@@ -19134,7 +19137,7 @@ window.habitMinus = function(id, evt) {
         showHabFloat(evt, `-${hpLoss} ❤️`, '#ef4444');
     }
 
-    saveHero(hero);
+    localStorage.setItem('jch_hero_v1', JSON.stringify(hero));
     updateGoldDisplays(hero);
     if (typeof renderHabHero === 'function') renderHabHero();
 };
