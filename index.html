@@ -17887,111 +17887,112 @@ function scheduleHabitReminder(name, time, emoji) {
 
 // Re-programar todos los recordatorios al abrir
 function rescheduleAllReminders(force) {
-    window.rescheduleAllReminders = rescheduleAllReminders; // exponer globalmente
-    // Throttle: máximo una vez por hora (salvo force=true desde saveHabit)
+    window.rescheduleAllReminders = rescheduleAllReminders;
+
     const now = Date.now();
-    if (!force && window._lastHabReschedule && (now - window._lastHabReschedule) < 3600000) return;
+    // Throttle: máximo una vez cada 30 minutos (salvo force=true)
+    if (!force && window._lastHabReschedule && (now - window._lastHabReschedule) < 1800000) return;
     window._lastHabReschedule = now;
 
     try {
-        // Leer hábitos directamente de localStorage
+        // ── 1. Leer hábitos ────────────────────────────────────────
         const allHabits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
         const habsWithReminder = allHabits.filter(function(h) {
             return h.reminderOn && !h.archived &&
                    ((h.reminderTimes && h.reminderTimes.length) || h.reminderTime);
         });
 
-        // Incluir también eventos del calendario con recordatorio
-        var calEvents = [];
-        try { calEvents = JSON.parse(localStorage.getItem('jch_calendar_v1')||'[]'); } catch(ex){}
-        var calWithReminder = calEvents.filter(function(e){ return e.reminder && e.reminder !== 'none' && !e.done; });
+        console.log('[JCH] rescheduleAllReminders: ' + habsWithReminder.length + ' hábitos con recordatorio');
 
-        console.log('[JCH] rescheduleAllReminders: '+habsWithReminder.length+' hábitos, '+calWithReminder.length+' eventos con recordatorio');
-
-        if (!habsWithReminder.length && !calWithReminder.length) {
-            console.log('[JCH] No hay recordatorios activos — limpiando Firestore');
-            // Aun así actualizar Firestore con lista vacía para limpiar datos viejos
-            var _stfEmpty = window._jchSaveToFirestore || (typeof saveToFirestore==='function'?saveToFirestore:null);
-            if (_stfEmpty) _stfEmpty([]);
+        if (!habsWithReminder.length) {
+            console.log('[JCH] No hay hábitos con recordatorio activo');
             return;
         }
 
-        var currentList = [];
-        try { currentList = JSON.parse(localStorage.getItem('jch_rem_v4') || '[]'); } catch(e) {}
+        // ── 2. Calcular fecha/hora SIEMPRE en zona horaria Lima ────
+        // Usamos toLocaleString con timeZone para obtener la fecha correcta en Lima
+        // independientemente de la zona horaria del dispositivo
+        var limaStr = new Date(now).toLocaleString('en-US', { timeZone: 'America/Lima' });
+        var limaDate = new Date(limaStr);
+        var limaYear  = limaDate.getFullYear();
+        var limaMonth = limaDate.getMonth();
+        var limaDay   = limaDate.getDate();
 
-        // Eliminar solo los hábitos anteriores, conservar eventos del calendario
-        var clean = currentList.filter(function(r) {
-            return !String(r.evId).startsWith('hab_');
-        });
+        // Offset Lima en ms: diferencia entre UTC y Lima
+        // Lima siempre es UTC-5 (no tiene horario de verano)
+        var LIMA_OFFSET_MS = -5 * 60 * 60 * 1000; // -18000000
 
-        const nowDate = new Date();
-        // Forzar fecha en zona horaria Lima (UTC-5) para calcular fireAt correctamente
-        const nowLima = new Date(nowDate.toLocaleString('en-US', {timeZone: 'America/Lima'}));
-        // Expandir hábitos con múltiples recordatorios
-        var habEntries = [];
+        // ── 3. Calcular fireAt para cada hábito ────────────────────
+        var newReminders = [];
+
         habsWithReminder.forEach(function(h) {
             var times = (h.reminderTimes && h.reminderTimes.length)
                 ? h.reminderTimes
                 : [h.reminderTime || '08:00'];
+
             times.forEach(function(t, idx) {
-                habEntries.push({ h: h, time: t, idx: idx });
+                var parts = (t || '08:00').split(':').map(Number);
+                var hr = parts[0] || 8;
+                var mn = parts[1] || 0;
+
+                // Construir timestamp en UTC para Lima:
+                // Fecha Lima + hora Lima → UTC timestamp
+                // Date.UTC(year, month, day, hr, mn) da UTC medianoche Lima
+                // Luego restamos el offset negativo de Lima (-5h) para obtener UTC correcto
+                var fireAtUtc = Date.UTC(limaYear, limaMonth, limaDay, hr, mn, 0) - LIMA_OFFSET_MS;
+
+                // Si ya pasó (más de 1 minuto en el pasado), programar para mañana
+                if (fireAtUtc <= now + 60000) {
+                    fireAtUtc += 86400000; // +24 horas
+                }
+
+                var suffix = idx > 0 ? '_' + idx : '';
+                var evId   = 'hab_' + (h.name || '').replace(/\W+/g, '_') + suffix;
+                var horaStr = String(hr).padStart(2,'0') + ':' + String(mn).padStart(2,'0');
+
+                newReminders.push({
+                    evId:   evId,
+                    fireAt: fireAtUtc,
+                    title:  (h.emoji || '🌿') + ' ' + (h.name || 'Hábito'),
+                    body:   '⏰ ' + horaStr + ' · ¡Es hora de tu hábito diario!',
+                    uid:    (typeof currentUser !== 'undefined' && currentUser) ? currentUser.uid : ''
+                });
+
+                console.log('[JCH] Programado: ' + evId + ' → ' + new Date(fireAtUtc).toLocaleString('es-PE', {timeZone:'America/Lima'}));
             });
         });
 
-        habEntries.forEach(function(item) {
-            var h = item.h, t = item.time, idx = item.idx;
-            var parts    = (t || '08:00').split(':').map(Number);
-            var hr = parts[0] || 8, mn = parts[1] || 0;
-            var todayFire = new Date(nowLima.getFullYear(), nowLima.getMonth(), nowLima.getDate(), hr, mn, 0);
-            var fireAt    = todayFire.getTime() > (now + 60000)
-                ? todayFire.getTime()
-                : todayFire.getTime() + 86400000;
-            var entry = {
-                evId:   'hab_' + (h.name || '').replace(/\W+/g, '_') + (idx > 0 ? '_' + idx : ''),
-                fireAt: fireAt,
-                title:  (h.emoji || '🌿') + ' ' + (h.name || 'Hábito'),
-                body:   '⏰ '+new Date(_fireAt2).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+' · ¡Es hora de tu hábito diario!'
-            };
-            clean.push(entry);
-            console.log('[JCH] Hábito programado: ' + entry.title + ' → ' + new Date(fireAt).toLocaleString());
+        // ── 4. Conservar recordatorios de eventos del calendario ───
+        var currentList = [];
+        try { currentList = JSON.parse(localStorage.getItem('jch_rem_v4') || '[]'); } catch(e) {}
+        var calReminders = currentList.filter(function(r) {
+            return !String(r.evId).startsWith('hab_');
         });
 
-        // Guardar en localStorage (mismo key que el calendario)
-        // Deduplicar por evId — quedarse con la entrada más reciente de cada hábito
-        var seen = {};
-        var deduped = [];
-        clean.forEach(function(r) {
-            if (!seen[r.evId]) { seen[r.evId] = true; deduped.push(r); }
-        });
-        localStorage.setItem('jch_rem_v4', JSON.stringify(deduped));
+        var finalList = calReminders.concat(newReminders);
 
-        // Solo subir a Firestore si hay cambios reales en los fireAt
-        // Comparar con lo que ya hay en localStorage para evitar sobreescribir Firestore innecesariamente
-        var prevList = [];
-        try { prevList = JSON.parse(localStorage.getItem('jch_rem_v4_prev') || '[]'); } catch(e) {}
-        var haycambios = deduped.length !== prevList.length || deduped.some(function(r) {
-            var prev = prevList.find(function(p){ return p.evId === r.evId; });
-            return !prev || Math.abs(prev.fireAt - r.fireAt) > 120000; // diferencia mayor a 2 minutos
-        });
+        // ── 5. Guardar en localStorage ─────────────────────────────
+        localStorage.setItem('jch_rem_v4', JSON.stringify(finalList));
 
-        if (haycambios || force) {
-            localStorage.setItem('jch_rem_v4_prev', JSON.stringify(deduped));
-            var _stf = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
-            if (_stf) {
-                _stf(deduped);
-                console.log('[JCH] rescheduleAllReminders: ' + deduped.length + ' recordatorios → Firestore (' + habsWithReminder.length + ' hábitos)');
-            } else {
-                console.warn('[JCH] saveToFirestore no disponible — reintentando en 3s');
-                setTimeout(function() {
-                    var _stf2 = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
-                    if (_stf2) _stf2(deduped);
-                }, 3000);
-            }
+        // ── 6. Subir a Firestore SIEMPRE que se llame esta función ─
+        // (La Cloud Function es la que reprograma +24h, no el HTML)
+        var _stf = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
+        if (_stf) {
+            _stf(finalList);
+            console.log('[JCH] ✅ Firestore actualizado: ' + finalList.length + ' recordatorios');
         } else {
-            console.log('[JCH] rescheduleAllReminders: sin cambios en fireAt, no se sobreescribe Firestore');
+            setTimeout(function() {
+                var _stf2 = window._jchSaveToFirestore || (typeof saveToFirestore === 'function' ? saveToFirestore : null);
+                if (_stf2) {
+                    _stf2(finalList);
+                    console.log('[JCH] ✅ Firestore actualizado (retry): ' + finalList.length + ' recordatorios');
+                }
+            }, 3000);
         }
 
-    } catch(e) { console.warn('[JCH] rescheduleAllReminders error:', e); }
+    } catch(e) {
+        console.warn('[JCH] rescheduleAllReminders error:', e);
+    }
 }
 
 // ── Editar / Borrar ───────────────────────────────────────────
