@@ -19111,7 +19111,6 @@ window.habitPlus = function(id, evt) {
     }
 
     localStorage.setItem('jch_hero_v1', JSON.stringify(hero));
-    console.log('[DEBUG habitPlus] hero guardado: xp='+hero.xp+' coins='+hero.coins+' bossHp='+hero.bossHp+' dmg='+dmg);
     if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
     if (typeof playSparkleSound === 'function') playSparkleSound();
 
