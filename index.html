@@ -19123,8 +19123,19 @@ window.habitPlus = function(id, evt) {
     if (streak >= 3 && typeof showStreakToast === 'function') showStreakToast(h, streak);
     if (typeof checkAndGrantAchievements === 'function') checkAndGrantAchievements();
 
-    // Re-render
-    setTimeout(() => { (window.renderHabToday||renderHabToday)(); }, 50);
+    // Re-render inmediato del boss y héroe
+    setTimeout(function() {
+        // Actualizar panel del boss
+        var bossEl = document.getElementById('habBossPanelToday');
+        if (bossEl && typeof window.renderBossMini === 'function') {
+            bossEl.innerHTML = window.renderBossMini();
+        }
+        // Actualizar panel del héroe
+        if (typeof renderHabHero === 'function') renderHabHero();
+        // Actualizar panel completo de hoy
+        if (typeof window.renderHabToday === 'function') window.renderHabToday();
+        else if (typeof renderHabToday === 'function') renderHabToday();
+    }, 50);
     updateHabitBadge && updateHabitBadge();
 };
 
