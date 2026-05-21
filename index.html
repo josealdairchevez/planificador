@@ -17221,6 +17221,20 @@ window.habRepInc = function(habitId, target) {
             }
             localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
 
+            // ── Actualizar boss panel inmediatamente ──────────────
+            setTimeout(function() {
+                var bossEl = document.getElementById('habBossPanelToday');
+                if (bossEl && typeof window.renderBossMini === 'function') {
+                    bossEl.innerHTML = window.renderBossMini();
+                    setTimeout(function() {
+                        var h2 = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+                        if (typeof window.drawBoss3D === 'function') {
+                            window.drawBoss3D('habBossMiniSVG', Math.min(h2.bossIndex||0, 19));
+                        }
+                    }, 150);
+                }
+            }, 50);
+
             // Animación flotante de recompensa
             if (typeof showHabitReward === 'function') {
                 var _hpBonusQ = heroRaw.class === 'healer' ? 3 : 0;
@@ -19123,20 +19137,13 @@ window.habitPlus = function(id, evt) {
     if (streak >= 3 && typeof showStreakToast === 'function') showStreakToast(h, streak);
     if (typeof checkAndGrantAchievements === 'function') checkAndGrantAchievements();
 
-    // Re-render inmediato del boss y héroe
+    // Re-render completo — renderHabToday ya incluye el boss y el héroe
     setTimeout(function() {
-        // Actualizar panel del boss
-        var bossEl = document.getElementById('habBossPanelToday');
-        if (bossEl && typeof window.renderBossMini === 'function') {
-            bossEl.innerHTML = window.renderBossMini();
-        }
-        // Actualizar panel del héroe
-        if (typeof renderHabHero === 'function') renderHabHero();
-        // Actualizar panel completo de hoy
         if (typeof window.renderHabToday === 'function') window.renderHabToday();
         else if (typeof renderHabToday === 'function') renderHabToday();
-    }, 50);
-    updateHabitBadge && updateHabitBadge();
+        if (typeof renderHabHero === 'function') renderHabHero();
+    }, 30);
+    if (typeof updateHabitBadge === 'function') updateHabitBadge();
 };
 
 // ── Botón − (hábito negativo / penalización) ──────────────────
