@@ -19479,10 +19479,34 @@ window.buyShopItem = function(itemId) {
 
 // ── RECOMPENSAS ───────────────────────────────────────────────
 const DEFAULT_REWARDS = [
-    {id:'r1',name:'Ver un episodio',icon:'🎬',cost:15},
-    {id:'r2',name:'Capricho dulce', icon:'🍕',cost:20},
-    {id:'r3',name:'Tiempo de juego',icon:'🎮',cost:30},
-    {id:'r4',name:'Día sin culpa',  icon:'😴',cost:50},
+    /* ── FÁCILES (5–20 🪙) ── micro-recompensas para mantener el impulso */
+    {id:'r01', name:'5 min de redes sociales sin culpa', icon:'📱', cost:5},
+    {id:'r02', name:'Canción favorita a todo volumen',   icon:'🎵', cost:5},
+    {id:'r03', name:'Descanso de 10 minutos total',      icon:'☕', cost:8},
+    {id:'r04', name:'Video de YouTube que tenías pendiente', icon:'▶️', cost:10},
+    {id:'r05', name:'Snack que más te guste',            icon:'🍫', cost:12},
+    {id:'r06', name:'Ver un episodio de tu serie',       icon:'🎬', cost:15},
+    {id:'r07', name:'Capricho dulce (helado, postre…)',  icon:'🍕', cost:20},
+    /* ── MEDIOS (25–80 🪙) ── para logros consistentes */
+    {id:'r08', name:'30 min de videojuego sin culpa',    icon:'🎮', cost:25},
+    {id:'r09', name:'Pedir comida a domicilio',          icon:'🛵', cost:30},
+    {id:'r10', name:'Tarde de películas o maratón',      icon:'🍿', cost:35},
+    {id:'r11', name:'Sesión de música o podcast favorito', icon:'🎧', cost:35},
+    {id:'r12', name:'Siesta sin alarma',                 icon:'😴', cost:40},
+    {id:'r13', name:'Día de pijama y relax total',       icon:'🧸', cost:50},
+    {id:'r14', name:'Salir a caminar sin destino fijo',  icon:'🌳', cost:50},
+    {id:'r15', name:'Baño largo con música y calma',     icon:'🛁', cost:55},
+    {id:'r16', name:'Noche de juegos en línea',          icon:'🕹️', cost:60},
+    {id:'r17', name:'Comprar algo pequeño que querías',  icon:'🛍️', cost:70},
+    {id:'r18', name:'Día sin culpa ni tareas pendientes',icon:'🏳️', cost:80},
+    /* ── GRANDES (100–300 🪙) ── para semanas épicas */
+    {id:'r19', name:'Salida con amigos o familia',       icon:'👥', cost:100},
+    {id:'r20', name:'Comer en tu restaurante favorito',  icon:'🍽️', cost:120},
+    {id:'r21', name:'Fin de semana sin pantalla de trabajo', icon:'🏕️', cost:150},
+    {id:'r22', name:'Comprar ese libro o juego que espera', icon:'📚', cost:150},
+    {id:'r23', name:'Día de spa / autocuidado total',    icon:'💆', cost:200},
+    {id:'r24', name:'Compra especial que llevas tiempo planeando', icon:'🎁', cost:250},
+    {id:'r25', name:'¡Viaje o escapada de un día!',      icon:'✈️', cost:300},
 ];
 let selectedRewardEmoji = '🎁';
 
