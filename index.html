@@ -5264,24 +5264,152 @@
         .hab-buy-btn:disabled { opacity:0.3;cursor:not-allowed;transform:none; }
 
         /* ── RECOMPENSAS ──────────────────────────────────── */
+        /* ── PANEL PREMIOS ULTRA PREMIUM ─────────────────────── */
+        #habRewardsPanel {
+            position:relative;overflow:hidden;
+            background:linear-gradient(160deg,rgba(6,10,25,0.98),rgba(4,14,32,0.98));
+            border-radius:16px;padding:14px 12px 12px;
+            border:1px solid rgba(251,191,36,0.18);
+            box-shadow:0 0 30px rgba(251,191,36,0.05),inset 0 0 40px rgba(0,0,0,0.4);
+        }
+        #habRewardsPanel::before {
+            content:'';position:absolute;inset:0;border-radius:16px;pointer-events:none;
+            background:radial-gradient(ellipse at 50% 0%,rgba(251,191,36,0.07) 0%,transparent 70%);
+        }
+        .hrp-header {
+            display:flex;align-items:center;justify-content:space-between;
+            margin-bottom:6px;position:relative;z-index:1;
+        }
+        .hrp-title {
+            font-size:0.68rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;
+            background:linear-gradient(90deg,#fbbf24,#f59e0b,#fbbf24);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-size:200% auto;animation:shineText 3s linear infinite;
+        }
+        .hrp-subtitle {
+            font-size:0.58rem;color:#4b5563;margin-bottom:10px;
+            position:relative;z-index:1;line-height:1.4;
+        }
+        .hrp-filter-row {
+            display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;
+            position:relative;z-index:1;
+        }
+        .hrp-filter-btn {
+            padding:3px 9px;border-radius:20px;font-size:0.58rem;font-weight:800;
+            border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);
+            color:#6b7280;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;
+        }
+        .hrp-filter-btn.active, .hrp-filter-btn:hover {
+            background:rgba(251,191,36,0.15);border-color:rgba(251,191,36,0.5);color:#fbbf24;
+        }
+        .hrp-grid {
+            display:flex;flex-direction:column;gap:7px;
+            position:relative;z-index:1;
+            max-height:340px;overflow-y:auto;
+            scrollbar-width:thin;scrollbar-color:rgba(251,191,36,0.2) transparent;
+        }
+        .hrp-grid::-webkit-scrollbar{width:3px;}
+        .hrp-grid::-webkit-scrollbar-track{background:transparent;}
+        .hrp-grid::-webkit-scrollbar-thumb{background:rgba(251,191,36,0.2);border-radius:10px;}
+        /* Tarjeta premium */
         .hab-reward-card {
+            position:relative;overflow:hidden;
             display:flex;align-items:center;gap:10px;
-            background:rgba(8,20,40,0.9);border-radius:14px;
-            border:1.5px solid rgba(16,185,129,0.15);padding:10px;
-            margin-bottom:8px;cursor:pointer;transition:all 0.2s;
+            border-radius:13px;padding:10px 12px;
+            cursor:pointer;transition:all 0.22s cubic-bezier(0.34,1.4,0.64,1);
+            border:1.5px solid transparent;
         }
-        .hab-reward-card:hover { border-color:rgba(16,185,129,0.4);transform:translateX(3px); }
-        .hab-reward-icon { font-size:1.5rem;flex-shrink:0; }
-        .hab-reward-info { flex:1; }
-        .hab-reward-name { font-size:0.82rem;font-weight:900;color:#fff; }
-        .hab-reward-cost { font-size:0.65rem;color:#fbbf24;font-weight:800;margin-top:2px; }
+        .hab-reward-card::before {
+            content:'';position:absolute;inset:0;border-radius:13px;
+            opacity:0;transition:opacity 0.3s;pointer-events:none;
+            background:linear-gradient(90deg,rgba(251,191,36,0.06),transparent);
+        }
+        .hab-reward-card:hover { transform:translateX(4px) scale(1.01); }
+        .hab-reward-card:hover::before { opacity:1; }
+        /* Nivel fácil */
+        .hab-reward-card.tier-easy {
+            background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(6,78,59,0.08));
+            border-color:rgba(16,185,129,0.2);
+        }
+        .hab-reward-card.tier-easy:hover { border-color:rgba(16,185,129,0.55);box-shadow:0 0 14px rgba(16,185,129,0.12); }
+        /* Nivel medio */
+        .hab-reward-card.tier-mid {
+            background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(120,53,15,0.08));
+            border-color:rgba(251,191,36,0.2);
+        }
+        .hab-reward-card.tier-mid:hover { border-color:rgba(251,191,36,0.55);box-shadow:0 0 14px rgba(251,191,36,0.12); }
+        /* Nivel épico */
+        .hab-reward-card.tier-epic {
+            background:linear-gradient(135deg,rgba(177,0,255,0.1),rgba(0,114,255,0.07));
+            border-color:rgba(177,0,255,0.22);
+        }
+        .hab-reward-card.tier-epic:hover { border-color:rgba(177,0,255,0.55);box-shadow:0 0 14px rgba(177,0,255,0.15); }
+        /* Bloqueada */
+        .hab-reward-card.locked { opacity:0.55;cursor:not-allowed; }
+        .hab-reward-card.locked:hover { transform:none;box-shadow:none; }
+        /* Icono */
+        .hab-reward-icon {
+            font-size:1.6rem;flex-shrink:0;
+            filter:drop-shadow(0 0 6px currentColor);
+            transition:transform 0.2s;
+        }
+        .hab-reward-card:not(.locked):hover .hab-reward-icon { transform:scale(1.15) rotate(-5deg); }
+        .hab-reward-info { flex:1;min-width:0; }
+        .hab-reward-name { font-size:0.8rem;font-weight:900;color:#f1f5f9;line-height:1.2; }
+        .hab-reward-desc { font-size:0.58rem;color:#64748b;margin-top:2px;line-height:1.3; }
+        .hab-reward-cost {
+            display:inline-flex;align-items:center;gap:3px;
+            font-size:0.62rem;font-weight:800;margin-top:4px;
+            padding:2px 7px;border-radius:10px;
+        }
+        .hab-reward-cost.can-buy {
+            background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);
+        }
+        .hab-reward-cost.cant-buy {
+            background:rgba(100,116,139,0.12);color:#64748b;border:1px solid rgba(100,116,139,0.2);
+        }
+        /* Badge tier */
+        .hrp-tier-badge {
+            position:absolute;top:6px;right:36px;
+            font-size:0.42rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;
+            padding:2px 6px;border-radius:8px;
+        }
+        .hrp-tier-badge.easy { background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.3); }
+        .hrp-tier-badge.mid  { background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.3); }
+        .hrp-tier-badge.epic { background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.3); }
+        /* Botón comprar */
+        .hrp-buy-btn {
+            flex-shrink:0;width:28px;height:28px;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            font-size:0.7rem;border:none;cursor:pointer;transition:all 0.2s;
+        }
+        .hrp-buy-btn.enabled  { background:rgba(16,185,129,0.2);color:#34d399; }
+        .hrp-buy-btn.disabled { background:rgba(100,116,139,0.1);color:#374151;cursor:not-allowed; }
+        .hrp-buy-btn.enabled:hover { background:rgba(16,185,129,0.4);transform:scale(1.2); }
+        /* Botón añadir */
         .hab-add-reward-btn {
-            width:100%;padding:10px;border-radius:12px;margin-top:4px;
-            background:rgba(16,185,129,0.1);border:1.5px dashed rgba(16,185,129,0.4);
-            color:#34d399;font-size:0.75rem;font-weight:800;cursor:pointer;
-            transition:all 0.2s;text-align:center;
+            width:100%;padding:9px;border-radius:12px;margin-top:8px;
+            background:rgba(251,191,36,0.07);border:1.5px dashed rgba(251,191,36,0.3);
+            color:#92400e;font-size:0.72rem;font-weight:800;cursor:pointer;
+            transition:all 0.2s;text-align:center;position:relative;z-index:1;
+            color:#d97706;
         }
-        .hab-add-reward-btn:hover { background:rgba(16,185,129,0.2); }
+        .hab-add-reward-btn:hover { background:rgba(251,191,36,0.14);border-color:rgba(251,191,36,0.55);color:#fbbf24; }
+        /* Separador de nivel */
+        .hrp-tier-divider {
+            display:flex;align-items:center;gap:6px;margin:6px 0 4px;
+            font-size:0.52rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;
+        }
+        .hrp-tier-divider span { white-space:nowrap; }
+        .hrp-tier-divider::before,.hrp-tier-divider::after {
+            content:'';flex:1;height:1px;
+        }
+        .hrp-tier-divider.easy { color:#34d399; }
+        .hrp-tier-divider.easy::before,.hrp-tier-divider.easy::after { background:rgba(16,185,129,0.2); }
+        .hrp-tier-divider.mid  { color:#fbbf24; }
+        .hrp-tier-divider.mid::before,.hrp-tier-divider.mid::after  { background:rgba(251,191,36,0.2); }
+        .hrp-tier-divider.epic { color:#c084fc; }
+        .hrp-tier-divider.epic::before,.hrp-tier-divider.epic::after { background:rgba(177,0,255,0.2); }
 
         /* ── GOLD DISPLAY ─────────────────────────────────── */
         .hab-gold-pill {
@@ -16133,36 +16261,76 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
 
             <!-- TAB RECOMPENSAS -->
             <div class="hab-tab-content" id="habTab-recompensas">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
-                    <span style="font-size:0.72rem;font-weight:900;color:#34d399;text-transform:uppercase;letter-spacing:1px;">🎁 Mis Recompensas</span>
-                    <span class="hab-gold-pill" id="habRewardGold">🪙 0</span>
-                </div>
-                <p style="font-size:0.65rem;color:#555;margin-bottom:0.8rem;">Define premios de la vida real y cómpralos con tu oro ganado.</p>
-                <div id="habRewardsList"></div>
-                <div class="hab-add-reward-btn" onclick="showAddRewardForm()">+ Añadir recompensa personalizada</div>
-                <div id="habAddRewardForm" style="display:none;margin-top:0.8rem;">
-                    <div class="hab-form-section">
-                        <label class="hab-form-label">🎁 Nombre de la recompensa</label>
-                        <input class="hab-form-input" id="habNewRewardName" placeholder="Ej: Ver un episodio, Helado, Día libre...">
+                <div id="habRewardsPanel">
+                    <div class="hrp-header">
+                        <span class="hrp-title">🎁 Mis Recompensas</span>
+                        <span class="hab-gold-pill" id="habRewardGold">🪙 0</span>
                     </div>
-                    <div class="hab-form-section">
-                        <label class="hab-form-label">💰 Costo en oro</label>
-                        <input class="hab-form-input" id="habNewRewardCost" type="number" min="1" value="20" placeholder="20">
+                    <p class="hrp-subtitle">Canjea tu oro ganado por experiencias reales que te motivan a seguir.</p>
+                    <div class="hrp-filter-row" id="hrpFilterRow">
+                        <button class="hrp-filter-btn active" onclick="hrpFilter('all',this)">✨ Todos</button>
+                        <button class="hrp-filter-btn" onclick="hrpFilter('easy',this)">🟢 Fácil</button>
+                        <button class="hrp-filter-btn" onclick="hrpFilter('mid',this)">🟡 Medio</button>
+                        <button class="hrp-filter-btn" onclick="hrpFilter('epic',this)">🟣 Épico</button>
+                        <button class="hrp-filter-btn" onclick="hrpFilter('available',this)">⚡ Al alcance</button>
                     </div>
-                    <div class="hab-form-section">
-                        <label class="hab-form-label">🎯 Icono</label>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <span class="hab-emoji-opt" data-reward-emoji="🍕" onclick="selectRewardEmoji(this)">🍕</span>
-                            <span class="hab-emoji-opt" data-reward-emoji="🎬" onclick="selectRewardEmoji(this)">🎬</span>
-                            <span class="hab-emoji-opt" data-reward-emoji="🎮" onclick="selectRewardEmoji(this)">🎮</span>
-                            <span class="hab-emoji-opt" data-reward-emoji="🛍️" onclick="selectRewardEmoji(this)">🛍️</span>
-                            <span class="hab-emoji-opt" data-reward-emoji="😴" onclick="selectRewardEmoji(this)">😴</span>
-                            <span class="hab-emoji-opt" data-reward-emoji="🎵" onclick="selectRewardEmoji(this)">🎵</span>
-                            <span class="hab-emoji-opt" data-reward-emoji="☕" onclick="selectRewardEmoji(this)">☕</span>
-                            <span class="hab-emoji-opt" data-reward-emoji="🏖️" onclick="selectRewardEmoji(this)">🏖️</span>
+                    <div class="hrp-grid" id="habRewardsList">
+                        <!-- FÁCIL -->
+                        <div class="hrp-tier-divider easy"><span>🟢 Fácil</span></div>
+                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🎵</div><div class="hab-reward-info"><div class="hab-reward-name">Canción favorita a todo volumen</div><div class="hab-reward-desc">Pon esa canción que te sube el ánimo al máximo.</div><span class="hab-reward-cost cant-buy">🪙 5 — Faltan 5</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">📱</div><div class="hab-reward-info"><div class="hab-reward-name">10 min de redes sin culpa</div><div class="hab-reward-desc">Scroll libre, sin timer mental ni remordimientos.</div><span class="hab-reward-cost cant-buy">🪙 8 — Faltan 8</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">☕</div><div class="hab-reward-info"><div class="hab-reward-name">Descanso total de 15 min</div><div class="hab-reward-desc">Café, agua o simplemente no hacer nada. Lo mereces.</div><span class="hab-reward-cost cant-buy">🪙 10 — Faltan 10</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">▶️</div><div class="hab-reward-info"><div class="hab-reward-name">Video pendiente de YouTube</div><div class="hab-reward-desc">Ese video que tienes guardado y nunca ves.</div><span class="hab-reward-cost cant-buy">🪙 12 — Faltan 12</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🍫</div><div class="hab-reward-info"><div class="hab-reward-name">Snack favorito ahora mismo</div><div class="hab-reward-desc">El antojo que llevas pensando toda la mañana.</div><span class="hab-reward-cost cant-buy">🪙 15 — Faltan 15</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🚶</div><div class="hab-reward-info"><div class="hab-reward-name">Mini paseo de 10 min al aire libre</div><div class="hab-reward-desc">Sal, respira y despeja la mente.</div><span class="hab-reward-cost cant-buy">🪙 18 — Faltan 18</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🎬</div><div class="hab-reward-info"><div class="hab-reward-name">Episodio de tu serie favorita</div><div class="hab-reward-desc">Un episodio completo, sin pausas ni culpa.</div><span class="hab-reward-cost cant-buy">🪙 25 — Faltan 25</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🎮</div><div class="hab-reward-info"><div class="hab-reward-name">30 min de videojuego</div><div class="hab-reward-desc">Modo de juego activado, productividad guardada.</div><span class="hab-reward-cost cant-buy">🪙 30 — Faltan 30</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <!-- MEDIO -->
+                        <div class="hrp-tier-divider mid"><span>🟡 Medio</span></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🍿</div><div class="hab-reward-info"><div class="hab-reward-name">Tarde de películas o maratón</div><div class="hab-reward-desc">Sofá, manta y tu peli o serie de elección.</div><span class="hab-reward-cost cant-buy">🪙 45 — Faltan 45</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🛵</div><div class="hab-reward-info"><div class="hab-reward-name">Pedir tu comida favorita a domicilio</div><div class="hab-reward-desc">Sin cocinar, sin lavar, solo disfrutar.</div><span class="hab-reward-cost cant-buy">🪙 50 — Faltan 50</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">😴</div><div class="hab-reward-info"><div class="hab-reward-name">Siesta sin alarma</div><div class="hab-reward-desc">Duerme hasta que el cuerpo diga basta.</div><span class="hab-reward-cost cant-buy">🪙 55 — Faltan 55</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🎧</div><div class="hab-reward-info"><div class="hab-reward-name">Sesión de música / podcast 1 hora</div><div class="hab-reward-desc">Escucha sin interrupciones, solo tú y el sonido.</div><span class="hab-reward-cost cant-buy">🪙 60 — Faltan 60</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🛁</div><div class="hab-reward-info"><div class="hab-reward-name">Baño largo con música y calma</div><div class="hab-reward-desc">Agua caliente, tu playlist y silencio del mundo.</div><span class="hab-reward-cost cant-buy">🪙 65 — Faltan 65</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🧸</div><div class="hab-reward-info"><div class="hab-reward-name">Día entero de pijama y relax</div><div class="hab-reward-desc">Pijama todo el día, sin salir, sin explicar.</div><span class="hab-reward-cost cant-buy">🪙 70 — Faltan 70</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🛍️</div><div class="hab-reward-info"><div class="hab-reward-name">Comprar algo pequeño que querías</div><div class="hab-reward-desc">Ese detalle pequeño que llevas tiempo viendo.</div><span class="hab-reward-cost cant-buy">🪙 80 — Faltan 80</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🏳️</div><div class="hab-reward-info"><div class="hab-reward-name">Día sin culpa ni tareas pendientes</div><div class="hab-reward-desc">Hoy no existe la lista. Solo el presente.</div><span class="hab-reward-cost cant-buy">🪙 90 — Faltan 90</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🕹️</div><div class="hab-reward-info"><div class="hab-reward-name">Noche de juegos online con amigos</div><div class="hab-reward-desc">Sesión épica sin horario de cierre.</div><span class="hab-reward-cost cant-buy">🪙 100 — Faltan 100</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <!-- ÉPICO -->
+                        <div class="hrp-tier-divider epic"><span>🟣 Épico</span></div>
+                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">👥</div><div class="hab-reward-info"><div class="hab-reward-name">Salida especial con personas que quieres</div><div class="hab-reward-desc">Cena, parque, café — el plan que sea con quien importa.</div><span class="hab-reward-cost cant-buy">🪙 120 — Faltan 120</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">🍽️</div><div class="hab-reward-info"><div class="hab-reward-name">Comer en tu restaurante favorito</div><div class="hab-reward-desc">Ese lugar especial que reservas para momentos que valen.</div><span class="hab-reward-cost cant-buy">🪙 150 — Faltan 150</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">📚</div><div class="hab-reward-info"><div class="hab-reward-name">Comprar ese libro o juego esperado</div><div class="hab-reward-desc">Invierte en algo que te da placer e inspiración.</div><span class="hab-reward-cost cant-buy">🪙 160 — Faltan 160</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">🏕️</div><div class="hab-reward-info"><div class="hab-reward-name">Fin de semana sin pantalla de trabajo</div><div class="hab-reward-desc">Desconexión total. El trabajo puede esperar.</div><span class="hab-reward-cost cant-buy">🪙 200 — Faltan 200</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">💆</div><div class="hab-reward-info"><div class="hab-reward-name">Día de spa o autocuidado profundo</div><div class="hab-reward-desc">Masaje, skincare o lo que tu cuerpo necesite.</div><span class="hab-reward-cost cant-buy">🪙 220 — Faltan 220</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">🎁</div><div class="hab-reward-info"><div class="hab-reward-name">Compra especial que llevas planeando</div><div class="hab-reward-desc">Esa cosa que llevas meses mirando y mereces ya.</div><span class="hab-reward-cost cant-buy">🪙 260 — Faltan 260</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">✈️</div><div class="hab-reward-info"><div class="hab-reward-name">¡Viaje o escapada de un día!</div><div class="hab-reward-desc">Un destino nuevo, aunque sea a una hora de casa.</div><span class="hab-reward-cost cant-buy">🪙 300 — Faltan 300</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                    </div>
+                    <div class="hab-add-reward-btn" onclick="showAddRewardForm()">＋ Crear recompensa personalizada</div>
+                    <div id="habAddRewardForm" style="display:none;margin-top:0.8rem;">
+                        <div class="hab-form-section">
+                            <label class="hab-form-label">🎁 Nombre de la recompensa</label>
+                            <input class="hab-form-input" id="habNewRewardName" placeholder="Ej: Ver un episodio, Helado, Día libre...">
                         </div>
+                        <div class="hab-form-section">
+                            <label class="hab-form-label">💰 Costo en oro</label>
+                            <input class="hab-form-input" id="habNewRewardCost" type="number" min="1" value="20" placeholder="20">
+                        </div>
+                        <div class="hab-form-section">
+                            <label class="hab-form-label">🎯 Icono</label>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <span class="hab-emoji-opt" data-reward-emoji="🍕" onclick="selectRewardEmoji(this)">🍕</span>
+                                <span class="hab-emoji-opt" data-reward-emoji="🎬" onclick="selectRewardEmoji(this)">🎬</span>
+                                <span class="hab-emoji-opt" data-reward-emoji="🎮" onclick="selectRewardEmoji(this)">🎮</span>
+                                <span class="hab-emoji-opt" data-reward-emoji="🛍️" onclick="selectRewardEmoji(this)">🛍️</span>
+                                <span class="hab-emoji-opt" data-reward-emoji="😴" onclick="selectRewardEmoji(this)">😴</span>
+                                <span class="hab-emoji-opt" data-reward-emoji="🎵" onclick="selectRewardEmoji(this)">🎵</span>
+                                <span class="hab-emoji-opt" data-reward-emoji="☕" onclick="selectRewardEmoji(this)">☕</span>
+                                <span class="hab-emoji-opt" data-reward-emoji="🏖️" onclick="selectRewardEmoji(this)">🏖️</span>
+                            </div>
+                        </div>
+                        <button class="hab-save-btn" style="margin-top:0.5rem;" onclick="saveCustomReward()">💾 GUARDAR RECOMPENSA</button>
                     </div>
-                    <button class="hab-save-btn" style="margin-top:0.5rem;" onclick="saveCustomReward()">💾 GUARDAR RECOMPENSA</button>
                 </div>
             </div>
 
@@ -19479,55 +19647,141 @@ window.buyShopItem = function(itemId) {
 
 // ── RECOMPENSAS ───────────────────────────────────────────────
 const DEFAULT_REWARDS = [
-    /* ── FÁCILES (5–20 🪙) ── micro-recompensas para mantener el impulso */
-    {id:'r01', name:'5 min de redes sociales sin culpa', icon:'📱', cost:5},
-    {id:'r02', name:'Canción favorita a todo volumen',   icon:'🎵', cost:5},
-    {id:'r03', name:'Descanso de 10 minutos total',      icon:'☕', cost:8},
-    {id:'r04', name:'Video de YouTube que tenías pendiente', icon:'▶️', cost:10},
-    {id:'r05', name:'Snack que más te guste',            icon:'🍫', cost:12},
-    {id:'r06', name:'Ver un episodio de tu serie',       icon:'🎬', cost:15},
-    {id:'r07', name:'Capricho dulce (helado, postre…)',  icon:'🍕', cost:20},
-    /* ── MEDIOS (25–80 🪙) ── para logros consistentes */
-    {id:'r08', name:'30 min de videojuego sin culpa',    icon:'🎮', cost:25},
-    {id:'r09', name:'Pedir comida a domicilio',          icon:'🛵', cost:30},
-    {id:'r10', name:'Tarde de películas o maratón',      icon:'🍿', cost:35},
-    {id:'r11', name:'Sesión de música o podcast favorito', icon:'🎧', cost:35},
-    {id:'r12', name:'Siesta sin alarma',                 icon:'😴', cost:40},
-    {id:'r13', name:'Día de pijama y relax total',       icon:'🧸', cost:50},
-    {id:'r14', name:'Salir a caminar sin destino fijo',  icon:'🌳', cost:50},
-    {id:'r15', name:'Baño largo con música y calma',     icon:'🛁', cost:55},
-    {id:'r16', name:'Noche de juegos en línea',          icon:'🕹️', cost:60},
-    {id:'r17', name:'Comprar algo pequeño que querías',  icon:'🛍️', cost:70},
-    {id:'r18', name:'Día sin culpa ni tareas pendientes',icon:'🏳️', cost:80},
-    /* ── GRANDES (100–300 🪙) ── para semanas épicas */
-    {id:'r19', name:'Salida con amigos o familia',       icon:'👥', cost:100},
-    {id:'r20', name:'Comer en tu restaurante favorito',  icon:'🍽️', cost:120},
-    {id:'r21', name:'Fin de semana sin pantalla de trabajo', icon:'🏕️', cost:150},
-    {id:'r22', name:'Comprar ese libro o juego que espera', icon:'📚', cost:150},
-    {id:'r23', name:'Día de spa / autocuidado total',    icon:'💆', cost:200},
-    {id:'r24', name:'Compra especial que llevas tiempo planeando', icon:'🎁', cost:250},
-    {id:'r25', name:'¡Viaje o escapada de un día!',      icon:'✈️', cost:300},
+    /* ── FÁCIL (≤30 🪙) — micro-recompensas diarias ── */
+    {id:'pr01',name:'Canción favorita a todo volumen',   icon:'🎵',cost:5, tier:'easy',desc:'Pon esa canción que te sube el ánimo al máximo.'},
+    {id:'pr02',name:'10 min de redes sin culpa',         icon:'📱',cost:8, tier:'easy',desc:'Scroll libre, sin timer mental ni remordimientos.'},
+    {id:'pr03',name:'Descanso total de 15 min',          icon:'☕',cost:10,tier:'easy',desc:'Café, agua o simplemente no hacer nada. Lo mereces.'},
+    {id:'pr04',name:'Video pendiente de YouTube',        icon:'▶️',cost:12,tier:'easy',desc:'Ese video que tienes guardado y nunca ves.'},
+    {id:'pr05',name:'Snack favorito ahora mismo',        icon:'🍫',cost:15,tier:'easy',desc:'El antojo que llevas pensando toda la mañana.'},
+    {id:'pr06',name:'Mini paseo de 10 min al aire libre',icon:'🚶',cost:18,tier:'easy',desc:'Sal, respira y despeja la mente.'},
+    {id:'pr07',name:'Episodio de tu serie favorita',     icon:'🎬',cost:25,tier:'easy',desc:'Un episodio completo, sin pausas ni culpa.'},
+    {id:'pr08',name:'30 min de videojuego',              icon:'🎮',cost:30,tier:'easy',desc:'Modo de juego activado, productividad guardada.'},
+    /* ── MEDIO (40–100 🪙) — para semanas consistentes ── */
+    {id:'pr09',name:'Tarde de películas o maratón',      icon:'🍿',cost:45,tier:'mid', desc:'Sofá, manta y tu peli o serie de elección.'},
+    {id:'pr10',name:'Pedir tu comida favorita a domicilio',icon:'🛵',cost:50,tier:'mid',desc:'Sin cocinar, sin lavar, solo disfrutar.'},
+    {id:'pr11',name:'Siesta sin alarma',                 icon:'😴',cost:55,tier:'mid', desc:'Duerme hasta que el cuerpo diga basta.'},
+    {id:'pr12',name:'Sesión de música / podcast 1 hora', icon:'🎧',cost:60,tier:'mid', desc:'Escucha sin interrupciones, solo tú y el sonido.'},
+    {id:'pr13',name:'Baño largo con música y calma',     icon:'🛁',cost:65,tier:'mid', desc:'Agua caliente, tu playlist y silencio del mundo.'},
+    {id:'pr14',name:'Día entero de pijama y relax',      icon:'🧸',cost:70,tier:'mid', desc:'Pijama todo el día, sin salir, sin explicar.'},
+    {id:'pr15',name:'Comprar algo pequeño que querías',  icon:'🛍️',cost:80,tier:'mid', desc:'Ese detalle pequeño que llevas tiempo viendo.'},
+    {id:'pr16',name:'Día sin culpa ni tareas pendientes',icon:'🏳️',cost:90,tier:'mid', desc:'Hoy no existe la lista. Solo el presente.'},
+    {id:'pr17',name:'Noche de juegos online con amigos', icon:'🕹️',cost:100,tier:'mid',desc:'Sesión épica sin horario de cierre.'},
+    /* ── ÉPICO (120+ 🪙) — para logros de alto impacto ── */
+    {id:'pr18',name:'Salida especial con personas que quieres',icon:'👥',cost:120,tier:'epic',desc:'Cena, parque, café — el plan que sea con quien importa.'},
+    {id:'pr19',name:'Comer en tu restaurante favorito',  icon:'🍽️',cost:150,tier:'epic',desc:'Ese lugar especial que reservas para momentos que valen.'},
+    {id:'pr20',name:'Comprar ese libro o juego esperado',icon:'📚',cost:160,tier:'epic',desc:'Invierte en algo que te da placer e inspiración.'},
+    {id:'pr21',name:'Fin de semana sin pantalla de trabajo',icon:'🏕️',cost:200,tier:'epic',desc:'Desconexión total. El trabajo puede esperar.'},
+    {id:'pr22',name:'Día de spa o autocuidado profundo', icon:'💆',cost:220,tier:'epic',desc:'Masaje, skincare o lo que tu cuerpo necesite.'},
+    {id:'pr23',name:'Compra especial que llevas planeando',icon:'🎁',cost:260,tier:'epic',desc:'Esa cosa que llevas meses mirando y mereces ya.'},
+    {id:'pr24',name:'¡Viaje o escapada de un día!',      icon:'✈️',cost:300,tier:'epic',desc:'Un destino nuevo, aunque sea a una hora de casa.'},
 ];
 let selectedRewardEmoji = '🎁';
+let _hrpActiveFilter = 'all';
+
+window.hrpFilter = function(f, btn) {
+    _hrpActiveFilter = f;
+    document.querySelectorAll('.hrp-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderHabRewards();
+};
 
 window.renderHabRewards = function() {
     const el     = document.getElementById('habRewardsList');
     const goldEl = document.getElementById('habRewardGold');
     if (!el) return;
-    const hero    = loadHero();
-    const rewards = loadRewards().length ? loadRewards() : DEFAULT_REWARDS;
-    if (goldEl) goldEl.textContent = `🪙 ${hero.coins||0}`;
 
-    el.innerHTML = rewards.map(r => `
-        <div class="hab-reward-card" onclick="buyReward('${r.id}')">
+    /* Autosuficiente: funciona con o sin localStorage/loadHero */
+    var coins = 0;
+    try {
+        if (typeof loadHero === 'function') {
+            var hero = loadHero();
+            coins = hero.coins || 0;
+        }
+    } catch(e) {}
+    if (goldEl) goldEl.textContent = '🪙 ' + coins;
+
+    /* Leer storage de forma segura, migrar datos viejos, y usar DEFAULT_REWARDS si vacío */
+    var stored = [];
+    try {
+        if (typeof loadRewards === 'function') {
+            stored = loadRewards() || [];
+        } else if (typeof localStorage !== 'undefined') {
+            stored = JSON.parse(localStorage.getItem('jch_rewards_v1') || '[]');
+        }
+    } catch(e) { stored = []; }
+    const OLD_IDS = new Set(['r1','r2','r3','r4']);
+    const isOldData = stored.length > 0 && stored.every(function(r){ return OLD_IDS.has(r.id); });
+    if (isOldData) {
+        try { if (typeof saveRewards === 'function') saveRewards([]); } catch(e) {}
+        stored = [];
+    }
+    const rewards = (stored && stored.length) ? stored : DEFAULT_REWARDS;
+
+    const tierMeta = {
+        easy: { label:'🟢 Fácil',   cls:'easy' },
+        mid:  { label:'🟡 Medio',   cls:'mid'  },
+        epic: { label:'🟣 Épico',   cls:'epic' },
+    };
+
+    let filtered = rewards;
+    if (_hrpActiveFilter === 'easy')      filtered = rewards.filter(r => r.tier === 'easy' || (!r.tier && r.cost <= 30));
+    else if (_hrpActiveFilter === 'mid')  filtered = rewards.filter(r => r.tier === 'mid'  || (!r.tier && r.cost > 30 && r.cost <= 100));
+    else if (_hrpActiveFilter === 'epic') filtered = rewards.filter(r => r.tier === 'epic' || (!r.tier && r.cost > 100));
+    else if (_hrpActiveFilter === 'available') filtered = rewards.filter(r => coins >= r.cost);
+
+    /* Agrupar por tier para mostrar divisores */
+    const grouped = { easy:[], mid:[], epic:[], custom:[] };
+    filtered.forEach(r => {
+        const t = r.tier || (r.cost <= 30 ? 'easy' : r.cost <= 100 ? 'mid' : 'epic');
+        if (grouped[t]) grouped[t].push(r); else grouped.custom.push(r);
+    });
+
+    const renderCard = r => {
+        const canBuy  = coins >= r.cost;
+        const tier    = r.tier || (r.cost <= 30 ? 'easy' : r.cost <= 100 ? 'mid' : 'epic');
+        const tierC   = tierMeta[tier] || tierMeta.easy;
+        const costCls = canBuy ? 'can-buy' : 'cant-buy';
+        const costTxt = canBuy
+            ? `🪙 ${r.cost} — ¡Canjear!`
+            : `🪙 ${r.cost} — Faltan ${r.cost - coins}`;
+        return `<div class="hab-reward-card tier-${tier}${canBuy?'':' locked'}" onclick="${canBuy?`buyReward('${r.id}')`:''}" title="${canBuy?'Haz clic para canjear':'Necesitas más oro'}">
             <div class="hab-reward-icon">${r.icon}</div>
             <div class="hab-reward-info">
                 <div class="hab-reward-name">${r.name}</div>
-                <div class="hab-reward-cost">${(hero.coins||0) >= r.cost ? `🪙 ${r.cost} — ¡Puedes canjear!` : `🪙 ${r.cost} — Necesitas ${r.cost-(hero.coins||0)} más`}</div>
+                ${r.desc?`<div class="hab-reward-desc">${r.desc}</div>`:''}
+                <span class="hab-reward-cost ${costCls}">${costTxt}</span>
             </div>
-            <div style="font-size:0.65rem;cursor:pointer;color:#555;" onclick="event.stopPropagation();deleteReward('${r.id}')">🗑️</div>
-        </div>
-    `).join('');
+            <span class="hrp-tier-badge ${tierC.cls}">${tierC.label}</span>
+            <div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" onclick="event.stopPropagation();deleteReward('${r.id}')" title="Eliminar">🗑️</div>
+        </div>`;
+    };
+
+    const renderDivider = (tier) => {
+        const m = tierMeta[tier];
+        return m ? `<div class="hrp-tier-divider ${tier}"><span>${m.label}</span></div>` : '';
+    };
+
+    let html = '';
+    if (_hrpActiveFilter === 'all') {
+        ['easy','mid','epic','custom'].forEach(t => {
+            if (grouped[t] && grouped[t].length) {
+                if (t !== 'custom') html += renderDivider(t);
+                html += grouped[t].map(renderCard).join('');
+            }
+        });
+    } else {
+        html = filtered.map(renderCard).join('');
+    }
+
+    if (!html) {
+        html = `<div style="text-align:center;padding:24px 8px;color:#4b5563;">
+            <div style="font-size:2rem;margin-bottom:8px;">🔒</div>
+            <div style="font-size:0.7rem;font-weight:800;color:#6b7280;">Sin recompensas en este nivel</div>
+            <div style="font-size:0.6rem;color:#374151;margin-top:4px;">Sigue completando hábitos para ganar oro.</div>
+        </div>`;
+    }
+
+    el.innerHTML = html;
 };
 
 window.buyReward = function(id) {
