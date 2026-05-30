@@ -21089,6 +21089,79 @@ window.showRandomCard = function() {
 
 
 
+
+
+const MOODS = [
+    { id:'amazing', emoji:'🤩', label:'Increíble', color:'#fbbf24', bg:'rgba(251,191,36,0.15)', glow:'rgba(251,191,36,0.3)' },
+    { id:'good',    emoji:'😊', label:'Bien',      color:'#22c55e', bg:'rgba(34,197,94,0.15)',  glow:'rgba(34,197,94,0.3)'  },
+    { id:'neutral', emoji:'😐', label:'Normal',    color:'#6366f1', bg:'rgba(99,102,241,0.15)', glow:'rgba(99,102,241,0.3)' },
+    { id:'bad',     emoji:'😞', label:'Mal',       color:'#f97316', bg:'rgba(249,115,22,0.15)', glow:'rgba(249,115,22,0.3)' },
+    { id:'awful',   emoji:'😭', label:'Terrible',  color:'#ef4444', bg:'rgba(239,68,68,0.15)',  glow:'rgba(239,68,68,0.3)'  },
+];
+let _selectedMood = 'good';
+
+window.renderHabDiario = function() {
+    const moodRow = document.getElementById('habMoodRow');
+    if (moodRow) {
+        moodRow.innerHTML = MOODS.map(m =>
+            '<div class="hab-mood-btn '+(_selectedMood===m.id?'selected':'')+'" '+
+            'style="--mc:'+m.color+';--mbg:'+m.bg+';--mglow:'+m.glow+';" onclick="selectMood(\''+m.id+'\')">' +
+            '<span class="hab-mood-emoji">'+m.emoji+'</span>' +
+            '<span class="hab-mood-label">'+m.label+'</span>' +
+            '</div>'
+        ).join('');
+    }
+    renderJournalHistory();
+};
+
+window.selectMood = function(moodId) {
+    _selectedMood = moodId;
+    document.querySelectorAll('.hab-mood-btn').forEach((b,i) => {
+        const m=MOODS[i]; if(!m) return;
+        b.classList.toggle('selected',m.id===moodId);
+        b.style.setProperty('--mc',m.color);
+        b.style.setProperty('--mbg',m.bg);
+        b.style.setProperty('--mglow',m.glow);
+    });
+};
+
+window.saveJournalEntry = function() {
+    const textEl=document.getElementById('habJournalText');
+    const text=(textEl?textEl.value.trim():'');
+    if(!text) return;
+    const journal=loadJournal();
+    const mood=MOODS.find(m=>m.id===_selectedMood)||MOODS[1];
+    journal.unshift({ date:todayKey(), mood:_selectedMood, moodEmoji:mood.emoji, moodLabel:mood.label, text:text, ts:Date.now() });
+    if(journal.length>60) journal.splice(60);
+    saveJournal(journal);
+    if(textEl) textEl.value='';
+    if(typeof playSparkleSound==='function') playSparkleSound();
+    const t=document.getElementById('habStreakToast');
+    if(t){t.textContent=mood.emoji+' Entrada guardada en tu diario';t.style.background='linear-gradient(135deg,#6366f1,#a78bfa)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+    renderJournalHistory();
+};
+
+function renderJournalHistory() {
+    const el=document.getElementById('habJournalHistory');
+    if(!el) return;
+    const journal=loadJournal();
+    if(!journal.length){el.innerHTML='<div style="color:#444;font-size:0.75rem;text-align:center;padding:10px;">Sin entradas aún. ¡Escribe algo!</div>';return;}
+    const MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    el.innerHTML=journal.slice(0,10).map(e=>{
+        const d=new Date(e.date);
+        const dateStr=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
+        const mood=MOODS.find(m=>m.id===e.mood)||MOODS[1];
+        return '<div class="hab-journal-entry">' +
+            '<div class="hab-je-header">' +
+              '<span style="font-size:1rem;">'+e.moodEmoji+'</span>' +
+              '<span style="font-size:0.68rem;font-weight:900;color:'+mood.color+';">'+e.moodLabel+'</span>' +
+              '<span class="hab-je-date">'+dateStr+'</span>' +
+            '</div>' +
+            '<div class="hab-je-text">'+e.text.substring(0,200)+(e.text.length>200?'...':'')+'</div>' +
+            '</div>';
+    }).join('');
+}
+
 const _origSwitchLR = window.switchHabTab;
 window.switchHabTab = function(tab, el) {
     _origSwitchLR && _origSwitchLR(tab, el);
@@ -25205,88 +25278,6 @@ window._cronoShowDetail = function(idx) {
 
 
 })();
-
-
-
-// ── DIARIO EMOCIONAL ──────────────────────────────────────────
-const MOODS = [
-    { id:'amazing', emoji:'🤩', label:'Increíble', color:'#fbbf24', bg:'rgba(251,191,36,0.15)', glow:'rgba(251,191,36,0.3)' },
-    { id:'good',    emoji:'😊', label:'Bien',      color:'#22c55e', bg:'rgba(34,197,94,0.15)',  glow:'rgba(34,197,94,0.3)'  },
-    { id:'neutral', emoji:'😐', label:'Normal',    color:'#6366f1', bg:'rgba(99,102,241,0.15)', glow:'rgba(99,102,241,0.3)' },
-    { id:'bad',     emoji:'😞', label:'Mal',       color:'#f97316', bg:'rgba(249,115,22,0.15)', glow:'rgba(249,115,22,0.3)' },
-    { id:'awful',   emoji:'😭', label:'Terrible',  color:'#ef4444', bg:'rgba(239,68,68,0.15)',  glow:'rgba(239,68,68,0.3)'  },
-];
-let _selectedMood = 'good';
-
-window.renderHabDiario = function() {
-    // Mood selector
-    const moodRow = document.getElementById('habMoodRow');
-    if (moodRow) {
-        moodRow.innerHTML = MOODS.map(m =>
-            '<div class="hab-mood-btn '+(_selectedMood===m.id?'selected':'')+'" '+
-            'style="--mc:'+m.color+';--mbg:'+m.bg+';--mglow:'+m.glow+';" onclick="selectMood(\''+m.id+'\')">' +
-            '<span class="hab-mood-emoji">'+m.emoji+'</span>' +
-            '<span class="hab-mood-label">'+m.label+'</span>' +
-            '</div>'
-        ).join('');
-    }
-
-    // Historial
-    renderJournalHistory();
-};
-
-window.selectMood = function(moodId) {
-    _selectedMood = moodId;
-    document.querySelectorAll('.hab-mood-btn').forEach((b,i) => {
-        const m=MOODS[i]; if(!m) return;
-        b.classList.toggle('selected',m.id===moodId);
-        b.style.setProperty('--mc',m.color);
-        b.style.setProperty('--mbg',m.bg);
-        b.style.setProperty('--mglow',m.glow);
-    });
-};
-
-window.saveJournalEntry = function() {
-    const textEl=document.getElementById('habJournalText');
-    const text=(textEl?textEl.value.trim():'');
-    if(!text) return;
-
-    const journal=loadJournal();
-    const mood=MOODS.find(m=>m.id===_selectedMood)||MOODS[1];
-    journal.unshift({ date:todayKey(), mood:_selectedMood, moodEmoji:mood.emoji, moodLabel:mood.label, text, ts:Date.now() });
-    // Guardar máximo 60 entradas
-    if(journal.length>60) journal.splice(60);
-    saveJournal(journal);
-
-    if(textEl) textEl.value='';
-    if(typeof playSparkleSound==='function') playSparkleSound();
-    const t=document.getElementById('habStreakToast');
-    if(t){t.textContent=mood.emoji+' Entrada guardada en tu diario';t.style.background='linear-gradient(135deg,#6366f1,#a78bfa)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
-
-    renderJournalHistory();
-};
-
-function renderJournalHistory() {
-    const el=document.getElementById('habJournalHistory');
-    if(!el) return;
-    const journal=loadJournal();
-    if(!journal.length){el.innerHTML='<div style="color:#444;font-size:0.75rem;text-align:center;padding:10px;">Sin entradas aún. ¡Escribe algo!</div>';return;}
-
-    const MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    el.innerHTML=journal.slice(0,10).map(e=>{
-        const d=new Date(e.date);
-        const dateStr=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
-        const mood=MOODS.find(m=>m.id===e.mood)||MOODS[1];
-        return '<div class="hab-journal-entry">' +
-            '<div class="hab-je-header">' +
-              '<span style="font-size:1rem;">'+e.moodEmoji+'</span>' +
-              '<span style="font-size:0.68rem;font-weight:900;color:'+mood.color+';">'+e.moodLabel+'</span>' +
-              '<span class="hab-je-date">'+dateStr+'</span>' +
-            '</div>' +
-            '<div class="hab-je-text">'+e.text.substring(0,200)+(e.text.length>200?'...':'')+'</div>' +
-            '</div>';
-    }).join('');
-}
 
 </script>
 </body>
