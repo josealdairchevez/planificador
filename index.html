@@ -20533,6 +20533,560 @@ window._HAB_QUESTS = QUESTS;
 window._HAB_CHESTS = CHESTS;
 
 })();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  LIFE RESET FEATURES — 66 Días, Pilares, Cartas, Hard Mode,
+//  Rating de Vida, Diario Emocional
+// ═══════════════════════════════════════════════════════════════
+(function() {
+
+const HABITS_KEY  = 'jch_habits_v1';
+const HERO_KEY    = 'jch_hero_v1';
+const JOURNEY_KEY = 'jch_journey_v1';
+const JOURNAL_KEY = 'jch_journal_v1';
+const CARDS_KEY   = 'jch_cards_v1';
+
+function loadHabits()  { return JSON.parse(localStorage.getItem(HABITS_KEY)||'[]'); }
+function loadHero()    { return JSON.parse(localStorage.getItem(HERO_KEY)||'null')||{coins:0,level:1,hp:100,maxHp:100,xp:0,xpNext:100}; }
+function saveHero(h)   { localStorage.setItem(HERO_KEY,JSON.stringify(h)); }
+function loadJourney() { return JSON.parse(localStorage.getItem(JOURNEY_KEY)||'null')||{ startDate:new Date().toISOString().split('T')[0], hardMode:false, dayLog:{} }; }
+function saveJourney(j){ localStorage.setItem(JOURNEY_KEY,JSON.stringify(j)); }
+function loadJournal() { return JSON.parse(localStorage.getItem(JOURNAL_KEY)||'[]'); }
+function saveJournal(j){ localStorage.setItem(JOURNAL_KEY,JSON.stringify(j)); }
+function loadCards()   { return JSON.parse(localStorage.getItem(CARDS_KEY)||'[]'); }
+function saveCards(c)  { localStorage.setItem(CARDS_KEY,JSON.stringify(c)); }
+
+function todayKey() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+// ── PILARES DE VIDA ───────────────────────────────────────────
+const PILLARS = [
+    { id:'sleep',   name:'Sueño',       icon:'😴', color:'#6366f1', glow:'rgba(99,102,241,0.3)',
+      tip:'Hábitos: dormir temprano, sin pantallas', habitKeys:['dormir','sueño','descanso'] },
+    { id:'water',   name:'Hidratación', icon:'💧', color:'#0ea5e9', glow:'rgba(14,165,233,0.3)',
+      tip:'Hábitos: beber agua, hidratarte', habitKeys:['agua','hidrat','beber'] },
+    { id:'exercise',name:'Ejercicio',   icon:'💪', color:'#22c55e', glow:'rgba(34,197,94,0.3)',
+      tip:'Hábitos: gym, correr, ejercicio', habitKeys:['ejercicio','gym','correr','deporte','caminar'] },
+    { id:'mind',    name:'Mente',       icon:'🧠', color:'#a78bfa', glow:'rgba(167,139,250,0.3)',
+      tip:'Hábitos: meditar, leer, estudiar', habitKeys:['meditar','leer','estudiar','mente','meditación'] },
+    { id:'screen',  name:'Pantallas',   icon:'📵', color:'#f97316', glow:'rgba(249,115,22,0.3)',
+      tip:'Hábitos: sin redes, sin móvil', habitKeys:['pantalla','redes','móvil','celular','screen'] },
+    { id:'hygiene', name:'Hábitos',     icon:'🚿', color:'#ec4899', glow:'rgba(236,72,153,0.3)',
+      tip:'Hábitos: ducha, rutina matutina', habitKeys:['ducha','higiene','rutina','mañana'] },
+];
+
+function calcPillarScore(pillar) {
+    const habits = loadHabits();
+    // Prioridad 1: hábitos vinculados explícitamente a este pilar
+    let related = habits.filter(h => h.pillar === pillar.id);
+    // Prioridad 2: hábitos sin pilar asignado que coincidan por nombre
+    if (!related.length) {
+        related = habits.filter(h => {
+            if (h.pillar && h.pillar !== 'none') return false; // ya tiene pilar asignado a otro
+            const name = (h.name||'').toLowerCase();
+            return pillar.habitKeys.some(k => name.includes(k));
+        });
+    }
+    // Si no hay ninguno relacionado, score 0 (no contaminar con completitud general)
+    if (!related.length) return 0;
+    const now = new Date();
+    let done=0, total=0;
+    for (let i=0;i<14;i++) {
+        const d=new Date(now); d.setDate(d.getDate()-i);
+        const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        related.forEach(h=>{
+            total++;
+            if((h.log||[]).includes(k)) done++;
+        });
+    }
+    return total>0 ? Math.round((done/total)*100) : 0;
+}
+
+function calcLifeRating() {
+    const scores = PILLARS.map(p => calcPillarScore(p));
+    const avg    = scores.reduce((s,v)=>s+v,0) / scores.length;
+    return Math.round(avg);
+}
+
+// ── RENDER TAB VIAJE ──────────────────────────────────────────
+window.renderHabViaje = function() {
+    const journey = loadJourney();
+    const habits  = loadHabits();
+
+    // Rating
+    const rating = calcLifeRating();
+    const ratingEl = document.getElementById('habLifeRatingNum');
+    if (ratingEl) ratingEl.textContent = rating;
+
+    // Hard Mode toggle
+    const hmt = document.getElementById('habHardModeToggle');
+    if (hmt) hmt.classList.toggle('on', !!journey.hardMode);
+
+    // Programa 66 días
+    const banner = document.getElementById('habJourneyBanner');
+    if (banner) {
+        const start    = new Date(journey.startDate);
+        const today    = new Date();
+        const dayNum   = Math.min(66, Math.max(1, Math.round((today-start)/86400000)+1));
+        const pct      = Math.round((dayNum/66)*100);
+
+        // Generar 66 puntos
+        const dots = [];
+        for (let i=1;i<=66;i++) {
+            const d=new Date(start); d.setDate(d.getDate()+i-1);
+            const k=d.toISOString().split('T')[0];
+            const todStr=todayKey();
+            if (k===todStr)      dots.push('<div class="hab-journey-dot today" title="Hoy: Día '+i+'"></div>');
+            else if (k<todStr) {
+                // Verificar si completó al menos un hábito ese día
+                const anyDone=habits.some(h=>(h.log||[]).includes(k));
+                if(journey.dayLog&&journey.dayLog[k]==='failed') dots.push('<div class="hab-journey-dot failed" title="Día '+i+': Fallado"></div>');
+                else if(anyDone) dots.push('<div class="hab-journey-dot done" title="Día '+i+': Completado"></div>');
+                else dots.push('<div class="hab-journey-dot" title="Día '+i+'"></div>');
+            } else dots.push('<div class="hab-journey-dot" title="Día '+i+'"></div>');
+        }
+
+        const diffLabel = rating>=80?'🏆 Élite':rating>=60?'⚡ Avanzado':rating>=40?'📈 En Progreso':'🌱 Comenzando';
+        banner.innerHTML =
+            '<div class="hab-journey-top">' +
+              '<div class="hab-journey-day-badge"><span class="hab-journey-day-num">'+dayNum+'</span><span class="hab-journey-day-lbl">de 66</span></div>' +
+              '<div class="hab-journey-info"><div class="hab-journey-title">Tu Arco de Transformación</div><div class="hab-journey-sub">La ciencia dice que 66 días forman un hábito</div></div>' +
+              '<div class="hab-journey-rating">'+diffLabel+'</div>' +
+            '</div>' +
+            '<div class="hab-journey-prog-row">' +
+              '<div class="hab-journey-prog-track"><div class="hab-journey-prog-fill" style="width:'+pct+'%"></div></div>' +
+              '<div class="hab-journey-prog-pct">'+pct+'%</div>' +
+            '</div>' +
+            '<div class="hab-journey-dots">'+dots.join('')+'</div>';
+    }
+
+    // Pilares
+    const pillarsEl = document.getElementById('habPillarsGrid');
+    if (pillarsEl) {
+        pillarsEl.innerHTML = PILLARS.map(p => {
+            const score = calcPillarScore(p);
+            const label = score>=80?'Excelente':score>=60?'Bueno':score>=40?'Regular':'Mejorar';
+            return '<div class="hab-pillar-card" style="--pc:'+p.color+'">' +
+                '<div class="hab-pillar-header">' +
+                  '<span class="hab-pillar-icon">'+p.icon+'</span>' +
+                  '<span class="hab-pillar-name">'+p.name+'</span>' +
+                  '<span class="hab-pillar-score">'+score+'%</span>' +
+                '</div>' +
+                '<div class="hab-pillar-bar-track"><div class="hab-pillar-bar-fill" style="width:'+score+'%;background:'+p.color+'"></div></div>' +
+                '<div class="hab-pillar-tip">'+label+' · '+p.tip+'</div>' +
+                '</div>';
+        }).join('');
+    }
+};
+
+// ── MODO DIFÍCIL ──────────────────────────────────────────────
+window.toggleHardMode = function() {
+    const journey = loadJourney();
+    journey.hardMode = !journey.hardMode;
+    saveJourney(journey);
+    const hmt = document.getElementById('habHardModeToggle');
+    if (hmt) hmt.classList.toggle('on', journey.hardMode);
+    const t=document.getElementById('habStreakToast');
+    if(t){
+        t.textContent=journey.hardMode?'💀 ¡Modo Difícil activado! No fallas.':'😌 Modo Normal activado';
+        t.style.background=journey.hardMode?'linear-gradient(135deg,#ef4444,#7f1d1d)':'linear-gradient(135deg,#10b981,#065f46)';
+        t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500);
+    }
+};
+
+// Hook en Modo Difícil: penalizar al inicio del día si falló ayer
+function checkHardModeReset() {
+    const journey=loadJourney();
+    if(!journey.hardMode) return;
+    const today=new Date();
+    const yesterday=new Date(today); yesterday.setDate(yesterday.getDate()-1);
+    const yk=yesterday.toISOString().split('T')[0];
+    const habits=loadHabits();
+    const anyDoneYesterday=habits.some(h=>(h.log||[]).includes(yk));
+    if(!anyDoneYesterday && !journey.dayLog?.[yk]) {
+        // Penalizar: -20 HP
+        const hero=loadHero();
+        hero.hp=Math.max(0,hero.hp-20);
+        saveHero(hero);
+        journey.dayLog=journey.dayLog||{};
+        journey.dayLog[yk]='failed';
+        saveJourney(journey);
+    }
+}
+
+// ── CARTAS MOTIVACIONALES ─────────────────────────────────────
+const CARD_CATEGORIES = [
+    { id:'confidence', label:'Confianza', icon:'🦁', color:'#fbbf24', bg:'linear-gradient(135deg,#1c0a00,#2d1500)', border:'rgba(251,191,36,0.4)', catColor:'#fbbf24' },
+    { id:'strength',   label:'Fuerza',    icon:'⚡', color:'#ef4444', bg:'linear-gradient(135deg,#1c0000,#2d0505)', border:'rgba(239,68,68,0.4)',  catColor:'#ef4444' },
+    { id:'discipline', label:'Disciplina',icon:'🎯', color:'#a78bfa', bg:'linear-gradient(135deg,#0f0020,#1e0040)', border:'rgba(167,139,250,0.4)',catColor:'#a78bfa' },
+    { id:'wisdom',     label:'Sabiduría', icon:'🦉', color:'#0ea5e9', bg:'linear-gradient(135deg,#00101c,#002040)', border:'rgba(14,165,233,0.4)', catColor:'#0ea5e9' },
+    { id:'focus',      label:'Enfoque',   icon:'🔥', color:'#10b981', bg:'linear-gradient(135deg,#001c0f,#002d1a)', border:'rgba(16,185,129,0.4)', catColor:'#10b981' },
+];
+
+const CARDS_DB = [
+    /* ══ CONFIANZA (30) ══ */
+    {id:'conf01',cat:'confidence',icon:'🦁',quote:'La confianza no viene de tener siempre la razón. Viene de no tener miedo a estar equivocado.',author:'Peter McIntyre'},
+    {id:'conf02',cat:'confidence',icon:'🦁',quote:'Cree en ti mismo y en todo lo que eres. Hay algo dentro de ti más grande que cualquier obstáculo.',author:'Christian D. Larson'},
+    {id:'conf03',cat:'confidence',icon:'🦁',quote:'Tu tiempo es limitado. No lo desperdicies viviendo la vida de otra persona.',author:'Steve Jobs'},
+    {id:'conf04',cat:'confidence',icon:'🦁',quote:'Nadie puede hacerte sentir inferior sin tu consentimiento.',author:'Eleanor Roosevelt'},
+    {id:'conf05',cat:'confidence',icon:'🦁',quote:'No esperes a sentirte seguro para actuar. Actúa y la seguridad llegará.',author:'Barbara De Angelis'},
+    {id:'conf06',cat:'confidence',icon:'🦁',quote:'El mayor peligro no es aspirar demasiado alto y fracasar, sino aspirar demasiado bajo y lograrlo.',author:'Miguel Ángel'},
+    {id:'conf07',cat:'confidence',icon:'🦁',quote:'Tú eres suficiente. Siempre lo has sido. Eso nunca ha estado en duda.',author:'Desconocido'},
+    {id:'conf08',cat:'confidence',icon:'🦁',quote:'La confianza es como un músculo: crece con el ejercicio y se debilita con la inactividad.',author:'Desconocido'},
+    {id:'conf09',cat:'confidence',icon:'🦁',quote:'Actúa como si fuera imposible fallar.',author:'Dorothea Brande'},
+    {id:'conf10',cat:'confidence',icon:'🦁',quote:'El hombre que se mueve de montaña comienza cargando piedras pequeñas.',author:'Confucio'},
+    {id:'conf11',cat:'confidence',icon:'🦁',quote:'Si puedes soñarlo, puedes hacerlo.',author:'Walt Disney'},
+    {id:'conf12',cat:'confidence',icon:'🦁',quote:'Lo que piensas de ti mismo es mucho más importante que lo que otros piensan de ti.',author:'Séneca'},
+    {id:'conf13',cat:'confidence',icon:'🦁',quote:'El único modo de descubrir los límites de lo posible es aventurarse un poco más allá de ellos, hacia lo imposible.',author:'Arthur C. Clarke'},
+    {id:'conf14',cat:'confidence',icon:'🦁',quote:'No te compares con nadie. Si lo haces, te estás insultando a ti mismo.',author:'Bill Gates'},
+    {id:'conf15',cat:'confidence',icon:'🦁',quote:'Cada vez que dices sí a ti mismo, estás diciéndole no al miedo.',author:'T. Harv Eker'},
+    {id:'conf16',cat:'confidence',icon:'🦁',quote:'Eres más valiente de lo que crees, más fuerte de lo que pareces y más inteligente de lo que piensas.',author:'A.A. Milne'},
+    {id:'conf17',cat:'confidence',icon:'🦁',quote:'La duda mata más sueños que el fracaso.',author:'Suzy Kassem'},
+    {id:'conf18',cat:'confidence',icon:'🦁',quote:'No importa lo lento que vayas mientras no te detengas.',author:'Confucio'},
+    {id:'conf19',cat:'confidence',icon:'🦁',quote:'El fracaso es simplemente la oportunidad de comenzar de nuevo, esta vez de forma más inteligente.',author:'Henry Ford'},
+    {id:'conf20',cat:'confidence',icon:'🦁',quote:'Confía en el proceso. Tu tiempo llegará. Sigue esforzándote.',author:'Desconocido'},
+    {id:'conf21',cat:'confidence',icon:'🦁',quote:'Nunca eres demasiado viejo para establecer un nuevo objetivo o soñar un nuevo sueño.',author:'C.S. Lewis'},
+    {id:'conf22',cat:'confidence',icon:'🦁',quote:'La única persona que puedes ser es tú mismo. Hazlo con toda tu fuerza.',author:'Desconocido'},
+    {id:'conf23',cat:'confidence',icon:'🦁',quote:'Sé tan bueno en lo que haces que no puedan ignorarte.',author:'Steve Martin'},
+    {id:'conf24',cat:'confidence',icon:'🦁',quote:'La autoconfianza es el primer secreto del éxito.',author:'Ralph Waldo Emerson'},
+    {id:'conf25',cat:'confidence',icon:'🦁',quote:'No estás compitiendo con nadie más que con quien fuiste ayer.',author:'Desconocido'},
+    {id:'conf26',cat:'confidence',icon:'🦁',quote:'El éxito es ir de fracaso en fracaso sin perder el entusiasmo.',author:'Winston Churchill'},
+    {id:'conf27',cat:'confidence',icon:'🦁',quote:'Tus errores no te definen. Lo que haces después de ellos, sí.',author:'Desconocido'},
+    {id:'conf28',cat:'confidence',icon:'🦁',quote:'El coraje no es la ausencia del miedo, sino el juicio de que algo más importa más que el miedo.',author:'Ambrose Redmoon'},
+    {id:'conf29',cat:'confidence',icon:'🦁',quote:'Cada mañana que despiertas es una segunda oportunidad.',author:'Desconocido'},
+    {id:'conf30',cat:'confidence',icon:'🦁',quote:'Eres capaz de cosas increíbles. Solo tienes que creerlo primero.',author:'Desconocido'},
+    /* ══ FUERZA (30) ══ */
+    {id:'str01',cat:'strength',icon:'⚡',quote:'La fuerza no proviene de la capacidad física. Proviene de la voluntad indomable.',author:'Mahatma Gandhi'},
+    {id:'str02',cat:'strength',icon:'⚡',quote:'El dolor que sientes hoy será la fuerza que sentirás mañana.',author:'Desconocido'},
+    {id:'str03',cat:'strength',icon:'⚡',quote:'Un campeón es alguien que se levanta cuando no puede.',author:'Jack Dempsey'},
+    {id:'str04',cat:'strength',icon:'⚡',quote:'No cuentes los días. Haz que los días cuenten.',author:'Muhammad Ali'},
+    {id:'str05',cat:'strength',icon:'⚡',quote:'Lo que no te mata te hace más fuerte.',author:'Friedrich Nietzsche'},
+    {id:'str06',cat:'strength',icon:'⚡',quote:'La adversidad presenta al hombre a sí mismo.',author:'Albert Einstein'},
+    {id:'str07',cat:'strength',icon:'⚡',quote:'Las dificultades preparan a personas ordinarias para destinos extraordinarios.',author:'C.S. Lewis'},
+    {id:'str08',cat:'strength',icon:'⚡',quote:'Cuando pienses en rendirte, recuerda por qué empezaste.',author:'Desconocido'},
+    {id:'str09',cat:'strength',icon:'⚡',quote:'No reces para tener una vida fácil. Reza para ser una persona más fuerte.',author:'Bruce Lee'},
+    {id:'str10',cat:'strength',icon:'⚡',quote:'La fuerza crece en los momentos en que crees que ya no puedes más.',author:'Desconocido'},
+    {id:'str11',cat:'strength',icon:'⚡',quote:'Sé más duro que tus circunstancias.',author:'Desconocido'},
+    {id:'str12',cat:'strength',icon:'⚡',quote:'La roca no se rompe con un solo golpe. Sigue golpeando.',author:'Jacob Riis'},
+    {id:'str13',cat:'strength',icon:'⚡',quote:'La fortaleza no se mide en cuánto aguantas, sino en cuántas veces te levantas.',author:'Desconocido'},
+    {id:'str14',cat:'strength',icon:'⚡',quote:'El hierro se afila con el hierro. Tú te fortaleces con los retos.',author:'Proverbios 27:17'},
+    {id:'str15',cat:'strength',icon:'⚡',quote:'Nunca subestimes el poder de la determinación silenciosa.',author:'Desconocido'},
+    {id:'str16',cat:'strength',icon:'⚡',quote:'Los momentos difíciles revelan guerreros. Tú eres uno de ellos.',author:'Desconocido'},
+    {id:'str17',cat:'strength',icon:'⚡',quote:'La fortaleza verdadera es mantenerse íntegro cuando todo presiona en tu contra.',author:'Desconocido'},
+    {id:'str18',cat:'strength',icon:'⚡',quote:'Cae siete veces, levántate ocho.',author:'Proverbio japonés'},
+    {id:'str19',cat:'strength',icon:'⚡',quote:'El único límite real es el que tú mismo te impones.',author:'Denis Waitley'},
+    {id:'str20',cat:'strength',icon:'⚡',quote:'Tu sufrimiento de hoy es tu fortaleza de mañana. No lo desperdicies.',author:'Desconocido'},
+    {id:'str21',cat:'strength',icon:'⚡',quote:'Los guerreros no nacen. Se forjan en la dificultad.',author:'Desconocido'},
+    {id:'str22',cat:'strength',icon:'⚡',quote:'Cuanto más sudas en el entrenamiento, menos sangras en la batalla.',author:'Proverbio militar'},
+    {id:'str23',cat:'strength',icon:'⚡',quote:'La resistencia no es solo física. Es mental, emocional y espiritual.',author:'Desconocido'},
+    {id:'str24',cat:'strength',icon:'⚡',quote:'Convierte tus heridas en sabiduría.',author:'Oprah Winfrey'},
+    {id:'str25',cat:'strength',icon:'⚡',quote:'Cuando todo parece estar en tu contra, recuerda que el avión despega contra el viento.',author:'Henry Ford'},
+    {id:'str26',cat:'strength',icon:'⚡',quote:'La calma es la fuerza más poderosa en la tormenta.',author:'Desconocido'},
+    {id:'str27',cat:'strength',icon:'⚡',quote:'No necesitas ser el más fuerte. Necesitas ser el que no se rinde.',author:'Desconocido'},
+    {id:'str28',cat:'strength',icon:'⚡',quote:'El acero se templa en el fuego. Tú también.',author:'Desconocido'},
+    {id:'str29',cat:'strength',icon:'⚡',quote:'La mayor batalla que librarás es contigo mismo. Y puedes ganarla.',author:'Desconocido'},
+    {id:'str30',cat:'strength',icon:'⚡',quote:'Hoy puede ser difícil. Mañana puede ser más difícil. Pero pasado mañana será hermoso.',author:'Jack Ma'},
+    /* ══ DISCIPLINA (30) ══ */
+    {id:'dis01',cat:'discipline',icon:'🎯',quote:'La disciplina es el puente entre las metas y los logros.',author:'Jim Rohn'},
+    {id:'dis02',cat:'discipline',icon:'🎯',quote:'No necesitas motivación si tienes disciplina. La motivación viene y va; la disciplina se construye.',author:'Jocko Willink'},
+    {id:'dis03',cat:'discipline',icon:'🎯',quote:'Primero nos formamos los hábitos, luego los hábitos nos forman a nosotros.',author:'John Dryden'},
+    {id:'dis04',cat:'discipline',icon:'🎯',quote:'La disciplina es elegir entre lo que quieres ahora y lo que más quieres.',author:'Augusta F. Kantra'},
+    {id:'dis05',cat:'discipline',icon:'🎯',quote:'El éxito no es más que unos pocos hábitos simples practicados cada día.',author:'Jim Rohn'},
+    {id:'dis06',cat:'discipline',icon:'🎯',quote:'Un hombre sin disciplina es un barco sin timón.',author:'Desconocido'},
+    {id:'dis07',cat:'discipline',icon:'🎯',quote:'La autodisciplina comienza con el dominio de tus pensamientos.',author:'Napoleon Hill'},
+    {id:'dis08',cat:'discipline',icon:'🎯',quote:'Gana la mañana, gana el día.',author:'Robin Sharma'},
+    {id:'dis09',cat:'discipline',icon:'🎯',quote:'La motivación te pone en marcha. El hábito te mantiene avanzando.',author:'Jim Ryun'},
+    {id:'dis10',cat:'discipline',icon:'🎯',quote:'Haz hoy lo que otros no quieren, vive mañana lo que otros no pueden.',author:'Jerry Rice'},
+    {id:'dis11',cat:'discipline',icon:'🎯',quote:'La constancia es lo que transforma lo ordinario en extraordinario.',author:'Desconocido'},
+    {id:'dis12',cat:'discipline',icon:'🎯',quote:'No busques la inspiración. Actúa y la inspiración te seguirá.',author:'Jack London'},
+    {id:'dis13',cat:'discipline',icon:'🎯',quote:'Las personas exitosas hacen lo que deben hacer, aunque no tengan ganas.',author:'Desconocido'},
+    {id:'dis14',cat:'discipline',icon:'🎯',quote:'Cada día es una nueva oportunidad para construir la versión que quieres ser.',author:'Desconocido'},
+    {id:'dis15',cat:'discipline',icon:'🎯',quote:'El talento es barato. Lo que marca la diferencia es la dedicación.',author:'Scott Adams'},
+    {id:'dis16',cat:'discipline',icon:'🎯',quote:'La repetición es la madre de todas las habilidades.',author:'Tony Robbins'},
+    {id:'dis17',cat:'discipline',icon:'🎯',quote:'Las grandes cosas no se hacen por impulso, sino por una serie de pequeñas cosas unidas.',author:'Vincent van Gogh'},
+    {id:'dis18',cat:'discipline',icon:'🎯',quote:'Disciplínate para hacer lo correcto incluso cuando nadie te está mirando.',author:'Desconocido'},
+    {id:'dis19',cat:'discipline',icon:'🎯',quote:'El camino a la cima está pavimentado con rutinas.',author:'Desconocido'},
+    {id:'dis20',cat:'discipline',icon:'🎯',quote:'No lo hagas porque tengas ganas. Hazlo porque has decidido que importa.',author:'Desconocido'},
+    {id:'dis21',cat:'discipline',icon:'🎯',quote:'Un pequeño progreso cada día suma grandes resultados.',author:'Satya Nani'},
+    {id:'dis22',cat:'discipline',icon:'🎯',quote:'La autodisciplina es la definición de la libertad real.',author:'Desconocido'},
+    {id:'dis23',cat:'discipline',icon:'🎯',quote:'Sin disciplina, el talento solo es un potencial desperdiciado.',author:'Desconocido'},
+    {id:'dis24',cat:'discipline',icon:'🎯',quote:'Lo que haces hoy determina donde estarás mañana.',author:'Desconocido'},
+    {id:'dis25',cat:'discipline',icon:'🎯',quote:'La grandeza no aparece de repente. Se cultiva día a día.',author:'Desconocido'},
+    {id:'dis26',cat:'discipline',icon:'🎯',quote:'Las excusas no construyen imperios. La disciplina sí.',author:'Desconocido'},
+    {id:'dis27',cat:'discipline',icon:'🎯',quote:'La diferencia entre quien eres y quien quieres ser está en lo que haces.',author:'Desconocido'},
+    {id:'dis28',cat:'discipline',icon:'🎯',quote:'Controla tu mente o ella te controlará a ti.',author:'Epicteto'},
+    {id:'dis29',cat:'discipline',icon:'🎯',quote:'Pequeñas acciones consistentes crean resultados extraordinarios.',author:'Desconocido'},
+    {id:'dis30',cat:'discipline',icon:'🎯',quote:'La persona disciplinada es libre. La indisciplinada es esclava de sus propios impulsos.',author:'Desconocido'},
+    /* ══ SABIDURÍA (30) ══ */
+    {id:'wis01',cat:'wisdom',icon:'🦉',quote:'El único verdadero viaje de descubrimiento consiste no en buscar nuevos paisajes, sino en tener nuevos ojos.',author:'Marcel Proust'},
+    {id:'wis02',cat:'wisdom',icon:'🦉',quote:'En medio de la dificultad yace la oportunidad.',author:'Albert Einstein'},
+    {id:'wis03',cat:'wisdom',icon:'🦉',quote:'Conocerse a uno mismo es el principio de toda sabiduría.',author:'Aristóteles'},
+    {id:'wis04',cat:'wisdom',icon:'🦉',quote:'El sabio no dice todo lo que piensa, pero siempre piensa todo lo que dice.',author:'Aristóteles'},
+    {id:'wis05',cat:'wisdom',icon:'🦉',quote:'La vida es lo que sucede mientras estás ocupado haciendo otros planes.',author:'John Lennon'},
+    {id:'wis06',cat:'wisdom',icon:'🦉',quote:'El mayor bien es saber cómo pertenecerse a uno mismo.',author:'Michel de Montaigne'},
+    {id:'wis07',cat:'wisdom',icon:'🦉',quote:'No es lo que le pasa a un hombre lo que lo define, sino cómo responde ante ello.',author:'Epicteto'},
+    {id:'wis08',cat:'wisdom',icon:'🦉',quote:'La mente es todo. En lo que piensas, te conviertes.',author:'Buda'},
+    {id:'wis09',cat:'wisdom',icon:'🦉',quote:'El tiempo que disfrutas perdiendo no es tiempo perdido.',author:'Bertrand Russell'},
+    {id:'wis10',cat:'wisdom',icon:'🦉',quote:'Si quieres ir rápido, ve solo. Si quieres llegar lejos, ve acompañado.',author:'Proverbio africano'},
+    {id:'wis11',cat:'wisdom',icon:'🦉',quote:'La sabiduría no es saber qué hacer en última instancia, sino qué hacer a continuación.',author:'Herbert Hoover'},
+    {id:'wis12',cat:'wisdom',icon:'🦉',quote:'Aprende como si fueras a vivir para siempre. Vive como si fueras a morir mañana.',author:'Mahatma Gandhi'},
+    {id:'wis13',cat:'wisdom',icon:'🦉',quote:'El hombre que hace una pregunta es un tonto por un minuto. El que no la hace es un tonto para siempre.',author:'Confucio'},
+    {id:'wis14',cat:'wisdom',icon:'🦉',quote:'No llores porque se terminó. Sonríe porque sucedió.',author:'Gabriel García Márquez'},
+    {id:'wis15',cat:'wisdom',icon:'🦉',quote:'La vida es breve. Hazla dulce.',author:'Desconocido'},
+    {id:'wis16',cat:'wisdom',icon:'🦉',quote:'Lo que no puedes cambiar, acéptalo. Lo que no puedes aceptar, cámbialo.',author:'Desconocido'},
+    {id:'wis17',cat:'wisdom',icon:'🦉',quote:'El mayor obstáculo para el descubrimiento no es la ignorancia, sino la ilusión de conocimiento.',author:'Daniel Boorstin'},
+    {id:'wis18',cat:'wisdom',icon:'🦉',quote:'Habla solo cuando tus palabras sean más bellas que el silencio.',author:'Proverbio árabe'},
+    {id:'wis19',cat:'wisdom',icon:'🦉',quote:'Cuida tus pensamientos, porque se convertirán en palabras. Cuida tus palabras, porque se convertirán en actos.',author:'Lao Tse'},
+    {id:'wis20',cat:'wisdom',icon:'🦉',quote:'El hombre más rico no es el que más tiene, sino el que menos necesita.',author:'Desconocido'},
+    {id:'wis21',cat:'wisdom',icon:'🦉',quote:'La experiencia es el maestro más duro. Primero te pone a prueba, luego te enseña la lección.',author:'Oscar Wilde'},
+    {id:'wis22',cat:'wisdom',icon:'🦉',quote:'Dos cosas son infinitas: el universo y la estupidez humana. Y del universo no estoy seguro.',author:'Albert Einstein'},
+    {id:'wis23',cat:'wisdom',icon:'🦉',quote:'El secreto de la felicidad no está en hacer siempre lo que uno quiere, sino en querer lo que uno hace.',author:'León Tolstói'},
+    {id:'wis24',cat:'wisdom',icon:'🦉',quote:'No temas al fracaso. Teme no haberlo intentado.',author:'Desconocido'},
+    {id:'wis25',cat:'wisdom',icon:'🦉',quote:'Quien no arriesga, no gana. Pero quien no piensa, siempre pierde.',author:'Desconocido'},
+    {id:'wis26',cat:'wisdom',icon:'🦉',quote:'El tiempo es el recurso más democrático: todos tenemos 24 horas. La diferencia está en cómo las usamos.',author:'Desconocido'},
+    {id:'wis27',cat:'wisdom',icon:'🦉',quote:'Madura la mente que puede sostener dos ideas opuestas a la vez.',author:'F. Scott Fitzgerald'},
+    {id:'wis28',cat:'wisdom',icon:'🦉',quote:'Cuanto más sé, más me doy cuenta de cuánto no sé.',author:'Sócrates'},
+    {id:'wis29',cat:'wisdom',icon:'🦉',quote:'La felicidad no es algo hecho. Viene de tus propias acciones.',author:'Dalai Lama'},
+    {id:'wis30',cat:'wisdom',icon:'🦉',quote:'La vida no se mide por los momentos que respiramos, sino por los momentos que nos dejan sin aliento.',author:'Maya Angelou'},
+    /* ══ ENFOQUE (30) ══ */
+    {id:'foc01',cat:'focus',icon:'🔥',quote:'Donde va tu atención, va tu energía. Y donde va tu energía, van tus resultados.',author:'T. Harv Eker'},
+    {id:'foc02',cat:'focus',icon:'🔥',quote:'El secreto del cambio es enfocar toda tu energía no en combatir lo viejo, sino en construir lo nuevo.',author:'Sócrates'},
+    {id:'foc03',cat:'focus',icon:'🔥',quote:'Haz lo que puedas, con lo que tienes, donde estás.',author:'Theodore Roosevelt'},
+    {id:'foc04',cat:'focus',icon:'🔥',quote:'Una persona que nunca se distrae no es una persona que nunca tiene distracciones. Es una persona que las ignora.',author:'Desconocido'},
+    {id:'foc05',cat:'focus',icon:'🔥',quote:'El enfoque no es sobre decir sí a lo que importa. Es sobre decir no a todo lo demás.',author:'Steve Jobs'},
+    {id:'foc06',cat:'focus',icon:'🔥',quote:'La multitarea es el arte de arruinar varias cosas a la vez.',author:'Desconocido'},
+    {id:'foc07',cat:'focus',icon:'🔥',quote:'Una sola cosa hecha completamente supera a cien cosas hechas a medias.',author:'Desconocido'},
+    {id:'foc08',cat:'focus',icon:'🔥',quote:'El que persigue dos liebres no caza ninguna.',author:'Proverbio latino'},
+    {id:'foc09',cat:'focus',icon:'🔥',quote:'El enfoque es el arte de saber qué ignorar.',author:'Desconocido'},
+    {id:'foc10',cat:'focus',icon:'🔥',quote:'Tu nivel de enfoque determina tu nivel de éxito.',author:'Desconocido'},
+    {id:'foc11',cat:'focus',icon:'🔥',quote:'La concentración es la raíz de todas las habilidades humanas.',author:'Bruce Lee'},
+    {id:'foc12',cat:'focus',icon:'🔥',quote:'Menos, pero mejor.',author:'Dieter Rams'},
+    {id:'foc13',cat:'focus',icon:'🔥',quote:'El presente es el único momento en que algo puede suceder.',author:'Lao Tse'},
+    {id:'foc14',cat:'focus',icon:'🔥',quote:'Haz una cosa. Hazla bien. Hazla ahora.',author:'Desconocido'},
+    {id:'foc15',cat:'focus',icon:'🔥',quote:'La claridad sobre lo que importa da poder a actuar.',author:'Desconocido'},
+    {id:'foc16',cat:'focus',icon:'🔥',quote:'Estar presente no es un lujo. Es el acto más poderoso que puedes realizar.',author:'Desconocido'},
+    {id:'foc17',cat:'focus',icon:'🔥',quote:'No es la velocidad lo que importa, sino la dirección.',author:'Desconocido'},
+    {id:'foc18',cat:'focus',icon:'🔥',quote:'La distracción es el enemigo del progreso.',author:'Desconocido'},
+    {id:'foc19',cat:'focus',icon:'🔥',quote:'Haz que cada momento cuente. El tiempo no vuelve.',author:'Desconocido'},
+    {id:'foc20',cat:'focus',icon:'🔥',quote:'La profundidad de tu trabajo es directamente proporcional a la profundidad de tu enfoque.',author:'Cal Newport'},
+    {id:'foc21',cat:'focus',icon:'🔥',quote:'La energía fluye donde va la atención.',author:'Tony Robbins'},
+    {id:'foc22',cat:'focus',icon:'🔥',quote:'El trabajo profundo es la habilidad superpoder del siglo XXI.',author:'Cal Newport'},
+    {id:'foc23',cat:'focus',icon:'🔥',quote:'Silencia el ruido externo y escucha lo que realmente importa.',author:'Desconocido'},
+    {id:'foc24',cat:'focus',icon:'🔥',quote:'Un minuto de enfoque vale más que una hora de distracción.',author:'Desconocido'},
+    {id:'foc25',cat:'focus',icon:'🔥',quote:'Cuando te enfocas en el problema, este crece. Cuando te enfocas en la solución, avanzas.',author:'Desconocido'},
+    {id:'foc26',cat:'focus',icon:'🔥',quote:'El enfoque convierte lo ordinario en extraordinario.',author:'Desconocido'},
+    {id:'foc27',cat:'focus',icon:'🔥',quote:'No mires el reloj. Haz lo que hace: sigue avanzando.',author:'Sam Levenson'},
+    {id:'foc28',cat:'focus',icon:'🔥',quote:'La mente dispersa es la peor forma de pobreza.',author:'Desconocido'},
+    {id:'foc29',cat:'focus',icon:'🔥',quote:'Tu mayor enemigo no es el tiempo. Es lo que haces mientras el tiempo pasa.',author:'Desconocido'},
+    {id:'foc30',cat:'focus',icon:'🔥',quote:'Cuando tu por qué es claro, el cómo aparece solo.',author:'Desconocido'},
+];
+
+let _currentCardCat = 'all';
+
+function getDailyCard() {
+    const idx = Math.floor(Date.now() / 86400000) % CARDS_DB.length;
+    return CARDS_DB[idx];
+}
+
+function isCardUnlocked(cardId) {
+    const habits    = loadHabits();
+    const totalDone = habits.reduce((s,h)=>s+(h.log||[]).length, 0);
+    const card      = CARDS_DB.find(c=>c.id===cardId);
+    if (!card) return false;
+    /* Calcular posición dentro de su colección */
+    const cardsInCat = CARDS_DB.filter(c=>c.cat===card.cat);
+    const posInCat   = cardsInCat.findIndex(c=>c.id===cardId);
+    const needed     = posInCat * 2; /* 0, 2, 4... hábitos */
+    return totalDone >= needed;
+}
+
+window.renderHabCartas = function() {
+    // ── Carta del dia ──────────────────────────────────────────
+    var dailyEl = document.getElementById('habDailyCard');
+    if (dailyEl) {
+        var card        = getDailyCard();
+        var cat         = CARD_CATEGORIES.find(function(c){ return c.id === card.cat; }) || CARD_CATEGORIES[0];
+        var unlockedDay = isCardUnlocked(card.id);
+        var collected   = loadCards();
+        var isColl      = collected.includes(card.id);
+        dailyEl.setAttribute('data-showing', card.id);
+
+        var d = document.createElement('div');
+        d.className = 'hab-mot-card';
+        d.style.cssText = 'background:' + cat.bg + ';border-color:' + cat.border + ';--card-bg:' + cat.bg + ';--card-border:' + cat.border + ';--card-glow:' + cat.color + '33;';
+        d.setAttribute('onclick', "collectCard('" + card.id + "')");
+
+        var inner = '';
+        if (isColl) inner += '<div class="hab-mot-card-collected">✅ En colección</div>';
+        inner += '<div class="hab-mot-card-category" style="color:' + cat.catColor + ';">' + cat.icon + ' ' + cat.label.toUpperCase() + ' · CARTA DEL DÍA</div>';
+        inner += '<div class="hab-mot-card-quote">“' + card.quote + '”</div>';
+        inner += '<div class="hab-mot-card-author">— ' + card.author + '</div>';
+        if (!isColl && unlockedDay) inner += '<div style="font-size:0.6rem;color:#888;margin-top:8px;text-align:center;">Toca para añadir a tu colección</div>';
+        d.innerHTML = inner;
+
+        dailyEl.innerHTML = '';
+        dailyEl.appendChild(d);
+
+        // Contador de desbloqueadas
+        var badge = document.getElementById('cardCountBadge');
+        if (badge) {
+            var h2 = loadHabits();
+            var t2 = h2.reduce(function(s,h){ return s + (h.log||[]).length; }, 0);
+            var u2 = CARDS_DB.filter(function(c) {
+                var cic = CARDS_DB.filter(function(x){ return x.cat === c.cat; });
+                var pos = cic.findIndex(function(x){ return x.id === c.id; });
+                return t2 >= pos * 2;
+            }).length;
+            badge.textContent = u2 + ' / ' + CARDS_DB.length + ' desbloqueadas';
+        }
+    }
+
+    // ── Filtros de coleccion ────────────────────────────────────
+    var navEl = document.getElementById('habCardsNav');
+    if (navEl) {
+        var cats = [{id:'all', label:'Todas', icon:'🗂️'}].concat(CARD_CATEGORIES);
+        navEl.innerHTML = cats.map(function(c) {
+            var active = (_currentCardCat === c.id) ? 'active' : '';
+            var btn    = document.createElement('div');
+            btn.className    = 'hab-cat-btn ' + active;
+            btn.textContent  = (c.icon || '') + ' ' + c.label;
+            btn.setAttribute('onclick', "filterCards('" + c.id + "')");
+            return btn.outerHTML;
+        }).join('');
+    }
+
+    // ── Coleccion de cartas ─────────────────────────────────────
+    renderCardsCollection();
+};
+
+window.filterCards = function(catId) {
+    _currentCardCat = catId;
+    document.querySelectorAll('.hab-cat-btn').forEach((b,i) => {
+        const cats=[{id:'all'},...CARD_CATEGORIES];
+        b.classList.toggle('active', cats[i]&&cats[i].id===catId);
+    });
+    renderCardsCollection();
+};
+
+function renderCardsCollection() {
+    var collEl = document.getElementById('habCardsCollection');
+    if (!collEl) return;
+    var collected = loadCards();
+    var habits    = loadHabits();
+    var totalDone = habits.reduce(function(s,h){ return s + (h.log||[]).length; }, 0);
+    var filtered  = (_currentCardCat === 'all') ? CARDS_DB : CARDS_DB.filter(function(c){ return c.cat === _currentCardCat; });
+
+    var catCount = {};
+    collEl.innerHTML = filtered.map(function(card) {
+        if (!catCount[card.cat]) catCount[card.cat] = 0;
+        var posInCat = catCount[card.cat];
+        catCount[card.cat]++;
+        var needed      = posInCat * 2;
+        var unlocked    = totalDone >= needed;
+        var isCollected = collected.includes(card.id);
+        var cat         = CARD_CATEGORIES.find(function(c){ return c.id === card.cat; }) || CARD_CATEGORIES[0];
+        var falta       = Math.max(0, needed - totalDone);
+
+        var lockDesc = (!unlocked)
+            ? '<div style="font-size:0.42rem;color:#475569;margin-top:3px;text-align:center;line-height:1.3;">'
+            + 'Completa ' + needed + ' hábitos<br>'
+            + '<span style="color:#64748b;">Te faltan ' + falta + '</span></div>'
+            : '';
+
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'hab-coll-card ' + (unlocked ? 'unlocked' : 'locked');
+        wrapper.style.cssText = '--cc:' + cat.color + ';--cbg:' + cat.color + '18;--cglow:' + cat.color + '44;';
+        wrapper.setAttribute('onclick', "collectCard('" + card.id + "')");
+        wrapper.setAttribute('title', card.quote.substring(0,50) + '...');
+
+        var lockHint = '';
+        if (!unlocked) {
+            lockHint = '<div style="font-size:0.46rem;color:#94a3b8;margin-top:4px;text-align:center;line-height:1.4;">'
+                + '<span style="color:#fbbf24;font-weight:900;">' + needed + '</span> habitos<br>'
+                + '<span style="color:#64748b;font-size:0.4rem;">te faltan ' + falta + '</span>'
+                + '</div>';
+        }
+
+        wrapper.innerHTML =
+            '<span style="font-size:' + (unlocked ? '1.4rem' : '1.1rem') + ';">'
+            + (unlocked ? card.icon : '&#x1F512;') + '</span>'
+            + '<div class="hab-coll-card-label" style="font-size:0.47rem;font-weight:900;margin-top:2px;">'
+            + (isCollected ? '&#x2705; ' : '') + cat.label + '</div>'
+            + lockHint;
+        return wrapper.outerHTML;
+    }).join('');
+}
+
+window.showRandomCard = function() {
+    var habits    = loadHabits();
+    var collected = loadCards();
+    var totalDone = habits.reduce(function(s,h){ return s+(h.log||[]).length; }, 0);
+    var unlocked  = CARDS_DB.filter(function(c) {
+        var cic = CARDS_DB.filter(function(x){ return x.cat===c.cat; });
+        var pos = cic.findIndex(function(x){ return x.id===c.id; });
+        return totalDone >= pos * 2;
+    });
+    if (!unlocked.length) {
+        var t = document.getElementById('habStreakToast');
+        if (t) {
+            t.textContent = 'Completa habitos para desbloquear cartas';
+            t.style.background = 'linear-gradient(135deg,#374151,#1f2937)';
+            t.classList.add('show');
+            setTimeout(function(){ t.classList.remove('show'); }, 2500);
+        }
+        return;
+    }
+    var dice = document.getElementById('randomCardDice');
+    var btn  = document.getElementById('randomCardBtn');
+    if (dice) {
+        var fi = 0;
+        var anim = setInterval(function() {
+            dice.style.transform = 'rotate(' + (fi*60) + 'deg) scale(1.3)';
+            fi++;
+            if (fi > 8) { clearInterval(anim); dice.style.transform='scale(1)'; }
+        }, 80);
+    }
+    if (btn) {
+        btn.style.boxShadow = '0 0 30px rgba(167,139,250,0.6)';
+        setTimeout(function(){ btn.style.boxShadow='0 0 16px rgba(167,139,250,0.25)'; }, 600);
+    }
+    var dailyEl   = document.getElementById('habDailyCard');
+    var currentId = dailyEl ? dailyEl.getAttribute('data-showing') : null;
+    var pool = unlocked.filter(function(c){ return c.id !== currentId; });
+    if (!pool.length) pool = unlocked;
+    var card = pool[Math.floor(Math.random() * pool.length)];
+    var cat  = CARD_CATEGORIES.find(function(c){ return c.id===card.cat; }) || CARD_CATEGORIES[0];
+    var isColl = collected.includes(card.id);
+    if (dailyEl) {
+        dailyEl.setAttribute('data-showing', card.id);
+        var d = document.createElement('div');
+        d.className = 'hab-mot-card';
+        d.style.cssText = 'background:'+cat.bg+';border-color:'+cat.border+';animation:cardFlipIn 0.4s cubic-bezier(0.34,1.4,0.64,1);';
+        d.setAttribute('onclick', "collectCard('" + card.id + "')");
+        var inner = '';
+        if (isColl) inner += '<div class="hab-mot-card-collected">En coleccion</div>';
+        inner += '<div class="hab-mot-card-category" style="color:'+cat.catColor+';">'+cat.icon+' '+cat.label.toUpperCase()+' - CARTA ALEATORIA</div>';
+        inner += '<div class="hab-mot-card-quote">"'+card.quote+'"</div>';
+        inner += '<div class="hab-mot-card-author">- '+card.author+'</div>';
+        if (!isColl) inner += '<div style="font-size:0.6rem;color:#888;margin-top:8px;text-align:center;">Toca para anadir a tu coleccion</div>';
+        d.innerHTML = inner;
+        dailyEl.innerHTML = '';
+        dailyEl.appendChild(d);
+    }
+    if (typeof playSparkleSound==='function') playSparkleSound();
+};
+
+(function(){
+    if (document.getElementById('cardFlipStyle')) return;
+    var s = document.createElement('style');
+    s.id = 'cardFlipStyle';
+    s.textContent = '@keyframes cardFlipIn{from{transform:rotateY(90deg) scale(0.8);opacity:0}to{transform:rotateY(0deg) scale(1);opacity:1}}';
+    document.head.appendChild(s);
+})();
+
 
 
 const _origSwitchLR = window.switchHabTab;
@@ -24653,463 +25207,5 @@ window._cronoShowDetail = function(idx) {
 })();
 
 </script>
-
-<script>
-// ═══════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
-//  LIFE RESET FEATURES — 66 Días, Pilares, Cartas, Hard Mode,
-//  Rating de Vida, Diario Emocional
-// ═══════════════════════════════════════════════════════════════
-(function() {
-
-const HABITS_KEY  = 'jch_habits_v1';
-const HERO_KEY    = 'jch_hero_v1';
-const JOURNEY_KEY = 'jch_journey_v1';
-const JOURNAL_KEY = 'jch_journal_v1';
-const CARDS_KEY   = 'jch_cards_v1';
-
-function loadHabits()  { return JSON.parse(localStorage.getItem(HABITS_KEY)||'[]'); }
-function loadHero()    { return JSON.parse(localStorage.getItem(HERO_KEY)||'null')||{coins:0,level:1,hp:100,maxHp:100,xp:0,xpNext:100}; }
-function saveHero(h)   { localStorage.setItem(HERO_KEY,JSON.stringify(h)); }
-function loadJourney() { return JSON.parse(localStorage.getItem(JOURNEY_KEY)||'null')||{ startDate:new Date().toISOString().split('T')[0], hardMode:false, dayLog:{} }; }
-function saveJourney(j){ localStorage.setItem(JOURNEY_KEY,JSON.stringify(j)); }
-function loadJournal() { return JSON.parse(localStorage.getItem(JOURNAL_KEY)||'[]'); }
-function saveJournal(j){ localStorage.setItem(JOURNAL_KEY,JSON.stringify(j)); }
-function loadCards()   { return JSON.parse(localStorage.getItem(CARDS_KEY)||'[]'); }
-function saveCards(c)  { localStorage.setItem(CARDS_KEY,JSON.stringify(c)); }
-
-function todayKey() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-
-// ── PILARES DE VIDA ───────────────────────────────────────────
-const PILLARS = [
-    { id:'sleep',   name:'Sueño',       icon:'😴', color:'#6366f1', glow:'rgba(99,102,241,0.3)',
-      tip:'Hábitos: dormir temprano, sin pantallas', habitKeys:['dormir','sueño','descanso'] },
-    { id:'water',   name:'Hidratación', icon:'💧', color:'#0ea5e9', glow:'rgba(14,165,233,0.3)',
-      tip:'Hábitos: beber agua, hidratarte', habitKeys:['agua','hidrat','beber'] },
-    { id:'exercise',name:'Ejercicio',   icon:'💪', color:'#22c55e', glow:'rgba(34,197,94,0.3)',
-      tip:'Hábitos: gym, correr, ejercicio', habitKeys:['ejercicio','gym','correr','deporte','caminar'] },
-    { id:'mind',    name:'Mente',       icon:'🧠', color:'#a78bfa', glow:'rgba(167,139,250,0.3)',
-      tip:'Hábitos: meditar, leer, estudiar', habitKeys:['meditar','leer','estudiar','mente','meditación'] },
-    { id:'screen',  name:'Pantallas',   icon:'📵', color:'#f97316', glow:'rgba(249,115,22,0.3)',
-      tip:'Hábitos: sin redes, sin móvil', habitKeys:['pantalla','redes','móvil','celular','screen'] },
-    { id:'hygiene', name:'Hábitos',     icon:'🚿', color:'#ec4899', glow:'rgba(236,72,153,0.3)',
-      tip:'Hábitos: ducha, rutina matutina', habitKeys:['ducha','higiene','rutina','mañana'] },
-];
-
-function calcPillarScore(pillar) {
-    const habits = loadHabits();
-    // Prioridad 1: hábitos vinculados explícitamente a este pilar
-    let related = habits.filter(h => h.pillar === pillar.id);
-    // Prioridad 2: hábitos sin pilar asignado que coincidan por nombre
-    if (!related.length) {
-        related = habits.filter(h => {
-            if (h.pillar && h.pillar !== 'none') return false; // ya tiene pilar asignado a otro
-            const name = (h.name||'').toLowerCase();
-            return pillar.habitKeys.some(k => name.includes(k));
-        });
-    }
-    // Si no hay ninguno relacionado, score 0 (no contaminar con completitud general)
-    if (!related.length) return 0;
-    const now = new Date();
-    let done=0, total=0;
-    for (let i=0;i<14;i++) {
-        const d=new Date(now); d.setDate(d.getDate()-i);
-        const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-        related.forEach(h=>{
-            total++;
-            if((h.log||[]).includes(k)) done++;
-        });
-    }
-    return total>0 ? Math.round((done/total)*100) : 0;
-}
-
-function calcLifeRating() {
-    const scores = PILLARS.map(p => calcPillarScore(p));
-    const avg    = scores.reduce((s,v)=>s+v,0) / scores.length;
-    return Math.round(avg);
-}
-
-// ── RENDER TAB VIAJE ──────────────────────────────────────────
-window.renderHabViaje = function() {
-    const journey = loadJourney();
-    const habits  = loadHabits();
-
-    // Rating
-    const rating = calcLifeRating();
-    const ratingEl = document.getElementById('habLifeRatingNum');
-    if (ratingEl) ratingEl.textContent = rating;
-
-    // Hard Mode toggle
-    const hmt = document.getElementById('habHardModeToggle');
-    if (hmt) hmt.classList.toggle('on', !!journey.hardMode);
-
-    // Programa 66 días
-    const banner = document.getElementById('habJourneyBanner');
-    if (banner) {
-        const start    = new Date(journey.startDate);
-        const today    = new Date();
-        const dayNum   = Math.min(66, Math.max(1, Math.round((today-start)/86400000)+1));
-        const pct      = Math.round((dayNum/66)*100);
-
-        // Generar 66 puntos
-        const dots = [];
-        for (let i=1;i<=66;i++) {
-            const d=new Date(start); d.setDate(d.getDate()+i-1);
-            const k=d.toISOString().split('T')[0];
-            const todStr=todayKey();
-            if (k===todStr)      dots.push('<div class="hab-journey-dot today" title="Hoy: Día '+i+'"></div>');
-            else if (k<todStr) {
-                // Verificar si completó al menos un hábito ese día
-                const anyDone=habits.some(h=>(h.log||[]).includes(k));
-                if(journey.dayLog&&journey.dayLog[k]==='failed') dots.push('<div class="hab-journey-dot failed" title="Día '+i+': Fallado"></div>');
-                else if(anyDone) dots.push('<div class="hab-journey-dot done" title="Día '+i+': Completado"></div>');
-                else dots.push('<div class="hab-journey-dot" title="Día '+i+'"></div>');
-            } else dots.push('<div class="hab-journey-dot" title="Día '+i+'"></div>');
-        }
-
-        const diffLabel = rating>=80?'🏆 Élite':rating>=60?'⚡ Avanzado':rating>=40?'📈 En Progreso':'🌱 Comenzando';
-        banner.innerHTML =
-            '<div class="hab-journey-top">' +
-              '<div class="hab-journey-day-badge"><span class="hab-journey-day-num">'+dayNum+'</span><span class="hab-journey-day-lbl">de 66</span></div>' +
-              '<div class="hab-journey-info"><div class="hab-journey-title">Tu Arco de Transformación</div><div class="hab-journey-sub">La ciencia dice que 66 días forman un hábito</div></div>' +
-              '<div class="hab-journey-rating">'+diffLabel+'</div>' +
-            '</div>' +
-            '<div class="hab-journey-prog-row">' +
-              '<div class="hab-journey-prog-track"><div class="hab-journey-prog-fill" style="width:'+pct+'%"></div></div>' +
-              '<div class="hab-journey-prog-pct">'+pct+'%</div>' +
-            '</div>' +
-            '<div class="hab-journey-dots">'+dots.join('')+'</div>';
-    }
-
-    // Pilares
-    const pillarsEl = document.getElementById('habPillarsGrid');
-    if (pillarsEl) {
-        pillarsEl.innerHTML = PILLARS.map(p => {
-            const score = calcPillarScore(p);
-            const label = score>=80?'Excelente':score>=60?'Bueno':score>=40?'Regular':'Mejorar';
-            return '<div class="hab-pillar-card" style="--pc:'+p.color+'">' +
-                '<div class="hab-pillar-header">' +
-                  '<span class="hab-pillar-icon">'+p.icon+'</span>' +
-                  '<span class="hab-pillar-name">'+p.name+'</span>' +
-                  '<span class="hab-pillar-score">'+score+'%</span>' +
-                '</div>' +
-                '<div class="hab-pillar-bar-track"><div class="hab-pillar-bar-fill" style="width:'+score+'%;background:'+p.color+'"></div></div>' +
-                '<div class="hab-pillar-tip">'+label+' · '+p.tip+'</div>' +
-                '</div>';
-        }).join('');
-    }
-};
-
-// ── MODO DIFÍCIL ──────────────────────────────────────────────
-window.toggleHardMode = function() {
-    const journey = loadJourney();
-    journey.hardMode = !journey.hardMode;
-    saveJourney(journey);
-    const hmt = document.getElementById('habHardModeToggle');
-    if (hmt) hmt.classList.toggle('on', journey.hardMode);
-    const t=document.getElementById('habStreakToast');
-    if(t){
-        t.textContent=journey.hardMode?'💀 ¡Modo Difícil activado! No fallas.':'😌 Modo Normal activado';
-        t.style.background=journey.hardMode?'linear-gradient(135deg,#ef4444,#7f1d1d)':'linear-gradient(135deg,#10b981,#065f46)';
-        t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500);
-    }
-};
-
-// Hook en Modo Difícil: penalizar al inicio del día si falló ayer
-function checkHardModeReset() {
-    const journey=loadJourney();
-    if(!journey.hardMode) return;
-    const today=new Date();
-    const yesterday=new Date(today); yesterday.setDate(yesterday.getDate()-1);
-    const yk=yesterday.toISOString().split('T')[0];
-    const habits=loadHabits();
-    const anyDoneYesterday=habits.some(h=>(h.log||[]).includes(yk));
-    if(!anyDoneYesterday && !journey.dayLog?.[yk]) {
-        // Penalizar: -20 HP
-        const hero=loadHero();
-        hero.hp=Math.max(0,hero.hp-20);
-        saveHero(hero);
-        journey.dayLog=journey.dayLog||{};
-        journey.dayLog[yk]='failed';
-        saveJourney(journey);
-    }
-}
-
-// ── CARTAS MOTIVACIONALES ─────────────────────────────────────
-const CARD_CATEGORIES = [
-    { id:'confidence', label:'Confianza', icon:'🦁', color:'#fbbf24', bg:'linear-gradient(135deg,#1c0a00,#2d1500)', border:'rgba(251,191,36,0.4)', catColor:'#fbbf24' },
-    { id:'strength',   label:'Fuerza',    icon:'⚡', color:'#ef4444', bg:'linear-gradient(135deg,#1c0000,#2d0505)', border:'rgba(239,68,68,0.4)',  catColor:'#ef4444' },
-    { id:'discipline', label:'Disciplina',icon:'🎯', color:'#a78bfa', bg:'linear-gradient(135deg,#0f0020,#1e0040)', border:'rgba(167,139,250,0.4)',catColor:'#a78bfa' },
-    { id:'wisdom',     label:'Sabiduría', icon:'🦉', color:'#0ea5e9', bg:'linear-gradient(135deg,#00101c,#002040)', border:'rgba(14,165,233,0.4)', catColor:'#0ea5e9' },
-    { id:'focus',      label:'Enfoque',   icon:'🔥', color:'#10b981', bg:'linear-gradient(135deg,#001c0f,#002d1a)', border:'rgba(16,185,129,0.4)', catColor:'#10b981' },
-];
-
-const CARDS_DB = [
-    /* ══ CONFIANZA (30) ══ */
-    {id:'conf01',cat:'confidence',icon:'🦁',quote:'La confianza no viene de tener siempre la razón. Viene de no tener miedo a estar equivocado.',author:'Peter McIntyre'},
-    {id:'conf02',cat:'confidence',icon:'🦁',quote:'Cree en ti mismo y en todo lo que eres. Hay algo dentro de ti más grande que cualquier obstáculo.',author:'Christian D. Larson'},
-    {id:'conf03',cat:'confidence',icon:'🦁',quote:'Tu tiempo es limitado. No lo desperdicies viviendo la vida de otra persona.',author:'Steve Jobs'},
-    {id:'conf04',cat:'confidence',icon:'🦁',quote:'Nadie puede hacerte sentir inferior sin tu consentimiento.',author:'Eleanor Roosevelt'},
-    {id:'conf05',cat:'confidence',icon:'🦁',quote:'No esperes a sentirte seguro para actuar. Actúa y la seguridad llegará.',author:'Barbara De Angelis'},
-    {id:'conf06',cat:'confidence',icon:'🦁',quote:'El mayor peligro no es aspirar demasiado alto y fracasar, sino aspirar demasiado bajo y lograrlo.',author:'Miguel Ángel'},
-    {id:'conf07',cat:'confidence',icon:'🦁',quote:'Tú eres suficiente. Siempre lo has sido. Eso nunca ha estado en duda.',author:'Desconocido'},
-    {id:'conf08',cat:'confidence',icon:'🦁',quote:'La confianza es como un músculo: crece con el ejercicio y se debilita con la inactividad.',author:'Desconocido'},
-    {id:'conf09',cat:'confidence',icon:'🦁',quote:'Actúa como si fuera imposible fallar.',author:'Dorothea Brande'},
-    {id:'conf10',cat:'confidence',icon:'🦁',quote:'El hombre que se mueve de montaña comienza cargando piedras pequeñas.',author:'Confucio'},
-    {id:'conf11',cat:'confidence',icon:'🦁',quote:'Si puedes soñarlo, puedes hacerlo.',author:'Walt Disney'},
-    {id:'conf12',cat:'confidence',icon:'🦁',quote:'Lo que piensas de ti mismo es mucho más importante que lo que otros piensan de ti.',author:'Séneca'},
-    {id:'conf13',cat:'confidence',icon:'🦁',quote:'El único modo de descubrir los límites de lo posible es aventurarse un poco más allá de ellos, hacia lo imposible.',author:'Arthur C. Clarke'},
-    {id:'conf14',cat:'confidence',icon:'🦁',quote:'No te compares con nadie. Si lo haces, te estás insultando a ti mismo.',author:'Bill Gates'},
-    {id:'conf15',cat:'confidence',icon:'🦁',quote:'Cada vez que dices sí a ti mismo, estás diciéndole no al miedo.',author:'T. Harv Eker'},
-    {id:'conf16',cat:'confidence',icon:'🦁',quote:'Eres más valiente de lo que crees, más fuerte de lo que pareces y más inteligente de lo que piensas.',author:'A.A. Milne'},
-    {id:'conf17',cat:'confidence',icon:'🦁',quote:'La duda mata más sueños que el fracaso.',author:'Suzy Kassem'},
-    {id:'conf18',cat:'confidence',icon:'🦁',quote:'No importa lo lento que vayas mientras no te detengas.',author:'Confucio'},
-    {id:'conf19',cat:'confidence',icon:'🦁',quote:'El fracaso es simplemente la oportunidad de comenzar de nuevo, esta vez de forma más inteligente.',author:'Henry Ford'},
-    {id:'conf20',cat:'confidence',icon:'🦁',quote:'Confía en el proceso. Tu tiempo llegará. Sigue esforzándote.',author:'Desconocido'},
-    {id:'conf21',cat:'confidence',icon:'🦁',quote:'Nunca eres demasiado viejo para establecer un nuevo objetivo o soñar un nuevo sueño.',author:'C.S. Lewis'},
-    {id:'conf22',cat:'confidence',icon:'🦁',quote:'La única persona que puedes ser es tú mismo. Hazlo con toda tu fuerza.',author:'Desconocido'},
-    {id:'conf23',cat:'confidence',icon:'🦁',quote:'Sé tan bueno en lo que haces que no puedan ignorarte.',author:'Steve Martin'},
-    {id:'conf24',cat:'confidence',icon:'🦁',quote:'La autoconfianza es el primer secreto del éxito.',author:'Ralph Waldo Emerson'},
-    {id:'conf25',cat:'confidence',icon:'🦁',quote:'No estás compitiendo con nadie más que con quien fuiste ayer.',author:'Desconocido'},
-    {id:'conf26',cat:'confidence',icon:'🦁',quote:'El éxito es ir de fracaso en fracaso sin perder el entusiasmo.',author:'Winston Churchill'},
-    {id:'conf27',cat:'confidence',icon:'🦁',quote:'Tus errores no te definen. Lo que haces después de ellos, sí.',author:'Desconocido'},
-    {id:'conf28',cat:'confidence',icon:'🦁',quote:'El coraje no es la ausencia del miedo, sino el juicio de que algo más importa más que el miedo.',author:'Ambrose Redmoon'},
-    {id:'conf29',cat:'confidence',icon:'🦁',quote:'Cada mañana que despiertas es una segunda oportunidad.',author:'Desconocido'},
-    {id:'conf30',cat:'confidence',icon:'🦁',quote:'Eres capaz de cosas increíbles. Solo tienes que creerlo primero.',author:'Desconocido'},
-    /* ══ FUERZA (30) ══ */
-    {id:'str01',cat:'strength',icon:'⚡',quote:'La fuerza no proviene de la capacidad física. Proviene de la voluntad indomable.',author:'Mahatma Gandhi'},
-    {id:'str02',cat:'strength',icon:'⚡',quote:'El dolor que sientes hoy será la fuerza que sentirás mañana.',author:'Desconocido'},
-    {id:'str03',cat:'strength',icon:'⚡',quote:'Un campeón es alguien que se levanta cuando no puede.',author:'Jack Dempsey'},
-    {id:'str04',cat:'strength',icon:'⚡',quote:'No cuentes los días. Haz que los días cuenten.',author:'Muhammad Ali'},
-    {id:'str05',cat:'strength',icon:'⚡',quote:'Lo que no te mata te hace más fuerte.',author:'Friedrich Nietzsche'},
-    {id:'str06',cat:'strength',icon:'⚡',quote:'La adversidad presenta al hombre a sí mismo.',author:'Albert Einstein'},
-    {id:'str07',cat:'strength',icon:'⚡',quote:'Las dificultades preparan a personas ordinarias para destinos extraordinarios.',author:'C.S. Lewis'},
-    {id:'str08',cat:'strength',icon:'⚡',quote:'Cuando pienses en rendirte, recuerda por qué empezaste.',author:'Desconocido'},
-    {id:'str09',cat:'strength',icon:'⚡',quote:'No reces para tener una vida fácil. Reza para ser una persona más fuerte.',author:'Bruce Lee'},
-    {id:'str10',cat:'strength',icon:'⚡',quote:'La fuerza crece en los momentos en que crees que ya no puedes más.',author:'Desconocido'},
-    {id:'str11',cat:'strength',icon:'⚡',quote:'Sé más duro que tus circunstancias.',author:'Desconocido'},
-    {id:'str12',cat:'strength',icon:'⚡',quote:'La roca no se rompe con un solo golpe. Sigue golpeando.',author:'Jacob Riis'},
-    {id:'str13',cat:'strength',icon:'⚡',quote:'La fortaleza no se mide en cuánto aguantas, sino en cuántas veces te levantas.',author:'Desconocido'},
-    {id:'str14',cat:'strength',icon:'⚡',quote:'El hierro se afila con el hierro. Tú te fortaleces con los retos.',author:'Proverbios 27:17'},
-    {id:'str15',cat:'strength',icon:'⚡',quote:'Nunca subestimes el poder de la determinación silenciosa.',author:'Desconocido'},
-    {id:'str16',cat:'strength',icon:'⚡',quote:'Los momentos difíciles revelan guerreros. Tú eres uno de ellos.',author:'Desconocido'},
-    {id:'str17',cat:'strength',icon:'⚡',quote:'La fortaleza verdadera es mantenerse íntegro cuando todo presiona en tu contra.',author:'Desconocido'},
-    {id:'str18',cat:'strength',icon:'⚡',quote:'Cae siete veces, levántate ocho.',author:'Proverbio japonés'},
-    {id:'str19',cat:'strength',icon:'⚡',quote:'El único límite real es el que tú mismo te impones.',author:'Denis Waitley'},
-    {id:'str20',cat:'strength',icon:'⚡',quote:'Tu sufrimiento de hoy es tu fortaleza de mañana. No lo desperdicies.',author:'Desconocido'},
-    {id:'str21',cat:'strength',icon:'⚡',quote:'Los guerreros no nacen. Se forjan en la dificultad.',author:'Desconocido'},
-    {id:'str22',cat:'strength',icon:'⚡',quote:'Cuanto más sudas en el entrenamiento, menos sangras en la batalla.',author:'Proverbio militar'},
-    {id:'str23',cat:'strength',icon:'⚡',quote:'La resistencia no es solo física. Es mental, emocional y espiritual.',author:'Desconocido'},
-    {id:'str24',cat:'strength',icon:'⚡',quote:'Convierte tus heridas en sabiduría.',author:'Oprah Winfrey'},
-    {id:'str25',cat:'strength',icon:'⚡',quote:'Cuando todo parece estar en tu contra, recuerda que el avión despega contra el viento.',author:'Henry Ford'},
-    {id:'str26',cat:'strength',icon:'⚡',quote:'La calma es la fuerza más poderosa en la tormenta.',author:'Desconocido'},
-    {id:'str27',cat:'strength',icon:'⚡',quote:'No necesitas ser el más fuerte. Necesitas ser el que no se rinde.',author:'Desconocido'},
-    {id:'str28',cat:'strength',icon:'⚡',quote:'El acero se templa en el fuego. Tú también.',author:'Desconocido'},
-    {id:'str29',cat:'strength',icon:'⚡',quote:'La mayor batalla que librarás es contigo mismo. Y puedes ganarla.',author:'Desconocido'},
-    {id:'str30',cat:'strength',icon:'⚡',quote:'Hoy puede ser difícil. Mañana puede ser más difícil. Pero pasado mañana será hermoso.',author:'Jack Ma'},
-    /* ══ DISCIPLINA (30) ══ */
-    {id:'dis01',cat:'discipline',icon:'🎯',quote:'La disciplina es el puente entre las metas y los logros.',author:'Jim Rohn'},
-    {id:'dis02',cat:'discipline',icon:'🎯',quote:'No necesitas motivación si tienes disciplina. La motivación viene y va; la disciplina se construye.',author:'Jocko Willink'},
-    {id:'dis03',cat:'discipline',icon:'🎯',quote:'Primero nos formamos los hábitos, luego los hábitos nos forman a nosotros.',author:'John Dryden'},
-    {id:'dis04',cat:'discipline',icon:'🎯',quote:'La disciplina es elegir entre lo que quieres ahora y lo que más quieres.',author:'Augusta F. Kantra'},
-    {id:'dis05',cat:'discipline',icon:'🎯',quote:'El éxito no es más que unos pocos hábitos simples practicados cada día.',author:'Jim Rohn'},
-    {id:'dis06',cat:'discipline',icon:'🎯',quote:'Un hombre sin disciplina es un barco sin timón.',author:'Desconocido'},
-    {id:'dis07',cat:'discipline',icon:'🎯',quote:'La autodisciplina comienza con el dominio de tus pensamientos.',author:'Napoleon Hill'},
-    {id:'dis08',cat:'discipline',icon:'🎯',quote:'Gana la mañana, gana el día.',author:'Robin Sharma'},
-    {id:'dis09',cat:'discipline',icon:'🎯',quote:'La motivación te pone en marcha. El hábito te mantiene avanzando.',author:'Jim Ryun'},
-    {id:'dis10',cat:'discipline',icon:'🎯',quote:'Haz hoy lo que otros no quieren, vive mañana lo que otros no pueden.',author:'Jerry Rice'},
-    {id:'dis11',cat:'discipline',icon:'🎯',quote:'La constancia es lo que transforma lo ordinario en extraordinario.',author:'Desconocido'},
-    {id:'dis12',cat:'discipline',icon:'🎯',quote:'No busques la inspiración. Actúa y la inspiración te seguirá.',author:'Jack London'},
-    {id:'dis13',cat:'discipline',icon:'🎯',quote:'Las personas exitosas hacen lo que deben hacer, aunque no tengan ganas.',author:'Desconocido'},
-    {id:'dis14',cat:'discipline',icon:'🎯',quote:'Cada día es una nueva oportunidad para construir la versión que quieres ser.',author:'Desconocido'},
-    {id:'dis15',cat:'discipline',icon:'🎯',quote:'El talento es barato. Lo que marca la diferencia es la dedicación.',author:'Scott Adams'},
-    {id:'dis16',cat:'discipline',icon:'🎯',quote:'La repetición es la madre de todas las habilidades.',author:'Tony Robbins'},
-    {id:'dis17',cat:'discipline',icon:'🎯',quote:'Las grandes cosas no se hacen por impulso, sino por una serie de pequeñas cosas unidas.',author:'Vincent van Gogh'},
-    {id:'dis18',cat:'discipline',icon:'🎯',quote:'Disciplínate para hacer lo correcto incluso cuando nadie te está mirando.',author:'Desconocido'},
-    {id:'dis19',cat:'discipline',icon:'🎯',quote:'El camino a la cima está pavimentado con rutinas.',author:'Desconocido'},
-    {id:'dis20',cat:'discipline',icon:'🎯',quote:'No lo hagas porque tengas ganas. Hazlo porque has decidido que importa.',author:'Desconocido'},
-    {id:'dis21',cat:'discipline',icon:'🎯',quote:'Un pequeño progreso cada día suma grandes resultados.',author:'Satya Nani'},
-    {id:'dis22',cat:'discipline',icon:'🎯',quote:'La autodisciplina es la definición de la libertad real.',author:'Desconocido'},
-    {id:'dis23',cat:'discipline',icon:'🎯',quote:'Sin disciplina, el talento solo es un potencial desperdiciado.',author:'Desconocido'},
-    {id:'dis24',cat:'discipline',icon:'🎯',quote:'Lo que haces hoy determina donde estarás mañana.',author:'Desconocido'},
-    {id:'dis25',cat:'discipline',icon:'🎯',quote:'La grandeza no aparece de repente. Se cultiva día a día.',author:'Desconocido'},
-    {id:'dis26',cat:'discipline',icon:'🎯',quote:'Las excusas no construyen imperios. La disciplina sí.',author:'Desconocido'},
-    {id:'dis27',cat:'discipline',icon:'🎯',quote:'La diferencia entre quien eres y quien quieres ser está en lo que haces.',author:'Desconocido'},
-    {id:'dis28',cat:'discipline',icon:'🎯',quote:'Controla tu mente o ella te controlará a ti.',author:'Epicteto'},
-    {id:'dis29',cat:'discipline',icon:'🎯',quote:'Pequeñas acciones consistentes crean resultados extraordinarios.',author:'Desconocido'},
-    {id:'dis30',cat:'discipline',icon:'🎯',quote:'La persona disciplinada es libre. La indisciplinada es esclava de sus propios impulsos.',author:'Desconocido'},
-    /* ══ SABIDURÍA (30) ══ */
-    {id:'wis01',cat:'wisdom',icon:'🦉',quote:'El único verdadero viaje de descubrimiento consiste no en buscar nuevos paisajes, sino en tener nuevos ojos.',author:'Marcel Proust'},
-    {id:'wis02',cat:'wisdom',icon:'🦉',quote:'En medio de la dificultad yace la oportunidad.',author:'Albert Einstein'},
-    {id:'wis03',cat:'wisdom',icon:'🦉',quote:'Conocerse a uno mismo es el principio de toda sabiduría.',author:'Aristóteles'},
-    {id:'wis04',cat:'wisdom',icon:'🦉',quote:'El sabio no dice todo lo que piensa, pero siempre piensa todo lo que dice.',author:'Aristóteles'},
-    {id:'wis05',cat:'wisdom',icon:'🦉',quote:'La vida es lo que sucede mientras estás ocupado haciendo otros planes.',author:'John Lennon'},
-    {id:'wis06',cat:'wisdom',icon:'🦉',quote:'El mayor bien es saber cómo pertenecerse a uno mismo.',author:'Michel de Montaigne'},
-    {id:'wis07',cat:'wisdom',icon:'🦉',quote:'No es lo que le pasa a un hombre lo que lo define, sino cómo responde ante ello.',author:'Epicteto'},
-    {id:'wis08',cat:'wisdom',icon:'🦉',quote:'La mente es todo. En lo que piensas, te conviertes.',author:'Buda'},
-    {id:'wis09',cat:'wisdom',icon:'🦉',quote:'El tiempo que disfrutas perdiendo no es tiempo perdido.',author:'Bertrand Russell'},
-    {id:'wis10',cat:'wisdom',icon:'🦉',quote:'Si quieres ir rápido, ve solo. Si quieres llegar lejos, ve acompañado.',author:'Proverbio africano'},
-    {id:'wis11',cat:'wisdom',icon:'🦉',quote:'La sabiduría no es saber qué hacer en última instancia, sino qué hacer a continuación.',author:'Herbert Hoover'},
-    {id:'wis12',cat:'wisdom',icon:'🦉',quote:'Aprende como si fueras a vivir para siempre. Vive como si fueras a morir mañana.',author:'Mahatma Gandhi'},
-    {id:'wis13',cat:'wisdom',icon:'🦉',quote:'El hombre que hace una pregunta es un tonto por un minuto. El que no la hace es un tonto para siempre.',author:'Confucio'},
-    {id:'wis14',cat:'wisdom',icon:'🦉',quote:'No llores porque se terminó. Sonríe porque sucedió.',author:'Gabriel García Márquez'},
-    {id:'wis15',cat:'wisdom',icon:'🦉',quote:'La vida es breve. Hazla dulce.',author:'Desconocido'},
-    {id:'wis16',cat:'wisdom',icon:'🦉',quote:'Lo que no puedes cambiar, acéptalo. Lo que no puedes aceptar, cámbialo.',author:'Desconocido'},
-    {id:'wis17',cat:'wisdom',icon:'🦉',quote:'El mayor obstáculo para el descubrimiento no es la ignorancia, sino la ilusión de conocimiento.',author:'Daniel Boorstin'},
-    {id:'wis18',cat:'wisdom',icon:'🦉',quote:'Habla solo cuando tus palabras sean más bellas que el silencio.',author:'Proverbio árabe'},
-    {id:'wis19',cat:'wisdom',icon:'🦉',quote:'Cuida tus pensamientos, porque se convertirán en palabras. Cuida tus palabras, porque se convertirán en actos.',author:'Lao Tse'},
-    {id:'wis20',cat:'wisdom',icon:'🦉',quote:'El hombre más rico no es el que más tiene, sino el que menos necesita.',author:'Desconocido'},
-    {id:'wis21',cat:'wisdom',icon:'🦉',quote:'La experiencia es el maestro más duro. Primero te pone a prueba, luego te enseña la lección.',author:'Oscar Wilde'},
-    {id:'wis22',cat:'wisdom',icon:'🦉',quote:'Dos cosas son infinitas: el universo y la estupidez humana. Y del universo no estoy seguro.',author:'Albert Einstein'},
-    {id:'wis23',cat:'wisdom',icon:'🦉',quote:'El secreto de la felicidad no está en hacer siempre lo que uno quiere, sino en querer lo que uno hace.',author:'León Tolstói'},
-    {id:'wis24',cat:'wisdom',icon:'🦉',quote:'No temas al fracaso. Teme no haberlo intentado.',author:'Desconocido'},
-    {id:'wis25',cat:'wisdom',icon:'🦉',quote:'Quien no arriesga, no gana. Pero quien no piensa, siempre pierde.',author:'Desconocido'},
-    {id:'wis26',cat:'wisdom',icon:'🦉',quote:'El tiempo es el recurso más democrático: todos tenemos 24 horas. La diferencia está en cómo las usamos.',author:'Desconocido'},
-    {id:'wis27',cat:'wisdom',icon:'🦉',quote:'Madura la mente que puede sostener dos ideas opuestas a la vez.',author:'F. Scott Fitzgerald'},
-    {id:'wis28',cat:'wisdom',icon:'🦉',quote:'Cuanto más sé, más me doy cuenta de cuánto no sé.',author:'Sócrates'},
-    {id:'wis29',cat:'wisdom',icon:'🦉',quote:'La felicidad no es algo hecho. Viene de tus propias acciones.',author:'Dalai Lama'},
-    {id:'wis30',cat:'wisdom',icon:'🦉',quote:'La vida no se mide por los momentos que respiramos, sino por los momentos que nos dejan sin aliento.',author:'Maya Angelou'},
-    /* ══ ENFOQUE (30) ══ */
-    {id:'foc01',cat:'focus',icon:'🔥',quote:'Donde va tu atención, va tu energía. Y donde va tu energía, van tus resultados.',author:'T. Harv Eker'},
-    {id:'foc02',cat:'focus',icon:'🔥',quote:'El secreto del cambio es enfocar toda tu energía no en combatir lo viejo, sino en construir lo nuevo.',author:'Sócrates'},
-    {id:'foc03',cat:'focus',icon:'🔥',quote:'Haz lo que puedas, con lo que tienes, donde estás.',author:'Theodore Roosevelt'},
-    {id:'foc04',cat:'focus',icon:'🔥',quote:'Una persona que nunca se distrae no es una persona que nunca tiene distracciones. Es una persona que las ignora.',author:'Desconocido'},
-    {id:'foc05',cat:'focus',icon:'🔥',quote:'El enfoque no es sobre decir sí a lo que importa. Es sobre decir no a todo lo demás.',author:'Steve Jobs'},
-    {id:'foc06',cat:'focus',icon:'🔥',quote:'La multitarea es el arte de arruinar varias cosas a la vez.',author:'Desconocido'},
-    {id:'foc07',cat:'focus',icon:'🔥',quote:'Una sola cosa hecha completamente supera a cien cosas hechas a medias.',author:'Desconocido'},
-    {id:'foc08',cat:'focus',icon:'🔥',quote:'El que persigue dos liebres no caza ninguna.',author:'Proverbio latino'},
-    {id:'foc09',cat:'focus',icon:'🔥',quote:'El enfoque es el arte de saber qué ignorar.',author:'Desconocido'},
-    {id:'foc10',cat:'focus',icon:'🔥',quote:'Tu nivel de enfoque determina tu nivel de éxito.',author:'Desconocido'},
-    {id:'foc11',cat:'focus',icon:'🔥',quote:'La concentración es la raíz de todas las habilidades humanas.',author:'Bruce Lee'},
-    {id:'foc12',cat:'focus',icon:'🔥',quote:'Menos, pero mejor.',author:'Dieter Rams'},
-    {id:'foc13',cat:'focus',icon:'🔥',quote:'El presente es el único momento en que algo puede suceder.',author:'Lao Tse'},
-    {id:'foc14',cat:'focus',icon:'🔥',quote:'Haz una cosa. Hazla bien. Hazla ahora.',author:'Desconocido'},
-    {id:'foc15',cat:'focus',icon:'🔥',quote:'La claridad sobre lo que importa da poder a actuar.',author:'Desconocido'},
-    {id:'foc16',cat:'focus',icon:'🔥',quote:'Estar presente no es un lujo. Es el acto más poderoso que puedes realizar.',author:'Desconocido'},
-    {id:'foc17',cat:'focus',icon:'🔥',quote:'No es la velocidad lo que importa, sino la dirección.',author:'Desconocido'},
-    {id:'foc18',cat:'focus',icon:'🔥',quote:'La distracción es el enemigo del progreso.',author:'Desconocido'},
-    {id:'foc19',cat:'focus',icon:'🔥',quote:'Haz que cada momento cuente. El tiempo no vuelve.',author:'Desconocido'},
-    {id:'foc20',cat:'focus',icon:'🔥',quote:'La profundidad de tu trabajo es directamente proporcional a la profundidad de tu enfoque.',author:'Cal Newport'},
-    {id:'foc21',cat:'focus',icon:'🔥',quote:'La energía fluye donde va la atención.',author:'Tony Robbins'},
-    {id:'foc22',cat:'focus',icon:'🔥',quote:'El trabajo profundo es la habilidad superpoder del siglo XXI.',author:'Cal Newport'},
-    {id:'foc23',cat:'focus',icon:'🔥',quote:'Silencia el ruido externo y escucha lo que realmente importa.',author:'Desconocido'},
-    {id:'foc24',cat:'focus',icon:'🔥',quote:'Un minuto de enfoque vale más que una hora de distracción.',author:'Desconocido'},
-    {id:'foc25',cat:'focus',icon:'🔥',quote:'Cuando te enfocas en el problema, este crece. Cuando te enfocas en la solución, avanzas.',author:'Desconocido'},
-    {id:'foc26',cat:'focus',icon:'🔥',quote:'El enfoque convierte lo ordinario en extraordinario.',author:'Desconocido'},
-    {id:'foc27',cat:'focus',icon:'🔥',quote:'No mires el reloj. Haz lo que hace: sigue avanzando.',author:'Sam Levenson'},
-    {id:'foc28',cat:'focus',icon:'🔥',quote:'La mente dispersa es la peor forma de pobreza.',author:'Desconocido'},
-    {id:'foc29',cat:'focus',icon:'🔥',quote:'Tu mayor enemigo no es el tiempo. Es lo que haces mientras el tiempo pasa.',author:'Desconocido'},
-    {id:'foc30',cat:'focus',icon:'🔥',quote:'Cuando tu por qué es claro, el cómo aparece solo.',author:'Desconocido'},
-];
-
-let _currentCardCat = 'all';
-
-function getDailyCard() {
-    const idx = Math.floor(Date.now() / 86400000) % CARDS_DB.length;
-    return CARDS_DB[idx];
-}
-
-function isCardUnlocked(cardId) {
-    const habits    = loadHabits();
-    const totalDone = habits.reduce((s,h)=>s+(h.log||[]).length, 0);
-    const card      = CARDS_DB.find(c=>c.id===cardId);
-    if (!card) return false;
-    /* Calcular posición dentro de su colección */
-    const cardsInCat = CARDS_DB.filter(c=>c.cat===card.cat);
-    const posInCat   = cardsInCat.findIndex(c=>c.id===cardId);
-    const needed     = posInCat * 2; /* 0, 2, 4... hábitos */
-    return totalDone >= needed;
-}
-
-window.renderHabCartas = function() {
-    // ── Carta del dia ──────────────────────────────────────────
-    var dailyEl = document.getElementById('habDailyCard');
-    if (dailyEl) {
-        var card        = getDailyCard();
-        var cat         = CARD_CATEGORIES.find(function(c){ return c.id === card.cat; }) || CARD_CATEGORIES[0];
-        var unlockedDay = isCardUnlocked(card.id);
-        var collected   = loadCards();
-        var isColl      = collected.includes(card.id);
-        dailyEl.setAttribute('data-showing', card.id);
-
-        var d = document.createElement('div');
-        d.className = 'hab-mot-card';
-        d.style.cssText = 'background:' + cat.bg + ';border-color:' + cat.border + ';--card-bg:' + cat.bg + ';--card-border:' + cat.border + ';--card-glow:' + cat.color + '33;';
-        d.setAttribute('onclick', "collectCard('" + card.id + "')");
-
-        var inner = '';
-        if (isColl) inner += '<div class="hab-mot-card-collected">✅ En colección</div>';
-        inner += '<div class="hab-mot-card-category" style="color:' + cat.catColor + ';">' + cat.icon + ' ' + cat.label.toUpperCase() + ' · CARTA DEL DÍA</div>';
-        inner += '<div class="hab-mot-card-quote">“' + card.quote + '”</div>';
-        inner += '<div class="hab-mot-card-author">— ' + card.author + '</div>';
-        if (!isColl && unlockedDay) inner += '<div style="font-size:0.6rem;color:#888;margin-top:8px;text-align:center;">Toca para añadir a tu colección</div>';
-        d.innerHTML = inner;
-
-        dailyEl.innerHTML = '';
-        dailyEl.appendChild(d);
-
-        // Contador de desbloqueadas
-        var badge = document.getElementById('cardCountBadge');
-        if (badge) {
-            var h2 = loadHabits();
-            var t2 = h2.reduce(function(s,h){ return s + (h.log||[]).length; }, 0);
-            var u2 = CARDS_DB.filter(function(c) {
-                var cic = CARDS_DB.filter(function(x){ return x.cat === c.cat; });
-                var pos = cic.findIndex(function(x){ return x.id === c.id; });
-                return t2 >= pos * 2;
-            }).length;
-            badge.textContent = u2 + ' / ' + CARDS_DB.length + ' desbloqueadas';
-        }
-    }
-
-    // ── Filtros de coleccion ────────────────────────────────────
-    var navEl = document.getElementById('habCardsNav');
-    if (navEl) {
-        var cats = [{id:'all', label:'Todas', icon:'🗂️'}].concat(CARD_CATEGORIES);
-        navEl.innerHTML = cats.map(function(c) {
-            var active = (_currentCardCat === c.id) ? 'active' : '';
-            var btn    = document.createElement('div');
-            btn.className    = 'hab-cat-btn ' + active;
-            btn.textContent  = (c.icon || '') + ' ' + c.label;
-            btn.setAttribute('onclick', "filterCards('" + c.id + "')");
-            return btn.outerHTML;
-        }).join('');
-    }
-
-    // ── Coleccion de cartas ─────────────────────────────────────
-    renderCardsCollection();
-};
-
-window.filterCards = function(catId) {
-    _currentCardCat = catId;
-    document.querySelectorAll('.hab-cat-btn').forEach((b,i) => {
-        const cats=[{id:'all'},...CARD_CATEGORIES];
-        b.classList.toggle('active', cats[i]&&cats[i].id===catId);
-    });
-    renderCardsCollection();
-};
-
-function renderCardsCollection() {
-    var collEl = document.getElementById('habCardsCollection');
-    if (!collEl) return;
-    var collected = loadCards();
-    var habits    = loadHabits();
-    var totalDone = habits.reduce(function(s,h){ return s + (h.log||[]).length; }, 0);
-    var filtered  = (_currentCardCat === 'all') ? CARDS_DB : CARDS_DB.filter(function(c){ return c.cat === _currentCardCat; });
-
-    var catCount = {};
-    collEl.innerHTML = filtered.map(function(card) {
-        if (!catCount[card.cat]) catCount[card.cat] = 0;
-        var posInCat = catCount[card.cat];
-        catCount[card.cat]++;
-        var needed      = posInCat * 2;
-        var unlocked    = totalDone >= needed;
-        var isCollected = collected.includes(card.id);
-        var cat         = CARD_CATEGORIES.find(function(c){ return c.id === card.cat; }) || CARD_CATEGORIES[0];
-        var falta       = Math.max(0, needed - totalDone);
-
-        var lockDesc = (!unlocked)
-            ? '<div style="font-size:0.42rem;color:#475569;margin-top:3px;text-align:center;line-height:1.3;">'
-            + 'Completa ' + needed + ' hábitos<br>'
-            + '<span style="color:#64748b;">Te faltan ' + falta + '</span></div>'
-            : '';
+</body>
+</html>
