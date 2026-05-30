@@ -4608,7 +4608,7 @@
 
         /* Cuerpo scrollable */
         .hab-body {
-            flex:1;overflow-y:scroll;padding:0.8rem 1rem 1.2rem;
+            flex:1;overflow-y:scroll;padding:0.8rem 0.5rem 1.2rem;
             -webkit-overflow-scrolling:touch;touch-action:pan-y;
             overscroll-behavior-y:contain;will-change:scroll-position;
             scrollbar-width:thin;scrollbar-color:#10b981 rgba(0,0,0,0.2);
@@ -5266,9 +5266,9 @@
         /* ── RECOMPENSAS ──────────────────────────────────── */
         /* ── PANEL PREMIOS ULTRA PREMIUM ─────────────────────── */
         #habRewardsPanel {
-            position:relative;overflow:hidden;
+            position:relative;overflow:visible;
             background:linear-gradient(160deg,rgba(6,10,25,0.98),rgba(4,14,32,0.98));
-            border-radius:16px;padding:14px 12px 12px;
+            border-radius:16px;padding:12px 8px 10px;
             border:1px solid rgba(251,191,36,0.18);
             box-shadow:0 0 30px rgba(251,191,36,0.05),inset 0 0 40px rgba(0,0,0,0.4);
         }
@@ -5303,9 +5303,9 @@
             background:rgba(251,191,36,0.15);border-color:rgba(251,191,36,0.5);color:#fbbf24;
         }
         .hrp-grid {
-            display:flex;flex-direction:column;gap:7px;
+            display:flex;flex-direction:column;gap:5px;
             position:relative;z-index:1;
-            max-height:340px;overflow-y:auto;
+            max-height:440px;overflow-y:auto;overflow-x:visible;
             scrollbar-width:thin;scrollbar-color:rgba(251,191,36,0.2) transparent;
         }
         .hrp-grid::-webkit-scrollbar{width:3px;}
@@ -5314,10 +5314,11 @@
         /* Tarjeta premium */
         .hab-reward-card {
             position:relative;overflow:hidden;
-            display:flex;align-items:center;gap:10px;
-            border-radius:13px;padding:10px 12px;
-            cursor:pointer;transition:all 0.22s cubic-bezier(0.34,1.4,0.64,1);
+            display:flex;flex-direction:row;align-items:flex-start;gap:10px;
+            border-radius:13px;padding:10px;
+            cursor:default;transition:all 0.2s;
             border:1.5px solid transparent;
+            width:100%;box-sizing:border-box;
         }
         .hab-reward-card::before {
             content:'';position:absolute;inset:0;border-radius:13px;
@@ -5350,29 +5351,34 @@
         /* Icono */
         .hab-reward-icon {
             font-size:1.6rem;flex-shrink:0;
-            filter:drop-shadow(0 0 6px currentColor);
             transition:transform 0.2s;
         }
         .hab-reward-card:not(.locked):hover .hab-reward-icon { transform:scale(1.15) rotate(-5deg); }
+        /* Glow de color por tier en el icono del div inline */
+        .tier-easy  > div:first-child { filter: drop-shadow(0 0 7px rgba(52,211,153,0.8))  drop-shadow(0 0 14px rgba(52,211,153,0.4));  }
+        .tier-mid   > div:first-child { filter: drop-shadow(0 0 7px rgba(251,191,36,0.8))  drop-shadow(0 0 14px rgba(251,191,36,0.4));  }
+        .tier-epic  > div:first-child { filter: drop-shadow(0 0 7px rgba(192,132,252,0.8)) drop-shadow(0 0 14px rgba(192,132,252,0.4)); }
         .hab-reward-info { flex:1;min-width:0; }
         .hab-reward-name { font-size:0.8rem;font-weight:900;color:#f1f5f9;line-height:1.2; }
         .hab-reward-desc { font-size:0.58rem;color:#64748b;margin-top:2px;line-height:1.3; }
         .hab-reward-cost {
             display:inline-flex;align-items:center;gap:3px;
-            font-size:0.62rem;font-weight:800;margin-top:4px;
-            padding:2px 7px;border-radius:10px;
+            font-size:0.64rem;font-weight:900;margin-top:5px;
+            padding:3px 9px;border-radius:20px;
         }
         .hab-reward-cost.can-buy {
-            background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);
+            background:rgba(16,185,129,0.18);color:#34d399;
+            border:1.5px solid rgba(16,185,129,0.4);
+            box-shadow:0 0 8px rgba(16,185,129,0.15);
         }
         .hab-reward-cost.cant-buy {
-            background:rgba(100,116,139,0.12);color:#64748b;border:1px solid rgba(100,116,139,0.2);
+            background:rgba(100,116,139,0.1);color:#94a3b8;
+            border:1.5px solid rgba(100,116,139,0.25);
         }
-        /* Badge tier */
+        /* Badge tier — ahora inline en el header de la tarjeta, no absoluto */
         .hrp-tier-badge {
-            position:absolute;top:6px;right:36px;
-            font-size:0.42rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;
-            padding:2px 6px;border-radius:8px;
+            font-size:0.42rem;font-weight:900;text-transform:uppercase;letter-spacing:0.8px;
+            padding:2px 6px;border-radius:8px;white-space:nowrap;flex-shrink:0;
         }
         .hrp-tier-badge.easy { background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.3); }
         .hrp-tier-badge.mid  { background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.3); }
@@ -7363,6 +7369,60 @@
         }
 </style>
 </head>
+<script>
+/* ── PREMIOS: función de filtro disponible globalmente desde el inicio ── */
+var _hrpActiveFilter = 'all';
+function _hrpApplyFilter(f, btn) {
+    _hrpActiveFilter = f || 'all';
+    /* Botones: activar con style directo */
+    ['all','easy','mid','epic','available'].forEach(function(k) {
+        var b = document.getElementById('hrpBtn-' + k);
+        if (!b) return;
+        if (k === f) {
+            b.style.cssText = 'background:rgba(251,191,36,0.25);border-color:rgba(251,191,36,0.8);color:#fbbf24;font-weight:900;padding:3px 9px;border-radius:20px;font-size:0.58rem;border-width:1.5px;border-style:solid;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;';
+        } else {
+            b.style.cssText = 'background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#6b7280;font-weight:800;padding:3px 9px;border-radius:20px;font-size:0.58rem;border-width:1.5px;border-style:solid;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;';
+        }
+    });
+    /* Monedas */
+    var coins = 0;
+    try { if (typeof loadHero === 'function') coins = loadHero().coins || 0; } catch(e) {}
+    var goldEl = document.getElementById('habRewardGold');
+    if (goldEl) goldEl.textContent = '🪙 ' + coins;
+    /* Tarjetas */
+    var cards = document.querySelectorAll('#habRewardsList .hab-reward-card');
+    cards.forEach(function(card) {
+        var tier = card.getAttribute('data-tier') || '';
+        var cost = parseInt(card.getAttribute('data-cost') || '9999');
+        var show = (f==='all') || (f===tier) || (f==='available' && coins>=cost);
+        card.style.display = show ? 'flex' : 'none';
+        var costEl = card.querySelector('.hab-reward-cost');
+        if (coins >= cost) {
+            card.classList.remove('locked'); card.style.cursor='pointer';
+            if (costEl) { costEl.style.background='rgba(16,185,129,0.18)';costEl.style.color='#34d399';costEl.style.borderColor='rgba(16,185,129,0.4)';costEl.textContent='🪙 '+cost+' — ¡Canjear!'; }
+        } else {
+            card.classList.add('locked'); card.style.cursor='default';
+            if (costEl) { costEl.style.background='rgba(100,116,139,0.12)';costEl.style.color='#94a3b8';costEl.style.borderColor='rgba(100,116,139,0.25)';costEl.textContent='🪙 '+cost+' monedas'; }
+        }
+    });
+    /* Divisores */
+    document.querySelectorAll('#habRewardsList .hrp-tier-divider').forEach(function(div) {
+        var t = div.getAttribute('data-divider') || '';
+        var any = false;
+        document.querySelectorAll('#habRewardsList .hab-reward-card[data-tier="'+t+'"]').forEach(function(c){ if(c.style.display!=='none') any=true; });
+        div.style.display = any ? 'flex' : 'none';
+    });
+    /* Vacío */
+    var anyVis = Array.from(cards).some(function(c){ return c.style.display!=='none'; });
+    var em = document.getElementById('hrpEmptyMsg');
+    if (!anyVis) {
+        if (!em) { em=document.createElement('div');em.id='hrpEmptyMsg';em.style.cssText='text-align:center;padding:20px 8px;';em.innerHTML='<div style="font-size:1.8rem;margin-bottom:6px;">🔒</div><div style="font-size:0.72rem;font-weight:900;color:#6b7280;">Nada al alcance aún</div><div style="font-size:0.6rem;color:#4b5563;margin-top:3px;">Completa más hábitos.</div>';var l=document.getElementById('habRewardsList');if(l)l.appendChild(em); }
+        em.style.display='block';
+    } else if(em) { em.style.display='none'; }
+}
+window._hrpApplyFilter = _hrpApplyFilter;
+window.hrpFilter        = _hrpApplyFilter;
+</script>
 <body>
     <div class="stars"></div>
 
@@ -16268,43 +16328,40 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                     </div>
                     <p class="hrp-subtitle">Canjea tu oro ganado por experiencias reales que te motivan a seguir.</p>
                     <div class="hrp-filter-row" id="hrpFilterRow">
-                        <button class="hrp-filter-btn active" onclick="hrpFilter('all',this)">✨ Todos</button>
-                        <button class="hrp-filter-btn" onclick="hrpFilter('easy',this)">🟢 Fácil</button>
-                        <button class="hrp-filter-btn" onclick="hrpFilter('mid',this)">🟡 Medio</button>
-                        <button class="hrp-filter-btn" onclick="hrpFilter('epic',this)">🟣 Épico</button>
-                        <button class="hrp-filter-btn" onclick="hrpFilter('available',this)">⚡ Al alcance</button>
+                        <button class="hrp-filter-btn active" id="hrpBtn-all"       onclick="_hrpApplyFilter('all',this)">✨ Todos</button>
+                        <button class="hrp-filter-btn"        id="hrpBtn-easy"      onclick="_hrpApplyFilter('easy',this)">🟢 Fácil</button>
+                        <button class="hrp-filter-btn"        id="hrpBtn-mid"       onclick="_hrpApplyFilter('mid',this)">🟡 Medio</button>
+                        <button class="hrp-filter-btn"        id="hrpBtn-epic"      onclick="_hrpApplyFilter('epic',this)">🟣 Épico</button>
+                        <button class="hrp-filter-btn"        id="hrpBtn-available" onclick="_hrpApplyFilter('available',this)">⚡ Al alcance</button>
                     </div>
                     <div class="hrp-grid" id="habRewardsList">
-                        <!-- FÁCIL -->
-                        <div class="hrp-tier-divider easy"><span>🟢 Fácil</span></div>
-                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🎵</div><div class="hab-reward-info"><div class="hab-reward-name">Canción favorita a todo volumen</div><div class="hab-reward-desc">Pon esa canción que te sube el ánimo al máximo.</div><span class="hab-reward-cost cant-buy">🪙 5 — Faltan 5</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">📱</div><div class="hab-reward-info"><div class="hab-reward-name">10 min de redes sin culpa</div><div class="hab-reward-desc">Scroll libre, sin timer mental ni remordimientos.</div><span class="hab-reward-cost cant-buy">🪙 8 — Faltan 8</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">☕</div><div class="hab-reward-info"><div class="hab-reward-name">Descanso total de 15 min</div><div class="hab-reward-desc">Café, agua o simplemente no hacer nada. Lo mereces.</div><span class="hab-reward-cost cant-buy">🪙 10 — Faltan 10</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">▶️</div><div class="hab-reward-info"><div class="hab-reward-name">Video pendiente de YouTube</div><div class="hab-reward-desc">Ese video que tienes guardado y nunca ves.</div><span class="hab-reward-cost cant-buy">🪙 12 — Faltan 12</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🍫</div><div class="hab-reward-info"><div class="hab-reward-name">Snack favorito ahora mismo</div><div class="hab-reward-desc">El antojo que llevas pensando toda la mañana.</div><span class="hab-reward-cost cant-buy">🪙 15 — Faltan 15</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🚶</div><div class="hab-reward-info"><div class="hab-reward-name">Mini paseo de 10 min al aire libre</div><div class="hab-reward-desc">Sal, respira y despeja la mente.</div><span class="hab-reward-cost cant-buy">🪙 18 — Faltan 18</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🎬</div><div class="hab-reward-info"><div class="hab-reward-name">Episodio de tu serie favorita</div><div class="hab-reward-desc">Un episodio completo, sin pausas ni culpa.</div><span class="hab-reward-cost cant-buy">🪙 25 — Faltan 25</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-easy locked" title="Necesitas más oro"><div class="hab-reward-icon">🎮</div><div class="hab-reward-info"><div class="hab-reward-name">30 min de videojuego</div><div class="hab-reward-desc">Modo de juego activado, productividad guardada.</div><span class="hab-reward-cost cant-buy">🪙 30 — Faltan 30</span></div><span class="hrp-tier-badge easy">🟢 Fácil</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <!-- MEDIO -->
-                        <div class="hrp-tier-divider mid"><span>🟡 Medio</span></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🍿</div><div class="hab-reward-info"><div class="hab-reward-name">Tarde de películas o maratón</div><div class="hab-reward-desc">Sofá, manta y tu peli o serie de elección.</div><span class="hab-reward-cost cant-buy">🪙 45 — Faltan 45</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🛵</div><div class="hab-reward-info"><div class="hab-reward-name">Pedir tu comida favorita a domicilio</div><div class="hab-reward-desc">Sin cocinar, sin lavar, solo disfrutar.</div><span class="hab-reward-cost cant-buy">🪙 50 — Faltan 50</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">😴</div><div class="hab-reward-info"><div class="hab-reward-name">Siesta sin alarma</div><div class="hab-reward-desc">Duerme hasta que el cuerpo diga basta.</div><span class="hab-reward-cost cant-buy">🪙 55 — Faltan 55</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🎧</div><div class="hab-reward-info"><div class="hab-reward-name">Sesión de música / podcast 1 hora</div><div class="hab-reward-desc">Escucha sin interrupciones, solo tú y el sonido.</div><span class="hab-reward-cost cant-buy">🪙 60 — Faltan 60</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🛁</div><div class="hab-reward-info"><div class="hab-reward-name">Baño largo con música y calma</div><div class="hab-reward-desc">Agua caliente, tu playlist y silencio del mundo.</div><span class="hab-reward-cost cant-buy">🪙 65 — Faltan 65</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🧸</div><div class="hab-reward-info"><div class="hab-reward-name">Día entero de pijama y relax</div><div class="hab-reward-desc">Pijama todo el día, sin salir, sin explicar.</div><span class="hab-reward-cost cant-buy">🪙 70 — Faltan 70</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🛍️</div><div class="hab-reward-info"><div class="hab-reward-name">Comprar algo pequeño que querías</div><div class="hab-reward-desc">Ese detalle pequeño que llevas tiempo viendo.</div><span class="hab-reward-cost cant-buy">🪙 80 — Faltan 80</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🏳️</div><div class="hab-reward-info"><div class="hab-reward-name">Día sin culpa ni tareas pendientes</div><div class="hab-reward-desc">Hoy no existe la lista. Solo el presente.</div><span class="hab-reward-cost cant-buy">🪙 90 — Faltan 90</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-mid locked" title="Necesitas más oro"><div class="hab-reward-icon">🕹️</div><div class="hab-reward-info"><div class="hab-reward-name">Noche de juegos online con amigos</div><div class="hab-reward-desc">Sesión épica sin horario de cierre.</div><span class="hab-reward-cost cant-buy">🪙 100 — Faltan 100</span></div><span class="hrp-tier-badge mid">🟡 Medio</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <!-- ÉPICO -->
-                        <div class="hrp-tier-divider epic"><span>🟣 Épico</span></div>
-                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">👥</div><div class="hab-reward-info"><div class="hab-reward-name">Salida especial con personas que quieres</div><div class="hab-reward-desc">Cena, parque, café — el plan que sea con quien importa.</div><span class="hab-reward-cost cant-buy">🪙 120 — Faltan 120</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">🍽️</div><div class="hab-reward-info"><div class="hab-reward-name">Comer en tu restaurante favorito</div><div class="hab-reward-desc">Ese lugar especial que reservas para momentos que valen.</div><span class="hab-reward-cost cant-buy">🪙 150 — Faltan 150</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">📚</div><div class="hab-reward-info"><div class="hab-reward-name">Comprar ese libro o juego esperado</div><div class="hab-reward-desc">Invierte en algo que te da placer e inspiración.</div><span class="hab-reward-cost cant-buy">🪙 160 — Faltan 160</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">🏕️</div><div class="hab-reward-info"><div class="hab-reward-name">Fin de semana sin pantalla de trabajo</div><div class="hab-reward-desc">Desconexión total. El trabajo puede esperar.</div><span class="hab-reward-cost cant-buy">🪙 200 — Faltan 200</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">💆</div><div class="hab-reward-info"><div class="hab-reward-name">Día de spa o autocuidado profundo</div><div class="hab-reward-desc">Masaje, skincare o lo que tu cuerpo necesite.</div><span class="hab-reward-cost cant-buy">🪙 220 — Faltan 220</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">🎁</div><div class="hab-reward-info"><div class="hab-reward-name">Compra especial que llevas planeando</div><div class="hab-reward-desc">Esa cosa que llevas meses mirando y mereces ya.</div><span class="hab-reward-cost cant-buy">🪙 260 — Faltan 260</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
-                        <div class="hab-reward-card tier-epic locked" title="Necesitas más oro"><div class="hab-reward-icon">✈️</div><div class="hab-reward-info"><div class="hab-reward-name">¡Viaje o escapada de un día!</div><div class="hab-reward-desc">Un destino nuevo, aunque sea a una hora de casa.</div><span class="hab-reward-cost cant-buy">🪙 300 — Faltan 300</span></div><span class="hrp-tier-badge epic">🟣 Épico</span><div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" title="Eliminar">🗑️</div></div>
+                        <div class="hrp-tier-divider easy" data-divider="easy" style="display:flex;align-items:center;gap:8px;margin:8px 0 3px;"><div style="flex:1;height:1px;background:#34d399;opacity:0.2;"></div><span style="font-size:0.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:#34d399;white-space:nowrap;">🟢 FÁCIL — recompensas diarias</span><div style="flex:1;height:1px;background:#34d399;opacity:0.2;"></div></div>
+                        <div class="hab-reward-card tier-easy locked" data-tier="easy" data-cost="5" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(16,185,129,0.09);border:1.5px solid rgba(16,185,129,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🎵</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟢 FÁCIL</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Canción favorita a todo volumen</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pon esa canción que te sube el ánimo.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 5</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr005')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-easy locked" data-tier="easy" data-cost="8" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(16,185,129,0.09);border:1.5px solid rgba(16,185,129,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">📱</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟢 FÁCIL</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">10 min de redes sin culpa</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Scroll libre, sin remordimientos.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 8</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr008')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-easy locked" data-tier="easy" data-cost="10" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(16,185,129,0.09);border:1.5px solid rgba(16,185,129,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">☕</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟢 FÁCIL</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Descanso total de 15 min</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Café o simplemente no hacer nada.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 10</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr010')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-easy locked" data-tier="easy" data-cost="12" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(16,185,129,0.09);border:1.5px solid rgba(16,185,129,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">▶️</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟢 FÁCIL</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Video pendiente de YouTube</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ese video guardado que nunca ves.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 12</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr012')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-easy locked" data-tier="easy" data-cost="15" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(16,185,129,0.09);border:1.5px solid rgba(16,185,129,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🍫</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟢 FÁCIL</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Snack favorito ahora mismo</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">El antojo que llevas pensando.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 15</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr015')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-easy locked" data-tier="easy" data-cost="18" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(16,185,129,0.09);border:1.5px solid rgba(16,185,129,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🚶</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟢 FÁCIL</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Mini paseo de 10 min exterior</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Sal, respira y despeja la mente.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 18</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr018')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-easy locked" data-tier="easy" data-cost="25" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(16,185,129,0.09);border:1.5px solid rgba(16,185,129,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🎬</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟢 FÁCIL</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Episodio de tu serie favorita</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Un episodio completo, sin culpa.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 25</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr025')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-easy locked" data-tier="easy" data-cost="30" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(16,185,129,0.09);border:1.5px solid rgba(16,185,129,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🎮</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟢 FÁCIL</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">30 min de videojuego libre</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Modo juego activado. Productividad en pausa.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 30</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr030')">🗑️</span></div></div>
+                        <div class="hrp-tier-divider mid" data-divider="mid" style="display:flex;align-items:center;gap:8px;margin:8px 0 3px;"><div style="flex:1;height:1px;background:#fbbf24;opacity:0.2;"></div><span style="font-size:0.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:#fbbf24;white-space:nowrap;">🟡 MEDIO — semanas de constancia</span><div style="flex:1;height:1px;background:#fbbf24;opacity:0.2;"></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="45" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🍿</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Tarde de películas o maratón</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Sofá, manta y tu peli de elección.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 45</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr045')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="50" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🛵</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pedir comida a domicilio</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Sin cocinar, sin lavar, solo disfrutar.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 50</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr050')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="55" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">😴</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Siesta sin alarma</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Duerme hasta que el cuerpo diga basta.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 55</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr055')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="60" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🎧</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Podcast o música 1 hora libre</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Solo tú y el sonido. Sin interrupciones.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 60</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr060')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="65" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🛁</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Baño largo con música y calma</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Agua caliente, tu playlist y paz.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 65</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr065')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="75" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🧸</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Día entero de pijama y relax</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Sin salir, sin explicar. Solo existir.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 75</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr075')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="80" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🛍️</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Comprar algo pequeño deseado</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ese detalle que llevas tiempo mirando.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 80</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr080')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="90" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🏳️</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Día sin culpa ni tareas</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hoy no existe la lista. Solo el presente.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 90</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr090')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-mid locked" data-tier="mid" data-cost="100" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(251,191,36,0.09);border:1.5px solid rgba(251,191,36,0.4);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🕹️</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟡 MEDIO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Noche de juegos con amigos</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Sesión épica sin horario de cierre.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 100</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr100')">🗑️</span></div></div>
+                        <div class="hrp-tier-divider epic" data-divider="epic" style="display:flex;align-items:center;gap:8px;margin:8px 0 3px;"><div style="flex:1;height:1px;background:#c084fc;opacity:0.2;"></div><span style="font-size:0.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:#c084fc;white-space:nowrap;">🟣 ÉPICO — meses de esfuerzo</span><div style="flex:1;height:1px;background:#c084fc;opacity:0.2;"></div></div>
+                        <div class="hab-reward-card tier-epic locked" data-tier="epic" data-cost="120" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(177,0,255,0.08);border:1.5px solid rgba(177,0,255,0.45);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">👥</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟣 ÉPICO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Salida especial con quien quieres</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Cena, parque o café con quien importa.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 120</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr120')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-epic locked" data-tier="epic" data-cost="150" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(177,0,255,0.08);border:1.5px solid rgba(177,0,255,0.45);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🍽️</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟣 ÉPICO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Comer en tu restaurante favorito</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">El lugar para momentos que valen.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 150</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr150')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-epic locked" data-tier="epic" data-cost="160" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(177,0,255,0.08);border:1.5px solid rgba(177,0,255,0.45);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">📚</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟣 ÉPICO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Comprar libro o juego esperado</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Invierte en algo que te da placer.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 160</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr160')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-epic locked" data-tier="epic" data-cost="200" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(177,0,255,0.08);border:1.5px solid rgba(177,0,255,0.45);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🏕️</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟣 ÉPICO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Fin de semana sin trabajo</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Desconexión total. El trabajo espera.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 200</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr200')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-epic locked" data-tier="epic" data-cost="220" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(177,0,255,0.08);border:1.5px solid rgba(177,0,255,0.45);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">💆</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟣 ÉPICO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Día de spa o autocuidado</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Masaje o lo que tu cuerpo necesite.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 220</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr220')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-epic locked" data-tier="epic" data-cost="260" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(177,0,255,0.08);border:1.5px solid rgba(177,0,255,0.45);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">🎁</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟣 ÉPICO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Compra especial planeada</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Esa cosa que llevas meses mirando.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 260</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr260')">🗑️</span></div></div>
+                        <div class="hab-reward-card tier-epic locked" data-tier="epic" data-cost="300" style="display:flex;flex-direction:row;align-items:center;gap:10px;padding:9px 10px;background:rgba(177,0,255,0.08);border:1.5px solid rgba(177,0,255,0.45);border-radius:13px;transition:border-color 0.2s;cursor:default;width:100%;box-sizing:border-box;" title="Necesitas más oro"><div style="font-size:1.7rem;flex-shrink:0;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">✈️</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;"><span style="background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.4);font-size:0.44rem;font-weight:900;text-transform:uppercase;letter-spacing:0.6px;padding:1px 5px;border-radius:20px;white-space:nowrap;flex-shrink:0;">🟣 ÉPICO</span></div><div style="font-size:0.76rem;font-weight:900;color:#f1f5f9;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">¡Viaje o escapada de un día!</div><div style="font-size:0.58rem;color:#64748b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Un destino nuevo a una hora de casa.</div></div><div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="hab-reward-cost cant-buy" style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-size:0.62rem;font-weight:900;padding:3px 8px;border-radius:20px;background:rgba(100,116,139,0.12);color:#94a3b8;border:1.5px solid rgba(100,116,139,0.25);min-width:80px;justify-content:center;flex-shrink:0;">🪙 300</span><span style="font-size:0.6rem;cursor:pointer;color:#374151;" title="Eliminar" onclick="event.stopPropagation();if(typeof deleteReward==='function')deleteReward('pr300')">🗑️</span></div></div>
                     </div>
                     <div class="hab-add-reward-btn" onclick="showAddRewardForm()">＋ Crear recompensa personalizada</div>
                     <div id="habAddRewardForm" style="display:none;margin-top:0.8rem;">
@@ -19676,112 +19733,104 @@ const DEFAULT_REWARDS = [
     {id:'pr24',name:'¡Viaje o escapada de un día!',      icon:'✈️',cost:300,tier:'epic',desc:'Un destino nuevo, aunque sea a una hora de casa.'},
 ];
 let selectedRewardEmoji = '🎁';
-let _hrpActiveFilter = 'all';
+var _hrpActiveFilter = 'all';
 
-window.hrpFilter = function(f, btn) {
+/* Función global directa — llamada por onclick inline de los botones */
+function _hrpApplyFilter(f, btn) {
     _hrpActiveFilter = f;
-    document.querySelectorAll('.hrp-filter-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    renderHabRewards();
-};
 
-window.renderHabRewards = function() {
-    const el     = document.getElementById('habRewardsList');
-    const goldEl = document.getElementById('habRewardGold');
-    if (!el) return;
-
-    /* Autosuficiente: funciona con o sin localStorage/loadHero */
-    var coins = 0;
-    try {
-        if (typeof loadHero === 'function') {
-            var hero = loadHero();
-            coins = hero.coins || 0;
+    /* 1. Activar botón visualmente con style directo (no depende de CSS cascade) */
+    ['all','easy','mid','epic','available'].forEach(function(k) {
+        var b = document.getElementById('hrpBtn-' + k);
+        if (!b) return;
+        if (k === f) {
+            b.style.background    = 'rgba(251,191,36,0.22)';
+            b.style.borderColor   = 'rgba(251,191,36,0.7)';
+            b.style.color         = '#fbbf24';
+            b.style.fontWeight    = '900';
+            b.classList.add('active');
+        } else {
+            b.style.background    = 'rgba(255,255,255,0.04)';
+            b.style.borderColor   = 'rgba(255,255,255,0.1)';
+            b.style.color         = '#6b7280';
+            b.style.fontWeight    = '800';
+            b.classList.remove('active');
         }
-    } catch(e) {}
-    if (goldEl) goldEl.textContent = '🪙 ' + coins;
-
-    /* Leer storage de forma segura, migrar datos viejos, y usar DEFAULT_REWARDS si vacío */
-    var stored = [];
-    try {
-        if (typeof loadRewards === 'function') {
-            stored = loadRewards() || [];
-        } else if (typeof localStorage !== 'undefined') {
-            stored = JSON.parse(localStorage.getItem('jch_rewards_v1') || '[]');
-        }
-    } catch(e) { stored = []; }
-    const OLD_IDS = new Set(['r1','r2','r3','r4']);
-    const isOldData = stored.length > 0 && stored.every(function(r){ return OLD_IDS.has(r.id); });
-    if (isOldData) {
-        try { if (typeof saveRewards === 'function') saveRewards([]); } catch(e) {}
-        stored = [];
-    }
-    const rewards = (stored && stored.length) ? stored : DEFAULT_REWARDS;
-
-    const tierMeta = {
-        easy: { label:'🟢 Fácil',   cls:'easy' },
-        mid:  { label:'🟡 Medio',   cls:'mid'  },
-        epic: { label:'🟣 Épico',   cls:'epic' },
-    };
-
-    let filtered = rewards;
-    if (_hrpActiveFilter === 'easy')      filtered = rewards.filter(r => r.tier === 'easy' || (!r.tier && r.cost <= 30));
-    else if (_hrpActiveFilter === 'mid')  filtered = rewards.filter(r => r.tier === 'mid'  || (!r.tier && r.cost > 30 && r.cost <= 100));
-    else if (_hrpActiveFilter === 'epic') filtered = rewards.filter(r => r.tier === 'epic' || (!r.tier && r.cost > 100));
-    else if (_hrpActiveFilter === 'available') filtered = rewards.filter(r => coins >= r.cost);
-
-    /* Agrupar por tier para mostrar divisores */
-    const grouped = { easy:[], mid:[], epic:[], custom:[] };
-    filtered.forEach(r => {
-        const t = r.tier || (r.cost <= 30 ? 'easy' : r.cost <= 100 ? 'mid' : 'epic');
-        if (grouped[t]) grouped[t].push(r); else grouped.custom.push(r);
     });
 
-    const renderCard = r => {
-        const canBuy  = coins >= r.cost;
-        const tier    = r.tier || (r.cost <= 30 ? 'easy' : r.cost <= 100 ? 'mid' : 'epic');
-        const tierC   = tierMeta[tier] || tierMeta.easy;
-        const costCls = canBuy ? 'can-buy' : 'cant-buy';
-        const costTxt = canBuy
-            ? `🪙 ${r.cost} — ¡Canjear!`
-            : `🪙 ${r.cost} — Faltan ${r.cost - coins}`;
-        return `<div class="hab-reward-card tier-${tier}${canBuy?'':' locked'}" onclick="${canBuy?`buyReward('${r.id}')`:''}" title="${canBuy?'Haz clic para canjear':'Necesitas más oro'}">
-            <div class="hab-reward-icon">${r.icon}</div>
-            <div class="hab-reward-info">
-                <div class="hab-reward-name">${r.name}</div>
-                ${r.desc?`<div class="hab-reward-desc">${r.desc}</div>`:''}
-                <span class="hab-reward-cost ${costCls}">${costTxt}</span>
-            </div>
-            <span class="hrp-tier-badge ${tierC.cls}">${tierC.label}</span>
-            <div style="font-size:0.6rem;cursor:pointer;color:#374151;flex-shrink:0;padding:4px;" onclick="event.stopPropagation();deleteReward('${r.id}')" title="Eliminar">🗑️</div>
-        </div>`;
-    };
+    /* 2. Leer monedas */
+    var coins = 0;
+    try { if (typeof loadHero === 'function') coins = loadHero().coins || 0; } catch(e) {}
+    var goldEl = document.getElementById('habRewardGold');
+    if (goldEl) goldEl.textContent = '🪙 ' + coins;
 
-    const renderDivider = (tier) => {
-        const m = tierMeta[tier];
-        return m ? `<div class="hrp-tier-divider ${tier}"><span>${m.label}</span></div>` : '';
-    };
+    /* 3. Mostrar/ocultar tarjetas */
+    var cards = document.querySelectorAll('#habRewardsList .hab-reward-card');
+    cards.forEach(function(card) {
+        var tier = card.getAttribute('data-tier') || '';
+        var cost = parseInt(card.getAttribute('data-cost') || '9999');
+        var show = (f === 'all') || (f === tier) || (f === 'available' && coins >= cost);
+        card.style.display = show ? 'flex' : 'none';
 
-    let html = '';
-    if (_hrpActiveFilter === 'all') {
-        ['easy','mid','epic','custom'].forEach(t => {
-            if (grouped[t] && grouped[t].length) {
-                if (t !== 'custom') html += renderDivider(t);
-                html += grouped[t].map(renderCard).join('');
+        /* Actualizar precio y estado locked/unlocked */
+        var costEl = card.querySelector('.hab-reward-cost');
+        if (coins >= cost) {
+            card.classList.remove('locked');
+            card.style.cursor = 'pointer';
+            if (costEl) {
+                costEl.style.background   = 'rgba(16,185,129,0.18)';
+                costEl.style.color        = '#34d399';
+                costEl.style.borderColor  = 'rgba(16,185,129,0.4)';
+                costEl.textContent        = '🪙 ' + cost + ' — ¡Canjear!';
             }
+        } else {
+            card.classList.add('locked');
+            card.style.cursor = 'default';
+            if (costEl) {
+                costEl.style.background  = 'rgba(100,116,139,0.12)';
+                costEl.style.color       = '#94a3b8';
+                costEl.style.borderColor = 'rgba(100,116,139,0.25)';
+                costEl.textContent       = '🪙 ' + cost + ' monedas';
+            }
+        }
+    });
+
+    /* 4. Mostrar/ocultar divisores */
+    document.querySelectorAll('#habRewardsList .hrp-tier-divider').forEach(function(div) {
+        var t = div.getAttribute('data-divider') || '';
+        var anyVis = false;
+        document.querySelectorAll('#habRewardsList .hab-reward-card[data-tier="' + t + '"]').forEach(function(c) {
+            if (c.style.display !== 'none') anyVis = true;
         });
-    } else {
-        html = filtered.map(renderCard).join('');
-    }
+        div.style.display = anyVis ? 'flex' : 'none';
+    });
 
-    if (!html) {
-        html = `<div style="text-align:center;padding:24px 8px;color:#4b5563;">
-            <div style="font-size:2rem;margin-bottom:8px;">🔒</div>
-            <div style="font-size:0.7rem;font-weight:800;color:#6b7280;">Sin recompensas en este nivel</div>
-            <div style="font-size:0.6rem;color:#374151;margin-top:4px;">Sigue completando hábitos para ganar oro.</div>
-        </div>`;
+    /* 5. Mensaje vacío */
+    var anyVisible = Array.from(cards).some(function(c) { return c.style.display !== 'none'; });
+    var emptyMsg = document.getElementById('hrpEmptyMsg');
+    if (!anyVisible) {
+        if (!emptyMsg) {
+            emptyMsg = document.createElement('div');
+            emptyMsg.id = 'hrpEmptyMsg';
+            emptyMsg.innerHTML = '<div style="text-align:center;padding:20px 8px;">'
+                + '<div style="font-size:1.8rem;margin-bottom:6px;">🔒</div>'
+                + '<div style="font-size:0.72rem;font-weight:900;color:#6b7280;">Nada al alcance aún</div>'
+                + '<div style="font-size:0.6rem;color:#4b5563;margin-top:3px;">Completa más hábitos para ganar monedas.</div>'
+                + '</div>';
+            var list = document.getElementById('habRewardsList');
+            if (list) list.appendChild(emptyMsg);
+        }
+        emptyMsg.style.display = 'block';
+    } else if (emptyMsg) {
+        emptyMsg.style.display = 'none';
     }
+}
+window._hrpApplyFilter = _hrpApplyFilter;
+window.hrpFilter = _hrpApplyFilter; /* compatibilidad */
 
-    el.innerHTML = html;
+/* Llamado al abrir el tab Premios */
+window.renderHabRewards = function() {
+    _hrpApplyFilter(_hrpActiveFilter, null);
 };
 
 window.buyReward = function(id) {
