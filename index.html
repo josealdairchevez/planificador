@@ -20135,7 +20135,7 @@ const ZONES = [
       country:'Punto de Partida', desc:'El inicio de toda aventura. Un bosque ancestral lleno de magia y secretos por descubrir.',
       tags:['Inicio','Naturaleza','Misterio'],
       bg:'linear-gradient(160deg,#052e16 0%,#064e3b 40%,#065f46 100%)' },
-    { id:'cave',     name:'Cueva\nOscura',          icon:'🕳️', color:'#78716c', glow:'rgba(120,113,108,0.3)',  req:10,
+    { id:'cave',     name:'Cueva\nOscura',          icon:'🕳️', color:'#94a3b8', glow:'rgba(148,163,184,0.45)',  req:10,
       country:'Las Profundidades', desc:'Túneles ancestrales llenos de cristales brillantes y ecos de otra era.',
       tags:['Oscuridad','Exploración','Cristales'],
       bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJjZyIgY3g9IjUwJSIgY3k9IjQwJSIgcj0iNTAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNTc1MzRlIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMGEwOTA4Ii8+PC9yYWRpYWxHcmFkaWVudD4KICA8cmFkaWFsR3JhZGllbnQgaWQ9ImNsIiBjeD0iNTAlIiBjeT0iMzUlIiByPSIyNSUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmYmJmMjQiIHN0b3Atb3BhY2l0eT0iMC41Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvcmFkaWFsR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMwYTA5MDgiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjY2cpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2NsKSIvPgo8IS0tIEVzdGFsYWN0aXRhcyAtLT4KPHBvbHlnb24gcG9pbnRzPSIyMCwwIDM1LDgwIDUwLDAiIGZpbGw9IiMxYzE5MTciLz48cG9seWdvbiBwb2ludHM9IjYwLDAgNzgsMTAwIDk2LDAiIGZpbGw9IiMyOTI1MjQiLz4KPHBvbHlnb24gcG9pbnRzPSIxMTAsMCAxMzAsOTAgMTUwLDAiIGZpbGw9IiMxYzE5MTciLz48cG9seWdvbiBwb2ludHM9IjE3MCwwIDE5MiwxMTAgMjE0LDAiIGZpbGw9IiMyOTI1MjQiLz4KPHBvbHlnb24gcG9pbnRzPSIyMzAsMCAyNTIsODUgMjc0LDAiIGZpbGw9IiMxYzE5MTciLz48cG9seWdvbiBwb2ludHM9IjI5MCwwIDMxMiw5NSAzMzQsMCIgZmlsbD0iIzI5MjUyNCIvPgo8cG9seWdvbiBwb2ludHM9IjM1MCwwIDM3MCw4MCAzOTAsMCIgZmlsbD0iIzFjMTkxNyIvPgo8IS0tIENyaXN0YWxlcyAtLT4KPHBvbHlnb24gcG9pbnRzPSIxNTAsMjYwIDE2MCwyMDAgMTcwLDI2MCIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iMC43Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMjAwLDI3MCAyMTIsMjEwIDIyNCwyNzAiIGZpbGw9IiNmNTllMGIiIG9wYWNpdHk9IjAuNiIvPgo8cG9seWdvbiBwb2ludHM9IjI1MCwyNTUgMjYyLDE5NSAyNzQsMjU1IiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjgiLz4KPHBvbHlnb24gcG9pbnRzPSIxMjAsMjgwIDEzMCwyMzAgMTQwLDI4MCIgZmlsbD0iI2ZjZDM0ZCIgb3BhY2l0eT0iMC41Ii8+CjwhLS0gU3VlbG8gcm9jb3NvIC0tPgo8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMjkwIiByeD0iMjAwIiByeT0iMjAiIGZpbGw9IiMxYzE5MTciLz4KPCEtLSBCcmlsbG8gY2VudHJhbCAtLT4KPGVsbGlwc2UgY3g9IjIwMCIgY3k9IjE0MCIgcng9IjYwIiByeT0iNDAiIGZpbGw9IiNmYmJmMjQiIG9wYWNpdHk9IjAuMDgiLz4KPC9zdmc+' },
@@ -20249,13 +20249,24 @@ window.renderHabMap = function() {
     el.innerHTML = ZONES.map((z, i) => {
         const unlocked  = totalDone >= z.req;
         const isCurrent = i === currentZoneIdx;
+        const missing   = unlocked ? 0 : (z.req - totalDone);
+        let progLabel;
+        if (unlocked && isCurrent) {
+            const nextZ = ZONES[i+1];
+            const toNext = nextZ ? (nextZ.req - totalDone) : 0;
+            progLabel = '📍 Actual' + (nextZ && toNext > 0 ? '<br><span style="font-size:0.45rem;color:#888;">Sig. zona: ' + toNext + ' háb.</span>' : '');
+        } else if (unlocked) {
+            progLabel = '✅ Visitada';
+        } else {
+            progLabel = '🔒 Faltan <b style="color:' + z.color + '">' + missing + '</b> háb.';
+        }
         return '<div class="hab-zone ' + (isCurrent?'current':(unlocked?'unlocked':'locked')) + '" ' +
             'id="habZone_' + i + '" ' +
             'style="--zone-bg:' + z.color + '18;--zone-color:' + z.color + ';--zone-glow:' + z.glow + ';" ' +
             'onclick="selectZone(' + i + ')">' +
             '<span class="hab-zone-icon">' + z.icon + '</span>' +
             '<div class="hab-zone-name">' + z.name.replace('\n','<br>') + '</div>' +
-            '<div class="hab-zone-prog">' + (unlocked ? (isCurrent?'📍 Actual':'✅ Visitada') : ('🔒 ' + z.req + ' háb.')) + '</div>' +
+            '<div class="hab-zone-prog">' + progLabel + '</div>' +
             (!unlocked ? '<div class="hab-zone-lock-icon">🔒</div>' : '') +
             '</div>';
     }).join('');
@@ -20282,7 +20293,9 @@ window.selectZone = function(i) {
         bgImg.classList.remove('visible');
         void bgImg.offsetWidth; // reflow para reiniciar transición
         // Usar siempre el gradiente bg (ya no hay imgs externas)
-        bgImg.style.background = z.bg || 'none';
+        bgImg.style.backgroundImage = z.bg ? 'url("' + z.bg + '")' : 'none';
+        bgImg.style.backgroundSize = 'cover';
+        bgImg.style.backgroundPosition = 'center';
         bgImg.classList.add('visible');
     }
     if (bgOverlay) {
