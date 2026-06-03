@@ -5452,25 +5452,84 @@
             font-size:0.6rem;font-weight:900;color:#60a5fa;
             text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;
         }
+        /* Fondo dinámico de zona seleccionada */
+        #habTab-mapa {
+            position:relative !important;
+            overflow:hidden !important;
+            border-radius:16px;
+            min-height:200px;
+        }
+        /* Capa 1: imagen de fondo */
+        .hab-map-bg-img {
+            position:absolute;top:0;left:0;right:0;bottom:0;
+            z-index:0;pointer-events:none;
+            background-size:cover;background-position:center;background-repeat:no-repeat;
+            opacity:0;transition:opacity 1s ease;
+        }
+        .hab-map-bg-img.visible { opacity:1; }
+        /* Capa 2: gradiente oscuro suave — solo en bordes para legibilidad */
+        .hab-map-bg-overlay {
+            position:absolute;top:0;left:0;right:0;bottom:0;
+            z-index:1;pointer-events:none;
+            background:linear-gradient(180deg,
+                rgba(0,6,18,0.10) 0%,
+                rgba(0,4,14,0.20) 40%,
+                rgba(0,3,10,0.70) 100%);
+            opacity:0;transition:opacity 1s ease;
+        }
+        .hab-map-bg-overlay.visible { opacity:1; }
+        /* Banner de zona seleccionada */
+        .hab-map-selected-banner {
+            border-radius:16px;padding:14px 16px;margin-bottom:10px;
+            position:relative;overflow:hidden;z-index:2;
+            border:1.5px solid rgba(255,255,255,0.12);
+            background:rgba(0,0,0,0.45);backdrop-filter:blur(14px);
+            display:none;
+        }
+        .hab-map-selected-banner.visible { display:block; }
+        .hab-map-selected-banner::before {
+            content:'';position:absolute;inset:0;border-radius:16px;
+            background:var(--zone-sel-gradient,linear-gradient(135deg,rgba(59,130,246,0.18),transparent 70%));
+            pointer-events:none;
+        }
+        .hab-map-sel-header { display:flex;align-items:center;gap:10px;margin-bottom:5px; }
+        .hab-map-sel-icon { font-size:2.2rem;filter:drop-shadow(0 0 10px var(--zone-sel-color,#3b82f6)); }
+        .hab-map-sel-name { font-size:1rem;font-weight:900;color:#fff;line-height:1.1; }
+        .hab-map-sel-country { font-size:0.6rem;color:var(--zone-sel-color,#60a5fa);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-top:2px; }
+        .hab-map-sel-desc { font-size:0.63rem;color:#bbb;line-height:1.55;margin-top:5px; }
+        .hab-map-sel-tags { display:flex;flex-wrap:wrap;gap:5px;margin-top:8px; }
+        .hab-map-sel-tag {
+            font-size:0.54rem;font-weight:800;padding:2px 9px;border-radius:20px;
+            background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:#ccc;
+        }
+        /* Grid de zonas */
         .hab-zone-grid {
             display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;
+            position:relative;z-index:2;
         }
         .hab-zone {
             border-radius:12px;padding:10px 8px;text-align:center;
             border:1.5px solid rgba(255,255,255,0.07);cursor:pointer;
-            transition:all 0.25s;position:relative;overflow:hidden;
+            transition:all 0.28s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;
+            backdrop-filter:blur(4px);
         }
         .hab-zone.locked {
-            background:rgba(255,255,255,0.03);filter:grayscale(1);opacity:0.4;
+            background:rgba(0,0,0,0.35);filter:grayscale(1);opacity:0.5;
         }
         .hab-zone.unlocked {
-            background:var(--zone-bg,rgba(59,130,246,0.12));
+            background:rgba(0,0,0,0.35);
             border-color:var(--zone-color,rgba(59,130,246,0.4));
         }
         .hab-zone.current {
             border-color:var(--zone-color,#3b82f6);
             box-shadow:0 0 15px var(--zone-glow,rgba(59,130,246,0.3));
             animation:habZonePulse 2s ease-in-out infinite;
+        }
+        .hab-zone.zone-selected {
+            border-color:var(--zone-color,#3b82f6) !important;
+            box-shadow:0 0 22px var(--zone-glow,rgba(59,130,246,0.5)),inset 0 0 14px rgba(255,255,255,0.05) !important;
+            transform:scale(1.05);
+            animation:none !important;
         }
         @keyframes habZonePulse {
             0%,100%{box-shadow:0 0 10px var(--zone-glow,rgba(59,130,246,0.3));}
@@ -5479,9 +5538,10 @@
         .hab-zone-icon { font-size:1.5rem;display:block;margin-bottom:3px; }
         .hab-zone-name { font-size:0.6rem;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px; }
         .hab-zone-prog { font-size:0.52rem;color:#888;margin-top:1px; }
-        .hab-zone-lock-icon {
-            position:absolute;top:4px;right:4px;font-size:0.7rem;opacity:0.5;
-        }
+        .hab-zone-lock-icon { position:absolute;top:4px;right:4px;font-size:0.7rem;opacity:0.5; }
+        .hab-map-title-wrap,.hab-map-footer { position:relative;z-index:2; }
+        #habMapSelBanner { position:relative;z-index:2; }
+        .hab-zone-grid { position:relative;z-index:2; }
 
         /* ── ANIMACIÓN DE BATALLA ───────────────────────────── */
         .hab-battle-overlay {
@@ -16246,9 +16306,14 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
 
             <!-- TAB MAPA -->
             <div class="hab-tab-content" id="habTab-mapa">
-                <div class="hab-map-title">🗺️ Mapa del Mundo — Zonas Desbloqueadas</div>
+                <div class="hab-map-bg-img" id="habMapBgImg"></div>
+                <div class="hab-map-bg-overlay" id="habMapBgOverlay"></div>
+                <div class="hab-map-title-wrap">
+                    <div class="hab-map-title">🗺️ Mapa del Mundo — Zonas Desbloqueadas</div>
+                </div>
+                <div class="hab-map-selected-banner" id="habMapSelBanner"></div>
                 <div class="hab-zone-grid" id="habZoneGrid"></div>
-                <div style="font-size:0.6rem;color:#444;text-align:center;margin-top:4px;">
+                <div class="hab-map-footer" style="font-size:0.6rem;color:#555;text-align:center;margin-top:4px;position:relative;z-index:1;">
                     Completa hábitos para desbloquear nuevas zonas
                 </div>
             </div>
@@ -16975,62 +17040,116 @@ function renderHabStats() {
 
 // ── Tab HÉROE ─────────────────────────────────────────────────
 function renderHabHero() {
-    const el=document.getElementById('habHeroPanel');
-    const detEl=document.getElementById('habHeroDetails');
-    if(!el) return;
-    const cls=CLASSES.find(c=>c.id===hero.class)||CLASSES[0];
-    const boss=BOSSES[Math.min(hero.bossIndex||0, BOSSES.length-1)];
-    const hpPct=Math.max(0,Math.round(hero.hp/hero.maxHp*100));
-    const xpPct=Math.round((hero.xp/hero.xpNext)*100);
+    const hero = JSON.parse(localStorage.getItem('jch_hero_v1')||'null') ||
+        {coins:0,gems:0,level:1,hp:100,maxHp:100,xp:0,xpNext:100,class:'warrior',equipment:{},bossIndex:0,bossesDefeated:0,bossHp:100,inventory:[]};
+    const CLASSES = window._HAB_CLASSES||[
+        {id:'warrior',name:'Guerrero',icon:'⚔️',bonus:'HP +20%',color:'#ef4444'},
+        {id:'mage',name:'Mago',icon:'🔮',bonus:'XP +25%',color:'#a78bfa'},
+        {id:'rogue',name:'Pícaro',icon:'🗡️',bonus:'🪙 +30%',color:'#fbbf24'},
+        {id:'healer',name:'Sanador',icon:'💚',bonus:'HP inmune',color:'#10b981'},
+    ];
+    const BOSSES = window._HAB_BOSSES||[
+        {name:'Goblin del Caos',     maxHp:100,  xpReward:50,   reward:'⚔️ Espada de Inicio'},
+        {name:'Lobo Zombie',         maxHp:180,  xpReward:80,   reward:'🦴 Colmillo Maldito'},
+        {name:'Troll del Pantano',   maxHp:280,  xpReward:120,  reward:'🛡️ Escudo de Barro'},
+        {name:'Oso Zombie',          maxHp:380,  xpReward:160,  reward:'🐾 Garra Putrefacta'},
+        {name:'Espectro',            maxHp:500,  xpReward:220,  reward:'🔮 Orbe Oscuro'},
+        {name:'Ghoul Devorador',     maxHp:650,  xpReward:290,  reward:'🦷 Colmillo del Vacío'},
+        {name:'Momia Ancestral',     maxHp:800,  xpReward:370,  reward:'📜 Pergamino Maldito'},
+        {name:'Hombre Lobo',         maxHp:980,  xpReward:460,  reward:'🌕 Piedra Lunar'},
+        {name:'Vampiro Noble',       maxHp:1150, xpReward:560,  reward:'🩸 Capa de Sangre'},
+        {name:'Gigante Maldito',     maxHp:1350, xpReward:680,  reward:'🪨 Roca del Titán'},
+        {name:'Golem de Piedra',     maxHp:1550, xpReward:820,  reward:'⚙️ Núcleo Pétreo'},
+        {name:'Caballero Vampiro',   maxHp:1780, xpReward:980,  reward:'🗡️ Espada Oscura'},
+        {name:'Golem de Fuego',      maxHp:2050, xpReward:1200, reward:'💎 Gema del Campeón'},
+        {name:'Demonio Ancestral',   maxHp:2400, xpReward:1450, reward:'🌟 Estrella Legendaria'},
+        {name:'Hidra Legendaria',    maxHp:2800, xpReward:1750, reward:'🏆 Escama de Hidra'},
+        {name:'Dragón Verde',        maxHp:3200, xpReward:2100, reward:'🌿 Corazón del Bosque'},
+        {name:'Demonio Oscuro',      maxHp:3700, xpReward:2500, reward:'🔱 Tridente Infernal'},
+        {name:'Dragón Azul',         maxHp:4300, xpReward:3000, reward:'⚡ Escama Tormentosa'},
+        {name:'Dragón Rojo',         maxHp:5000, xpReward:3600, reward:'🔥 Corazón de Llamas'},
+        {name:'Dragón Negro',        maxHp:6000, xpReward:4500, reward:'👑 Corona del Campeón Eterno'},
+    ];
+    const cls  = CLASSES.find(c=>c.id===hero.class)||CLASSES[0];
+    const bossI= Math.min(hero.bossIndex||0,19);
+    const boss = BOSSES[bossI];
+    const hpPct= Math.max(0,Math.round(hero.hp/hero.maxHp*100));
+    const xpPct= Math.round((hero.xp/hero.xpNext)*100);
+    const hpC  = hpPct>60?'#22c55e':hpPct>30?'#eab308':'#ef4444';
+    const bHpPct=Math.round(((hero.bossHp||boss.maxHp)/boss.maxHp)*100);
 
-    el.innerHTML=`
-        <div class="hab-hero-panel">
-            <div class="hab-hero-top">
-                <div class="hab-hero-avatar" style="background:${cls.color}20;border-color:${cls.color}80;">${cls.icon}</div>
-                <div class="hab-hero-info">
-                    <div class="hab-hero-name">${hero.name||'Héroe JCH'}</div>
-                    <div class="hab-hero-class">${cls.name} · ${cls.bonus}</div>
-                    <div class="hab-hero-level">⭐ Nivel ${hero.level}</div>
-                </div>
-                <div class="hab-coins-row">
-                    <span class="hab-coin-badge">🪙 ${hero.coins||0}</span>
-                </div>
-            </div>
-            <div class="hab-bar-row">
-                <div class="hab-bar-label"><span>❤️ HP</span><span>${Math.round(hero.hp)}/${hero.maxHp}</span></div>
-                <div class="hab-bar-track"><div class="hab-bar-fill hab-hp-fill" style="width:${hpPct}%"></div></div>
-            </div>
-            <div class="hab-bar-row">
-                <div class="hab-bar-label"><span>⚡ XP</span><span>${hero.xp}/${hero.xpNext}</span></div>
-                <div class="hab-bar-track"><div class="hab-bar-fill hab-xp-fill" style="width:${xpPct}%"></div></div>
-            </div>
-        </div>
-        ${renderBossFull(boss)}
-    `;
+    const el = document.getElementById('habHeroPanel');
+    if (!el) return;
 
-    // Inyectar SVG premium del boss actual
-    setTimeout(function() {
-        if (typeof window.drawBoss3D === 'function') {
-            window.drawBoss3D('habHeroBossSVG', Math.min(hero.bossIndex||0, BOSSES.length-1));
-        }
-    }, 30);
+    el.innerHTML = `
+    <div class="hab-hero-3d-panel">
+      <div class="hab-hero-3d-inner">
+        <div class="hab-hero-canvas-wrap" id="habHeroSVGWrap" style="background:radial-gradient(circle at 40% 30%,${cls.color}22,transparent 70%);"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.9rem;font-weight:900;color:#fff;">${hero.name||'Héroe JCH'}</div>
+          <div style="font-size:0.6rem;color:${cls.color};font-weight:800;text-transform:uppercase;letter-spacing:1px;">${cls.icon} ${cls.name} · ${cls.bonus}</div>
+          <div style="font-size:0.6rem;color:#fbbf24;margin-top:2px;">⭐ Nivel ${hero.level}</div>
+          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+            <span style="font-size:0.65rem;font-weight:900;color:#fbbf24;">🪙 ${hero.coins||0}</span>
+            <span style="font-size:0.62rem;color:#34d399;">💎 ${hero.gems||0}</span>
+            <span style="font-size:0.58rem;color:#555;">💀 ${hero.bossesDefeated||0}</span>
+          </div>
+          <div style="margin-top:7px;">
+            <div style="display:flex;justify-content:space-between;font-size:0.52rem;color:#888;margin-bottom:2px;"><span>❤️ HP</span><span style="color:${hpC};">${Math.round(hero.hp)}/${hero.maxHp}</span></div>
+            <div style="height:7px;border-radius:3px;background:rgba(255,255,255,0.07);overflow:hidden;"><div style="height:100%;width:${hpPct}%;background:linear-gradient(90deg,${hpC}88,${hpC});border-radius:3px;box-shadow:0 0 5px ${hpC}66;transition:width 0.5s;"></div></div>
+          </div>
+          <div style="margin-top:4px;">
+            <div style="display:flex;justify-content:space-between;font-size:0.52rem;color:#888;margin-bottom:2px;"><span>⚡ XP</span><span>${hero.xp}/${hero.xpNext}</span></div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.07);overflow:hidden;"><div style="height:100%;width:${xpPct}%;background:linear-gradient(90deg,#a78bfa,#818cf8);border-radius:3px;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hab-boss-3d-panel" style="margin-top:10px;">
+      <div class="hab-boss-3d-inner">
+        <div class="hab-boss-canvas-wrap" id="habBossSVGWrap" style="width:90px;height:90px;flex-shrink:0;"></div>
+        <div class="hab-boss-3d-info">
+          <div class="hab-boss-3d-name">${boss.name}</div>
+          <div class="hab-boss-3d-sub">🎁 ${boss.reward}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(251,191,36,0.13);border:1px solid rgba(251,191,36,0.35);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:#fbbf24;">⭐ +${boss.xpReward} XP al vencer</span>
+            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(167,139,250,0.13);border:1px solid rgba(167,139,250,0.35);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:#a78bfa;">Boss #${bossI+1}/20</span>
+            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(${bHpPct>60?'34,197,94':bHpPct>30?'234,179,8':'239,68,68'},0.13);border:1px solid rgba(${bHpPct>60?'34,197,94':bHpPct>30?'234,179,8':'239,68,68'},0.4);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:${bHpPct>60?'#22c55e':bHpPct>30?'#eab308':'#ef4444'};">${bHpPct}% HP</span>
+          </div>
+          <div class="hab-boss-3d-hp-bar" style="margin-top:6px;"><div class="hab-boss-3d-hp-fill" style="width:${bHpPct}%;background:linear-gradient(90deg,${bHpPct>60?'#16a34a,#22c55e':bHpPct>30?'#b45309,#eab308':'#b91c1c,#ef4444'});"></div></div>
+          <div class="hab-boss-3d-hp-text" style="display:flex;justify-content:space-between;">${Math.max(0,hero.bossHp||boss.maxHp)}/${boss.maxHp} HP <span style="color:#555;">⚔️ Completa hábitos para atacar</span></div>
+        </div>
+      </div>
+    </div>`;
 
-    if(detEl) detEl.innerHTML=`
-        <div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.8rem 0 0.4rem;">Clase del Héroe</div>
-        <div class="hab-class-grid">
-            ${CLASSES.map(c=>`
-            <div class="hab-class-btn ${hero.class===c.id?'selected':''}" onclick="selectHeroClass('${c.id}')">
-                <span class="hab-class-icon">${c.icon}</span>
-                <span class="hab-class-name">${c.name}</span>
-                <span style="font-size:0.52rem;color:#666;">${c.bonus}</span>
-            </div>`).join('')}
-        </div>
-        <div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.8rem 0 0.4rem;">🎒 Inventario</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-            ${(hero.inventory||[]).length?hero.inventory.map(it=>`<span style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:4px 10px;font-size:0.68rem;color:#fbbf24;">${it}</span>`).join(''):'<span style="font-size:0.72rem;color:#444;">Sin objetos aún. ¡Derrota un boss!</span>'}
-        </div>
-        <div style="margin-top:14px;" id="habAttrPanel"></div>
-    `;
+    // Inyectar SVGs directamente
+    if (typeof window.drawHero3D === 'function') window.drawHero3D('habHeroSVGWrap');
+    if (typeof window.drawBoss3D === 'function') window.drawBoss3D('habBossSVGWrap', bossI);
+
+    // Clases e inventario
+    const detEl = document.getElementById('habHeroDetails');
+    if (detEl) detEl.innerHTML = `
+    <div style="font-size:0.62rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.8rem 0 0.4rem;">⚔️ Clase del Héroe</div>
+    <div class="hab-class-grid">${CLASSES.map(c=>`
+      <div class="hab-class-btn ${hero.class===c.id?'selected':''}" onclick="selectHeroClass('${c.id}')">
+        <span class="hab-class-icon">${c.icon}</span><span class="hab-class-name">${c.name}</span>
+        <span style="font-size:0.5rem;color:#666;">${c.bonus}</span>
+      </div>`).join('')}</div>
+    <div style="font-size:0.62rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.8rem 0 0.4rem;">🎒 Equipo Activo</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px;">
+      ${['weapon','shield','helm','armor','boots','amulet'].map(slot=>{
+        const si = (window.SHOP_ITEMS||[]).find(i=>i&&i.id===(hero.equipment&&hero.equipment[slot]));
+        const ic = {weapon:'⚔️',shield:'🛡️',helm:'⛑️',armor:'🦺',boots:'👢',amulet:'📿'};
+        const nm = {weapon:'Arma',shield:'Escudo',helm:'Yelmo',armor:'Armadura',boots:'Botas',amulet:'Amuleto'};
+        return `<div style="background:rgba(255,255,255,0.04);border:1.5px solid ${si?'rgba(251,191,36,0.4)':'rgba(255,255,255,0.07)'};border-radius:10px;padding:6px;text-align:center;">
+          <div style="font-size:1.1rem;">${si?si.icon:ic[slot]}</div>
+          <div style="font-size:0.44rem;color:${si?'#fbbf24':'#555'};margin-top:2px;font-weight:800;">${si?si.name:nm[slot]}</div>
+        </div>`;}).join('')}
+    </div>
+    <div style="font-size:0.62rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.4rem 0;">🎒 Inventario</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;">${(hero.inventory||[]).length
+      ?hero.inventory.map(it=>`<span style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:3px 8px;font-size:0.62rem;color:#fbbf24;">${it}</span>`).join('')
+      :'<span style="font-size:0.7rem;color:#444;">Sin items. ¡Compra en 🛒 Tienda!</span>'}</div>`;
 }
 
 function _legacyRenderBossMini_DISABLED() {
@@ -17055,32 +17174,31 @@ function _legacyRenderBossMini_DISABLED() {
 }
 
 function renderBossFull(boss) {
-    const bossHp  = Math.max(0, hero.bossHp || boss.maxHp);
-    const pct     = Math.round(bossHp / boss.maxHp * 100);
-    const bossIdx = Math.min(hero.bossIndex || 0, BOSSES.length - 1);
-    const hpColor = pct > 60 ? '#22c55e' : pct > 30 ? '#eab308' : '#ef4444';
-    return `
-    <div class="hab-boss-panel" style="background:linear-gradient(135deg,rgba(15,10,30,0.98),rgba(25,15,45,0.98));border:1.5px solid rgba(139,92,246,0.25);border-radius:18px;padding:16px;margin-top:10px;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-            <div id="habHeroBossSVG" style="width:90px;height:90px;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(139,92,246,0.5));"></div>
-            <div style="flex:1;">
-                <div style="font-size:0.95rem;font-weight:900;color:#fff;letter-spacing:0.5px;margin-bottom:3px;">${boss.name}</div>
-                <div style="font-size:0.62rem;color:#a78bfa;margin-bottom:2px;">🎁 ${boss.reward}</div>
-                <div style="font-size:0.62rem;color:#fbbf24;">⭐ +${boss.xpReward} XP al vencer</div>
-                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
-                    <span style="font-size:0.58rem;color:#888;">Boss #${bossIdx+1}/20</span>
-                    <span style="font-size:0.58rem;color:${hpColor};font-weight:700;">${pct}% HP</span>
-                </div>
-            </div>
-        </div>
-        <div style="background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;height:10px;margin-bottom:6px;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${hpColor},${hpColor}aa);border-radius:8px;transition:width 0.6s ease;"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:0.62rem;color:#888;">${bossHp} / ${boss.maxHp} HP</span>
-            <span style="font-size:0.58rem;color:#555;">⚔️ Completa hábitos para atacar</span>
-        </div>
-    </div>`;
+    var hero2  = loadHero();
+    var bossI  = Math.min(hero2.bossIndex||0, 19);
+    var bossObj= BOSSES[bossI];
+    var rawHp  = parseFloat(hero2.bossHp);
+    var bossHp = (!isNaN(rawHp) && rawHp <= bossObj.maxHp && rawHp >= 0) ? rawHp : bossObj.maxHp;
+    var pct    = Math.round((bossHp / bossObj.maxHp) * 100);
+    var hpColor= pct > 60 ? "linear-gradient(90deg,#7f1d1d,#dc2626,#ef4444,#fca5a5)"
+                : pct > 30 ? "linear-gradient(90deg,#78350f,#d97706,#fbbf24)"
+                : "linear-gradient(90deg,#450a0a,#b91c1c,#ef4444)";
+    return '<div class="hab-boss-3d-panel" style="margin-bottom:14px;">'
+        + '<div class="hab-boss-3d-inner">'
+        + '<div id="habHeroBossSVG2" style="width:110px;height:110px;flex-shrink:0;border-radius:16px;overflow:hidden;'
+        + 'background:radial-gradient(circle at 50% 35%,rgba(239,68,68,0.25),rgba(120,0,0,0.3) 60%,transparent 80%);'
+        + 'border:1.5px solid rgba(239,68,68,0.3);box-shadow:0 0 20px rgba(239,68,68,0.2),inset 0 0 15px rgba(0,0,0,0.5);"></div>'
+        + '<div class="hab-boss-3d-info">'
+        + '<div class="hab-boss-badges">'
+        + '<span class="hab-boss-badge lv">' + (bossObj.lv||"Nv.1") + '</span>'
+        + '<span class="hab-boss-badge type">' + (bossObj.type||"Bestia") + '</span>'
+        + '</div>'
+        + '<div class="hab-boss-3d-name">' + bossObj.name + '</div>'
+        + '<div class="hab-boss-3d-sub">⚔️ ¡Completa hábitos para atacar!</div>'
+        + '<div class="hab-boss-3d-hp-bar"><div class="hab-boss-3d-hp-fill" style="width:' + pct + "%;background:" + hpColor + '"></div></div>'
+        + '<div class="hab-boss-3d-hp-text">' + Math.round(bossHp) + " / " + bossObj.maxHp + " HP · " + pct + "%</div>"
+        + '<div class="hab-boss-reward-row">🎁 Recompensa: ' + bossObj.reward + " · +" + (bossObj.xpReward||50) + " XP</div>"
+        + '</div></div></div>';
 }
 
 // ── Tab LOGROS ────────────────────────────────────────────────
@@ -20011,39 +20129,139 @@ function todayKey()   { const d=new Date(); return `${d.getFullYear()}-${String(
 
 // ── ZONAS DEL MAPA ────────────────────────────────────────────
 const ZONES = [
-    { id:'forest',  name:'Bosque\nInicial', icon:'🌲', color:'#22c55e', glow:'rgba(34,197,94,0.3)',  req:0   },
-    { id:'cave',    name:'Cueva\nOscura',   icon:'🕳️', color:'#78716c', glow:'rgba(120,113,108,0.3)', req:10  },
-    { id:'desert',  name:'Desierto\nÁrido', icon:'🏜️', color:'#f59e0b', glow:'rgba(245,158,11,0.3)',  req:25  },
-    { id:'sea',     name:'Mar\nProfundo',   icon:'🌊', color:'#0ea5e9', glow:'rgba(14,165,233,0.3)',  req:45  },
-    { id:'volcano', name:'Volcán\nActivo',  icon:'🌋', color:'#ef4444', glow:'rgba(239,68,68,0.3)',   req:70  },
-    { id:'sky',     name:'Cielos\nAzules',  icon:'☁️', color:'#a78bfa', glow:'rgba(167,139,250,0.3)', req:100 },
-    { id:'ice',     name:'Tundra\nHelada',  icon:'❄️', color:'#67e8f9', glow:'rgba(103,232,249,0.3)', req:140 },
-    { id:'castle',  name:'Castillo\nReal',  icon:'🏰', color:'#fbbf24', glow:'rgba(251,191,36,0.3)',  req:190 },
-    { id:'space',   name:'Cosmos\nFinal',   icon:'🌌', color:'#818cf8', glow:'rgba(129,140,248,0.3)', req:250 },
+    // ── Zonas Fantásticas originales ──
+    { id:'forest',   name:'Bosque\nInicial',       icon:'🌲', color:'#22c55e', glow:'rgba(34,197,94,0.3)',    req:0,
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJza3kiIGN4PSI1MCUiIGN5PSIwJSIgcj0iODAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDUyZTE2Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDIxYTBiIi8+PC9yYWRpYWxHcmFkaWVudD4KICA8cmFkaWFsR3JhZGllbnQgaWQ9Imdsb3cxIiBjeD0iNTAlIiBjeT0iMzAlIiByPSI0MCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxNmEzNGEiIHN0b3Atb3BhY2l0eT0iMC42Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDUyZTE2IiBzdG9wLW9wYWNpdHk9IjAiLz48L3JhZGlhbEdyYWRpZW50PgogIDxyYWRpYWxHcmFkaWVudCBpZD0iZ2xvdzIiIGN4PSIzMCUiIGN5PSI1MCUiIHI9IjMwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzIyYzU1ZSIgc3RvcC1vcGFjaXR5PSIwLjMiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50IiBzdG9wLW9wYWNpdHk9IjAiLz48L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3NreSkiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZ2xvdzEpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2dsb3cyKSIvPgo8IS0tIFJheW9zIGRlIGx1eiAtLT4KPHBvbHlnb24gcG9pbnRzPSIxOTAsMCAyMTAsMCAyNjAsMzAwIDE0MCwzMDAiIGZpbGw9IiMyMmM1NWUiIG9wYWNpdHk9IjAuMDciLz4KPHBvbHlnb24gcG9pbnRzPSIxNjAsMCAxNzUsMCAyMTAsMzAwIDEwMCwzMDAiIGZpbGw9IiM0YWRlODAiIG9wYWNpdHk9IjAuMDUiLz4KPHBvbHlnb24gcG9pbnRzPSIyMjAsMCAyNDAsMCAzMDAsMzAwIDIwMCwzMDAiIGZpbGw9IiMxNmEzNGEiIG9wYWNpdHk9IjAuMDYiLz4KPCEtLSDDgXJib2xlcyBmb25kbyAtLT4KPHBvbHlnb24gcG9pbnRzPSIwLDMwMCA0MCwxMjAgODAsMzAwIiBmaWxsPSIjMTQ1MzJkIi8+PHBvbHlnb24gcG9pbnRzPSIzMCwzMDAgNzAsMTAwIDExMCwzMDAiIGZpbGw9IiMxNjY1MzQiLz4KPHBvbHlnb24gcG9pbnRzPSI2MCwzMDAgMTAwLDgwIDE0MCwzMDAiIGZpbGw9IiMxNTgwM2QiLz48cG9seWdvbiBwb2ludHM9IjEwMCwzMDAgMTQ1LDYwIDE5MCwzMDAiIGZpbGw9IiMxNDUzMmQiLz4KPHBvbHlnb24gcG9pbnRzPSIxNDAsMzAwIDE4NSw0MCAyMzAsMzAwIiBmaWxsPSIjMTY2NTM0Ii8+PHBvbHlnb24gcG9pbnRzPSIxODAsMzAwIDIyNSw1NSAyNzAsMzAwIiBmaWxsPSIjMTU4MDNkIi8+Cjxwb2x5Z29uIHBvaW50cz0iMjIwLDMwMCAyNjUsNzAgMzEwLDMwMCIgZmlsbD0iIzE0NTMyZCIvPjxwb2x5Z29uIHBvaW50cz0iMjYwLDMwMCAzMDUsNTAgMzUwLDMwMCIgZmlsbD0iIzE2NjUzNCIvPgo8cG9seWdvbiBwb2ludHM9IjMwMCwzMDAgMzQ1LDgwIDM5MCwzMDAiIGZpbGw9IiMxNTgwM2QiLz48cG9seWdvbiBwb2ludHM9IjM0MCwzMDAgMzkwLDEwMCA0MDAsMzAwIiBmaWxsPSIjMTQ1MzJkIi8+CjwhLS0gw4FyYm9sZXMgcHJpbWVyIHBsYW5vIC0tPgo8cG9seWdvbiBwb2ludHM9Ii0xMCwzMDAgNDAsMTQwIDkwLDMwMCIgZmlsbD0iIzA1MmUxNiIvPjxwb2x5Z29uIHBvaW50cz0iNTAsMzAwIDExMCwxMTAgMTcwLDMwMCIgZmlsbD0iIzA2NGUzYiIvPgo8cG9seWdvbiBwb2ludHM9IjEzMCwzMDAgMTkwLDkwIDI1MCwzMDAiIGZpbGw9IiMwNTJlMTYiLz48cG9seWdvbiBwb2ludHM9IjIxMCwzMDAgMjcwLDgwIDMzMCwzMDAiIGZpbGw9IiMwNjRlM2IiLz4KPHBvbHlnb24gcG9pbnRzPSIyOTAsMzAwIDM1MCwxMDAgNDEwLDMwMCIgZmlsbD0iIzA1MmUxNiIvPgo8IS0tIFN1ZWxvIC0tPgo8cmVjdCB4PSIwIiB5PSIyNzAiIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAiIGZpbGw9IiMwMjJjMTYiLz4KPCEtLSBQYXJ0w61jdWxhcyBkZSBsdXogLS0+CjxjaXJjbGUgY3g9IjE3MCIgY3k9IjgwIiByPSIyIiBmaWxsPSIjODZlZmFjIiBvcGFjaXR5PSIwLjgiLz4KPGNpcmNsZSBjeD0iMjIwIiBjeT0iMTIwIiByPSIxLjUiIGZpbGw9IiNiYmY3ZDAiIG9wYWNpdHk9IjAuNiIvPgo8Y2lyY2xlIGN4PSIxNTAiIGN5PSIxNTAiIHI9IjEiIGZpbGw9IiM4NmVmYWMiIG9wYWNpdHk9IjAuNSIvPgo8Y2lyY2xlIGN4PSIyNTAiIGN5PSI5MCIgcj0iMiIgZmlsbD0iIzRhZGU4MCIgb3BhY2l0eT0iMC43Ii8+CjxjaXJjbGUgY3g9IjIwMCIgY3k9IjYwIiByPSIxLjUiIGZpbGw9IiM4NmVmYWMiIG9wYWNpdHk9IjAuOSIvPgo8L3N2Zz4=',
+      country:'Punto de Partida', desc:'El inicio de toda aventura. Un bosque ancestral lleno de magia y secretos por descubrir.',
+      tags:['Inicio','Naturaleza','Misterio'],
+      bg:'linear-gradient(160deg,#052e16 0%,#064e3b 40%,#065f46 100%)' },
+    { id:'cave',     name:'Cueva\nOscura',          icon:'🕳️', color:'#78716c', glow:'rgba(120,113,108,0.3)',  req:10,
+      country:'Las Profundidades', desc:'Túneles ancestrales llenos de cristales brillantes y ecos de otra era.',
+      tags:['Oscuridad','Exploración','Cristales'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJjZyIgY3g9IjUwJSIgY3k9IjQwJSIgcj0iNTAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNTc1MzRlIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMGEwOTA4Ii8+PC9yYWRpYWxHcmFkaWVudD4KICA8cmFkaWFsR3JhZGllbnQgaWQ9ImNsIiBjeD0iNTAlIiBjeT0iMzUlIiByPSIyNSUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmYmJmMjQiIHN0b3Atb3BhY2l0eT0iMC41Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvcmFkaWFsR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMwYTA5MDgiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjY2cpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2NsKSIvPgo8IS0tIEVzdGFsYWN0aXRhcyAtLT4KPHBvbHlnb24gcG9pbnRzPSIyMCwwIDM1LDgwIDUwLDAiIGZpbGw9IiMxYzE5MTciLz48cG9seWdvbiBwb2ludHM9IjYwLDAgNzgsMTAwIDk2LDAiIGZpbGw9IiMyOTI1MjQiLz4KPHBvbHlnb24gcG9pbnRzPSIxMTAsMCAxMzAsOTAgMTUwLDAiIGZpbGw9IiMxYzE5MTciLz48cG9seWdvbiBwb2ludHM9IjE3MCwwIDE5MiwxMTAgMjE0LDAiIGZpbGw9IiMyOTI1MjQiLz4KPHBvbHlnb24gcG9pbnRzPSIyMzAsMCAyNTIsODUgMjc0LDAiIGZpbGw9IiMxYzE5MTciLz48cG9seWdvbiBwb2ludHM9IjI5MCwwIDMxMiw5NSAzMzQsMCIgZmlsbD0iIzI5MjUyNCIvPgo8cG9seWdvbiBwb2ludHM9IjM1MCwwIDM3MCw4MCAzOTAsMCIgZmlsbD0iIzFjMTkxNyIvPgo8IS0tIENyaXN0YWxlcyAtLT4KPHBvbHlnb24gcG9pbnRzPSIxNTAsMjYwIDE2MCwyMDAgMTcwLDI2MCIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iMC43Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMjAwLDI3MCAyMTIsMjEwIDIyNCwyNzAiIGZpbGw9IiNmNTllMGIiIG9wYWNpdHk9IjAuNiIvPgo8cG9seWdvbiBwb2ludHM9IjI1MCwyNTUgMjYyLDE5NSAyNzQsMjU1IiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjgiLz4KPHBvbHlnb24gcG9pbnRzPSIxMjAsMjgwIDEzMCwyMzAgMTQwLDI4MCIgZmlsbD0iI2ZjZDM0ZCIgb3BhY2l0eT0iMC41Ii8+CjwhLS0gU3VlbG8gcm9jb3NvIC0tPgo8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMjkwIiByeD0iMjAwIiByeT0iMjAiIGZpbGw9IiMxYzE5MTciLz4KPCEtLSBCcmlsbG8gY2VudHJhbCAtLT4KPGVsbGlwc2UgY3g9IjIwMCIgY3k9IjE0MCIgcng9IjYwIiByeT0iNDAiIGZpbGw9IiNmYmJmMjQiIG9wYWNpdHk9IjAuMDgiLz4KPC9zdmc+' },
+    { id:'desert',   name:'Desierto\nÁrido',        icon:'🏜️', color:'#f59e0b', glow:'rgba(245,158,11,0.3)',   req:25,
+      country:'Tierras Áridas', desc:'Dunas infinitas bajo un sol implacable, donde el calor forja la voluntad del más fuerte.',
+      tags:['Calor','Resistencia','Dunas'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJkc2t5IiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzdjMmQxMiIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjYzI0MTBjIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZjk3MzE2Ii8+PC9saW5lYXJHcmFkaWVudD4KICA8cmFkaWFsR3JhZGllbnQgaWQ9ImRzdW4iIGN4PSI3MCUiIGN5PSIyNSUiIHI9IjIwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZiYmYyNCIgc3RvcC1vcGFjaXR5PSIwLjkiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50Ii8+PC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNkc2t5KSIvPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNkc3VuKSIvPgo8IS0tIER1bmFzIC0tPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMzAwIiByeD0iMTgwIiByeT0iODAiIGZpbGw9IiM5MjQwMGUiLz4KPGVsbGlwc2UgY3g9IjMyMCIgY3k9IjMwMCIgcng9IjE2MCIgcnk9IjcwIiBmaWxsPSIjNzgzNTBmIi8+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSIyODAiIHJ4PSIyNTAiIHJ5PSI2MCIgZmlsbD0iI2I0NTMwOSIvPgo8ZWxsaXBzZSBjeD0iMCIgY3k9IjI5MCIgcng9IjEyMCIgcnk9IjUwIiBmaWxsPSIjOTI0MDBlIi8+CjxlbGxpcHNlIGN4PSI0MDAiIGN5PSIyOTUiIHJ4PSIxMzAiIHJ5PSI1NSIgZmlsbD0iIzc4MzUwZiIvPgo8IS0tIFNvbCAtLT4KPGNpcmNsZSBjeD0iMjgwIiBjeT0iNzUiIHI9IjMwIiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjkiLz4KPGNpcmNsZSBjeD0iMjgwIiBjeT0iNzUiIHI9IjQ1IiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjE1Ii8+CjwhLS0gT25kYXMgZGUgY2Fsb3IgLS0+CjxwYXRoIGQ9Ik0wLDIwMCBRMTAwLDE5MCAyMDAsMjAwIFEzMDAsMjEwIDQwMCwyMDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y5NzMxNiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjMiLz4KPHBhdGggZD0iTTAsMjIwIFExMDAsMjEwIDIwMCwyMjAgUTMwMCwyMzAgNDAwLDIyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmI5MjNjIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMiIvPgo8L3N2Zz4=' },
+    { id:'sea',      name:'Mar\nProfundo',           icon:'🌊', color:'#0ea5e9', glow:'rgba(14,165,233,0.3)',   req:45,
+      country:'Océano Sin Fin', desc:'Abismos marinos donde la luz no llega y criaturas milenarias guardan secretos del mundo antiguo.',
+      tags:['Océano','Abismo','Misterio'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJzZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwNzU5ODUiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzAzNjlhMSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzA4MmY0OSIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJzbCIgY3g9IjUwJSIgY3k9IjMwJSIgcj0iNDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMzhiZGY4IiBzdG9wLW9wYWNpdHk9IjAuMyIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0idHJhbnNwYXJlbnQiLz48L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3NnKSIvPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNzbCkiLz4KPCEtLSBPbmRhcyAtLT4KPHBhdGggZD0iTTAsMTIwIFE1MCwxMDAgMTAwLDEyMCBRMTUwLDE0MCAyMDAsMTIwIFEyNTAsMTAwIDMwMCwxMjAgUTM1MCwxNDAgNDAwLDEyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjN2RkM2ZjIiBzdHJva2Utd2lkdGg9IjIiIG9wYWNpdHk9IjAuNCIvPgo8cGF0aCBkPSJNMCwxNTAgUTYwLDEzMCAxMjAsMTUwIFExODAsMTcwIDI0MCwxNTAgUTMwMCwxMzAgMzYwLDE1MCBRMzgwLDE1OCA0MDAsMTUwIiBmaWxsPSJub25lIiBzdHJva2U9IiMzOGJkZjgiIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjMiLz4KPHBhdGggZD0iTTAsMTgwIFE4MCwxNjAgMTYwLDE4MCBRMjQwLDIwMCAzMjAsMTgwIFEzNjAsMTcwIDQwMCwxODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzdkZDNmYyIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjI1Ii8+CjwhLS0gQnVyYnVqYXMgLS0+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjIwMCIgcj0iNCIgZmlsbD0iI2JhZTZmZCIgb3BhY2l0eT0iMC40Ii8+CjxjaXJjbGUgY3g9IjE4MCIgY3k9IjE3MCIgcj0iMyIgZmlsbD0iIzdkZDNmYyIgb3BhY2l0eT0iMC41Ii8+CjxjaXJjbGUgY3g9IjI2MCIgY3k9IjIxMCIgcj0iNSIgZmlsbD0iI2JhZTZmZCIgb3BhY2l0eT0iMC4zIi8+CjxjaXJjbGUgY3g9IjMyMCIgY3k9IjE4MCIgcj0iMyIgZmlsbD0iIzM4YmRmOCIgb3BhY2l0eT0iMC40Ii8+CjxjaXJjbGUgY3g9IjYwIiBjeT0iMjQwIiByPSI0IiBmaWxsPSIjN2RkM2ZjIiBvcGFjaXR5PSIwLjM1Ii8+CjwhLS0gRm9uZG8gcHJvZnVuZG8gLS0+CjxyZWN0IHg9IjAiIHk9IjI0MCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSI2MCIgZmlsbD0iIzA4MmY0OSIvPgo8L3N2Zz4=' },
+    { id:'volcano',  name:'Volcán\nActivo',          icon:'🌋', color:'#ef4444', glow:'rgba(239,68,68,0.3)',    req:70,
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJ2ZyIgY3g9IjUwJSIgY3k9IjgwJSIgcj0iNjAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZGMyNjI2Ii8+PHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiM3ZjFkMWQiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxYTAyMDIiLz48L3JhZGlhbEdyYWRpZW50PgogIDxyYWRpYWxHcmFkaWVudCBpZD0idmwiIGN4PSI1MCUiIGN5PSI2MCUiIHI9IjMwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2Y5NzMxNiIgc3RvcC1vcGFjaXR5PSIwLjgiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50Ii8+PC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCN2ZykiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjdmwpIi8+CjwhLS0gVm9sY8OhbiAtLT4KPHBvbHlnb24gcG9pbnRzPSIyMDAsNDAgMjgwLDMwMCAxMjAsMzAwIiBmaWxsPSIjNDUwYTBhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMjAwLDQwIDI2MCwzMDAgMTQwLDMwMCIgZmlsbD0iIzdmMWQxZCIvPgo8IS0tIExhdmEgLS0+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSI0MiIgcng9IjIwIiByeT0iMTAiIGZpbGw9IiNmOTczMTYiIG9wYWNpdHk9IjAuOSIvPgo8cGF0aCBkPSJNMTk1LDUwIFEyMDAsMTIwIDE5MCwxODAgUTE4NSwyMjAgMTk1LDI4MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjk3MzE2IiBzdHJva2Utd2lkdGg9IjQiIG9wYWNpdHk9IjAuNyIvPgo8cGF0aCBkPSJNMjA1LDUwIFEyMTUsMTMwIDIyMCwxOTAgUTIyNSwyMzAgMjEwLDI4MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmJiZjI0IiBzdHJva2Utd2lkdGg9IjMiIG9wYWNpdHk9IjAuNiIvPgo8IS0tIFBhcnTDrWN1bGFzIGRlIGxhdmEgLS0+CjxjaXJjbGUgY3g9IjE2MCIgY3k9IjEwMCIgcj0iMyIgZmlsbD0iI2Y5NzMxNiIgb3BhY2l0eT0iMC44Ii8+CjxjaXJjbGUgY3g9IjI0MCIgY3k9IjgwIiByPSI0IiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjciLz4KPGNpcmNsZSBjeD0iMTgwIiBjeT0iNjAiIHI9IjIiIGZpbGw9IiNlZjQ0NDQiIG9wYWNpdHk9IjAuOSIvPgo8Y2lyY2xlIGN4PSIyMjAiIGN5PSI1NSIgcj0iMyIgZmlsbD0iI2Y5NzMxNiIgb3BhY2l0eT0iMC44Ii8+CjwhLS0gSHVtbyAtLT4KPGVsbGlwc2UgY3g9IjIwMCIgY3k9IjIwIiByeD0iMzAiIHJ5PSIxNSIgZmlsbD0iIzM3NDE1MSIgb3BhY2l0eT0iMC41Ii8+CjxlbGxpcHNlIGN4PSIxOTAiIGN5PSI1IiByeD0iMjAiIHJ5PSIxMCIgZmlsbD0iIzRiNTU2MyIgb3BhY2l0eT0iMC40Ii8+Cjwvc3ZnPg==',
+      country:'Tierras de Fuego', desc:'La tierra tiembla bajo tus pies. Lava y ceniza danzan en un ballet de destrucción y creación.',
+      tags:['Fuego','Poder','Peligro'],
+      bg:'linear-gradient(160deg,#450a0a 0%,#7f1d1d 40%,#991b1b 100%)' },
+    { id:'sky',      name:'Cielos\nAzules',          icon:'☁️', color:'#a78bfa', glow:'rgba(167,139,250,0.3)',  req:100,
+      country:'Reino de las Nubes', desc:'Entre nubes de algodón y rayos de luz dorada, el horizonte nunca ha parecido tan cercano.',
+      tags:['Libertad','Altura','Viento'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJza3lnIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzFlMWI0YiIvPjxzdG9wIG9mZnNldD0iNDAlIiBzdG9wLWNvbG9yPSIjNDMzOGNhIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjNjM2NmYxIi8+PC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNza3lnKSIvPgo8IS0tIE51YmVzIC0tPgo8ZWxsaXBzZSBjeD0iODAiIGN5PSI4MCIgcng9IjYwIiByeT0iMjUiIGZpbGw9IiNlMGU3ZmYiIG9wYWNpdHk9IjAuMTUiLz4KPGVsbGlwc2UgY3g9IjExMCIgY3k9IjcwIiByeD0iNDUiIHJ5PSIyMCIgZmlsbD0iI2M3ZDJmZSIgb3BhY2l0eT0iMC4yIi8+CjxlbGxpcHNlIGN4PSI1MCIgY3k9Ijg1IiByeD0iMzUiIHJ5PSIxNSIgZmlsbD0iI2UwZTdmZiIgb3BhY2l0eT0iMC4xMiIvPgo8ZWxsaXBzZSBjeD0iMjgwIiBjeT0iMTIwIiByeD0iNzAiIHJ5PSIyOCIgZmlsbD0iI2M3ZDJmZSIgb3BhY2l0eT0iMC4xNSIvPgo8ZWxsaXBzZSBjeD0iMzIwIiBjeT0iMTEwIiByeD0iNTAiIHJ5PSIyMiIgZmlsbD0iI2UwZTdmZiIgb3BhY2l0eT0iMC4xOCIvPgo8ZWxsaXBzZSBjeD0iMjQwIiBjeT0iMTI1IiByeD0iNDAiIHJ5PSIxOCIgZmlsbD0iI2M3ZDJmZSIgb3BhY2l0eT0iMC4xMiIvPgo8ZWxsaXBzZSBjeD0iMTYwIiBjeT0iMTgwIiByeD0iNTUiIHJ5PSIyMiIgZmlsbD0iI2UwZTdmZiIgb3BhY2l0eT0iMC4xIi8+CjwhLS0gRXN0cmVsbGFzIGxlamFuYXMgLS0+CjxjaXJjbGUgY3g9IjMwIiBjeT0iMzAiIHI9IjEiIGZpbGw9IiNhNWI0ZmMiIG9wYWNpdHk9IjAuNiIvPgo8Y2lyY2xlIGN4PSIzNzAiIGN5PSI1MCIgcj0iMS41IiBmaWxsPSIjODE4Y2Y4IiBvcGFjaXR5PSIwLjUiLz4KPGNpcmNsZSBjeD0iMjAwIiBjeT0iMjAiIHI9IjEiIGZpbGw9IiNjN2QyZmUiIG9wYWNpdHk9IjAuNyIvPgo8Y2lyY2xlIGN4PSIzNTAiIGN5PSIxODAiIHI9IjEiIGZpbGw9IiNhNWI0ZmMiIG9wYWNpdHk9IjAuNCIvPgo8L3N2Zz4=' },
+    { id:'ice',      name:'Tundra\nHelada',          icon:'❄️', color:'#67e8f9', glow:'rgba(103,232,249,0.3)',  req:140,
+      country:'El Gran Norte', desc:'Auroras boreales pintan el cielo mientras el frío eterno guarda los secretos de la tundra.',
+      tags:['Frío','Aurora','Silencio'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJpZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwYTI1NDAiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzBlNGQ2YiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzE1NWU3NSIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJhdXJvcmEiIGN4PSI1MCUiIGN5PSIyMCUiIHI9IjYwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzZlZTdiNyIgc3RvcC1vcGFjaXR5PSIwLjQiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iI2E3OGJmYSIgc3RvcC1vcGFjaXR5PSIwLjIiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50Ii8+PC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNpZykiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjYXVyb3JhKSIvPgo8IS0tIEF1cm9yYSAtLT4KPHBhdGggZD0iTTAsNjAgUTEwMCwyMCAyMDAsNjAgUTMwMCwxMDAgNDAwLDYwIiBmaWxsPSJub25lIiBzdHJva2U9IiM2ZWU3YjciIHN0cm9rZS13aWR0aD0iMyIgb3BhY2l0eT0iMC41Ii8+CjxwYXRoIGQ9Ik0wLDgwIFExMDAsNDAgMjAwLDgwIFEzMDAsMTIwIDQwMCw4MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYTc4YmZhIiBzdHJva2Utd2lkdGg9IjIiIG9wYWNpdHk9IjAuNCIvPgo8cGF0aCBkPSJNMCwxMDAgUTEwMCw2MCAyMDAsMTAwIFEzMDAsMTQwIDQwMCwxMDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzM0ZDM5OSIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjMiLz4KPCEtLSBNb250YcOxYXMgZGUgaGllbG8gLS0+Cjxwb2x5Z29uIHBvaW50cz0iMCwzMDAgODAsMTYwIDE2MCwzMDAiIGZpbGw9IiMwZTRkNmIiLz48cG9seWdvbiBwb2ludHM9IjYwLDMwMCAxNDAsMTQwIDIyMCwzMDAiIGZpbGw9IiMxNTVlNzUiLz4KPHBvbHlnb24gcG9pbnRzPSIxNDAsMzAwIDIyMCwxMjAgMzAwLDMwMCIgZmlsbD0iIzBlNGQ2YiIvPjxwb2x5Z29uIHBvaW50cz0iMjIwLDMwMCAzMDAsMTUwIDM4MCwzMDAiIGZpbGw9IiMxNTVlNzUiLz4KPHBvbHlnb24gcG9pbnRzPSIzMDAsMzAwIDM4MCwxMzAgNDAwLDMwMCA0MDAsMzAwIiBmaWxsPSIjMGU0ZDZiIi8+CjwhLS0gTmlldmUgLS0+CjxyZWN0IHg9IjAiIHk9IjI3MCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMCIgZmlsbD0iI2NmZmFmZSIgb3BhY2l0eT0iMC4zIi8+CjwhLS0gRXN0cmVsbGFzIC0tPgo8Y2lyY2xlIGN4PSI1MCIgY3k9IjQwIiByPSIxLjUiIGZpbGw9IiNlMGYyZmUiIG9wYWNpdHk9IjAuOCIvPgo8Y2lyY2xlIGN4PSIxNTAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iI2JhZTZmZCIgb3BhY2l0eT0iMC43Ii8+CjxjaXJjbGUgY3g9IjMwMCIgY3k9IjM1IiByPSIxLjUiIGZpbGw9IiNlMGYyZmUiIG9wYWNpdHk9IjAuNiIvPgo8Y2lyY2xlIGN4PSIzNTAiIGN5PSIxNSIgcj0iMSIgZmlsbD0iI2JhZTZmZCIgb3BhY2l0eT0iMC44Ii8+CjxjaXJjbGUgY3g9IjI1MCIgY3k9IjUwIiByPSIxIiBmaWxsPSIjZTBmMmZlIiBvcGFjaXR5PSIwLjUiLz4KPC9zdmc+' },
+    { id:'castle',   name:'Castillo\nReal',          icon:'🏰', color:'#fbbf24', glow:'rgba(251,191,36,0.3)',   req:190,
+      country:'Reino Legendario', desc:'Torres de piedra que tocan las nubes, guardianes de siglos de historia y poder real.',
+      tags:['Historia','Poder','Leyenda'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJjc2t5IiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzBkMGEwMyIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjNDQzMDBhIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjNzEzZjEyIi8+PC9saW5lYXJHcmFkaWVudD4KICA8cmFkaWFsR3JhZGllbnQgaWQ9ImNtb29uIiBjeD0iNzUlIiBjeT0iMjAlIiByPSIxNSUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmYmJmMjQiIHN0b3Atb3BhY2l0eT0iMC45Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvcmFkaWFsR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjY3NreSkiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjY21vb24pIi8+CjwhLS0gTHVuYSAtLT4KPGNpcmNsZSBjeD0iMzAwIiBjeT0iNjAiIHI9IjI1IiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjciLz4KPGNpcmNsZSBjeD0iMzEyIiBjeT0iNTIiIHI9IjIyIiBmaWxsPSIjNDQzMDBhIi8+CjwhLS0gQ2FzdGlsbG8gc2lsdWV0YSAtLT4KPHJlY3QgeD0iMTIwIiB5PSIxNDAiIHdpZHRoPSIxNjAiIGhlaWdodD0iMTYwIiBmaWxsPSIjMWMxNDA3Ii8+CjxyZWN0IHg9IjEwMCIgeT0iMTIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNjAiIGZpbGw9IiMxYzE0MDciLz4KPHJlY3QgeD0iMjYwIiB5PSIxMjAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI2MCIgZmlsbD0iIzFjMTQwNyIvPgo8cmVjdCB4PSIxODAiIHk9IjEwMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjUwIiBmaWxsPSIjMWMxNDA3Ii8+CjwhLS0gVG9ycmVzIC0tPgo8cmVjdCB4PSI5NSIgeT0iMTAwIiB3aWR0aD0iMTAiIGhlaWdodD0iMjAiIGZpbGw9IiMyOTIxMDUiLz48cmVjdCB4PSIxMTAiIHk9IjEwMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjMjkyMTA1Ii8+CjxyZWN0IHg9IjI1NSIgeT0iMTAwIiB3aWR0aD0iMTAiIGhlaWdodD0iMjAiIGZpbGw9IiMyOTIxMDUiLz48cmVjdCB4PSIyNzAiIHk9IjEwMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjMjkyMTA1Ii8+CjwhLS0gVmVudGFuYXMgaWx1bWluYWRhcyAtLT4KPHJlY3QgeD0iMTU1IiB5PSIxNjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyNSIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iMC42Ii8+CjxyZWN0IHg9IjIyNSIgeT0iMTYwIiB3aWR0aD0iMjAiIGhlaWdodD0iMjUiIGZpbGw9IiNmYmJmMjQiIG9wYWNpdHk9IjAuNSIvPgo8cmVjdCB4PSIxOTAiIHk9IjE1NSIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZjU5ZTBiIiBvcGFjaXR5PSIwLjciLz4KPCEtLSBTdWVsbyAtLT4KPHJlY3QgeD0iMCIgeT0iMjgwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjMWMxNDA3Ii8+Cjwvc3ZnPg==' },
+    { id:'space',    name:'Cosmos\nFinal',           icon:'🌌', color:'#818cf8', glow:'rgba(129,140,248,0.3)',  req:250,
+      country:'El Universo', desc:'Más allá de las estrellas, donde el tiempo y el espacio se doblan y todo es posible.',
+      tags:['Infinito','Estrellas','Cosmos'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJzcGciIGN4PSI0MCUiIGN5PSI1MCUiIHI9IjYwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzQzMzhjYSIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjMWUxYjRiIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDMwNzEyIi8+PC9yYWRpYWxHcmFkaWVudD4KICA8cmFkaWFsR3JhZGllbnQgaWQ9Im5lYnVsYSIgY3g9IjcwJSIgY3k9IjMwJSIgcj0iNDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjN2MzYWVkIiBzdG9wLW9wYWNpdHk9IjAuNCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0idHJhbnNwYXJlbnQiLz48L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjMDMwNzEyIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3NwZykiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjbmVidWxhKSIvPgo8IS0tIEVzdHJlbGxhcyAtLT4KPGNpcmNsZSBjeD0iMjAiIGN5PSIxNSIgcj0iMS41IiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45Ii8+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNDAiIHI9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjciLz4KPGNpcmNsZSBjeD0iMTAwIiBjeT0iMjAiIHI9IjIiIGZpbGw9IiNjN2QyZmUiIG9wYWNpdHk9IjAuOCIvPgo8Y2lyY2xlIGN4PSIxNTAiIGN5PSI1MCIgcj0iMSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNiIvPgo8Y2lyY2xlIGN4PSIyMDAiIGN5PSIxMCIgcj0iMS41IiBmaWxsPSIjYTViNGZjIiBvcGFjaXR5PSIwLjkiLz4KPGNpcmNsZSBjeD0iMjUwIiBjeT0iMzUiIHI9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjciLz4KPGNpcmNsZSBjeD0iMzAwIiBjeT0iMTUiIHI9IjIiIGZpbGw9IiM4MThjZjgiIG9wYWNpdHk9IjAuOCIvPgo8Y2lyY2xlIGN4PSIzNTAiIGN5PSI0NSIgcj0iMSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNiIvPgo8Y2lyY2xlIGN4PSIzODAiIGN5PSIyNSIgcj0iMS41IiBmaWxsPSIjYzdkMmZlIiBvcGFjaXR5PSIwLjciLz4KPGNpcmNsZSBjeD0iODAiIGN5PSI5MCIgcj0iMSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNSIvPgo8Y2lyY2xlIGN4PSIxODAiIGN5PSI4MCIgcj0iMS41IiBmaWxsPSIjYTViNGZjIiBvcGFjaXR5PSIwLjYiLz4KPGNpcmNsZSBjeD0iMzIwIiBjeT0iNzAiIHI9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiLz4KPGNpcmNsZSBjeD0iNDAiIGN5PSIxNTAiIHI9IjEiIGZpbGw9IiNlMGU3ZmYiIG9wYWNpdHk9IjAuNCIvPgo8Y2lyY2xlIGN4PSIzNjAiIGN5PSIxMzAiIHI9IjEuNSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNSIvPgo8IS0tIFBsYW5ldGEgLS0+CjxjaXJjbGUgY3g9IjMwMCIgY3k9IjEyMCIgcj0iNDAiIGZpbGw9IiM0MzM4Y2EiIG9wYWNpdHk9IjAuOCIvPgo8ZWxsaXBzZSBjeD0iMzAwIiBjeT0iMTIwIiByeD0iNTUiIHJ5PSI4IiBmaWxsPSJub25lIiBzdHJva2U9IiM4MThjZjgiIHN0cm9rZS13aWR0aD0iMyIgb3BhY2l0eT0iMC42Ii8+CjxjaXJjbGUgY3g9IjI4NSIgY3k9IjEwOCIgcj0iMTIiIGZpbGw9IiMzMTJlODEiIG9wYWNpdHk9IjAuNiIvPgo8IS0tIE5lYnVsb3NhIC0tPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTgwIiByeD0iODAiIHJ5PSI0MCIgZmlsbD0iIzdjM2FlZCIgb3BhY2l0eT0iMC4xIi8+Cjwvc3ZnPg==' },
+    // ── 7 Maravillas + Lugares Icónicos ──
+    { id:'machu',    name:'Machu\nPicchu',           icon:'🏔️', color:'#86efac', glow:'rgba(134,239,172,0.35)', req:30,
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJtZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwMjJjMTYiLz48c3RvcCBvZmZzZXQ9IjYwJSIgc3RvcC1jb2xvcj0iIzE0NTMyZCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzE2NjUzNCIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJtaXN0IiBjeD0iNTAlIiBjeT0iNDAlIiByPSI1MCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNiYmY3ZDAiIHN0b3Atb3BhY2l0eT0iMC4yNSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0idHJhbnNwYXJlbnQiLz48L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI21nKSIvPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNtaXN0KSIvPgo8IS0tIE1vbnRhw7FhcyBuZXZhZGFzIC0tPgo8cG9seWdvbiBwb2ludHM9IjAsMzAwIDgwLDgwIDE2MCwzMDAiIGZpbGw9IiMwNTJlMTYiLz4KPHBvbHlnb24gcG9pbnRzPSI2MCwzMDAgMTYwLDUwIDI2MCwzMDAiIGZpbGw9IiMwNjRlM2IiLz4KPHBvbHlnb24gcG9pbnRzPSIxNjAsMzAwIDI2MCw3MCAzNjAsMzAwIiBmaWxsPSIjMDUyZTE2Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMjgwLDMwMCAzNjAsOTAgNDAwLDMwMCIgZmlsbD0iIzA2NWY0NiIvPgo8IS0tIE5pZWJsYSAtLT4KPHJlY3QgeD0iMCIgeT0iMTUwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjYmJmN2QwIiBvcGFjaXR5PSIwLjA4Ii8+CjxyZWN0IHg9IjAiIHk9IjE4MCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMCIgZmlsbD0iIzg2ZWZhYyIgb3BhY2l0eT0iMC4wNiIvPgo8IS0tIFJ1aW5hcyBJbmNhIChzaWx1ZXRhKSAtLT4KPHJlY3QgeD0iMTIwIiB5PSIyMDAiIHdpZHRoPSIxNjAiIGhlaWdodD0iMTUiIGZpbGw9IiMxNTgwM2QiLz4KPHJlY3QgeD0iMTMwIiB5PSIxODUiIHdpZHRoPSIyMCIgaGVpZ2h0PSIxNSIgZmlsbD0iIzE1ODAzZCIvPgo8cmVjdCB4PSIxNjAiIHk9IjE4MCIgd2lkdGg9IjI1IiBoZWlnaHQ9IjIwIiBmaWxsPSIjMTY2NTM0Ii8+CjxyZWN0IHg9IjIwMCIgeT0iMTg1IiB3aWR0aD0iMjAiIGhlaWdodD0iMTUiIGZpbGw9IiMxNTgwM2QiLz4KPHJlY3QgeD0iMjMwIiB5PSIxODgiIHdpZHRoPSIzMCIgaGVpZ2h0PSIxMiIgZmlsbD0iIzE2NjUzNCIvPgo8IS0tIFRlcnJhemFzIC0tPgo8cmVjdCB4PSI4MCIgeT0iMjMwIiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjgiIGZpbGw9IiMxNmEzNGEiIG9wYWNpdHk9IjAuNiIvPgo8cmVjdCB4PSI5MCIgeT0iMjQ1IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjgiIGZpbGw9IiMxNTgwM2QiIG9wYWNpdHk9IjAuNSIvPgo8cmVjdCB4PSIxMDAiIHk9IjI2MCIgd2lkdGg9IjIwMCIgaGVpZ2h0PSI4IiBmaWxsPSIjMTQ1MzJkIiBvcGFjaXR5PSIwLjQiLz4KPC9zdmc+',
+      country:'🇵🇪 Perú · América del Sur', desc:'Ciudad perdida de los Incas a 2430 m sobre el nivel del mar. Una de las maravillas del mundo moderno rodeada de neblina y misterio andino.',
+      tags:['Inca','Maravilla','UNESCO','Andes'],
+      bg:'linear-gradient(160deg,#052e16 0%,#14532d 40%,#166534 100%)' },
+    { id:'chichen',  name:'Chichén\nItzá',           icon:'🔺', color:'#fcd34d', glow:'rgba(252,211,77,0.35)',  req:35,
+      country:'🇲🇽 México · América Central', desc:'La pirámide maya de Kukulcán domina la selva yucateca. En cada equinoccio, una serpiente de luz desciende por sus escalones.',
+      tags:['Maya','Pirámide','Maravilla','México'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJjaWciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWEwODAwIi8+PHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiM3MTNmMTIiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM4NTRkMGUiLz48L2xpbmVhckdyYWRpZW50PgogIDxyYWRpYWxHcmFkaWVudCBpZD0iY2lzdW4iIGN4PSI1MCUiIGN5PSIyMCUiIHI9IjMwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZiYmYyNCIgc3RvcC1vcGFjaXR5PSIwLjYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50Ii8+PC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNjaWcpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2Npc3VuKSIvPgo8IS0tIFNvbCAtLT4KPGNpcmNsZSBjeD0iMjAwIiBjeT0iNjAiIHI9IjI4IiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjgiLz4KPCEtLSBQaXLDoW1pZGUgTWF5YSAtLT4KPHBvbHlnb24gcG9pbnRzPSIyMDAsNjAgMzIwLDI4MCA4MCwyODAiIGZpbGw9IiM3ODM1MGYiLz4KPCEtLSBFc2NhbG9uZXMgLS0+CjxyZWN0IHg9IjE0MCIgeT0iMjYwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjgiIGZpbGw9IiM5MjQwMGUiLz4KPHJlY3QgeD0iMTQ4IiB5PSIyNDUiIHdpZHRoPSIxMDQiIGhlaWdodD0iOCIgZmlsbD0iIzdjMmQxMiIvPgo8cmVjdCB4PSIxNTYiIHk9IjIzMCIgd2lkdGg9Ijg4IiBoZWlnaHQ9IjgiIGZpbGw9IiM5MjQwMGUiLz4KPHJlY3QgeD0iMTY0IiB5PSIyMTUiIHdpZHRoPSI3MiIgaGVpZ2h0PSI4IiBmaWxsPSIjN2MyZDEyIi8+CjxyZWN0IHg9IjE3MiIgeT0iMjAwIiB3aWR0aD0iNTYiIGhlaWdodD0iOCIgZmlsbD0iIzkyNDAwZSIvPgo8cmVjdCB4PSIxODAiIHk9IjE4NSIgd2lkdGg9IjQwIiBoZWlnaHQ9IjgiIGZpbGw9IiM3YzJkMTIiLz4KPHJlY3QgeD0iMTg4IiB5PSIxNzAiIHdpZHRoPSIyNCIgaGVpZ2h0PSI4IiBmaWxsPSIjOTI0MDBlIi8+CjwhLS0gVGVtcGxvIGNpbWEgLS0+CjxyZWN0IHg9IjE4MiIgeT0iMTMwIiB3aWR0aD0iMzYiIGhlaWdodD0iNDAiIGZpbGw9IiM3ODM1MGYiLz4KPHJlY3QgeD0iMTc4IiB5PSIxMjgiIHdpZHRoPSI0NCIgaGVpZ2h0PSI2IiBmaWxsPSIjN2MyZDEyIi8+CjwhLS0gU2VsdmEgZm9uZG8gLS0+Cjxwb2x5Z29uIHBvaW50cz0iMCwyODAgMzAsMjAwIDYwLDI4MCIgZmlsbD0iIzA1MmUxNiIvPjxwb2x5Z29uIHBvaW50cz0iMzQwLDI4MCAzNzAsMTkwIDQwMCwyODAiIGZpbGw9IiMwNjRlM2IiLz4KPC9zdmc+' },
+    { id:'coliseo',  name:'Coliseo\nRomano',         icon:'🏟️', color:'#fb923c', glow:'rgba(251,146,60,0.35)',  req:55,
+      country:'🇮🇹 Roma, Italia · Europa', desc:'El anfiteatro más grande del Imperio Romano. Escenario de gladiadores, fieras y la gloria eterna de la Ciudad Eterna.',
+      tags:['Roma','Gladiadores','Maravilla','Historia'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJyZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxYTA4MDAiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzdjMmQxMiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzlhMzQxMiIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJyc3VuIiBjeD0iMzAlIiBjeT0iMjAlIiByPSIyNSUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmYjkyM2MiIHN0b3Atb3BhY2l0eT0iMC41Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvcmFkaWFsR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjcmcpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3JzdW4pIi8+CjwhLS0gQ29saXNlbyBzaWx1ZXRhIC0tPgo8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMjIwIiByeD0iMTgwIiByeT0iMTAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNjMjQxMGMiIHN0cm9rZS13aWR0aD0iMyIvPgo8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMjIwIiByeD0iMTUwIiByeT0iODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VhNTgwYyIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjYiLz4KPCEtLSBBcmNvcyAtLT4KPHJlY3QgeD0iMjAiIHk9IjE0MCIgd2lkdGg9IjM2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM0MzE0MDciIG9wYWNpdHk9IjAuOCIvPgo8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMTQwIiByeD0iMTgwIiByeT0iMzAiIGZpbGw9IiM3YzJkMTIiLz4KPCEtLSBWZW50YW5hcy9hcmNvcyBkZWwgY29saXNlbyAtLT4KPGVsbGlwc2UgY3g9IjcwIiBjeT0iMTcwIiByeD0iMTgiIHJ5PSIyNSIgZmlsbD0iIzFhMDgwMCIvPgo8ZWxsaXBzZSBjeD0iMTIwIiBjeT0iMTY1IiByeD0iMTgiIHJ5PSIyNSIgZmlsbD0iIzFhMDgwMCIvPgo8ZWxsaXBzZSBjeD0iMTcwIiBjeT0iMTYyIiByeD0iMTgiIHJ5PSIyNSIgZmlsbD0iIzFhMDgwMCIvPgo8ZWxsaXBzZSBjeD0iMjIwIiBjeT0iMTYxIiByeD0iMTgiIHJ5PSIyNSIgZmlsbD0iIzFhMDgwMCIvPgo8ZWxsaXBzZSBjeD0iMjcwIiBjeT0iMTYyIiByeD0iMTgiIHJ5PSIyNSIgZmlsbD0iIzFhMDgwMCIvPgo8ZWxsaXBzZSBjeD0iMzIwIiBjeT0iMTY1IiByeD0iMTgiIHJ5PSIyNSIgZmlsbD0iIzFhMDgwMCIvPgo8ZWxsaXBzZSBjeD0iMzcwIiBjeT0iMTcwIiByeD0iMTgiIHJ5PSIyNSIgZmlsbD0iIzFhMDgwMCIvPgo8IS0tIFBpc28gYXJlbmEgLS0+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSIyNTAiIHJ4PSIxMjAiIHJ5PSIzMCIgZmlsbD0iIzkyNDAwZSIgb3BhY2l0eT0iMC40Ii8+Cjwvc3ZnPg==' },
+    { id:'tajmahal', name:'Taj\nMahal',              icon:'🕌', color:'#e0e7ff', glow:'rgba(224,231,255,0.35)', req:65,
+      country:'🇮🇳 Agra, India · Asia', desc:'Mausoleo de mármol blanco construido por el emperador Sha Jahan en honor a su esposa. Un poema de amor en piedra.',
+      tags:['India','Maravilla','Amor','Mogol'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJ0ZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwYTA5MjAiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzMxMmU4MSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzM3MzBhMyIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJ0bW9vbiIgY3g9Ijc1JSIgY3k9IjE1JSIgcj0iMTUlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZTBlN2ZmIiBzdG9wLW9wYWNpdHk9IjAuOCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0idHJhbnNwYXJlbnQiLz48L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3RnKSIvPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCN0bW9vbikiLz4KPCEtLSBUYWogTWFoYWwgc2lsdWV0YSAtLT4KPCEtLSBCYXNlIC0tPgo8cmVjdCB4PSI4MCIgeT0iMjAwIiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2M3ZDJmZSIgb3BhY2l0eT0iMC4yIi8+CjwhLS0gQ8O6cHVsYSBwcmluY2lwYWwgLS0+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSIxNjAiIHJ4PSI1MCIgcnk9IjYwIiBmaWxsPSIjZTBlN2ZmIiBvcGFjaXR5PSIwLjI1Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMjAwLDEwMCAxNTAsMjAwIDI1MCwyMDAiIGZpbGw9IiNjN2QyZmUiIG9wYWNpdHk9IjAuMyIvPgo8IS0tIEFndWphIC0tPgo8cmVjdCB4PSIxOTgiIHk9IjgwIiB3aWR0aD0iNCIgaGVpZ2h0PSIyNSIgZmlsbD0iI2UwZTdmZiIgb3BhY2l0eT0iMC42Ii8+CjxjaXJjbGUgY3g9IjIwMCIgY3k9Ijc4IiByPSI0IiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjgiLz4KPCEtLSBUb3JyZXMgbGF0ZXJhbGVzIC0tPgo8cmVjdCB4PSIxMTAiIHk9IjE4MCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjYwIiBmaWxsPSIjYTViNGZjIiBvcGFjaXR5PSIwLjMiLz4KPGVsbGlwc2UgY3g9IjExOCIgY3k9IjE3OCIgcng9IjEwIiByeT0iMTUiIGZpbGw9IiNjN2QyZmUiIG9wYWNpdHk9IjAuMyIvPgo8cmVjdCB4PSIyNzQiIHk9IjE4MCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjYwIiBmaWxsPSIjYTViNGZjIiBvcGFjaXR5PSIwLjMiLz4KPGVsbGlwc2UgY3g9IjI4MiIgY3k9IjE3OCIgcng9IjEwIiByeT0iMTUiIGZpbGw9IiNjN2QyZmUiIG9wYWNpdHk9IjAuMyIvPgo8IS0tIFJlZmxlam8gZW4gYWd1YSAtLT4KPHJlY3QgeD0iMCIgeT0iMjU1IiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQ1IiBmaWxsPSIjMWUxYjRiIiBvcGFjaXR5PSIwLjYiLz4KPGVsbGlwc2UgY3g9IjIwMCIgY3k9IjI2MCIgcng9IjUwIiByeT0iMTUiIGZpbGw9IiNhNWI0ZmMiIG9wYWNpdHk9IjAuMSIvPgo8IS0tIEVzdHJlbGxhcyAtLT4KPGNpcmNsZSBjeD0iNTAiIGN5PSIzMCIgcj0iMS41IiBmaWxsPSIjZTBlN2ZmIiBvcGFjaXR5PSIwLjciLz4KPGNpcmNsZSBjeD0iMTIwIiBjeT0iMTUiIHI9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiLz4KPGNpcmNsZSBjeD0iMzMwIiBjeT0iMjUiIHI9IjEuNSIgZmlsbD0iI2M3ZDJmZSIgb3BhY2l0eT0iMC42Ii8+Cjwvc3ZnPg==' },
+    { id:'muralla',  name:'Gran\nMuralla',           icon:'🧱', color:'#d97706', glow:'rgba(217,119,6,0.35)',   req:80,
+      country:'🇨🇳 China · Asia', desc:'21 000 km de historia milenaria serpentean por montañas y valles. La mayor estructura arquitectónica jamás construida por el ser humano.',
+      tags:['China','Maravilla','Historia','Largo'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJ3ZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwZDA1MDAiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzQyMjAwNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzc4MzUwZiIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJ3c3VuIiBjeD0iNjAlIiBjeT0iMjUlIiByPSIyMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNkOTc3MDYiIHN0b3Atb3BhY2l0eT0iMC42Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvcmFkaWFsR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjd2cpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3dzdW4pIi8+CjwhLS0gTW9udGHDsWFzIGZvbmRvIC0tPgo8cG9seWdvbiBwb2ludHM9IjAsMzAwIDYwLDE0MCAxMjAsMzAwIiBmaWxsPSIjMWEwYTAwIi8+Cjxwb2x5Z29uIHBvaW50cz0iODAsMzAwIDE2MCwxMjAgMjQwLDMwMCIgZmlsbD0iIzI5MjAwNSIvPgo8cG9seWdvbiBwb2ludHM9IjIwMCwzMDAgMjgwLDEzMCAzNjAsMzAwIiBmaWxsPSIjMWEwYTAwIi8+Cjxwb2x5Z29uIHBvaW50cz0iMzAwLDMwMCAzODAsMTUwIDQwMCwzMDAiIGZpbGw9IiMyOTIwMDUiLz4KPCEtLSBMYSBHcmFuIE11cmFsbGEgLS0+CjxwYXRoIGQ9Ik0wLDIwMCBRNTAsMTgwIDEwMCwxOTAgUTE1MCwyMDAgMjAwLDE4NSBRMjUwLDE3MCAzMDAsMTgwIFEzNTAsMTkwIDQwMCwxNzUiIGZpbGw9IiM3ODM1MGYiIHN0cm9rZT0iIzkyNDAwZSIgc3Ryb2tlLXdpZHRoPSIzIi8+CjwhLS0gVG9ycmVzIGRlIGxhIG11cmFsbGEgLS0+CjxyZWN0IHg9IjE1IiB5PSIxNzUiIHdpZHRoPSIyMCIgaGVpZ2h0PSIzMCIgZmlsbD0iIzdjMmQxMiIvPgo8cmVjdCB4PSIxMiIgeT0iMTczIiB3aWR0aD0iMjYiIGhlaWdodD0iNiIgZmlsbD0iIzkyNDAwZSIvPgo8cmVjdCB4PSI5NSIgeT0iMTY4IiB3aWR0aD0iMjAiIGhlaWdodD0iMjciIGZpbGw9IiM3YzJkMTIiLz4KPHJlY3QgeD0iOTIiIHk9IjE2NiIgd2lkdGg9IjI2IiBoZWlnaHQ9IjYiIGZpbGw9IiM5MjQwMGUiLz4KPHJlY3QgeD0iMTkwIiB5PSIxNjMiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyNyIgZmlsbD0iIzdjMmQxMiIvPgo8cmVjdCB4PSIxODciIHk9IjE2MSIgd2lkdGg9IjI2IiBoZWlnaHQ9IjYiIGZpbGw9IiM5MjQwMGUiLz4KPHJlY3QgeD0iMjkwIiB5PSIxNTgiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyNyIgZmlsbD0iIzdjMmQxMiIvPgo8cmVjdCB4PSIyODciIHk9IjE1NiIgd2lkdGg9IjI2IiBoZWlnaHQ9IjYiIGZpbGw9IiM5MjQwMGUiLz4KPCEtLSBBbG1lbmFzIC0tPgo8cmVjdCB4PSIxNiIgeT0iMTcwIiB3aWR0aD0iNSIgaGVpZ2h0PSI4IiBmaWxsPSIjOWEzNDEyIi8+PHJlY3QgeD0iMjQiIHk9IjE3MCIgd2lkdGg9IjUiIGhlaWdodD0iOCIgZmlsbD0iIzlhMzQxMiIvPjxyZWN0IHg9IjMyIiB5PSIxNzAiIHdpZHRoPSI1IiBoZWlnaHQ9IjgiIGZpbGw9IiM5YTM0MTIiLz4KPC9zdmc+' },
+    { id:'petra',    name:'Petra\nRosada',           icon:'🏛️', color:'#f87171', glow:'rgba(248,113,113,0.35)', req:95,
+      country:'🇯🇴 Jordania · Medio Oriente', desc:'La ciudad nabatea esculpida en roca arenisca rosada. El Tesoro de Petra emerge de los cañones como visión de otro mundo.',
+      tags:['Nabateo','Maravilla','Desierto','Roca'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJwZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxYTAwMDIiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzdmMWQxZCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzlmMTIzOSIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJwc3VuIiBjeD0iNTAlIiBjeT0iMzAlIiByPSIzNSUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmNDNmNWUiIHN0b3Atb3BhY2l0eT0iMC4zIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvcmFkaWFsR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjcGcpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3BzdW4pIi8+CjwhLS0gUGFyZWRlcyBkZSByb2NhIC0tPgo8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzdmMWQxZCIgb3BhY2l0eT0iMC43Ii8+CjxyZWN0IHg9IjMwMCIgeT0iMCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiM5ZjEyMzkiIG9wYWNpdHk9IjAuNiIvPgo8IS0tIEVsIFRlc29ybyBkZSBQZXRyYSAtLT4KPHJlY3QgeD0iMTMwIiB5PSIxMDAiIHdpZHRoPSIxNDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjYmUxMjNjIiBvcGFjaXR5PSIwLjQiLz4KPCEtLSBDb2x1bW5hcyAtLT4KPHJlY3QgeD0iMTQwIiB5PSIxMjAiIHdpZHRoPSIxNSIgaGVpZ2h0PSIxODAiIGZpbGw9IiNmNDNmNWUiIG9wYWNpdHk9IjAuMyIvPgo8cmVjdCB4PSIxNzAiIHk9IjEyMCIgd2lkdGg9IjE1IiBoZWlnaHQ9IjE4MCIgZmlsbD0iI2UxMWQ0OCIgb3BhY2l0eT0iMC4zIi8+CjxyZWN0IHg9IjIxNSIgeT0iMTIwIiB3aWR0aD0iMTUiIGhlaWdodD0iMTgwIiBmaWxsPSIjZjQzZjVlIiBvcGFjaXR5PSIwLjMiLz4KPHJlY3QgeD0iMjQ1IiB5PSIxMjAiIHdpZHRoPSIxNSIgaGVpZ2h0PSIxODAiIGZpbGw9IiNlMTFkNDgiIG9wYWNpdHk9IjAuMyIvPgo8IS0tIEZyb250w7NuIHN1cGVyaW9yIC0tPgo8cG9seWdvbiBwb2ludHM9IjEzMCwxMjAgMjAwLDYwIDI3MCwxMjAiIGZpbGw9IiNiZTEyM2MiIG9wYWNpdHk9IjAuNSIvPgo8cG9seWdvbiBwb2ludHM9IjE1NSwxMjAgMjAwLDg1IDI0NSwxMjAiIGZpbGw9IiNmNDNmNWUiIG9wYWNpdHk9IjAuNCIvPgo8IS0tIFB1ZXJ0YSAtLT4KPHJlY3QgeD0iMTgzIiB5PSIyMDAiIHdpZHRoPSIzNCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiM0NTBhMGEiLz4KPCEtLSBFc3RyZWNobyBjYcOxw7NuIGFycmliYSAtLT4KPHBvbHlnb24gcG9pbnRzPSIwLDAgMTAwLDAgMTAwLDYwIDAsNjAiIGZpbGw9IiMxYTAwMDIiIG9wYWNpdHk9IjAuOCIvPgo8cG9seWdvbiBwb2ludHM9IjMwMCwwIDQwMCwwIDQwMCw2MCAzMDAsNjAiIGZpbGw9IiMxYTAwMDIiIG9wYWNpdHk9IjAuOCIvPgo8L3N2Zz4=' },
+    { id:'cristo',   name:'Cristo\nRedentor',        icon:'✝️', color:'#34d399', glow:'rgba(52,211,153,0.35)',  req:110,
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJjcmciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDExYTBhIi8+PHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiMwNjRlM2IiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwNjVmNDYiLz48L2xpbmVhckdyYWRpZW50PgogIDxyYWRpYWxHcmFkaWVudCBpZD0iY3JsaWdodCIgY3g9IjUwJSIgY3k9IjMwJSIgcj0iMzAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMzRkMzk5IiBzdG9wLW9wYWNpdHk9IjAuNCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0idHJhbnNwYXJlbnQiLz48L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2NyZykiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjY3JsaWdodCkiLz4KPCEtLSBOdWJlcyAtLT4KPGVsbGlwc2UgY3g9IjgwIiBjeT0iMTIwIiByeD0iNjAiIHJ5PSIyMCIgZmlsbD0iI2VjZmRmNSIgb3BhY2l0eT0iMC4xMiIvPgo8ZWxsaXBzZSBjeD0iMzIwIiBjeT0iMTAwIiByeD0iNzAiIHJ5PSIyMiIgZmlsbD0iI2QxZmFlNSIgb3BhY2l0eT0iMC4xIi8+CjwhLS0gTW9udGHDsWEgLS0+Cjxwb2x5Z29uIHBvaW50cz0iMjAwLDE4MCA4MCwzMDAgMzIwLDMwMCIgZmlsbD0iIzA1MmUxNiIvPgo8IS0tIENyaXN0byBSZWRlbnRvciBzaWx1ZXRhIC0tPgo8IS0tIEN1ZXJwbyAtLT4KPHJlY3QgeD0iMTkzIiB5PSIxMDAiIHdpZHRoPSIxNCIgaGVpZ2h0PSI4MCIgZmlsbD0iI2QxZmFlNSIgb3BhY2l0eT0iMC41Ii8+CjwhLS0gQnJhem9zIGV4dGVuZGlkb3MgLS0+CjxyZWN0IHg9IjE0MCIgeT0iMTI1IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZDFmYWU1IiBvcGFjaXR5PSIwLjUiLz4KPCEtLSBDYWJlemEgLS0+CjxjaXJjbGUgY3g9IjIwMCIgY3k9Ijk1IiByPSIxMCIgZmlsbD0iI2VjZmRmNSIgb3BhY2l0eT0iMC42Ii8+CjwhLS0gQXVyYS9icmlsbG8gLS0+CjxjaXJjbGUgY3g9IjIwMCIgY3k9IjEzMCIgcj0iNTAiIGZpbGw9IiMzNGQzOTkiIG9wYWNpdHk9IjAuMDYiLz4KPCEtLSBDaXVkYWQgUsOtbyBkZSBmb25kbyAobHVjZXMpIC0tPgo8cmVjdCB4PSIwIiB5PSIyNjAiIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAiIGZpbGw9IiMwMjJjMTYiLz4KPGNpcmNsZSBjeD0iNjAiIGN5PSIyNzUiIHI9IjIiIGZpbGw9IiNmYmJmMjQiIG9wYWNpdHk9IjAuNSIvPgo8Y2lyY2xlIGN4PSIxMDAiIGN5PSIyNzAiIHI9IjEuNSIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iMC40Ii8+CjxjaXJjbGUgY3g9IjMwMCIgY3k9IjI3MiIgcj0iMiIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iMC41Ii8+CjxjaXJjbGUgY3g9IjM0MCIgY3k9IjI2OCIgcj0iMS41IiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjQiLz4KPC9zdmc+',
+      country:'🇧🇷 Río de Janeiro, Brasil', desc:'A 710 m sobre el nivel del mar, los brazos del Cristo Redentor abrazan toda la ciudad de Río con su belleza y espiritualidad.',
+      tags:['Brasil','Maravilla','Fe','Río'],
+      bg:'linear-gradient(160deg,#052e16 0%,#064e3b 40%,#065f46 100%)' },
+    { id:'eiffel',   name:'Torre\nEiffel',           icon:'🗼', color:'#818cf8', glow:'rgba(129,140,248,0.35)', req:125,
+      country:'🇫🇷 París, Francia · Europa', desc:'El símbolo de Francia y el romanticismo. Construida en 1889, cada noche su danza de luces ilumina el Sena con magia parisina.',
+      tags:['París','Francia','Romántico','Icono'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJlZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwNjA0MGYiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzFlMWI0YiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzMxMmU4MSIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJlbGlnaHQiIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjQwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzYzNjZmMSIgc3RvcC1vcGFjaXR5PSIwLjMiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50Ii8+PC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNlZykiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZWxpZ2h0KSIvPgo8IS0tIEx1bmEgeSBlc3RyZWxsYXMgLS0+CjxjaXJjbGUgY3g9IjMyMCIgY3k9IjUwIiByPSIxOCIgZmlsbD0iI2UwZTdmZiIgb3BhY2l0eT0iMC41Ii8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzAiIHI9IjEuNSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNyIvPgo8Y2lyY2xlIGN4PSIxNTAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iI2M3ZDJmZSIgb3BhY2l0eT0iMC44Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjYwIiByPSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjUiLz4KPGNpcmNsZSBjeD0iMjgwIiBjeT0iODAiIHI9IjEiIGZpbGw9IiNhNWI0ZmMiIG9wYWNpdHk9IjAuNiIvPgo8IS0tIFRvcnJlIEVpZmZlbCBzaWx1ZXRhIC0tPgo8IS0tIEJhc2UgLS0+Cjxwb2x5Z29uIHBvaW50cz0iMTMwLDMwMCAxNjUsMjAwIDIwMCwzMDAiIGZpbGw9IiM0ZjQ2ZTUiIG9wYWNpdHk9IjAuNSIvPgo8cG9seWdvbiBwb2ludHM9IjIwMCwzMDAgMjM1LDIwMCAyNzAsMzAwIiBmaWxsPSIjNDMzOGNhIiBvcGFjaXR5PSIwLjUiLz4KPCEtLSBQYXRhcyAtLT4KPHBvbHlnb24gcG9pbnRzPSIxNDAsMzAwIDE2NSwyMDAgMTc1LDMwMCIgZmlsbD0iIzRmNDZlNSIgb3BhY2l0eT0iMC43Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMjI1LDMwMCAyMzUsMjAwIDI2MCwzMDAiIGZpbGw9IiM0MzM4Y2EiIG9wYWNpdHk9IjAuNyIvPgo8IS0tIEN1ZXJwbyAtLT4KPHBvbHlnb24gcG9pbnRzPSIxNjUsMjAwIDIwMCw1MCAyMzUsMjAwIiBmaWxsPSIjNjM2NmYxIiBvcGFjaXR5PSIwLjUiLz4KPCEtLSBOaXZlbCAxIC0tPgo8cmVjdCB4PSIxNTgiIHk9IjIwMCIgd2lkdGg9Ijg0IiBoZWlnaHQ9IjgiIGZpbGw9IiM4MThjZjgiIG9wYWNpdHk9IjAuNiIvPgo8IS0tIE5pdmVsIDIgLS0+CjxyZWN0IHg9IjE3MiIgeT0iMTUwIiB3aWR0aD0iNTYiIGhlaWdodD0iNiIgZmlsbD0iI2E1YjRmYyIgb3BhY2l0eT0iMC41Ii8+CjwhLS0gQWd1amEgLS0+CjxyZWN0IHg9IjE5OCIgeT0iMzAiIHdpZHRoPSI0IiBoZWlnaHQ9IjI1IiBmaWxsPSIjYzdkMmZlIiBvcGFjaXR5PSIwLjgiLz4KPCEtLSBMdWNlcyBicmlsbGFudGVzIC0tPgo8Y2lyY2xlIGN4PSIyMDAiIGN5PSIyOCIgcj0iMyIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iMC45Ii8+CjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE1MCIgcj0iMiIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iMC42Ii8+CjwhLS0gUsOtbyBTZW5hIGZvbmRvIC0tPgo8cmVjdCB4PSIwIiB5PSIyNjUiIHdpZHRoPSI0MDAiIGhlaWdodD0iMzUiIGZpbGw9IiMxZTFiNGIiLz4KPGVsbGlwc2UgY3g9IjIwMCIgY3k9IjI2OCIgcng9IjEwMCIgcnk9IjgiIGZpbGw9IiM0MzM4Y2EiIG9wYWNpdHk9IjAuMyIvPgo8L3N2Zz4=' },
+    { id:'piramides',name:'Pirámides\nde Guiza',     icon:'🔶', color:'#fbbf24', glow:'rgba(251,191,36,0.35)',  req:150,
+      country:'🇪🇬 Guiza, Egipto · África', desc:'Las únicas maravillas del mundo antiguo que aún se alzan. Guardianes de faraones durante 4500 años bajo el sol del desierto.',
+      tags:['Egipto','Faraón','Maravilla Antigua','Esfinge'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJweWciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMTAwZDAyIi8+PHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiM0MjIwMDYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM3MTNmMTIiLz48L2xpbmVhckdyYWRpZW50PgogIDxyYWRpYWxHcmFkaWVudCBpZD0icHlzdW4iIGN4PSI3MCUiIGN5PSIyMCUiIHI9IjI1JSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZiYmYyNCIgc3RvcC1vcGFjaXR5PSIwLjgiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50Ii8+PC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNweWcpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3B5c3VuKSIvPgo8IS0tIFNvbCAtLT4KPGNpcmNsZSBjeD0iMjgwIiBjeT0iNjAiIHI9IjMwIiBmaWxsPSIjZmJiZjI0IiBvcGFjaXR5PSIwLjciLz4KPGNpcmNsZSBjeD0iMjgwIiBjeT0iNjAiIHI9IjUwIiBmaWxsPSIjZjU5ZTBiIiBvcGFjaXR5PSIwLjEiLz4KPCEtLSBBcmVuYSBkZXNpZXJ0byAtLT4KPHJlY3QgeD0iMCIgeT0iMjQwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjNzgzNTBmIi8+CjwhLS0gUGlyw6FtaWRlcyAtLT4KPHBvbHlnb24gcG9pbnRzPSI2MCwyNDAgMTYwLDgwIDI2MCwyNDAiIGZpbGw9IiNiNDUzMDkiLz4KPHBvbHlnb24gcG9pbnRzPSI2MCwyNDAgMTYwLDgwIDE5MCwyNDAiIGZpbGw9IiNkOTc3MDYiIG9wYWNpdHk9IjAuNSIvPgo8IS0tIFBpcsOhbWlkZSAyIC0tPgo8cG9seWdvbiBwb2ludHM9IjE4MCwyNDAgMjYwLDExMCAzNDAsMjQwIiBmaWxsPSIjOTI0MDBlIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTgwLDI0MCAyNjAsMTEwIDI5MCwyNDAiIGZpbGw9IiNiNDUzMDkiIG9wYWNpdHk9IjAuNSIvPgo8IS0tIFBpcsOhbWlkZSAzIHBlcXVlw7FhIC0tPgo8cG9seWdvbiBwb2ludHM9IjMwMCwyNDAgMzQ1LDE2MCAzOTAsMjQwIiBmaWxsPSIjNzgzNTBmIi8+CjwhLS0gRXNmaW5nZSBzaWx1ZXRhIC0tPgo8ZWxsaXBzZSBjeD0iMTIwIiBjeT0iMjQwIiByeD0iMzUiIHJ5PSIyMCIgZmlsbD0iIzdjMmQxMiIvPgo8cmVjdCB4PSI4NSIgeT0iMjIwIiB3aWR0aD0iNzAiIGhlaWdodD0iMjIiIGZpbGw9IiM3YzJkMTIiLz4KPGVsbGlwc2UgY3g9IjkwIiBjeT0iMjE1IiByeD0iMTUiIHJ5PSIxOCIgZmlsbD0iIzkyNDAwZSIvPgo8IS0tIEVzdHJlbGxhcyAtLT4KPGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMS41IiBmaWxsPSIjZmRlNjhhIiBvcGFjaXR5PSIwLjYiLz4KPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTUiIHI9IjEiIGZpbGw9IiNmYmJmMjQiIG9wYWNpdHk9IjAuNSIvPgo8Y2lyY2xlIGN4PSIzNzAiIGN5PSI0MCIgcj0iMS41IiBmaWxsPSIjZmRlNjhhIiBvcGFjaXR5PSIwLjciLz4KPC9zdmc+' },
+    { id:'angkor',   name:'Angkor\nWat',             icon:'🛕', color:'#a78bfa', glow:'rgba(167,139,250,0.35)', req:170,
+      country:'🇰🇭 Siem Riep, Camboya · Asia', desc:'El templo más grande del mundo emergiendo de la jungla camboyana. Un universo hindú tallado en piedra durante el Imperio Jemer.',
+      tags:['Camboya','Templo','Jemer','UNESCO'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJhZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwZDA3MjAiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzJlMTA2NSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzRjMWQ5NSIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPHJhZGlhbEdyYWRpZW50IGlkPSJhc3VuIiBjeD0iNTAlIiBjeT0iMjUlIiByPSIyNSUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNhNzhiZmEiIHN0b3Atb3BhY2l0eT0iMC41Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvcmFkaWFsR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjYWcpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2FzdW4pIi8+CjwhLS0gQW1hbmVjZXIgZm9uZG8gLS0+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSIxMzAiIHJ4PSI2MCIgcnk9IjMwIiBmaWxsPSIjZjU5ZTBiIiBvcGFjaXR5PSIwLjIiLz4KPCEtLSBTZWx2YSBmb25kbyAtLT4KPHBvbHlnb24gcG9pbnRzPSIwLDMwMCAyNSwyMDAgNTAsMzAwIiBmaWxsPSIjMDUyZTE2Ii8+PHBvbHlnb24gcG9pbnRzPSIzMCwzMDAgNjAsMTkwIDkwLDMwMCIgZmlsbD0iIzA2NGUzYiIvPgo8cG9seWdvbiBwb2ludHM9IjMxMCwzMDAgMzQwLDE4NSAzNzAsMzAwIiBmaWxsPSIjMDY0ZTNiIi8+PHBvbHlnb24gcG9pbnRzPSIzNTAsMzAwIDM3NSwyMDAgNDAwLDMwMCIgZmlsbD0iIzA1MmUxNiIvPgo8IS0tIFRvcnJlcyBkZSBBbmdrb3IgKHRvcnJlcyBjb2IpIC0tPgo8cmVjdCB4PSI4MCIgeT0iMTgwIiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iIzJlMTA2NSIgb3BhY2l0eT0iMC44Ii8+CjwhLS0gVG9ycmUgY2VudHJhbCAtLT4KPHBvbHlnb24gcG9pbnRzPSIyMDAsODAgMTc1LDE4MCAyMjUsMTgwIiBmaWxsPSIjNmQyOGQ5Ii8+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSI3OCIgcng9IjE4IiByeT0iMjUiIGZpbGw9IiM3YzNhZWQiIG9wYWNpdHk9IjAuOCIvPgo8IS0tIFRvcnJlcyBsYXRlcmFsZXMgLS0+Cjxwb2x5Z29uIHBvaW50cz0iMTMwLDEyMCAxMTIsMTgwIDE0OCwxODAiIGZpbGw9IiM1YjIxYjYiLz4KPGVsbGlwc2UgY3g9IjEzMCIgY3k9IjExOCIgcng9IjE0IiByeT0iMTgiIGZpbGw9IiM2ZDI4ZDkiIG9wYWNpdHk9IjAuNyIvPgo8cG9seWdvbiBwb2ludHM9IjI3MCwxMjAgMjUyLDE4MCAyODgsMTgwIiBmaWxsPSIjNWIyMWI2Ii8+CjxlbGxpcHNlIGN4PSIyNzAiIGN5PSIxMTgiIHJ4PSIxNCIgcnk9IjE4IiBmaWxsPSIjNmQyOGQ5IiBvcGFjaXR5PSIwLjciLz4KPCEtLSBSZWZsZWpvIGFndWEgLS0+CjxyZWN0IHg9IjAiIHk9IjI1NSIgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0NSIgZmlsbD0iIzFlMWI0YiIgb3BhY2l0eT0iMC43Ii8+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSIyNTgiIHJ4PSI4MCIgcnk9IjEyIiBmaWxsPSIjN2MzYWVkIiBvcGFjaXR5PSIwLjE1Ii8+Cjwvc3ZnPg==' },
+    { id:'santorini',name:'Santorini\nGrecia',       icon:'🏝️', color:'#38bdf8', glow:'rgba(56,189,248,0.35)',  req:200,
+      country:'🇬🇷 Santorini, Grecia · Europa', desc:'Cúpulas azules sobre acantilados blancos frente al Egeo. El volcán dormido bajo el mar recuerda el origen mítico de la isla.',
+      tags:['Grecia','Mediterráneo','Volcán','Azul'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJzdGciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDQxMjFlIi8+PHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiMwMzY5YTEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwMjg0YzciLz48L2xpbmVhckdyYWRpZW50PgogIDxyYWRpYWxHcmFkaWVudCBpZD0ic3RzdW4iIGN4PSI3MCUiIGN5PSIyMCUiIHI9IjIwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzM4YmRmOCIgc3RvcC1vcGFjaXR5PSIwLjciLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50Ii8+PC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNzdGcpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3N0c3VuKSIvPgo8IS0tIFNvbCBzb2JyZSBlbCBtYXIgLS0+CjxjaXJjbGUgY3g9IjI4MCIgY3k9IjY1IiByPSIyMiIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iMC43Ii8+CjwhLS0gQ2FzYXMgYmxhbmNhcyBhY2FudGlsYWRvIC0tPgo8cmVjdCB4PSIyMCIgeT0iMTQwIiB3aWR0aD0iMzYwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZTBmMmZlIiBvcGFjaXR5PSIwLjE1Ii8+CjwhLS0gQ2FzYXMgaW5kaXZpZHVhbGVzIC0tPgo8cmVjdCB4PSIzMCIgeT0iMTU1IiB3aWR0aD0iMzUiIGhlaWdodD0iMzAiIGZpbGw9IiNmMGY5ZmYiIG9wYWNpdHk9IjAuNCIvPgo8cmVjdCB4PSI3MCIgeT0iMTQ4IiB3aWR0aD0iMzAiIGhlaWdodD0iMzciIGZpbGw9IiNlMGYyZmUiIG9wYWNpdHk9IjAuNCIvPgo8cmVjdCB4PSIxMDUiIHk9IjE1MiIgd2lkdGg9IjI4IiBoZWlnaHQ9IjMzIiBmaWxsPSIjZjBmOWZmIiBvcGFjaXR5PSIwLjM1Ii8+CjxyZWN0IHg9IjE0MCIgeT0iMTQ1IiB3aWR0aD0iMzIiIGhlaWdodD0iNDAiIGZpbGw9IiNlMGYyZmUiIG9wYWNpdHk9IjAuNCIvPgo8cmVjdCB4PSIxODAiIHk9IjE1MCIgd2lkdGg9IjI4IiBoZWlnaHQ9IjM1IiBmaWxsPSIjZjBmOWZmIiBvcGFjaXR5PSIwLjM1Ii8+CjxyZWN0IHg9IjIxNSIgeT0iMTQzIiB3aWR0aD0iMzUiIGhlaWdodD0iNDIiIGZpbGw9IiNlMGYyZmUiIG9wYWNpdHk9IjAuNCIvPgo8cmVjdCB4PSIyNTgiIHk9IjE0OCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjM3IiBmaWxsPSIjZjBmOWZmIiBvcGFjaXR5PSIwLjM1Ii8+CjxyZWN0IHg9IjI5NSIgeT0iMTUyIiB3aWR0aD0iMjgiIGhlaWdodD0iMzMiIGZpbGw9IiNlMGYyZmUiIG9wYWNpdHk9IjAuNCIvPgo8cmVjdCB4PSIzMzAiIHk9IjE0NiIgd2lkdGg9IjM1IiBoZWlnaHQ9IjM5IiBmaWxsPSIjZjBmOWZmIiBvcGFjaXR5PSIwLjM1Ii8+CjwhLS0gQ8O6cHVsYXMgYXp1bGVzIC0tPgo8ZWxsaXBzZSBjeD0iNDciIGN5PSIxNTUiIHJ4PSIxMiIgcnk9IjgiIGZpbGw9IiMwMzY5YTEiIG9wYWNpdHk9IjAuNyIvPgo8ZWxsaXBzZSBjeD0iMTIwIiBjeT0iMTUwIiByeD0iMTEiIHJ5PSI3IiBmaWxsPSIjMDI4NGM3IiBvcGFjaXR5PSIwLjciLz4KPGVsbGlwc2UgY3g9IjE5NyIgY3k9IjE0OCIgcng9IjEyIiByeT0iOCIgZmlsbD0iIzAzNjlhMSIgb3BhY2l0eT0iMC43Ii8+CjxlbGxpcHNlIGN4PSIyNzUiIGN5PSIxNDYiIHJ4PSIxMSIgcnk9IjciIGZpbGw9IiMwMjg0YzciIG9wYWNpdHk9IjAuNyIvPgo8IS0tIE1hciBFZ2VvIC0tPgo8cmVjdCB4PSIwIiB5PSIyNDAiIHdpZHRoPSI0MDAiIGhlaWdodD0iNjAiIGZpbGw9IiMwNzU5ODUiLz4KPHBhdGggZD0iTTAsMjQ1IFExMDAsMjM1IDIwMCwyNDUgUTMwMCwyNTUgNDAwLDI0NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzhiZGY4IiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC40Ii8+CjxwYXRoIGQ9Ik0wLDI1OCBRMTAwLDI0OCAyMDAsMjU4IFEzMDAsMjY4IDQwMCwyNTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzdkZDNmYyIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjMiLz4KPC9zdmc+' },
+    { id:'aurora',   name:'Aurora\nBoreal',          icon:'🌌', color:'#6ee7b7', glow:'rgba(110,231,183,0.35)', req:230,
+      country:'🇮🇸 Islandia · Círculo Ártico', desc:'Cortinas de luz verde, violeta y azul danzan en el cielo ártico. Un espectáculo cósmico que solo los viajeros más dedicados contemplan.',
+      tags:['Islandia','Ártico','Cielo','Magia'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJhdXJnIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzAxMTIwOSIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjMDY0ZTNiIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDY1ZjQ2Ii8+PC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNhdXJnKSIvPgo8IS0tIEF1cm9yYSBib3JlYWwgY2FwYXMgLS0+CjxwYXRoIGQ9Ik0wLDgwIFExMDAsMjAgMjAwLDcwIFEzMDAsMTIwIDQwMCw2MCBMNDAwLDAgTDAsMCBaIiBmaWxsPSIjNmVlN2I3IiBvcGFjaXR5PSIwLjIiLz4KPHBhdGggZD0iTTAsMTAwIFE4MCw0MCAxODAsOTAgUTI4MCwxNDAgNDAwLDgwIEw0MDAsNTAgTDAsNTAgWiIgZmlsbD0iIzM0ZDM5OSIgb3BhY2l0eT0iMC4xNSIvPgo8cGF0aCBkPSJNMCwxMjAgUTEyMCw2MCAyMjAsMTEwIFEzMjAsMTYwIDQwMCwxMDAgTDQwMCw3MCBMMCw3MCBaIiBmaWxsPSIjYTc4YmZhIiBvcGFjaXR5PSIwLjIiLz4KPHBhdGggZD0iTTAsMTQwIFExMDAsODAgMjAwLDEzMCBRMzAwLDE4MCA0MDAsMTIwIEw0MDAsOTAgTDAsOTAgWiIgZmlsbD0iIzZlZTdiNyIgb3BhY2l0eT0iMC4xMiIvPgo8cGF0aCBkPSJNMCwxMTAgUTYwLDUwIDE2MCwxMDAgUTI2MCwxNTAgNDAwLDkwIiBmaWxsPSJub25lIiBzdHJva2U9IiM2ZWU3YjciIHN0cm9rZS13aWR0aD0iMiIgb3BhY2l0eT0iMC41Ii8+CjxwYXRoIGQ9Ik0wLDEzMCBRODAsNjUgMTgwLDExNSBRMzAwLDE2NSA0MDAsMTEwIiBmaWxsPSJub25lIiBzdHJva2U9IiNhNzhiZmEiIHN0cm9rZS13aWR0aD0iMiIgb3BhY2l0eT0iMC40Ii8+CjxwYXRoIGQ9Ik0wLDE1MCBRMTAwLDg1IDIwMCwxMzUgUTMxMCwxODUgNDAwLDEzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzRkMzk5IiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC40Ii8+CjwhLS0gTW9udGHDsWFzIMOhcnRpY2FzIC0tPgo8cG9seWdvbiBwb2ludHM9IjAsMzAwIDUwLDIwMCAxMDAsMzAwIiBmaWxsPSIjMDIyYzIyIi8+PHBvbHlnb24gcG9pbnRzPSI2MCwzMDAgMTMwLDE4MCAyMDAsMzAwIiBmaWxsPSIjMDY0ZTNiIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTYwLDMwMCAyMzAsMTkwIDMwMCwzMDAiIGZpbGw9IiMwMjJjMjIiLz48cG9seWdvbiBwb2ludHM9IjI2MCwzMDAgMzMwLDE4NSA0MDAsMzAwIiBmaWxsPSIjMDY0ZTNiIi8+CjwhLS0gTmlldmUgZW4gY2ltYXMgLS0+Cjxwb2x5Z29uIHBvaW50cz0iNTAsMjAwIDYwLDIxNSA0MCwyMTUiIGZpbGw9IiNjZmZhZmUiIG9wYWNpdHk9IjAuNSIvPgo8cG9seWdvbiBwb2ludHM9IjEzMCwxODAgMTQwLDE5NSAxMjAsMTk1IiBmaWxsPSIjY2ZmYWZlIiBvcGFjaXR5PSIwLjUiLz4KPHBvbHlnb24gcG9pbnRzPSIyMzAsMTkwIDI0MCwyMDUgMjIwLDIwNSIgZmlsbD0iI2NmZmFmZSIgb3BhY2l0eT0iMC41Ii8+CjwhLS0gRXN0cmVsbGFzIC0tPgo8Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiLz4KPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTUiIHI9IjEiIGZpbGw9IiNjZmZhZmUiIG9wYWNpdHk9IjAuNyIvPgo8Y2lyY2xlIGN4PSIzNTAiIGN5PSIyMCIgcj0iMS41IiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC42Ii8+CjxjaXJjbGUgY3g9IjI4MCIgY3k9IjQwIiByPSIxIiBmaWxsPSIjYTdmM2QwIiBvcGFjaXR5PSIwLjgiLz4KPC9zdmc+' },
+    { id:'fuji',     name:'Monte\nFuji',             icon:'🗻', color:'#e2e8f0', glow:'rgba(226,232,240,0.35)', req:280,
+      country:'🇯🇵 Honshu, Japón · Asia', desc:'El volcán sagrado del Japón, símbolo nacional y fuente de inspiración artística durante siglos. Su silueta perfecta es inconfundible.',
+      tags:['Japón','Volcán','Sagrado','Arte'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJmamciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDMwNzFhIi8+PHN0b3Agb2Zmc2V0PSI0MCUiIHN0b3AtY29sb3I9IiMxZTNhNWYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxZTQwYWYiLz48L2xpbmVhckdyYWRpZW50PgogIDxyYWRpYWxHcmFkaWVudCBpZD0iZmptb29uIiBjeD0iNzUlIiBjeT0iMTUlIiByPSIxMiUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNlMmU4ZjAiIHN0b3Atb3BhY2l0eT0iMC44Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvcmFkaWFsR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZmpnKSIvPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNmam1vb24pIi8+CjwhLS0gTHVuYSBsbGVuYSAtLT4KPGNpcmNsZSBjeD0iMzAwIiBjeT0iNDUiIHI9IjI1IiBmaWxsPSIjZTJlOGYwIiBvcGFjaXR5PSIwLjYiLz4KPCEtLSBNb250ZSBGdWppIC0tPgo8cG9seWdvbiBwb2ludHM9IjIwMCw0MCA1MCwzMDAgMzUwLDMwMCIgZmlsbD0iIzFlM2E1ZiIvPgo8cG9seWdvbiBwb2ludHM9IjIwMCw0MCAxMjAsMzAwIDI4MCwzMDAiIGZpbGw9IiMxZTQwYWYiIG9wYWNpdHk9IjAuNSIvPgo8IS0tIE5pZXZlIGVuIGxhIGNpbWEgLS0+Cjxwb2x5Z29uIHBvaW50cz0iMjAwLDQwIDE3MCwxMjAgMjMwLDEyMCIgZmlsbD0iI2UyZThmMCIgb3BhY2l0eT0iMC44Ii8+CjwhLS0gTnViZXMgYmFqYXMgLS0+CjxyZWN0IHg9IjAiIHk9IjIwMCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSIyNSIgZmlsbD0iI2JmZGJmZSIgb3BhY2l0eT0iMC4wOCIvPgo8IS0tIExhZ28gS2F3YWd1Y2hpIChyZWZsZWpvKSAtLT4KPGVsbGlwc2UgY3g9IjIwMCIgY3k9IjI3NSIgcng9IjE1MCIgcnk9IjIwIiBmaWxsPSIjMWU0MGFmIiBvcGFjaXR5PSIwLjQiLz4KPGVsbGlwc2UgY3g9IjIwMCIgY3k9IjI3OCIgcng9IjgwIiByeT0iOCIgZmlsbD0iI2JmZGJmZSIgb3BhY2l0eT0iMC4xIi8+CjwhLS0gRmxvcmVzIGRlIGNlcmV6byAtLT4KPGNpcmNsZSBjeD0iNTAiIGN5PSIyNjAiIHI9IjUiIGZpbGw9IiNmZGE0YWYiIG9wYWNpdHk9IjAuNSIvPgo8Y2lyY2xlIGN4PSI2MCIgY3k9IjI1NSIgcj0iNCIgZmlsbD0iI2ZiNzE4NSIgb3BhY2l0eT0iMC40Ii8+CjxjaXJjbGUgY3g9IjM1MCIgY3k9IjI1OCIgcj0iNSIgZmlsbD0iI2ZkYTRhZiIgb3BhY2l0eT0iMC41Ii8+CjxjaXJjbGUgY3g9IjM0MCIgY3k9IjI1MiIgcj0iNCIgZmlsbD0iI2ZiNzE4NSIgb3BhY2l0eT0iMC40Ii8+CjwhLS0gRXN0cmVsbGFzIC0tPgo8Y2lyY2xlIGN4PSI0MCIgY3k9IjI1IiByPSIxLjUiIGZpbGw9IiNiZmRiZmUiIG9wYWNpdHk9IjAuNyIvPgo8Y2lyY2xlIGN4PSIxMjAiIGN5PSIxMCIgcj0iMSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNiIvPgo8Y2lyY2xlIGN4PSIyMDAiIGN5PSIxOCIgcj0iMSIgZmlsbD0iI2UwZjJmZSIgb3BhY2l0eT0iMC44Ii8+Cjwvc3ZnPg==' },
+    { id:'uluru',    name:'Uluru\nAustralia',        icon:'🪨', color:'#ef4444', glow:'rgba(239,68,68,0.35)',   req:320,
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJ1ZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxYTAyMDIiLz48c3RvcCBvZmZzZXQ9IjQwJSIgc3RvcC1jb2xvcj0iIzdmMWQxZCIvPjxzdG9wIG9mZnNldD0iODAlIiBzdG9wLWNvbG9yPSIjOTkxYjFiIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjNzgzNTBmIi8+PC9saW5lYXJHcmFkaWVudD4KICA8cmFkaWFsR3JhZGllbnQgaWQ9InVzdW4iIGN4PSIxNSUiIGN5PSIzMCUiIHI9IjI1JSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2Y5NzMxNiIgc3RvcC1vcGFjaXR5PSIwLjciLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50Ii8+PC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCN1ZykiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjdXN1bikiLz4KPCEtLSBTb2wgcG9uaWVudGUgLS0+CjxjaXJjbGUgY3g9IjYwIiBjeT0iOTAiIHI9IjM1IiBmaWxsPSIjZjk3MzE2IiBvcGFjaXR5PSIwLjgiLz4KPGNpcmNsZSBjeD0iNjAiIGN5PSI5MCIgcj0iNTUiIGZpbGw9IiNmYjkyM2MiIG9wYWNpdHk9IjAuMTUiLz4KPCEtLSBDaWVsbyByYXlhZG8gZGVsIGF0YXJkZWNlciAtLT4KPHBhdGggZD0iTTAsODAgUTIwMCw2MCA0MDAsODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y5NzMxNiIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjMiLz4KPHBhdGggZD0iTTAsMTAwIFEyMDAsODAgNDAwLDEwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmI5MjNjIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC4yNSIvPgo8IS0tIFVsdXJ1IOKAlCBtb25vbGl0byAtLT4KPGVsbGlwc2UgY3g9IjIwMCIgY3k9IjIxMCIgcng9IjE3MCIgcnk9IjgwIiBmaWxsPSIjZGMyNjI2Ii8+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSIyMDAiIHJ4PSIxNTUiIHJ5PSI2NSIgZmlsbD0iI2VmNDQ0NCIvPgo8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMTk1IiByeD0iMTQwIiByeT0iNTUiIGZpbGw9IiNkYzI2MjYiLz4KPCEtLSBUZXh0dXJhIHJvY2EgLS0+CjxwYXRoIGQ9Ik04MCwyMDAgUTEyMCwxODUgMTYwLDE5NSBRMjAwLDIwNSAyNDAsMTkyIFEyODAsMTc4IDMyMCwxOTMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2I5MWMxYyIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjUiLz4KPHBhdGggZD0iTTYwLDIxNSBRMTAwLDIwMCAxNTAsMjEwIFEyMDAsMjIwIDI1MCwyMDcgUTMwMCwxOTQgMzQwLDIwOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTkxYjFiIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC40Ii8+CjwhLS0gU3VlbG8gZGVzaWVydG8gcm9qbyAtLT4KPHJlY3QgeD0iMCIgeT0iMjU1IiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQ1IiBmaWxsPSIjNzgzNTBmIi8+CjwhLS0gU29tYnJhIFVsdXJ1IC0tPgo8ZWxsaXBzZSBjeD0iMjIwIiBjeT0iMjYwIiByeD0iMTQwIiByeT0iMTUiIGZpbGw9IiM0NTBhMGEiIG9wYWNpdHk9IjAuNiIvPgo8L3N2Zz4=',
+      country:'🇦🇺 Territorio del Norte, Australia', desc:'El monolito sagrado de los aborígenes Anangu se tiñe de rojo al atardecer. Centro espiritual del continente australiano desde hace 60 000 años.',
+      tags:['Australia','Aborigen','Sagrado','Desierto'],
+      bg:'linear-gradient(160deg,#450a0a 0%,#7f1d1d 40%,#991b1b 100%)' },
+    { id:'amazonia', name:'Amazonia\nProfunda',      icon:'🌿', color:'#4ade80', glow:'rgba(74,222,128,0.35)',  req:370,
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJhbWciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDExYTBhIi8+PHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiMxNDUzMmQiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxNjY1MzQiLz48L2xpbmVhckdyYWRpZW50PgogIDxyYWRpYWxHcmFkaWVudCBpZD0iYW1saWdodCIgY3g9IjUwJSIgY3k9IjIwJSIgcj0iMzAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNGFkZTgwIiBzdG9wLW9wYWNpdHk9IjAuMyIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0idHJhbnNwYXJlbnQiLz48L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2FtZykiLz4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjYW1saWdodCkiLz4KPCEtLSBDYXBhcyBkZSBzZWx2YSAtLT4KPHBvbHlnb24gcG9pbnRzPSIwLDMwMCAzMCwxMDAgNjAsMzAwIiBmaWxsPSIjMDUyZTE2Ii8+PHBvbHlnb24gcG9pbnRzPSIyMCwzMDAgNjAsODAgMTAwLDMwMCIgZmlsbD0iIzA2NGUzYiIvPgo8cG9seWdvbiBwb2ludHM9IjYwLDMwMCAxMDAsNjAgMTQwLDMwMCIgZmlsbD0iIzA1MmUxNiIvPjxwb2x5Z29uIHBvaW50cz0iMTAwLDMwMCAxNDUsNTAgMTkwLDMwMCIgZmlsbD0iIzE0NTMyZCIvPgo8cG9seWdvbiBwb2ludHM9IjE0MCwzMDAgMTg1LDcwIDIzMCwzMDAiIGZpbGw9IiMwNjRlM2IiLz48cG9seWdvbiBwb2ludHM9IjE4MCwzMDAgMjI1LDU1IDI3MCwzMDAiIGZpbGw9IiMwNTJlMTYiLz4KPHBvbHlnb24gcG9pbnRzPSIyMjAsMzAwIDI2NSw2NSAzMTAsMzAwIiBmaWxsPSIjMTQ1MzJkIi8+PHBvbHlnb24gcG9pbnRzPSIyNjAsMzAwIDMwNSw3NSAzNTAsMzAwIiBmaWxsPSIjMDY0ZTNiIi8+Cjxwb2x5Z29uIHBvaW50cz0iMzAwLDMwMCAzNDUsODUgMzkwLDMwMCIgZmlsbD0iIzA1MmUxNiIvPgo8IS0tIE5pZWJsYSBkZSBzZWx2YSAtLT4KPHJlY3QgeD0iMCIgeT0iMTYwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwIiBmaWxsPSIjYmJmN2QwIiBvcGFjaXR5PSIwLjA2Ii8+CjxyZWN0IHg9IjAiIHk9IjIwMCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MCIgZmlsbD0iIzg2ZWZhYyIgb3BhY2l0eT0iMC4wNSIvPgo8IS0tIFJheW9zIGRlIGx1eiBlbnRyZSDDoXJib2xlcyAtLT4KPHBvbHlnb24gcG9pbnRzPSIxODUsMCAyMDUsMCAyNTAsMzAwIDE0MCwzMDAiIGZpbGw9IiM0YWRlODAiIG9wYWNpdHk9IjAuMDQiLz4KPHBvbHlnb24gcG9pbnRzPSIxNjUsMCAxODAsMCAyMTAsMzAwIDEwMCwzMDAiIGZpbGw9IiMyMmM1NWUiIG9wYWNpdHk9IjAuMDMiLz4KPCEtLSBSw61vIEFtYXpvbmFzIC0tPgo8cGF0aCBkPSJNMCwyMjAgUTEwMCwyMTAgMjAwLDIyNSBRMzAwLDI0MCA0MDAsMjIwIiBmaWxsPSIjMDM2OWExIiBvcGFjaXR5PSIwLjQiIHN0cm9rZT0iIzM4YmRmOCIgc3Ryb2tlLXdpZHRoPSIxIi8+CjwhLS0gRmF1bmE6IGx1Y2nDqXJuYWdhcyAtLT4KPGNpcmNsZSBjeD0iOTAiIGN5PSIxMzAiIHI9IjIiIGZpbGw9IiM4NmVmYWMiIG9wYWNpdHk9IjAuNyIvPgo8Y2lyY2xlIGN4PSIyMDAiIGN5PSIxMTAiIHI9IjEuNSIgZmlsbD0iIzRhZGU4MCIgb3BhY2l0eT0iMC44Ii8+CjxjaXJjbGUgY3g9IjMxMCIgY3k9IjE0MCIgcj0iMiIgZmlsbD0iIzg2ZWZhYyIgb3BhY2l0eT0iMC42Ii8+CjxjaXJjbGUgY3g9IjE1NSIgY3k9IjE1MCIgcj0iMSIgZmlsbD0iI2JiZjdkMCIgb3BhY2l0eT0iMC45Ii8+Cjwvc3ZnPg==',
+      country:'🌎 América del Sur', desc:'El pulmón del planeta. La selva más biodiversa de la Tierra esconde especies aún desconocidas y civilizaciones que el tiempo olvidó.',
+      tags:['Selva','Biodiversidad','Misterio','Pulmón'],
+      bg:'linear-gradient(160deg,#052e16 0%,#14532d 40%,#166534 100%)' },
+    { id:'antartida',name:'La\nAntártida',           icon:'🧊', color:'#bae6fd', glow:'rgba(186,230,253,0.35)', req:450,
+      country:'🌍 Continente Antártico', desc:'El último continente salvaje. Silencio absoluto, glaciares eternos y un cielo de estrellas sin contaminación lumínica. El fin del mundo.',
+      tags:['Hielo','Extremo','Científico','Último'],
+      bg:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJhbnRnIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzA0MTExZSIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjMGU0ZDZiIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMGM0YTZlIi8+PC9saW5lYXJHcmFkaWVudD4KICA8cmFkaWFsR3JhZGllbnQgaWQ9ImFudGF1ciIgY3g9IjUwJSIgY3k9IjIwJSIgcj0iNTAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjYmFlNmZkIiBzdG9wLW9wYWNpdHk9IjAuMyIvPjxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjN2RkM2ZjIiBzdG9wLW9wYWNpdHk9IjAuMSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0idHJhbnNwYXJlbnQiLz48L3JhZGlhbEdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2FudGcpIi8+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2FudGF1cikiLz4KPCEtLSBHbGFjaWFyZXMvaWNlYmVyZ3MgLS0+Cjxwb2x5Z29uIHBvaW50cz0iMCwzMDAgNjAsMTgwIDEyMCwzMDAiIGZpbGw9IiNlMGYyZmUiIG9wYWNpdHk9IjAuNSIvPgo8cG9seWdvbiBwb2ludHM9IjgwLDMwMCAxNjAsMTUwIDI0MCwzMDAiIGZpbGw9IiNiYWU2ZmQiIG9wYWNpdHk9IjAuNTUiLz4KPHBvbHlnb24gcG9pbnRzPSIyMDAsMzAwIDI4MCwxNjAgMzYwLDMwMCIgZmlsbD0iI2UwZjJmZSIgb3BhY2l0eT0iMC41Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMzIwLDMwMCAzOTAsMTg1IDQwMCwzMDAiIGZpbGw9IiNiYWU2ZmQiIG9wYWNpdHk9IjAuNDUiLz4KPCEtLSBSZWZsZWpvcyBhenVsZXMgZW4gaGllbG8gLS0+Cjxwb2x5Z29uIHBvaW50cz0iMCwzMDAgNjAsMTgwIDgwLDMwMCIgZmlsbD0iIzdkZDNmYyIgb3BhY2l0eT0iMC4yIi8+Cjxwb2x5Z29uIHBvaW50cz0iODAsMzAwIDE2MCwxNTAgMTgwLDMwMCIgZmlsbD0iIzM4YmRmOCIgb3BhY2l0eT0iMC4xNSIvPgo8cG9seWdvbiBwb2ludHM9IjIwMCwzMDAgMjgwLDE2MCAyNDAsMzAwIiBmaWxsPSIjN2RkM2ZjIiBvcGFjaXR5PSIwLjIiLz4KPCEtLSBNYXIgaGVsYWRvIC0tPgo8cmVjdCB4PSIwIiB5PSIyNjAiIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAiIGZpbGw9IiMwNzU5ODUiLz4KPHBhdGggZD0iTTAsMjY1IFExMDAsMjU1IDIwMCwyNjUgUTMwMCwyNzUgNDAwLDI2NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmFlNmZkIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC40Ii8+CjwhLS0gQXVyb3JhcyBhdXN0cmFsZXMgLS0+CjxwYXRoIGQ9Ik0wLDYwIFEyMDAsMzAgNDAwLDYwIiBmaWxsPSJub25lIiBzdHJva2U9IiNiYWU2ZmQiIHN0cm9rZS13aWR0aD0iMiIgb3BhY2l0eT0iMC40Ii8+CjxwYXRoIGQ9Ik0wLDgwIFEyMDAsNTAgNDAwLDgwIiBmaWxsPSJub25lIiBzdHJva2U9IiM3ZGQzZmMiIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjMiLz4KPCEtLSBFc3RyZWxsYXMgbsOtdGlkYXMgLS0+CjxjaXJjbGUgY3g9IjMwIiBjeT0iMjAiIHI9IjIiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjkiLz4KPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAiIHI9IjEuNSIgZmlsbD0iI2UwZjJmZSIgb3BhY2l0eT0iMC44Ii8+CjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE1IiByPSIyIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC43Ii8+CjxjaXJjbGUgY3g9IjMyMCIgY3k9IjgiIHI9IjEuNSIgZmlsbD0iI2JhZTZmZCIgb3BhY2l0eT0iMC45Ii8+CjxjaXJjbGUgY3g9IjM4MCIgY3k9IjI1IiByPSIyIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC44Ii8+CjwhLS0gUGluZ8O8aW5vIHNpbHVldGEgLS0+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSIyNDgiIHJ4PSIxMCIgcnk9IjE0IiBmaWxsPSIjMGM0YTZlIi8+CjxjaXJjbGUgY3g9IjIwMCIgY3k9IjIzMyIgcj0iNyIgZmlsbD0iIzBlNGQ2YiIvPgo8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMjM4IiByeD0iNSIgcnk9IjciIGZpbGw9IiNlMGYyZmUiIG9wYWNpdHk9IjAuNiIvPgo8L3N2Zz4=' },
 ];
 
 window.renderHabMap = function() {
     const el = document.getElementById('habZoneGrid');
     if (!el) return;
-    const hero   = loadHero();
     const habits = loadHabits();
     const totalDone = habits.reduce((s,h)=>(s+(h.log||[]).length), 0);
     const currentZoneIdx = ZONES.filter(z => totalDone >= z.req).length - 1;
 
     el.innerHTML = ZONES.map((z, i) => {
-        const unlocked = totalDone >= z.req;
+        const unlocked  = totalDone >= z.req;
         const isCurrent = i === currentZoneIdx;
-        const nextReq   = ZONES[i+1] ? ZONES[i+1].req : z.req;
-        const prog      = unlocked ? 100 : Math.round((totalDone/z.req)*100);
         return '<div class="hab-zone ' + (isCurrent?'current':(unlocked?'unlocked':'locked')) + '" ' +
-            'style="--zone-bg:' + z.color + '15;--zone-color:' + z.color + ';--zone-glow:' + z.glow + ';" ' +
+            'id="habZone_' + i + '" ' +
+            'style="--zone-bg:' + z.color + '18;--zone-color:' + z.color + ';--zone-glow:' + z.glow + ';" ' +
             'onclick="selectZone(' + i + ')">' +
             '<span class="hab-zone-icon">' + z.icon + '</span>' +
             '<div class="hab-zone-name">' + z.name.replace('\n','<br>') + '</div>' +
-            '<div class="hab-zone-prog">' + (unlocked ? (isCurrent?'📍 Actual':'✅ Completada') : ('🔒 ' + z.req + ' compl.')) + '</div>' +
+            '<div class="hab-zone-prog">' + (unlocked ? (isCurrent?'📍 Actual':'✅ Visitada') : ('🔒 ' + z.req + ' háb.')) + '</div>' +
             (!unlocked ? '<div class="hab-zone-lock-icon">🔒</div>' : '') +
             '</div>';
     }).join('');
+
+    // Seleccionar zona actual por defecto
+    selectZone(currentZoneIdx);
 };
 
 window.selectZone = function(i) {
@@ -20051,8 +20269,46 @@ window.selectZone = function(i) {
     const habits = loadHabits();
     const total  = habits.reduce((s,h)=>s+(h.log||[]).length,0);
     if (total < z.req) return;
-    const t = document.getElementById('habStreakToast');
-    if (t) { t.textContent = z.icon+' Zona: '+z.name.replace('\n',' ')+' — Sigue completando hábitos!'; t.style.background='linear-gradient(135deg,'+z.color+','+z.color+'aa)'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+
+    // Resaltar zona seleccionada
+    document.querySelectorAll('.hab-zone').forEach(el => el.classList.remove('zone-selected'));
+    const zEl = document.getElementById('habZone_' + i);
+    if (zEl) zEl.classList.add('zone-selected');
+
+    // Fondo dinámico — capa imagen + capa gradiente separadas
+    const bgImg     = document.getElementById('habMapBgImg');
+    const bgOverlay = document.getElementById('habMapBgOverlay');
+    if (bgImg) {
+        bgImg.classList.remove('visible');
+        void bgImg.offsetWidth; // reflow para reiniciar transición
+        // Usar siempre el gradiente bg (ya no hay imgs externas)
+        bgImg.style.background = z.bg || 'none';
+        bgImg.classList.add('visible');
+    }
+    if (bgOverlay) {
+        bgOverlay.classList.remove('visible');
+        void bgOverlay.offsetWidth;
+        bgOverlay.classList.add('visible');
+    }
+
+    // Banner de zona seleccionada
+    const banner = document.getElementById('habMapSelBanner');
+    if (banner) {
+        banner.style.setProperty('--zone-sel-color', z.color);
+        banner.style.setProperty('--zone-sel-gradient', 'linear-gradient(135deg,' + z.color + '22,transparent 70%)');
+        const tagsHtml = (z.tags||[]).map(t => '<span class="hab-map-sel-tag">' + t + '</span>').join('');
+        banner.innerHTML =
+            '<div class="hab-map-sel-header">' +
+                '<span class="hab-map-sel-icon">' + z.icon + '</span>' +
+                '<div>' +
+                    '<div class="hab-map-sel-name">' + z.name.replace('\n',' ') + '</div>' +
+                    '<div class="hab-map-sel-country">' + (z.country||'') + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="hab-map-sel-desc">' + (z.desc||'') + '</div>' +
+            '<div class="hab-map-sel-tags">' + tagsHtml + '</div>';
+        banner.classList.add('visible');
+    }
 };
 
 // ── ANIMACIÓN DE BATALLA ──────────────────────────────────────
@@ -21089,6 +21345,79 @@ window.showRandomCard = function() {
 
 
 
+
+
+const MOODS = [
+    { id:'amazing', emoji:'🤩', label:'Increíble', color:'#fbbf24', bg:'rgba(251,191,36,0.15)', glow:'rgba(251,191,36,0.3)' },
+    { id:'good',    emoji:'😊', label:'Bien',      color:'#22c55e', bg:'rgba(34,197,94,0.15)',  glow:'rgba(34,197,94,0.3)'  },
+    { id:'neutral', emoji:'😐', label:'Normal',    color:'#6366f1', bg:'rgba(99,102,241,0.15)', glow:'rgba(99,102,241,0.3)' },
+    { id:'bad',     emoji:'😞', label:'Mal',       color:'#f97316', bg:'rgba(249,115,22,0.15)', glow:'rgba(249,115,22,0.3)' },
+    { id:'awful',   emoji:'😭', label:'Terrible',  color:'#ef4444', bg:'rgba(239,68,68,0.15)',  glow:'rgba(239,68,68,0.3)'  },
+];
+let _selectedMood = 'good';
+
+window.renderHabDiario = function() {
+    const moodRow = document.getElementById('habMoodRow');
+    if (moodRow) {
+        moodRow.innerHTML = MOODS.map(m =>
+            '<div class="hab-mood-btn '+(_selectedMood===m.id?'selected':'')+'" '+
+            'style="--mc:'+m.color+';--mbg:'+m.bg+';--mglow:'+m.glow+';" onclick="selectMood(\''+m.id+'\')">' +
+            '<span class="hab-mood-emoji">'+m.emoji+'</span>' +
+            '<span class="hab-mood-label">'+m.label+'</span>' +
+            '</div>'
+        ).join('');
+    }
+    renderJournalHistory();
+};
+
+window.selectMood = function(moodId) {
+    _selectedMood = moodId;
+    document.querySelectorAll('.hab-mood-btn').forEach((b,i) => {
+        const m=MOODS[i]; if(!m) return;
+        b.classList.toggle('selected',m.id===moodId);
+        b.style.setProperty('--mc',m.color);
+        b.style.setProperty('--mbg',m.bg);
+        b.style.setProperty('--mglow',m.glow);
+    });
+};
+
+window.saveJournalEntry = function() {
+    const textEl=document.getElementById('habJournalText');
+    const text=(textEl?textEl.value.trim():'');
+    if(!text) return;
+    const journal=loadJournal();
+    const mood=MOODS.find(m=>m.id===_selectedMood)||MOODS[1];
+    journal.unshift({ date:todayKey(), mood:_selectedMood, moodEmoji:mood.emoji, moodLabel:mood.label, text:text, ts:Date.now() });
+    if(journal.length>60) journal.splice(60);
+    saveJournal(journal);
+    if(textEl) textEl.value='';
+    if(typeof playSparkleSound==='function') playSparkleSound();
+    const t=document.getElementById('habStreakToast');
+    if(t){t.textContent=mood.emoji+' Entrada guardada en tu diario';t.style.background='linear-gradient(135deg,#6366f1,#a78bfa)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+    renderJournalHistory();
+};
+
+function renderJournalHistory() {
+    const el=document.getElementById('habJournalHistory');
+    if(!el) return;
+    const journal=loadJournal();
+    if(!journal.length){el.innerHTML='<div style="color:#444;font-size:0.75rem;text-align:center;padding:10px;">Sin entradas aún. ¡Escribe algo!</div>';return;}
+    const MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    el.innerHTML=journal.slice(0,10).map(e=>{
+        const d=new Date(e.date);
+        const dateStr=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
+        const mood=MOODS.find(m=>m.id===e.mood)||MOODS[1];
+        return '<div class="hab-journal-entry">' +
+            '<div class="hab-je-header">' +
+              '<span style="font-size:1rem;">'+e.moodEmoji+'</span>' +
+              '<span style="font-size:0.68rem;font-weight:900;color:'+mood.color+';">'+e.moodLabel+'</span>' +
+              '<span class="hab-je-date">'+dateStr+'</span>' +
+            '</div>' +
+            '<div class="hab-je-text">'+e.text.substring(0,200)+(e.text.length>200?'...':'')+'</div>' +
+            '</div>';
+    }).join('');
+}
+
 const _origSwitchLR = window.switchHabTab;
 window.switchHabTab = function(tab, el) {
     _origSwitchLR && _origSwitchLR(tab, el);
@@ -21792,15 +22121,23 @@ const EQUIP_DB = {
 };
 
 const EGGS_DB = [
-    {id:'egg_wolf',    name:'Lobo',      icon:'🐺', cost:3,  currency:'gem'},
-    {id:'egg_tiger',   name:'Tigre',     icon:'🐯', cost:3,  currency:'gem'},
-    {id:'egg_panda',   name:'Panda',     icon:'🐼', cost:3,  currency:'gem'},
-    {id:'egg_dragon',  name:'Dragón',    icon:'🐲', cost:3,  currency:'gem'},
-    {id:'egg_unicorn', name:'Unicornio', icon:'🦄', cost:3,  currency:'gem'},
-    {id:'egg_fox',     name:'Zorro',     icon:'🦊', cost:3,  currency:'gem'},
-    {id:'egg_owl',     name:'Búho',      icon:'🦉', cost:3,  currency:'gem'},
-    {id:'egg_cat',     name:'Gato',      icon:'🐱', cost:3,  currency:'gem'},
-    {id:'egg_rabbit',  name:'Conejo',    icon:'🐰', cost:3,  currency:'gem'},
+    {id:'egg_wolf',     name:'Lobo',       icon:'🐺', cost:3, currency:'gem'},
+    {id:'egg_tiger',    name:'Tigre',      icon:'🐯', cost:3, currency:'gem'},
+    {id:'egg_panda',    name:'Panda',      icon:'🐼', cost:3, currency:'gem'},
+    {id:'egg_dragon',   name:'Dragón',     icon:'🐲', cost:3, currency:'gem'},
+    {id:'egg_unicorn',  name:'Unicornio',  icon:'🦄', cost:3, currency:'gem'},
+    {id:'egg_fox',      name:'Zorro',      icon:'🦊', cost:3, currency:'gem'},
+    {id:'egg_owl',      name:'Búho',       icon:'🦉', cost:3, currency:'gem'},
+    {id:'egg_cat',      name:'Gato',       icon:'🐱', cost:3, currency:'gem'},
+    {id:'egg_rabbit',   name:'Conejo',     icon:'🐰', cost:3, currency:'gem'},
+    /* Mascotas de pergaminos de misión */
+    {id:'egg_turtle',   name:'Tortuga',    icon:'🐢', cost:4, currency:'gem'},
+    {id:'egg_whale',    name:'Ballena',    icon:'🐳', cost:4, currency:'gem'},
+    {id:'egg_seahorse', name:'Caballito de Mar', icon:'🦄', cost:4, currency:'gem'},
+    {id:'egg_basilisk', name:'Basilisco',  icon:'🐍', cost:4, currency:'gem'},
+    {id:'egg_bunny',    name:'Conejillo',  icon:'🐰', cost:4, currency:'gem'},
+    {id:'egg_horse',    name:'Caballo',     icon:'🐴', cost:4, currency:'gem'},
+    {id:'egg_opal',     name:'Opalo',       icon:'🫧', cost:4, currency:'gem'},
 ];
 
 const POTIONS_DB = [
@@ -21843,13 +22180,212 @@ const SEASONAL_SETS = [
 ];
 
 const SCROLLS_DB = [
-    {id:'scr1',name:'La Bestia del Bosque',icon:'📜',cost:100,currency:'gold',req:'Nivel 1',reqType:'level',reqVal:1,xpReward:80,goldReward:40,desc:'Una criatura acecha el bosque...'},
-    {id:'scr2',name:'El Dragón Rojo',      icon:'📜',cost:1,  currency:'gem', req:'Nivel 5',reqType:'level',reqVal:5,xpReward:150,goldReward:75,desc:'El dragón exige tributo'},
-    {id:'scr3',name:'El Vampiro Ancestral',icon:'📜',cost:1,  currency:'gem', req:'Nivel 10',reqType:'level',reqVal:10,xpReward:250,goldReward:120,desc:'La noche se cierne...'},
-    {id:'scr4',name:'El Golem de Piedra',  icon:'📜',cost:1,  currency:'gem', req:'Nivel 15',reqType:'level',reqVal:15,xpReward:350,goldReward:180,desc:'Despierta del letargo eterno'},
-    {id:'scr5',name:'El Kraken',           icon:'📜',cost:200,currency:'gold',req:'Nivel 20',reqType:'level',reqVal:20,xpReward:500,goldReward:250,desc:'Las profundidades llaman'},
-    {id:'scr6',name:'La Lich',             icon:'📜',cost:400,currency:'gold',req:'Nivel 30',reqType:'level',reqVal:30,xpReward:700,goldReward:350,desc:'La muerte personificada'},
-    {id:'scr7',name:'El Titan Solar',      icon:'📜',cost:500,currency:'gold',req:'Nivel 40',reqType:'level',reqVal:40,xpReward:900,goldReward:450,desc:'Desafía al sol mismo'},
+    /* ══ MISIONES DESBLOQUEABLES (monedas / gemas) ═══════════════════════════ */
+    /* -- Bestia del Bosque: boss simple para nivel 1 ------------------------- */
+    {id:'scr_basilisk1', name:'La Basi-lista',
+     icon:'📜', cost:100, currency:'gold', req:'Nivel 1',  reqType:'level', reqVal:1,
+     habitReq:25, xpReward:42, goldReward:8,
+     desc:'Una serpiente de mirada petrificante acecha el camino. Completa 25 hábitos para derrotarla.',
+     items:[]},
+    /* -- Conejos salvajes (gema x1) ----------------------------------------- */
+    {id:'scr_bunny1', name:'Los Conejos Salvajes de la Suciedad',
+     icon:'📜', cost:1, currency:'gem', req:'Nivel 1', reqType:'level', reqVal:1,
+     habitReq:30, xpReward:42, goldReward:8,
+     desc:'Una manada de conejos salvajes causa estragos. Derrotalos completando 30 hábitos.',
+     items:['egg_bunny']},
+    /* -- Batalla Lunar (gema x4) -------------------------------------------- */
+    {id:'scr_lunar1', name:'Batalla Lunar, Parte 1: Fragmentos Misteriosos',
+     icon:'📜', cost:4, currency:'gem', req:'Nivel 3', reqType:'level', reqVal:3,
+     habitReq:20, xpReward:50, goldReward:7,
+     desc:'Encuentra los fragmentos lunares completando 20 hábitos.',
+     items:['item_lunar_helm']},
+    {id:'scr_lunar2', name:'Batalla Lunar, Parte 2: Detén el Estrés Eclipsante',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_lunar1',
+     habitReq:40, xpReward:275, goldReward:37,
+     desc:'El estrés eclipsante ataca. Necesitas 40 hábitos para frenarlo.',
+     items:['item_lunar_armor']},
+    {id:'scr_lunar3', name:'Batalla Lunar, Parte 3: La Luna Monstruosa',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_lunar2',
+     habitReq:60, xpReward:650, goldReward:67,
+     desc:'La luna monstruosa desciende. 60 hábitos para vencerla.',
+     items:['item_lunar_scythe']},
+    /* -- Ataque de lo Mundano ----------------------------------------------- */
+    {id:'scr_mundano1', name:'Ataque de lo Mundano, Parte 1: Desastre de Platos',
+     icon:'📜', cost:0, currency:'quest', req:'Completar La Basi-lista', reqType:'quest', reqVal:'scr_basilisk1',
+     habitReq:20, xpReward:50, goldReward:7,
+     desc:'Los platos sucios se acumulan. Completa 20 hábitos para limpiar el desastre.',
+     items:['scr_mundano2']},
+    {id:'scr_mundano2', name:'Ataque de lo Mundano, Parte 2: El Monstruo sin Merienda',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_mundano1',
+     habitReq:30, xpReward:100, goldReward:20,
+     desc:'El monstruo del hambre ataca. 30 hábitos para saciarlo.',
+     items:['scr_mundano3']},
+    {id:'scr_mundano3', name:'Ataque de lo Mundano, Parte 3: El Laundromancer',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_mundano2',
+     habitReq:50, xpReward:125, goldReward:25,
+     desc:'El Laundromancer controla la suciedad. 50 hábitos para derrotarlo.',
+     items:['item_helmet_nameless', 'egg_turtle', 'egg_whale']},
+    /* -- Vicio --------------------------------------------------------------- */
+    {id:'scr_vicio1', name:'Vicio, Parte 1: Libérate de la Influencia del Dragón',
+     icon:'📜', cost:0, currency:'quest', req:'Nivel 15', reqType:'level', reqVal:15,
+     habitReq:40, xpReward:100, goldReward:20,
+     desc:'El dragón del vicio te controla. 40 hábitos para liberarte.',
+     items:['scr_vicio2']},
+    {id:'scr_vicio2', name:'Vicio, Parte 2: Encuentra la Guarida del Gusano',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_vicio1',
+     habitReq:50, xpReward:75, goldReward:20,
+     desc:'Rastrea la guarida del gusano completando 50 hábitos.',
+     items:['scr_vicio3']},
+    {id:'scr_vicio3', name:'Vicio, Parte 3: Vicio se Despierta',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_vicio2',
+     habitReq:80, xpReward:1000, goldReward:100,
+     desc:'El jefe final del vicio se despierta. Necesitas 80 hábitos para vencerlo.',
+     items:['item_dragon_staff', 'egg_dragon', 'egg_dragon']},
+    /* ══ SAGAS DE MAESTRO DE CLASE ══════════════════════════════════════════ */
+    /* -- El Caballero Dorado ------------------------------------------------ */
+    {id:'scr_golden1', name:'El Caballero Dorado, Parte 1: Una Conversación Seria',
+     icon:'📜', cost:200, currency:'gold', req:'Nivel 20', reqType:'level', reqVal:20,
+     habitReq:60, xpReward:120, goldReward:15,
+     desc:'El caballero dorado te reta. Completa 60 hábitos para superar la prueba.',
+     items:['scr_golden2']},
+    {id:'scr_golden2', name:'El Caballero Dorado, Parte 2: Caballero Dorado',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_golden1',
+     habitReq:100, xpReward:750, goldReward:75,
+     desc:'El caballero dorado en su forma final. 100 hábitos para vencerlo.',
+     items:['scr_golden3']},
+    {id:'scr_golden3', name:'El Caballero Dorado, Parte 3: El Caballero de Hierro',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_golden2',
+     habitReq:150, xpReward:1500, goldReward:900,
+     desc:'El caballero de hierro: la forma definitiva. 150 hábitos para conquistarlo.',
+     items:['item_honey', 'item_honey', 'item_honey', 'egg_dragon', 'egg_dragon', 'item_morningstar']},
+    /* -- Reincidencia ------------------------------------------------------- */
+    {id:'scr_recid1', name:'Reincidencia, Parte 1: La Cadena de Piedra Lunar',
+     icon:'📜', cost:0, currency:'quest', req:'Nivel 30', reqType:'level', reqVal:30,
+     habitReq:100, xpReward:100, goldReward:50,
+     desc:'Rompe la cadena de piedra lunar completando 100 hábitos.',
+     items:['scr_recid2']},
+    {id:'scr_recid2', name:'Reincidencia, Parte 2: Reincidencia el Nigromante',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_recid1',
+     habitReq:150, xpReward:1000, goldReward:500,
+     desc:'El Nigromante resurge. 150 hábitos para sellarlo de nuevo.',
+     items:['scr_recid3']},
+    {id:'scr_recid3', name:'Reincidencia, Parte 3: Reincidencia Transformada',
+     icon:'📜', cost:500, currency:'gold', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_recid2',
+     habitReq:200, xpReward:2000, goldReward:1000,
+     desc:'La forma final del Nigromante. 200 hábitos para erradicarlo para siempre.',
+     items:['item_nightshade', 'item_crown_death']},
+    /* ══ MISIONES MASCOTAS ══════════════════════════════════════════════════ */
+    {id:'scr_turtle',  name:'Guía a la Tortuga',
+     icon:'📜', cost:4, currency:'gem', req:'Nivel 5', reqType:'level', reqVal:5,
+     habitReq:30, xpReward:70, goldReward:12,
+     desc:'Protege a la tortuga marina completando 30 hábitos.',
+     items:['egg_turtle']},
+    {id:'scr_whale',   name:'El Gemido de la Ballena',
+     icon:'📜', cost:4, currency:'gem', req:'Nivel 5', reqType:'level', reqVal:5,
+     habitReq:30, xpReward:70, goldReward:12,
+     desc:'Ayuda a la ballena completando 30 hábitos.',
+     items:['egg_whale']},
+    {id:'scr_seahorse',name:'El Derbi Dilatorio',
+     icon:'📜', cost:4, currency:'gem', req:'Nivel 5', reqType:'level', reqVal:5,
+     habitReq:30, xpReward:70, goldReward:12,
+     desc:'El caballito de mar necesita tu ayuda. 30 hábitos.',
+     items:['egg_seahorse']},
+    /* ══ PELIGRO EN DILATORIA ══════════════════════════════════════════════ */
+    {id:'scr_dil1', name:'Peligro en Dilatoria, Parte 1: Mensaje en una Botella',
+     icon:'📜', cost:200, currency:'gold', req:'Nivel 5', reqType:'level', reqVal:5,
+     habitReq:35, xpReward:75, goldReward:10,
+     desc:'Recoge Coral de Fuego y Aletas Azules completando 35 habitos.',
+     items:['item_ocean_armor']},
+    {id:'scr_dil2', name:'Peligro en Dilatoria, Parte 2: Criaturas de la Grieta',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_dil1',
+     habitReq:55, xpReward:500, goldReward:40,
+     desc:'Las criaturas de la grieta emergen. 55 habitos para detenerlas.',
+     items:['item_skeleton_potion','item_cotton_candy_blue_potion','item_coral_diadem']},
+    {id:'scr_dil3', name:'Peligro en Dilatoria, Parte 3: No Solo una Simple Doncella',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_dil2',
+     habitReq:80, xpReward:650, goldReward:50,
+     desc:'La doncella revela su poder. 80 habitos para enfrentarla.',
+     items:['item_fish','item_fish','item_fish','item_trident','item_lunar_pearl_shield']},
+    /* ══ CAOS EN LA MISTIFICACION ═══════════════════════════════════════════ */
+    {id:'scr_mist1', name:'Caos en la Mistificacion, Parte 1: Terrible Interrupcion',
+     icon:'📜', cost:200, currency:'gold', req:'Nivel 8', reqType:'level', reqVal:8,
+     habitReq:40, xpReward:500, goldReward:35,
+     desc:'La Mistificacion sufre una terrible interrupcion. 40 habitos para restaurarla.',
+     items:['item_skeleton_potion','item_white_potion','item_rainbow_rogue_armor']},
+    {id:'scr_mist2', name:'Caos en la Mistificacion, Parte 2: El Viento Empeora',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_mist1',
+     habitReq:55, xpReward:75, goldReward:10,
+     desc:'Recoge Mistiposas Rojas, Azules y Verdes completando 55 habitos.',
+     items:['item_rainbow_rogue_cap']},
+    {id:'scr_mist3', name:'Caos en la Mistificacion, Parte 3: El Cartero Grosero',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_mist2',
+     habitReq:80, xpReward:650, goldReward:50,
+     desc:'El cartero grosero debe ser detenido. 80 habitos para vencerlo.',
+     items:['item_cotton_candy_pink','item_cotton_candy_pink','item_cotton_candy_pink','item_rainbow_message_main','item_rainbow_message_off']},
+    /* ══ CALAMIDAD DE ESTOICALMA ═════════════════════════════════════════════ */
+    {id:'scr_esto1', name:'Calamidad de Estoicalma, Parte 1: Enemigos de Tierra',
+     icon:'📜', cost:200, currency:'gold', req:'Nivel 10', reqType:'level', reqVal:10,
+     habitReq:40, xpReward:500, goldReward:35,
+     desc:'Los enemigos de tierra asedian Estoicalma. 40 habitos para repelerlos.',
+     items:['item_skeleton_hatching','item_desert_hatching','item_mammoth_rider_armor']},
+    {id:'scr_esto2', name:'Calamidad de Estoicalma, 2a Parte: Cavernas de Tempano',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_esto1',
+     habitReq:55, xpReward:75, goldReward:10,
+     desc:'Busca las Cavernas de Tempano recolectando 40 Monedas de Hielo.',
+     items:['item_mammoth_rider_cap']},
+    {id:'scr_esto3', name:'Calamidad de Estoicalma, 3a Parte: Terremoto del Dragon de Hielo',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_esto2',
+     habitReq:80, xpReward:650, goldReward:50,
+     desc:'El Dragon de Hielo desencadena un terremoto. 80 habitos para derrotarlo.',
+     items:['item_blue_cotton_candy','item_blue_cotton_candy','item_blue_cotton_candy','item_mammoth_harpoon','item_mammoth_horn']},
+    /* ══ TERROR EN BOSQUETAREA ════════════════════════════════════════════════ */
+    {id:'scr_bosq1', name:'Terror en Bosquetarea, Parte 1: El Resplandor en Bosquetarea',
+     icon:'📜', cost:200, currency:'gold', req:'Nivel 12', reqType:'level', reqVal:12,
+     habitReq:40, xpReward:500, goldReward:35,
+     desc:'Una luz siniestra brilla en el bosque. 40 habitos para investigarla.',
+     items:['item_skeleton_hatching','item_red_potion','item_pyromancer_turban']},
+    {id:'scr_bosq2', name:'Terror en Bosquetarea, Parte 2: Encontrando las Hadas Florecientes',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_bosq1',
+     habitReq:55, xpReward:75, goldReward:10,
+     desc:'Recoge Duendes, Brownies y Driadas completando 55 habitos.',
+     items:['item_pyromancer_robes']},
+    {id:'scr_bosq3', name:'Terror en Bosquetarea, Parte 3: Jacko de la Linterna',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_bosq2',
+     habitReq:80, xpReward:650, goldReward:50,
+     desc:'Jacko de la Linterna acecha. 80 habitos para vencerlo.',
+     items:['item_strawberry','item_strawberry','item_strawberry','item_bosquetarea_lantern']},
+    /* ══ EL MISTERIO DE LOS MAESTROS DE CLASE ════════════════════════════════ */
+    {id:'scr_mstc1', name:'El Misterio de los Maestros de Clase, Parte 1: Lee Entre Lineas',
+     icon:'📜', cost:400, currency:'gold', req:'Nivel 15', reqType:'level', reqVal:15,
+     habitReq:60, xpReward:200, goldReward:20,
+     desc:'Recoge Volumenes Antiguos, Prohibidos y Ocultos completando 60 habitos.',
+     items:['item_potato','item_potato','item_potato','item_meat','item_meat','item_meat','item_milk','item_milk','item_milk']},
+    {id:'scr_mstc2', name:'El Misterio de los Maestros de Clase, Parte 2: Montando al eVitador',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 1', reqType:'quest', reqVal:'scr_mstc1',
+     habitReq:100, xpReward:1500, goldReward:80,
+     desc:'El eVitador debe ser domado. 100 habitos para montarlo.',
+     items:['item_chocolate','item_chocolate','item_chocolate','item_honey','item_honey','item_honey','item_rotten_meat','item_rotten_meat','item_rotten_meat','item_ethereal_mask']},
+    {id:'scr_mstc3', name:'El Misterio de los Maestros de Clase, Parte 3: La Ciudad en la Arena',
+     icon:'📜', cost:0, currency:'quest', req:'Completar Parte 2', reqType:'quest', reqVal:'scr_mstc2',
+     habitReq:150, xpReward:2000, goldReward:100,
+     desc:'La ciudad oculta en la arena espera. 150 habitos para encontrarla.',
+     items:['item_basic_potion','item_cotton_candy_pink_potion','item_gold_potion','item_shadow_potion','item_zombie_potion','item_ethereal_amulet']},
+    {id:'scr_mstc4', name:'El Misterio de los Maestros de Clase, Parte 4: La Maestra Perdida',
+     icon:'📜', cost:500, currency:'gold', req:'Completar Parte 3', reqType:'quest', reqVal:'scr_mstc3',
+     habitReq:200, xpReward:3500, goldReward:200,
+     desc:'La Maestra de Clase Perdida aguarda. 200 habitos para rescatarla.',
+     items:['item_ethereal_mount','item_ethereal_cloak','item_ethereal_crystals']},
+    /* ══ MISIONES DE MASCOTAS ADICIONALES ════════════════════════════════════ */
+    {id:'scr_opal',  name:'El Mito de los Opalos Arcanos',
+     icon:'📜', cost:4, currency:'gem', req:'Nivel 5', reqType:'level', reqVal:5,
+     habitReq:35, xpReward:350, goldReward:50,
+     desc:'Recoge Gemas de Opalo, Runas de Libra y Mercurio. 35 habitos.',
+     items:['item_opal_potion','item_opal_potion','item_opal_potion']},
+    {id:'scr_horse', name:'Monta a la Pesadi-Yegua',
+     icon:'📜', cost:4, currency:'gem', req:'Nivel 5', reqType:'level', reqVal:5,
+     habitReq:30, xpReward:275, goldReward:37,
+     desc:'Domestica a la Pesadi-Yegua completando 30 habitos.',
+     items:['egg_horse','egg_horse','egg_horse']},
 ];
 
 // ── TOAST DE COMPRA ───────────────────────────────────────────
@@ -22645,54 +23181,268 @@ window.buySeasonalItem = function(itemId, setName, cost) {
     updateGoldDisplays && updateGoldDisplays(hero);
 };
 
-// ── TIENDA DE PERGAMINOS DE MISIÓN ────────────────────────────
-function renderScrollShop() {
-    const el   = document.getElementById('habScrollShop');
-    if (!el) return;
-    const hero = loadHero();
-    const inv  = loadInv();
-    const owned= inv.scrolls||[];
+// ── CATÁLOGO DE ITEMS DE PERGAMINOS ───────────────────────────
+const SCROLL_ITEMS_CATALOG = {
+    'item_lunar_helm':    {name:'Yelmo del Guerrero Lunar',   icon:'🪖', type:'equipo'},
+    'item_lunar_armor':   {name:'Armadura del Guerrero Lunar',icon:'🛡️', type:'equipo'},
+    'item_lunar_scythe':  {name:'Guadaña Lunar',              icon:'⚔️', type:'equipo'},
+    'item_helmet_nameless':{name:'Casco sin Nombre',          icon:'🪖', type:'equipo'},
+    'item_dragon_staff':  {name:'Vara del Dragón',            icon:'🪄', type:'equipo'},
+    'item_morningstar':   {name:'Lucero del Alba',            icon:'⚡', type:'equipo'},
+    'item_honey':         {name:'Miel',                       icon:'🍯', type:'consumible'},
+    'item_nightshade':    {name:'Sombra Nocturna',            icon:'🌙', type:'consumible'},
+    'item_crown_death':   {name:'Corona de la Muerte',        icon:'💀', type:'equipo'},
+    /* Nuevos items de pergaminos */
+    'item_ocean_armor':           {name:'Armadura Oceanica con Aletas',    icon:'🛡️', type:'equipo'},
+    'item_skeleton_potion':       {name:'Pocion de Eclosion Esqueletica',  icon:'⚗️', type:'pocion'},
+    'item_cotton_candy_blue_potion':{name:'Pocion Algodon Azucar Azul',   icon:'💜', type:'pocion'},
+    'item_coral_diadem':          {name:'Diadema de Coral de Fuego',       icon:'👑', type:'equipo'},
+    'item_fish':                  {name:'Pescado (Comida)',                 icon:'🐟', type:'comida'},
+    'item_trident':               {name:'Tridente de Mareas Tempestuosas', icon:'🔱', type:'equipo'},
+    'item_lunar_pearl_shield':    {name:'Escudo de Perla Lunar',           icon:'🛡️', type:'equipo'},
+    'item_white_potion':          {name:'Pocion de Eclosion Blanca',       icon:'⚪', type:'pocion'},
+    'item_rainbow_rogue_armor':   {name:'Tunicas del Mensajero Arcoiris',  icon:'🌈', type:'equipo'},
+    'item_rainbow_rogue_cap':     {name:'Capucha del Mensajero Arcoiris',  icon:'🌈', type:'equipo'},
+    'item_cotton_candy_pink':     {name:'Algodon de Azucar Rosa (Comida)', icon:'🩷', type:'comida'},
+    'item_rainbow_message_main':  {name:'Mensaje Arcoiris del Picaro (Mano Principal)', icon:'🌈', type:'equipo'},
+    'item_rainbow_message_off':   {name:'Mensaje Arcoiris del Picaro (Mano de Fuera)',  icon:'🌈', type:'equipo'},
+    'item_skeleton_hatching':     {name:'Pocion de Eclosion Esqueleto',    icon:'💀', type:'pocion'},
+    'item_desert_hatching':       {name:'Pocion de Eclosion Desierto',     icon:'🏜️', type:'pocion'},
+    'item_mammoth_rider_armor':   {name:'Armadura de Jinete de Mamut',     icon:'🦣', type:'equipo'},
+    'item_mammoth_rider_cap':     {name:'Casco de Jinete de Mamut',        icon:'🪖', type:'equipo'},
+    'item_blue_cotton_candy':     {name:'Algodon Azucar Azul (Comida)',    icon:'💙', type:'comida'},
+    'item_mammoth_harpoon':       {name:'Arpon de Jinete de Mamut',        icon:'🗡️', type:'equipo'},
+    'item_mammoth_horn':          {name:'Cuerno de Jinete de Mamut',       icon:'📯', type:'equipo'},
+    'item_red_potion':            {name:'Pocion Eclosion Roja',            icon:'🔴', type:'pocion'},
+    'item_pyromancer_turban':     {name:'Turbante de Piromano (Casco)',    icon:'🪖', type:'equipo'},
+    'item_pyromancer_robes':      {name:'Ropajes de Piromano (Armadura)',  icon:'🔥', type:'equipo'},
+    'item_strawberry':            {name:'Fresa (Alimento)',                icon:'🍓', type:'comida'},
+    'item_bosquetarea_lantern':   {name:'Linterna del Bosquetarea (Arma)', icon:'🔦', type:'equipo'},
+    'item_potato':                {name:'Patata (Comida)',                  icon:'🥔', type:'comida'},
+    'item_meat':                  {name:'Carne (Comida)',                   icon:'🥩', type:'comida'},
+    'item_milk':                  {name:'Leche (Comida)',                   icon:'🥛', type:'comida'},
+    'item_chocolate':             {name:'Chocolate (Comida)',               icon:'🍫', type:'comida'},
+    'item_rotten_meat':           {name:'Carne Podrida (Comida)',          icon:'🤢', type:'comida'},
+    'item_ethereal_mask':         {name:'Mascara Eterea (Gafas)',           icon:'😷', type:'equipo'},
+    'item_basic_potion':          {name:'Pocion de Eclosion Basica',       icon:'🧪', type:'pocion'},
+    'item_cotton_candy_pink_potion':{name:'Pocion Eclosion Algodon Rosa',  icon:'🩷', type:'pocion'},
+    'item_gold_potion':           {name:'Pocion de Eclosion de Oro',       icon:'🟡', type:'pocion'},
+    'item_shadow_potion':         {name:'Pocion de Eclosion de Sombra',    icon:'🌑', type:'pocion'},
+    'item_zombie_potion':         {name:'Pocion de Eclosion Zombie',       icon:'🧟', type:'pocion'},
+    'item_ethereal_amulet':       {name:'Amuleto de Eter (Accesorio)',     icon:'🔮', type:'equipo'},
+    'item_ethereal_mount':        {name:'Montura Invisible de Eter',       icon:'👻', type:'montura'},
+    'item_ethereal_cloak':        {name:'Capa de Eter (Espalda)',          icon:'🌫️', type:'equipo'},
+    'item_ethereal_crystals':     {name:'Cristales de Eter (Arma 2 manos)',icon:'💎', type:'equipo'},
+    'item_opal_potion':           {name:'Pocion de Eclosion Opalo',        icon:'🫧', type:'pocion'},
+    'egg_horse':                  {name:'Huevo de Caballo',                icon:'🐴', type:'huevo'},
+};
 
-    el.innerHTML = SCROLLS_DB.map(scr => {
-        const isOwned  = owned.includes(scr.id);
-        const meetsReq = (hero.level||1) >= scr.reqVal;
-        const currency = scr.currency==='gem'?'💎':'🪙';
-        const costVal  = scr.cost;
-        const hasEnough= scr.currency==='gem'?(hero.gems||0)>=costVal:(hero.coins||0)>=costVal;
-        return '<div class="hab-shop-item" style="'+(isOwned?'border-color:rgba(34,197,94,0.3)':!meetsReq?'opacity:0.5':'')+'">'+
-            '<div class="hab-shop-icon">'+scr.icon+'</div>'+
-            '<div class="hab-shop-info">'+
-              '<div class="hab-shop-name">'+scr.name+' '+( isOwned?'<span style="font-size:0.58rem;color:#22c55e;">✓ Activada</span>':'')+'</div>'+
-              '<div class="hab-shop-desc">'+scr.desc+'</div>'+
-              '<div class="hab-shop-stat">+'+scr.xpReward+' XP · +'+scr.goldReward+'🪙 · Req: '+scr.req+'</div>'+
-            '</div>'+
-            '<button class="hab-buy-btn" onclick="buyScroll(\''+scr.id+'\')" '+(!meetsReq||isOwned||!hasEnough?'disabled':'')+'>'+(isOwned?'✓':currency+costVal)+'</button>'+
-            '</div>';
-    }).join('');
+function getItemLabel(itemId) {
+    if (SCROLL_ITEMS_CATALOG[itemId]) return SCROLL_ITEMS_CATALOG[itemId];
+    var scr = SCROLLS_DB.find(function(s){ return s.id===itemId; });
+    if (scr) return {name:'Pergamino: '+scr.name, icon:'📜', type:'pergamino'};
+    var egg = EGGS_DB.find(function(e){ return e.id===itemId; });
+    if (egg) return {name:'Huevo de '+egg.name, icon:egg.icon, type:'huevo'};
+    return {name:itemId, icon:'🎁', type:'objeto'};
 }
 
-window.buyScroll = function(scrId) {
-    const hero = loadHero();
-    const scr  = SCROLLS_DB.find(s=>s.id===scrId);
-    if (!scr || (hero.level||1) < scr.reqVal) return;
-    const inv  = loadInv();
-    inv.scrolls= inv.scrolls||[];
-    if (inv.scrolls.includes(scr.id)) return;
+function canBuyScroll(scr, hero, inv) {
+    var owned = inv.scrolls||[];
+    var done  = inv.scrollsDone||[];
+    if (owned.includes(scr.id)||done.includes(scr.id)) return 'owned';
+    if (scr.currency==='quest') {
+        var prereq = scr.reqVal;
+        if (!owned.includes(prereq)&&!done.includes(prereq)) return 'locked';
+        return 'available';
+    }
+    if ((hero.level||1) < (scr.reqVal||1)) return 'locked';
+    if (scr.currency==='gem'  && (hero.gems||0)  < scr.cost) return 'no_funds';
+    if (scr.currency==='gold' && (hero.coins||0) < scr.cost) return 'no_funds';
+    return 'available';
+}
 
-    if (scr.currency==='gem' && (hero.gems||0)<scr.cost) { showBuyToast('💎 Necesitas '+scr.cost+' gemas'); return; }
-    if (scr.currency==='gold'&& (hero.coins||0)<scr.cost){ showBuyToast('🔒 Necesitas '+scr.cost+'🪙'); return; }
-
-    if (scr.currency==='gem')  hero.gems  = (hero.gems||0)  - scr.cost;
-    else                       hero.coins = (hero.coins||0) - scr.cost;
-    hero.xp    = (hero.xp||0) + scr.xpReward;
-    hero.coins = (hero.coins||0) + scr.goldReward;
-    inv.scrolls.push(scr.id);
-    saveHero(hero); saveInv(inv);
-    if(typeof createFireworks==='function') createFireworks();
-    showBuyToast('📜 Misión "'+scr.name+'" activada! +'+scr.xpReward+' XP');
-    renderScrollShop();
-    updateGoldDisplays && updateGoldDisplays(hero);
+// ── TIENDA DE PERGAMINOS DE MISIÓN ────────────────────────────
+/* Helpers para pergaminos */
+window._closeScrollModal = function() {
+    var m = document.getElementById('scrollDetailModal');
+    if (m) m.style.display = 'none';
 };
+window._buySD = function(el) {
+    var id = el ? el.getAttribute('data-scrid') : null;
+    if (id) window.buyScrollFromModal(id);
+};
+window._showSD = function(el) {
+    var id = el ? el.getAttribute('data-scrid') : null;
+    if (id) window.showScrollDetail(id);
+};
+
+function renderScrollShop() {
+    var el = document.getElementById('habScrollShop');
+    if (!el) return;
+    var hero   = loadHero();
+    var inv    = loadInv();
+    var owned  = inv.scrolls     || [];
+    var done   = inv.scrollsDone || [];
+    var html   = '';
+
+    SCROLLS_DB.forEach(function(scr) {
+        var isOwned  = owned.indexOf(scr.id) >= 0 || done.indexOf(scr.id) >= 0;
+        var isLocked = false;
+        if (!isOwned) {
+            if (scr.currency === 'quest') {
+                isLocked = owned.indexOf(scr.reqVal) < 0 && done.indexOf(scr.reqVal) < 0;
+            } else {
+                isLocked = (hero.level||1) < (scr.reqVal||1);
+            }
+        }
+
+        var borderCol = isOwned  ? 'border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.04);'
+                      : isLocked ? 'opacity:0.5;' : '';
+
+        var currency  = scr.currency==='gem'?'💎':scr.currency==='gold'?'🪙':'';
+        var btnTxt    = isOwned?'✅':isLocked?'🔒':(currency+(scr.cost||''));
+
+        var badge = isOwned
+            ? '<span style="margin-left:4px;font-size:0.44rem;font-weight:900;background:rgba(34,197,94,0.18);color:#34d399;border:1px solid rgba(34,197,94,0.4);padding:2px 6px;border-radius:20px;">ACTIVADA</span>'
+            : isLocked
+            ? '<span style="margin-left:4px;font-size:0.44rem;font-weight:900;background:rgba(100,116,139,0.15);color:#64748b;border:1px solid rgba(100,116,139,0.3);padding:2px 6px;border-radius:20px;">BLOQUEADA</span>'
+            : '';
+
+        var itemIcons = '';
+        if (scr.items && scr.items.length) {
+            scr.items.slice(0,5).forEach(function(it){
+                var info = getItemLabel(it);
+                itemIcons += '<span style="font-size:0.8rem;" title="'+info.name+'">'+info.icon+'</span>';
+            });
+        }
+
+        html += '<div class="hab-shop-item" style="'+borderCol+'cursor:pointer;" onclick="_showSD(this)" data-scrid="'+scr.id+'">' 
+             +  '<div class="hab-shop-icon">'+scr.icon+'</div>'
+             +  '<div class="hab-shop-info">'
+             +    '<div class="hab-shop-name">'+scr.name+badge+'</div>'
+             +    '<div class="hab-shop-desc">'+scr.desc+'</div>'
+             +    '<div class="hab-shop-stat">+'+scr.xpReward+' XP · +'+scr.goldReward+'🪙 · '+scr.req+'</div>'
+             +    (itemIcons ? '<div style="margin-top:3px;">'+itemIcons+'</div>' : '')
+             +  '</div>'
+             +  '<button class="hab-buy-btn" onclick="event.stopPropagation();_showSD(this.parentNode)" data-scrid="'+scr.id+'" style="font-size:0.65rem;flex-shrink:0;">'+btnTxt+'</button>' 
+             +  '</div>';
+    });
+
+    el.innerHTML = html || '<div style="color:#444;text-align:center;padding:16px;font-size:0.75rem;">Sin pergaminos disponibles</div>';
+}
+
+window.showScrollDetail = function(scrId) {
+    var scr  = SCROLLS_DB.filter(function(s){ return s.id===scrId; })[0];
+    if (!scr) return;
+    var hero   = loadHero();
+    var inv    = loadInv();
+    var owned  = inv.scrolls     || [];
+    var done   = inv.scrollsDone || [];
+    var isOwned= owned.indexOf(scr.id)>=0 || done.indexOf(scr.id)>=0;
+    var isLock = false;
+    if (!isOwned) {
+        if (scr.currency==='quest') isLock = owned.indexOf(scr.reqVal)<0 && done.indexOf(scr.reqVal)<0;
+        else isLock = (hero.level||1) < (scr.reqVal||1);
+    }
+    var noFunds = !isOwned && !isLock && (
+        scr.currency==='gem'  ? (hero.gems||0)  < scr.cost :
+        scr.currency==='gold' ? (hero.coins||0) < scr.cost : false
+    );
+    var canBuy = !isOwned && !isLock && !noFunds;
+
+    var modal = document.getElementById('scrollDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'scrollDetailModal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);';
+        document.body.appendChild(modal);
+        modal.onclick = function(e){ if(e.target===modal) modal.style.display='none'; };
+    }
+
+    var itemsHtml = '';
+    if (scr.items && scr.items.length) {
+        itemsHtml += '<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border-radius:12px;">';
+        itemsHtml += '<div style="font-size:0.52rem;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Objetos de recompensa</div>';
+        scr.items.forEach(function(it){
+            var info = getItemLabel(it);
+            var tc   = info.type==='huevo'?'#34d399':info.type==='equipo'?'#a78bfa':'#fbbf24';
+            itemsHtml += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
+                +'<span style="font-size:1.1rem;">'+info.icon+'</span>'
+                +'<div><div style="font-size:0.7rem;font-weight:800;color:#f1f5f9;">'+info.name+'</div>'
+                +'<div style="font-size:0.5rem;color:'+tc+';text-transform:uppercase;font-weight:900;">'+info.type+'</div></div></div>';
+        });
+        itemsHtml += '</div>';
+    }
+
+    var currency  = scr.currency==='gem'?'💎':scr.currency==='gold'?'🪙':'';
+    var btnLabel  = isOwned?'✅ Ya activada':isLock?'🔒 Bloqueada':noFunds?'Sin fondos':'Comprar '+currency+(scr.cost||'');
+    var btnStyle  = canBuy?'background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border:none;cursor:pointer;'
+                         :'background:rgba(100,116,139,0.2);color:#64748b;border:none;';
+
+    modal.innerHTML = '<div style="background:linear-gradient(160deg,#0a0f1e,#111827);border:2px solid rgba(167,139,250,0.35);border-radius:20px;padding:22px 18px;max-width:360px;width:92%;max-height:85vh;overflow-y:auto;box-shadow:0 0 40px rgba(167,139,250,0.18);">'
+        +'<div style="text-align:center;margin-bottom:12px;">'
+        +  '<div style="font-size:2.4rem;margin-bottom:6px;filter:drop-shadow(0 0 8px rgba(167,139,250,0.5));">'+scr.icon+'</div>'
+        +  '<div style="font-size:0.92rem;font-weight:900;color:#f1f5f9;line-height:1.3;margin-bottom:4px;">'+scr.name+'</div>'
+        +  '<div style="font-size:0.6rem;color:#64748b;line-height:1.4;">'+scr.desc+'</div>'
+        +'</div>'
+        +'<div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:10px;margin-bottom:6px;">'
+        +  '<div style="font-size:0.52rem;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Recompensas</div>'
+        +  '<div style="display:flex;gap:6px;">'
+        +    '<div style="flex:1;text-align:center;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:8px;"><div style="font-size:0.95rem;font-weight:900;color:#fbbf24;">+'+scr.xpReward+'</div><div style="font-size:0.45rem;color:#92400e;text-transform:uppercase;font-weight:900;">XP</div></div>'
+        +    '<div style="flex:1;text-align:center;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:8px;"><div style="font-size:0.95rem;font-weight:900;color:#34d399;">+'+scr.goldReward+'</div><div style="font-size:0.45rem;color:#065f46;text-transform:uppercase;font-weight:900;">Monedas</div></div>'
+        +    '<div style="flex:1;text-align:center;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:8px;"><div style="font-size:0.95rem;font-weight:900;color:#f87171;">'+(scr.habitReq||'?')+'</div><div style="font-size:0.45rem;color:#7f1d1d;text-transform:uppercase;font-weight:900;">Hábitos</div></div>'
+        +  '</div>'
+        +'</div>'
+        +itemsHtml
+        +'<div style="display:flex;gap:8px;margin-top:14px;">'
+        +  '<button onclick="_closeScrollModal()" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#94a3b8;cursor:pointer;font-size:0.75rem;font-weight:800;">Cerrar</button>'
+        +  '<button onclick="_buySD(this)" data-scrid="'+scr.id+'" style="flex:2;padding:10px;border-radius:12px;font-size:0.78rem;font-weight:900;'+btnStyle+'"'+(canBuy?'':' disabled')+'>'+btnLabel+'</button>'
+        +'</div>'
+        +'</div>';
+
+    modal.style.display = 'flex';
+};
+
+window.buyScrollFromModal = function(scrId) {
+    document.getElementById('scrollDetailModal').style.display='none';
+    buyScroll(scrId);
+};
+
+window.buyScroll = function(scrId) {
+    var hero   = loadHero();
+    var scr    = SCROLLS_DB.filter(function(s){ return s.id===scrId; })[0];
+    if (!scr) return;
+    var inv    = loadInv();
+    inv.scrolls     = inv.scrolls     || [];
+    inv.scrollsDone = inv.scrollsDone || [];
+    inv.items       = inv.items       || [];
+
+    var owned  = inv.scrolls;
+    var done   = inv.scrollsDone;
+    if (owned.indexOf(scr.id)>=0 || done.indexOf(scr.id)>=0) return;
+
+    if (scr.currency==='quest') {
+        if (owned.indexOf(scr.reqVal)<0 && done.indexOf(scr.reqVal)<0) { showBuyToast('Requisito: '+scr.req); return; }
+    } else {
+        if ((hero.level||1) < (scr.reqVal||1)) { showBuyToast('Necesitas '+scr.req); return; }
+        if (scr.currency==='gem'  && (hero.gems||0)  < scr.cost) { showBuyToast('Necesitas '+scr.cost+'💎'); return; }
+        if (scr.currency==='gold' && (hero.coins||0) < scr.cost) { showBuyToast('Necesitas '+scr.cost+'🪙'); return; }
+        if (scr.currency==='gem')  hero.gems  = (hero.gems||0)  - scr.cost;
+        if (scr.currency==='gold') hero.coins = (hero.coins||0) - scr.cost;
+    }
+
+    var habits   = loadHabits();
+    var totalNow = habits.reduce(function(s,h){ return s+(h.log||[]).length; },0);
+    inv.scrollProgress         = inv.scrollProgress || {};
+    inv.scrollProgress[scr.id] = totalNow;
+    inv.scrolls.push(scr.id);
+
+    saveHero(hero); saveInv(inv);
+    if (typeof updateGoldDisplays==='function') updateGoldDisplays(hero);
+    renderScrollShop();
+    showBuyToast('📜 Activada! '+scr.habitReq+' hábitos para ganar +'+scr.xpReward+' XP · +'+scr.goldReward+'🪙');
+};
+
 
 // ── Gems: los hábitos en modo difícil/hard generan gemas ─────
 // Hook en habitPlus para dar gemas ocasionalmente
@@ -22761,7 +23511,7 @@ window._HAB_SCROLLS     = SCROLLS_DB;
 // ══════════════════════════════════════════════════════════════
 
 function svgBoss0(){ // T-REX
-return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+return `<svg viewBox="0 -5 110 125" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <radialGradient id="b0bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#16a34a" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
   <radialGradient id="b0body" cx="35%" cy="30%"><stop offset="0%" stop-color="#4ade80"/><stop offset="45%" stop-color="#22c55e"/><stop offset="100%" stop-color="#14532d"/></radialGradient>
@@ -22842,7 +23592,7 @@ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
 </svg>`;}
 
 function svgBoss1(){ // PTERODÁCTILO
-return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+return `<svg viewBox="0 -5 110 125" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <radialGradient id="p1bg" cx="50%" cy="50%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
   <radialGradient id="p1wing" cx="30%" cy="25%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="50%" stop-color="#6d28d9"/><stop offset="100%" stop-color="#2e1065"/></radialGradient>
@@ -22905,7 +23655,7 @@ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
 </svg>`;}
 
 function svgBoss2(){ // MOSASAURIO
-return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+return `<svg viewBox="0 -5 110 125" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <radialGradient id="m2bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient>
   <radialGradient id="m2body" cx="30%" cy="25%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="50%" stop-color="#0284c7"/><stop offset="100%" stop-color="#0c4a6e"/></radialGradient>
@@ -22969,7 +23719,7 @@ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
 </svg>`;}
 
 function svgBoss3(){ // DRAGÓN VOLCANIC
-return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+return `<svg viewBox="0 -5 110 125" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <radialGradient id="d3bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#ef4444" stop-opacity="0.35"/><stop offset="100%" stop-color="transparent"/></radialGradient>
   <radialGradient id="d3body" cx="30%" cy="25%"><stop offset="0%" stop-color="#f87171"/><stop offset="40%" stop-color="#ef4444"/><stop offset="75%" stop-color="#b91c1c"/><stop offset="100%" stop-color="#7f1d1d"/></radialGradient>
@@ -23048,7 +23798,7 @@ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
 </svg>`;}
 
 function svgBoss4(){ // DEMONIO ANCESTRAL
-return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+return `<svg viewBox="0 -5 110 125" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <radialGradient id="dm4bg" cx="50%" cy="50%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.4"/><stop offset="70%" stop-color="#4c1d95" stop-opacity="0.15"/><stop offset="100%" stop-color="transparent"/></radialGradient>
   <radialGradient id="dm4body" cx="30%" cy="25%"><stop offset="0%" stop-color="#a78bfa"/><stop offset="45%" stop-color="#7c3aed"/><stop offset="80%" stop-color="#5b21b6"/><stop offset="100%" stop-color="#2e1065"/></radialGradient>
@@ -23139,7 +23889,7 @@ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
 </svg>`;}
 
 function svgBoss5(){ // DIOS DE LA SOMBRA CÓSMICO
-return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+return `<svg viewBox="0 -5 110 125" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <radialGradient id="sg5bg" cx="50%" cy="45%"><stop offset="0%" stop-color="#312e81" stop-opacity="0.5"/><stop offset="50%" stop-color="#1e1b4b" stop-opacity="0.25"/><stop offset="100%" stop-color="transparent"/></radialGradient>
   <radialGradient id="sg5body" cx="28%" cy="22%"><stop offset="0%" stop-color="#818cf8"/><stop offset="40%" stop-color="#4f46e5"/><stop offset="75%" stop-color="#312e81"/><stop offset="100%" stop-color="#1e1b4b"/></radialGradient>
@@ -23230,7 +23980,7 @@ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
 
 const BOSS_SVGS = [svgBoss0, svgBoss1, svgBoss2, svgBoss3, svgBoss4, svgBoss5,
     // Boss 6 — Goblin del Caos (verde, mazo mágico)
-    function(){ return `<svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+    function(){ return `<svg viewBox="0 -5 110 125" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <radialGradient id="g6bg" cx="50%" cy="60%"><stop offset="0%" stop-color="#16a34a" stop-opacity="0.25"/><stop offset="100%" stop-color="transparent"/></radialGradient>
   <radialGradient id="g6body" cx="35%" cy="30%"><stop offset="0%" stop-color="#86efac"/><stop offset="50%" stop-color="#22c55e"/><stop offset="100%" stop-color="#14532d"/></radialGradient>
@@ -24572,6 +25322,13 @@ window.drawBoss3D = function(containerId, bossIndex) {
     el.style.display = 'flex';
     el.style.alignItems = 'center';
     el.style.justifyContent = 'center';
+    /* Asegurar que el SVG interno escale al contenedor sin recortarse */
+    var svgEl = el.querySelector('svg');
+    if (svgEl) {
+        svgEl.style.width   = '110px';
+        svgEl.style.height  = '110px';
+        svgEl.style.display = 'block';
+    }
 };
 
 window.drawHero3D = function(containerId) {
@@ -24661,9 +25418,14 @@ window.renderHabHero = function() {
         <div class="hab-boss-canvas-wrap" id="habBossSVGWrap" style="width:90px;height:90px;flex-shrink:0;"></div>
         <div class="hab-boss-3d-info">
           <div class="hab-boss-3d-name">${boss.name}</div>
-          <div class="hab-boss-3d-sub">🎁 ${boss.reward} · +${boss.xpReward} XP</div>
-          <div class="hab-boss-3d-hp-bar"><div class="hab-boss-3d-hp-fill" style="width:${bHpPct}%"></div></div>
-          <div class="hab-boss-3d-hp-text">${Math.max(0,hero.bossHp||boss.maxHp)}/${boss.maxHp} HP</div>
+          <div class="hab-boss-3d-sub">🎁 ${boss.reward}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(251,191,36,0.13);border:1px solid rgba(251,191,36,0.35);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:#fbbf24;">⭐ +${boss.xpReward} XP al vencer</span>
+            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(167,139,250,0.13);border:1px solid rgba(167,139,250,0.35);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:#a78bfa;">Boss #${bossI+1}/20</span>
+            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(${bHpPct>60?'34,197,94':bHpPct>30?'234,179,8':'239,68,68'},0.13);border:1px solid rgba(${bHpPct>60?'34,197,94':bHpPct>30?'234,179,8':'239,68,68'},0.4);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:${bHpPct>60?'#22c55e':bHpPct>30?'#eab308':'#ef4444'};">${bHpPct}% HP</span>
+          </div>
+          <div class="hab-boss-3d-hp-bar" style="margin-top:6px;"><div class="hab-boss-3d-hp-fill" style="width:${bHpPct}%;background:linear-gradient(90deg,${bHpPct>60?'#16a34a,#22c55e':bHpPct>30?'#b45309,#eab308':'#b91c1c,#ef4444'});"></div></div>
+          <div class="hab-boss-3d-hp-text" style="display:flex;justify-content:space-between;">${Math.max(0,hero.bossHp||boss.maxHp)}/${boss.maxHp} HP <span style="color:#555;">⚔️ Completa hábitos para atacar</span></div>
         </div>
       </div>
     </div>`;
@@ -25205,88 +25967,6 @@ window._cronoShowDetail = function(idx) {
 
 
 })();
-
-
-
-// ── DIARIO EMOCIONAL ──────────────────────────────────────────
-const MOODS = [
-    { id:'amazing', emoji:'🤩', label:'Increíble', color:'#fbbf24', bg:'rgba(251,191,36,0.15)', glow:'rgba(251,191,36,0.3)' },
-    { id:'good',    emoji:'😊', label:'Bien',      color:'#22c55e', bg:'rgba(34,197,94,0.15)',  glow:'rgba(34,197,94,0.3)'  },
-    { id:'neutral', emoji:'😐', label:'Normal',    color:'#6366f1', bg:'rgba(99,102,241,0.15)', glow:'rgba(99,102,241,0.3)' },
-    { id:'bad',     emoji:'😞', label:'Mal',       color:'#f97316', bg:'rgba(249,115,22,0.15)', glow:'rgba(249,115,22,0.3)' },
-    { id:'awful',   emoji:'😭', label:'Terrible',  color:'#ef4444', bg:'rgba(239,68,68,0.15)',  glow:'rgba(239,68,68,0.3)'  },
-];
-let _selectedMood = 'good';
-
-window.renderHabDiario = function() {
-    // Mood selector
-    const moodRow = document.getElementById('habMoodRow');
-    if (moodRow) {
-        moodRow.innerHTML = MOODS.map(m =>
-            '<div class="hab-mood-btn '+(_selectedMood===m.id?'selected':'')+'" '+
-            'style="--mc:'+m.color+';--mbg:'+m.bg+';--mglow:'+m.glow+';" onclick="selectMood(\''+m.id+'\')">' +
-            '<span class="hab-mood-emoji">'+m.emoji+'</span>' +
-            '<span class="hab-mood-label">'+m.label+'</span>' +
-            '</div>'
-        ).join('');
-    }
-
-    // Historial
-    renderJournalHistory();
-};
-
-window.selectMood = function(moodId) {
-    _selectedMood = moodId;
-    document.querySelectorAll('.hab-mood-btn').forEach((b,i) => {
-        const m=MOODS[i]; if(!m) return;
-        b.classList.toggle('selected',m.id===moodId);
-        b.style.setProperty('--mc',m.color);
-        b.style.setProperty('--mbg',m.bg);
-        b.style.setProperty('--mglow',m.glow);
-    });
-};
-
-window.saveJournalEntry = function() {
-    const textEl=document.getElementById('habJournalText');
-    const text=(textEl?textEl.value.trim():'');
-    if(!text) return;
-
-    const journal=loadJournal();
-    const mood=MOODS.find(m=>m.id===_selectedMood)||MOODS[1];
-    journal.unshift({ date:todayKey(), mood:_selectedMood, moodEmoji:mood.emoji, moodLabel:mood.label, text, ts:Date.now() });
-    // Guardar máximo 60 entradas
-    if(journal.length>60) journal.splice(60);
-    saveJournal(journal);
-
-    if(textEl) textEl.value='';
-    if(typeof playSparkleSound==='function') playSparkleSound();
-    const t=document.getElementById('habStreakToast');
-    if(t){t.textContent=mood.emoji+' Entrada guardada en tu diario';t.style.background='linear-gradient(135deg,#6366f1,#a78bfa)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
-
-    renderJournalHistory();
-};
-
-function renderJournalHistory() {
-    const el=document.getElementById('habJournalHistory');
-    if(!el) return;
-    const journal=loadJournal();
-    if(!journal.length){el.innerHTML='<div style="color:#444;font-size:0.75rem;text-align:center;padding:10px;">Sin entradas aún. ¡Escribe algo!</div>';return;}
-
-    const MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    el.innerHTML=journal.slice(0,10).map(e=>{
-        const d=new Date(e.date);
-        const dateStr=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
-        const mood=MOODS.find(m=>m.id===e.mood)||MOODS[1];
-        return '<div class="hab-journal-entry">' +
-            '<div class="hab-je-header">' +
-              '<span style="font-size:1rem;">'+e.moodEmoji+'</span>' +
-              '<span style="font-size:0.68rem;font-weight:900;color:'+mood.color+';">'+e.moodLabel+'</span>' +
-              '<span class="hab-je-date">'+dateStr+'</span>' +
-            '</div>' +
-            '<div class="hab-je-text">'+e.text.substring(0,200)+(e.text.length>200?'...':'')+'</div>' +
-            '</div>';
-    }).join('');
-}
 
 </script>
 </body>
