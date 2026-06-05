@@ -34,19 +34,8 @@
             tryPatch();
         })();
     </script>
-    <script>
-    // ── PREVIEW TEMPORAL: monedas y gemas infinitas para pruebas ──
-    window._unlockPreview = true; // Cambiar a false para producción
-    window._getPreviewHero = function() {
-        var raw = '{}';
-        try { raw = localStorage.getItem('jch_hero_v1') || '{}'; } catch(e){}
-        var hero = {};
-        try { hero = JSON.parse(raw); } catch(e){}
-        if (window._unlockPreview) { hero.gems = 9999; hero.coins = 9999; }
-        return hero;
-    };
-    </script>
     <style>
+        :root {
             --bg-dark: #001224;
             --accent-cyan: #00d2ff;
             --accent-blue: #0072ff;
@@ -22905,7 +22894,7 @@ window.buyEquipItemV2 = function(itemId, category) {
 
 // ── POPUP DE CONFIRMACIÓN DE COMPRA ──────────────────────────
 window.showEquipItemPopup = function(itemId, category) {
-    const hero  = window._getPreviewHero ? window._getPreviewHero() : loadHero();
+    const hero  = (typeof _getPreviewHero==='function') ? _getPreviewHero() : loadHero();
     const items = EQUIP_DB[category] || [];
     const item  = items.find(function(i){ return i.id === itemId; });
     if (!item) return;
@@ -23630,6 +23619,15 @@ window._HAB_SCROLLS     = SCROLLS_DB;
 //  POPUP PREMIUM — Huevos, Pociones, Estacional
 // ══════════════════════════════════════════════════════════════
 
+// ── DESBLOQUEO TEMPORAL DE GEMAS (preview) ───────────────────
+window._unlockPreview = true; // PREVIEW: establece en false para producción
+
+function _getPreviewHero() {
+    const hero = typeof loadHero==='function' ? loadHero() : JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+    if (window._unlockPreview) { hero.gems = 9999; hero.coins = 9999; }
+    return hero;
+}
+
 // ── POPUP GENÉRICO PREMIUM ────────────────────────────────────
 function showItemPopupGeneric(opts) {
     // opts: { icon, name, desc, stat, price, currency, canAfford, owned, onBuy }
@@ -23720,7 +23718,7 @@ function showItemPopupGeneric(opts) {
 window.showEggPopup = function(eggId) {
     const egg  = (window._HAB_EGGS_DB||EGGS_DB).find(function(e){ return e.id===eggId; });
     if (!egg) return;
-    const hero = window._getPreviewHero ? window._getPreviewHero() : loadHero();
+    const hero = _getPreviewHero();
     const inv  = typeof loadInv==='function' ? loadInv() : {};
     const qty  = ((inv.eggs||{})[eggId]||0);
     showItemPopupGeneric({
@@ -23742,7 +23740,7 @@ window.showEggPopup = function(eggId) {
 window.showPotionPopup = function(potId) {
     const pot  = (window._HAB_POTIONS_DB||POTIONS_DB).find(function(p){ return p.id===potId; });
     if (!pot) return;
-    const hero = window._getPreviewHero ? window._getPreviewHero() : loadHero();
+    const hero = _getPreviewHero();
     const inv  = typeof loadInv==='function' ? loadInv() : {};
     const qty  = ((inv.potions||{})[potId]||0);
     showItemPopupGeneric({
@@ -23762,7 +23760,7 @@ window.showPotionPopup = function(potId) {
 
 // ── POPUP ESTACIONAL ──────────────────────────────────────────
 window.showSeasonalPopup = function(itemId, setName, cost) {
-    const hero = window._getPreviewHero ? window._getPreviewHero() : loadHero();
+    const hero = _getPreviewHero();
     const inv  = typeof loadInv==='function' ? loadInv() : {};
     const owned= (inv.seasonal||[]).includes(itemId);
     // find item
@@ -23831,7 +23829,7 @@ window.openInventoryPanel = function() {
     var old = document.getElementById('_invPanelOverlay');
     if (old) old.remove();
 
-    var hero   = window._getPreviewHero ? window._getPreviewHero() : loadHero();
+    var hero   = _getPreviewHero();
     var inv    = typeof loadInv==='function' ? loadInv() : {};
     var pets   = typeof loadPets==='function' ? loadPets() : {};
     var eqDB   = window._HAB_EQUIP_DB || {weapon:[],armor:[],other:[]};
