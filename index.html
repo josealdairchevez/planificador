@@ -6638,13 +6638,15 @@
         .hab-routine-tag.anytime { background:rgba(99,102,241,0.1);color:#818cf8; }
 
         /* ── GRÁFICO ACTIVIDAD POR DÍA ──────────────────────── */
-        .hab-weekday-chart { margin-bottom:12px; }
+        .hab-weekday-chart { margin-bottom:12px;display:flex;flex-direction:column; }
         .hab-wdc-title {
             font-size:0.62rem;font-weight:900;color:#888;
             text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;
+            flex-shrink:0;
         }
         .hab-wdc-bars {
             display:flex;gap:5px;align-items:flex-end;height:90px;padding:4px 0;
+            flex-shrink:0;
         }
         .hab-wdc-bar-col {
             flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
