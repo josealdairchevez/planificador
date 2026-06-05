@@ -6638,17 +6638,16 @@
         .hab-routine-tag.anytime { background:rgba(99,102,241,0.1);color:#818cf8; }
 
         /* ── GRÁFICO ACTIVIDAD POR DÍA ──────────────────────── */
-        .hab-weekday-chart { display:block;margin-top:16px;margin-bottom:12px;border-top:1px solid rgba(255,255,255,0.07);padding-top:14px;min-height:130px; }
+        .hab-weekday-chart { margin-bottom:12px; }
         .hab-wdc-title {
             font-size:0.62rem;font-weight:900;color:#888;
-            text-transform:uppercase;letter-spacing:1.2px;
-            display:block;width:100%;margin-bottom:16px;position:relative;
+            text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;
         }
         .hab-wdc-bars {
-            display:flex;gap:5px;align-items:flex-end;height:90px;padding:4px 0;position:relative;
+            display:flex;gap:5px;align-items:flex-end;height:90px;padding:4px 0;
         }
         .hab-wdc-bar-col {
-            flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;
+            flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
         }
         .hab-wdc-bar-track {
             flex:1;width:100%;border-radius:6px;background:rgba(255,255,255,0.06);
@@ -16193,8 +16192,8 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                 <div id="habStrengthList"></div>
 
                 <!-- Gráfico actividad por día de semana -->
-                <div class="hab-weekday-chart" style="margin-top:20px;">
-                    <div class="hab-wdc-title" style="display:block;margin-bottom:14px;">📊 Actividad por día de la semana</div>
+                <div class="hab-weekday-chart">
+                    <div class="hab-wdc-title">📊 Actividad por día de la semana</div>
                     <div class="hab-wdc-bars" id="habWdcBars"></div>
                 </div>
 
@@ -22895,7 +22894,7 @@ window.buyEquipItemV2 = function(itemId, category) {
 
 // ── POPUP DE CONFIRMACIÓN DE COMPRA ──────────────────────────
 window.showEquipItemPopup = function(itemId, category) {
-    const hero  = (typeof _getPreviewHero==='function') ? _getPreviewHero() : loadHero();
+    const hero  = loadHero();
     const items = EQUIP_DB[category] || [];
     const item  = items.find(function(i){ return i.id === itemId; });
     if (!item) return;
@@ -23621,7 +23620,7 @@ window._HAB_SCROLLS     = SCROLLS_DB;
 // ══════════════════════════════════════════════════════════════
 
 // ── DESBLOQUEO TEMPORAL DE GEMAS (preview) ───────────────────
-window._unlockPreview = true; // PREVIEW: establece en false para producción
+window._unlockPreview = false; // Preview desactivado
 
 function _getPreviewHero() {
     const hero = typeof loadHero==='function' ? loadHero() : JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
@@ -25629,8 +25628,35 @@ function svgHero(hero){
         healer: {skin:'#b3e5fc',skinD:'#81d4fa',hair:'#0d47a1',shirt:'#1565c0',shirtD:'#0d47a1',pants:'#1a237e',boots:'#0a0a1a',aura:'#60a5fa'},
     };
     const p = P[cls]||P.warrior;
-    const sc = hasArmor?'#1e40af':p.shirt;
-    const sd = hasArmor?'#1e3a8a':p.shirtD;
+    const ARMOR_COLORS = {
+      ar_cloth1:  {c:'#4d7c0f',d:'#365314'},
+      ar_leather1:{c:'#92400e',d:'#78350f'},
+      ar_hide1:   {c:'#78350f',d:'#451a03'},
+      ar_chain1:  {c:'#6b7280',d:'#4b5563'},
+      ar_studded: {c:'#7c3412',d:'#431407'},
+      ar_scale1:  {c:'#065f46',d:'#064e3b'},
+      ar_bronze1: {c:'#b45309',d:'#92400e'},
+      ar_iron1:   {c:'#374151',d:'#1f2937'},
+      ar_ninja1:  {c:'#111827',d:'#030712'},
+      ar_cloak1:  {c:'#1e1b4b',d:'#0f0a1e'},
+      ar_chain2:  {c:'#4b5563',d:'#374151'},
+      ar_plate1:  {c:'#374151',d:'#111827'},
+      ar_rune1:   {c:'#1e40af',d:'#1e3a8a'},
+      ar_mage1:   {c:'#5b21b6',d:'#3b0764'},
+      ar_scale2:  {c:'#14532d',d:'#052e16'},
+      ar_knight1: {c:'#1e3a8a',d:'#172554'},
+      ar_dark1:   {c:'#0f172a',d:'#020617'},
+      ar_golden1: {c:'#b45309',d:'#78350f'},
+      ar_royal1:  {c:'#6d28d9',d:'#4c1d95'},
+      ar_dragon1: {c:'#14532d',d:'#052e16'},
+      ar_holy1:   {c:'#1d4ed8',d:'#1e3a8a'},
+      ar_titan1:  {c:'#1c1917',d:'#0c0a09'},
+      ar_divine1: {c:'#0369a1',d:'#0c4a6e'},
+    };
+    const aid = eq.armor||'';
+    const ac = ARMOR_COLORS[aid]||(hasArmor?{c:'#1e40af',d:'#1e3a8a'}:{c:p.shirt,d:p.shirtD});
+    const sc = ac.c;
+    const sd = ac.d;
 
     return `<svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -25656,10 +25682,46 @@ ${hasShield?`<!-- Escudo equipado -->
 `:''}
 
 <!-- BOTAS -->
-<ellipse cx="39" cy="120" rx="11" ry="6" fill="${hasOther?'#78350f':p.boots}" filter="url(#hsh)"/>
-<ellipse cx="62" cy="119" rx="10" ry="5.5" fill="${hasOther?'#92400e':p.boots}" filter="url(#hsh)"/>
+${(()=>{
+  const oid = eq.other||'';
+  const BOOT_COLORS={
+    ot_boots1:{c:'#78350f',h:'rgba(200,140,70,0.3)'},
+    ot_boots2:{c:'#374151',h:'rgba(180,180,180,0.3)'},
+    ot_boots3:{c:'#1e3a8a',h:'rgba(96,165,250,0.4)'},
+  };
+  const bc = BOOT_COLORS[oid]||(hasOther?{c:'#78350f',h:'rgba(200,140,70,0.2)'}:{c:p.boots,h:'rgba(255,255,255,0.12)'});
+  if(oid==='ot_boots1') return `
+<ellipse cx="39" cy="120" rx="11" ry="6" fill="${bc.c}" filter="url(#hsh)"/>
+<ellipse cx="62" cy="119" rx="10" ry="5.5" fill="${bc.c}" filter="url(#hsh)"/>
+<ellipse cx="36" cy="117" rx="7" ry="4" fill="rgba(255,255,255,0.14)"/>
+<ellipse cx="59" cy="116" rx="6" ry="3.5" fill="rgba(255,255,255,0.12)"/>
+<path d="M29 118 Q39 115 49 118" stroke="rgba(180,120,60,0.5)" stroke-width="1" fill="none"/>
+<path d="M53 117 Q62 114 72 117" stroke="rgba(180,120,60,0.5)" stroke-width="1" fill="none"/>`;
+  if(oid==='ot_boots2') return `
+<ellipse cx="39" cy="120" rx="11" ry="6" fill="${bc.c}" filter="url(#hsh)"/>
+<ellipse cx="62" cy="119" rx="10" ry="5.5" fill="${bc.c}" filter="url(#hsh)"/>
+<ellipse cx="36" cy="117" rx="7" ry="4" fill="rgba(255,255,255,0.14)"/>
+<ellipse cx="59" cy="116" rx="6" ry="3.5" fill="rgba(255,255,255,0.12)"/>
+<path d="M29 116 Q39 113 49 116" stroke="rgba(180,180,180,0.5)" stroke-width="1.5" fill="none"/>
+<path d="M53 115 Q62 112 72 115" stroke="rgba(180,180,180,0.5)" stroke-width="1.5" fill="none"/>
+<ellipse cx="39" cy="118" rx="4" ry="2" fill="rgba(220,220,220,0.2)"/>
+<ellipse cx="62" cy="117" rx="3.5" ry="1.8" fill="rgba(220,220,220,0.2)"/>`;
+  if(oid==='ot_boots3') return `
+<ellipse cx="39" cy="120" rx="11" ry="6" fill="${bc.c}" filter="url(#hsh)"/>
+<ellipse cx="62" cy="119" rx="10" ry="5.5" fill="${bc.c}" filter="url(#hsh)"/>
+<ellipse cx="36" cy="117" rx="7" ry="4" fill="rgba(255,255,255,0.2)"/>
+<ellipse cx="59" cy="116" rx="6" ry="3.5" fill="rgba(255,255,255,0.18)"/>
+<path d="M29 116 Q39 113 49 116" stroke="rgba(96,165,250,0.6)" stroke-width="1.5" fill="none"/>
+<path d="M53 115 Q62 112 72 115" stroke="rgba(96,165,250,0.6)" stroke-width="1.5" fill="none"/>
+<ellipse cx="39" cy="118" rx="5" ry="2" fill="rgba(96,165,250,0.25)" filter="url(#hglow)"/>
+<ellipse cx="62" cy="117" rx="4.5" ry="1.8" fill="rgba(96,165,250,0.25)" filter="url(#hglow)"/>`;
+  /* sin botas o accesorios no-bota */
+  return `
+<ellipse cx="39" cy="120" rx="11" ry="6" fill="${p.boots}" filter="url(#hsh)"/>
+<ellipse cx="62" cy="119" rx="10" ry="5.5" fill="${p.boots}" filter="url(#hsh)"/>
 <ellipse cx="36" cy="117" rx="7" ry="4" fill="rgba(255,255,255,0.12)"/>
-<ellipse cx="59" cy="116" rx="6" ry="3.5" fill="rgba(255,255,255,0.1)"/>
+<ellipse cx="59" cy="116" rx="6" ry="3.5" fill="rgba(255,255,255,0.1)"/>`;
+})()}
 
 <!-- PIERNAS -->
 <ellipse cx="40" cy="100" rx="10" ry="20" fill="url(#hpants)" filter="url(#hsh)"/>
@@ -25675,12 +25737,208 @@ ${hasShield?`<!-- Escudo equipado -->
 <!-- TORSO -->
 <ellipse cx="50" cy="62" rx="18" ry="20" fill="url(#hshirt)" filter="url(#hsh)"/>
 <ellipse cx="45" cy="56" rx="11" ry="13" fill="rgba(255,255,255,0.15)"/>
-${!hasArmor?`<line x1="50" y1="44" x2="50" y2="78" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+${(()=>{
+  if(!hasArmor) return `<line x1="50" y1="44" x2="50" y2="78" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
 <circle cx="50" cy="52" r="1.5" fill="rgba(255,255,255,0.3)"/>
 <circle cx="50" cy="60" r="1.5" fill="rgba(255,255,255,0.3)"/>
-<circle cx="50" cy="68" r="1.5" fill="rgba(255,255,255,0.3)"/>`:
-`<path d="M38 50 Q50 48 62 50 L64 68 Q50 72 36 68 Z" fill="rgba(255,255,255,0.08)"/>
-<path d="M44 50 L46 78 M54 50 L52 78" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>`}
+<circle cx="50" cy="68" r="1.5" fill="rgba(255,255,255,0.3)"/>`;
+  /* ── ar_cloth1 — Túnica de Tela ── */
+  if(aid==='ar_cloth1') return `
+<line x1="50" y1="44" x2="50" y2="78" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+<path d="M38 54 Q50 52 62 54" stroke="rgba(255,255,255,0.15)" stroke-width="1" fill="none"/>
+<path d="M38 64 Q50 62 62 64" stroke="rgba(255,255,255,0.15)" stroke-width="1" fill="none"/>`;
+  /* ── ar_leather1 — Cuero Ligero ── */
+  if(aid==='ar_leather1') return `
+<path d="M44 48 L46 78 M54 48 L52 78" stroke="rgba(200,150,80,0.4)" stroke-width="1.5"/>
+<rect x="43" y="54" width="14" height="3" rx="1.5" fill="rgba(200,150,80,0.35)"/>
+<rect x="43" y="64" width="14" height="3" rx="1.5" fill="rgba(200,150,80,0.35)"/>`;
+  /* ── ar_hide1 — Piel de Bestia ── */
+  if(aid==='ar_hide1') return `
+<path d="M38 50 Q44 48 50 50 Q56 48 62 50 L62 70 Q56 72 50 70 Q44 72 38 70 Z" fill="rgba(255,255,255,0.07)"/>
+<path d="M42 50 Q50 53 58 50" stroke="rgba(255,200,100,0.3)" stroke-width="1" fill="none"/>
+<path d="M40 60 Q50 63 60 60" stroke="rgba(255,200,100,0.3)" stroke-width="1" fill="none"/>
+<circle cx="50" cy="55" r="2" fill="rgba(255,200,100,0.25)"/>`;
+  /* ── ar_chain1 — Cota de Malla ── */
+  if(aid==='ar_chain1') return `
+<line x1="38" y1="52" x2="62" y2="52" stroke="rgba(180,180,180,0.35)" stroke-width="1"/>
+<line x1="38" y1="58" x2="62" y2="58" stroke="rgba(180,180,180,0.35)" stroke-width="1"/>
+<line x1="38" y1="64" x2="62" y2="64" stroke="rgba(180,180,180,0.35)" stroke-width="1"/>
+<line x1="38" y1="70" x2="62" y2="70" stroke="rgba(180,180,180,0.35)" stroke-width="1"/>
+<line x1="44" y1="48" x2="44" y2="78" stroke="rgba(180,180,180,0.3)" stroke-width="1"/>
+<line x1="50" y1="48" x2="50" y2="78" stroke="rgba(180,180,180,0.3)" stroke-width="1"/>
+<line x1="56" y1="48" x2="56" y2="78" stroke="rgba(180,180,180,0.3)" stroke-width="1"/>`;
+  /* ── ar_studded — Cuero Tachado ── */
+  if(aid==='ar_studded') return `
+<path d="M44 48 L46 78 M54 48 L52 78" stroke="rgba(180,120,60,0.4)" stroke-width="1.5"/>
+<circle cx="44" cy="54" r="1.5" fill="rgba(200,180,100,0.7)"/>
+<circle cx="50" cy="52" r="1.5" fill="rgba(200,180,100,0.7)"/>
+<circle cx="56" cy="54" r="1.5" fill="rgba(200,180,100,0.7)"/>
+<circle cx="44" cy="64" r="1.5" fill="rgba(200,180,100,0.7)"/>
+<circle cx="50" cy="62" r="1.5" fill="rgba(200,180,100,0.7)"/>
+<circle cx="56" cy="64" r="1.5" fill="rgba(200,180,100,0.7)"/>`;
+  /* ── ar_scale1 — Armadura Escamas ── */
+  if(aid==='ar_scale1') return `
+<path d="M38 52 Q44 49 50 52 Q56 49 62 52" stroke="rgba(100,220,160,0.4)" stroke-width="1" fill="none"/>
+<path d="M38 59 Q44 56 50 59 Q56 56 62 59" stroke="rgba(100,220,160,0.4)" stroke-width="1" fill="none"/>
+<path d="M38 66 Q44 63 50 66 Q56 63 62 66" stroke="rgba(100,220,160,0.4)" stroke-width="1" fill="none"/>
+<ellipse cx="50" cy="53" rx="5" ry="2.5" fill="rgba(100,220,160,0.15)"/>
+<ellipse cx="44" cy="59" rx="4" ry="2" fill="rgba(100,220,160,0.12)"/>
+<ellipse cx="56" cy="59" rx="4" ry="2" fill="rgba(100,220,160,0.12)"/>`;
+  /* ── ar_bronze1 — Armadura de Bronce ── */
+  if(aid==='ar_bronze1') return `
+<path d="M38 50 Q50 48 62 50 L62 68 Q50 72 38 68 Z" fill="rgba(255,255,255,0.07)"/>
+<path d="M44 50 L46 78 M54 50 L52 78" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+<rect x="44" y="54" width="12" height="4" rx="2" fill="rgba(251,191,36,0.3)"/>
+<ellipse cx="50" cy="56" rx="4" ry="2" fill="rgba(251,191,36,0.2)"/>`;
+  /* ── ar_iron1 — Armadura de Hierro ── */
+  if(aid==='ar_iron1') return `
+<path d="M38 50 Q50 48 62 50 L64 68 Q50 72 36 68 Z" fill="rgba(255,255,255,0.08)"/>
+<path d="M44 50 L46 78 M54 50 L52 78" stroke="rgba(180,180,180,0.2)" stroke-width="1"/>
+<rect x="43" y="52" width="14" height="5" rx="1" fill="rgba(100,100,100,0.4)"/>
+<circle cx="50" cy="54" r="2.5" fill="rgba(180,180,180,0.4)"/>
+<ellipse cx="44" cy="54" rx="1.5" ry="1.5" fill="rgba(220,220,220,0.5)"/>
+<ellipse cx="56" cy="54" rx="1.5" ry="1.5" fill="rgba(220,220,220,0.5)"/>`;
+  /* ── ar_ninja1 — Traje Ninja ── */
+  if(aid==='ar_ninja1') return `
+<path d="M38 50 Q50 48 62 50 L62 78 Q50 80 38 78 Z" fill="rgba(255,255,255,0.04)"/>
+<rect x="43" y="54" width="14" height="2" rx="1" fill="rgba(150,150,150,0.25)"/>
+<rect x="43" y="62" width="14" height="2" rx="1" fill="rgba(150,150,150,0.25)"/>
+<rect x="43" y="70" width="14" height="2" rx="1" fill="rgba(150,150,150,0.25)"/>`;
+  /* ── ar_cloak1 — Capa de Sombra ── */
+  if(aid==='ar_cloak1') return `
+<path d="M36 48 Q50 44 64 48 L66 78 Q50 82 34 78 Z" fill="rgba(100,80,180,0.12)"/>
+<path d="M38 52 Q50 49 62 52" stroke="rgba(167,139,250,0.3)" stroke-width="1" fill="none"/>
+<path d="M36 62 Q50 59 64 62" stroke="rgba(167,139,250,0.2)" stroke-width="1" fill="none"/>
+<ellipse cx="50" cy="52" rx="6" ry="2" fill="rgba(167,139,250,0.15)"/>`;
+  /* ── ar_chain2 — Malla Reforzada ── */
+  if(aid==='ar_chain2') return `
+<line x1="38" y1="50" x2="62" y2="50" stroke="rgba(200,200,200,0.4)" stroke-width="1"/>
+<line x1="38" y1="56" x2="62" y2="56" stroke="rgba(200,200,200,0.4)" stroke-width="1"/>
+<line x1="38" y1="62" x2="62" y2="62" stroke="rgba(200,200,200,0.4)" stroke-width="1"/>
+<line x1="38" y1="68" x2="62" y2="68" stroke="rgba(200,200,200,0.4)" stroke-width="1"/>
+<line x1="38" y1="74" x2="62" y2="74" stroke="rgba(200,200,200,0.4)" stroke-width="1"/>
+<line x1="44" y1="48" x2="44" y2="78" stroke="rgba(200,200,200,0.35)" stroke-width="1"/>
+<line x1="50" y1="48" x2="50" y2="78" stroke="rgba(200,200,200,0.35)" stroke-width="1"/>
+<line x1="56" y1="48" x2="56" y2="78" stroke="rgba(200,200,200,0.35)" stroke-width="1"/>
+<rect x="43" y="51" width="14" height="4" rx="1" fill="rgba(255,255,255,0.08)"/>`;
+  /* ── ar_plate1 — Armadura de Placas ── */
+  if(aid==='ar_plate1') return `
+<path d="M38 50 Q50 47 62 50 L63 68 Q50 72 37 68 Z" fill="rgba(255,255,255,0.09)"/>
+<path d="M44 50 L45 78 M55 50 L54 78" stroke="rgba(180,180,180,0.25)" stroke-width="1.5"/>
+<rect x="43" y="52" width="14" height="6" rx="2" fill="rgba(150,150,150,0.3)"/>
+<line x1="43" y1="55" x2="57" y2="55" stroke="rgba(220,220,220,0.3)" stroke-width="1"/>
+<ellipse cx="50" cy="55" rx="3" ry="1.5" fill="rgba(220,220,220,0.3)"/>`;
+  /* ── ar_rune1 — Armadura Rúnica ── */
+  if(aid==='ar_rune1') return `
+<path d="M38 50 Q50 47 62 50 L63 68 Q50 72 37 68 Z" fill="rgba(255,255,255,0.07)"/>
+<path d="M44 50 L45 78 M55 50 L54 78" stroke="rgba(129,140,248,0.3)" stroke-width="1"/>
+<ellipse cx="50" cy="54" rx="4" ry="2" fill="rgba(129,140,248,0.25)" filter="url(#hglow)"/>
+<ellipse cx="44" cy="62" rx="2" ry="2" fill="rgba(129,140,248,0.35)" filter="url(#hglow)"/>
+<ellipse cx="56" cy="62" rx="2" ry="2" fill="rgba(129,140,248,0.35)" filter="url(#hglow)"/>
+<ellipse cx="50" cy="70" rx="2" ry="2" fill="rgba(129,140,248,0.3)" filter="url(#hglow)"/>`;
+  /* ── ar_mage1 — Manto Arcano ── */
+  if(aid==='ar_mage1') return `
+<path d="M36 48 Q50 44 64 48 L66 80 Q50 84 34 80 Z" fill="rgba(139,92,246,0.1)"/>
+<path d="M38 52 Q50 49 62 52" stroke="rgba(196,181,253,0.35)" stroke-width="1" fill="none"/>
+<path d="M36 62 Q50 59 64 62" stroke="rgba(196,181,253,0.25)" stroke-width="1" fill="none"/>
+<ellipse cx="50" cy="53" rx="5" ry="2" fill="rgba(196,181,253,0.2)"/>
+<ellipse cx="44" cy="60" rx="2" ry="2" fill="rgba(196,181,253,0.3)" filter="url(#hglow)"/>
+<ellipse cx="56" cy="60" rx="2" ry="2" fill="rgba(196,181,253,0.3)" filter="url(#hglow)"/>
+<ellipse cx="50" cy="68" rx="3" ry="2" fill="rgba(196,181,253,0.2)" filter="url(#hglow)"/>`;
+  /* ── ar_scale2 — Escamas de Dragón ── */
+  if(aid==='ar_scale2') return `
+<path d="M38 50 Q44 47 50 50 Q56 47 62 50 L62 70 Q56 73 50 70 Q44 73 38 70 Z" fill="rgba(255,255,255,0.07)"/>
+<path d="M38 52 Q44 49 50 52 Q56 49 62 52" stroke="rgba(52,211,153,0.45)" stroke-width="1" fill="none"/>
+<path d="M38 59 Q44 56 50 59 Q56 56 62 59" stroke="rgba(52,211,153,0.45)" stroke-width="1" fill="none"/>
+<path d="M38 66 Q44 63 50 66 Q56 63 62 66" stroke="rgba(52,211,153,0.45)" stroke-width="1" fill="none"/>
+<ellipse cx="44" cy="54" rx="3.5" ry="2" fill="rgba(52,211,153,0.2)"/>
+<ellipse cx="56" cy="54" rx="3.5" ry="2" fill="rgba(52,211,153,0.2)"/>
+<ellipse cx="50" cy="61" rx="3.5" ry="2" fill="rgba(52,211,153,0.2)"/>`;
+  /* ── ar_knight1 — Armadura de Caballero ── */
+  if(aid==='ar_knight1') return `
+<path d="M38 50 Q50 47 62 50 L63 70 Q50 74 37 70 Z" fill="rgba(255,255,255,0.09)"/>
+<path d="M44 50 L45 78 M55 50 L54 78" stroke="rgba(147,197,253,0.3)" stroke-width="1.5"/>
+<rect x="43" y="51" width="14" height="7" rx="2" fill="rgba(100,130,200,0.3)"/>
+<line x1="43" y1="55" x2="57" y2="55" stroke="rgba(147,197,253,0.4)" stroke-width="1"/>
+<ellipse cx="50" cy="54" rx="4" ry="2" fill="rgba(147,197,253,0.25)"/>
+<ellipse cx="44" cy="65" rx="2" ry="2" fill="rgba(147,197,253,0.3)"/>
+<ellipse cx="56" cy="65" rx="2" ry="2" fill="rgba(147,197,253,0.3)"/>`;
+  /* ── ar_dark1 — Armadura Oscura ── */
+  if(aid==='ar_dark1') return `
+<path d="M38 50 Q50 47 62 50 L63 70 Q50 74 37 70 Z" fill="rgba(255,255,255,0.05)"/>
+<path d="M44 50 L45 78 M55 50 L54 78" stroke="rgba(239,68,68,0.25)" stroke-width="1.5"/>
+<rect x="43" y="51" width="14" height="7" rx="2" fill="rgba(239,68,68,0.12)"/>
+<line x1="43" y1="55" x2="57" y2="55" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+<ellipse cx="44" cy="65" rx="2" ry="2" fill="rgba(239,68,68,0.4)" filter="url(#hglow)"/>
+<ellipse cx="56" cy="65" rx="2" ry="2" fill="rgba(239,68,68,0.4)" filter="url(#hglow)"/>
+<ellipse cx="50" cy="72" rx="2.5" ry="1.5" fill="rgba(239,68,68,0.3)" filter="url(#hglow)"/>`;
+  /* ── ar_golden1 — Armadura Dorada ── */
+  if(aid==='ar_golden1') return `
+<path d="M38 50 Q50 47 62 50 L63 70 Q50 74 37 70 Z" fill="rgba(251,191,36,0.1)"/>
+<path d="M44 50 L45 78 M55 50 L54 78" stroke="rgba(251,191,36,0.4)" stroke-width="1.5"/>
+<rect x="43" y="51" width="14" height="7" rx="2" fill="rgba(251,191,36,0.25)"/>
+<line x1="43" y1="55" x2="57" y2="55" stroke="rgba(253,230,138,0.5)" stroke-width="1"/>
+<ellipse cx="50" cy="54" rx="4" ry="2" fill="rgba(253,230,138,0.4)" filter="url(#hglow)"/>
+<ellipse cx="44" cy="65" rx="2" ry="2" fill="rgba(251,191,36,0.5)" filter="url(#hglow)"/>
+<ellipse cx="56" cy="65" rx="2" ry="2" fill="rgba(251,191,36,0.5)" filter="url(#hglow)"/>
+<ellipse cx="50" cy="72" rx="3" ry="1.5" fill="rgba(253,230,138,0.35)" filter="url(#hglow)"/>`;
+  /* ── ar_royal1 — Manto Real ── */
+  if(aid==='ar_royal1') return `
+<path d="M36 48 Q50 44 64 48 L66 80 Q50 84 34 80 Z" fill="rgba(139,92,246,0.12)"/>
+<path d="M38 52 Q50 49 62 52" stroke="rgba(196,181,253,0.4)" stroke-width="1.5" fill="none"/>
+<path d="M36 62 Q50 59 64 62" stroke="rgba(196,181,253,0.3)" stroke-width="1" fill="none"/>
+<rect x="44" y="52" width="12" height="5" rx="2" fill="rgba(196,181,253,0.2)"/>
+<ellipse cx="50" cy="54" rx="4" ry="2" fill="rgba(196,181,253,0.3)" filter="url(#hglow)"/>
+<ellipse cx="44" cy="64" rx="2.5" ry="2.5" fill="rgba(167,139,250,0.4)" filter="url(#hglow)"/>
+<ellipse cx="56" cy="64" rx="2.5" ry="2.5" fill="rgba(167,139,250,0.4)" filter="url(#hglow)"/>
+<ellipse cx="50" cy="72" rx="3" ry="2" fill="rgba(196,181,253,0.3)" filter="url(#hglow)"/>`;
+  /* ── ar_dragon1 — Escamas de Dragón Anciano ── */
+  if(aid==='ar_dragon1') return `
+<path d="M38 50 Q44 47 50 50 Q56 47 62 50 L62 72 Q56 75 50 72 Q44 75 38 72 Z" fill="rgba(255,255,255,0.07)"/>
+<path d="M38 52 Q44 49 50 52 Q56 49 62 52" stroke="rgba(74,222,128,0.5)" stroke-width="1.2" fill="none"/>
+<path d="M38 59 Q44 56 50 59 Q56 56 62 59" stroke="rgba(74,222,128,0.5)" stroke-width="1.2" fill="none"/>
+<path d="M38 66 Q44 63 50 66 Q56 63 62 66" stroke="rgba(74,222,128,0.5)" stroke-width="1.2" fill="none"/>
+<ellipse cx="44" cy="54" rx="4" ry="2" fill="rgba(74,222,128,0.2)" filter="url(#hglow)"/>
+<ellipse cx="56" cy="54" rx="4" ry="2" fill="rgba(74,222,128,0.2)" filter="url(#hglow)"/>
+<ellipse cx="50" cy="61" rx="4" ry="2" fill="rgba(74,222,128,0.2)" filter="url(#hglow)"/>
+<ellipse cx="44" cy="68" rx="4" ry="2" fill="rgba(74,222,128,0.15)" filter="url(#hglow)"/>
+<ellipse cx="56" cy="68" rx="4" ry="2" fill="rgba(74,222,128,0.15)" filter="url(#hglow)"/>`;
+  /* ── ar_holy1 — Armadura Sagrada ── */
+  if(aid==='ar_holy1') return `
+<path d="M38 50 Q50 47 62 50 L63 70 Q50 74 37 70 Z" fill="rgba(255,255,255,0.1)"/>
+<path d="M44 50 L45 78 M55 50 L54 78" stroke="rgba(253,230,138,0.35)" stroke-width="1.5"/>
+<rect x="43" y="51" width="14" height="7" rx="2" fill="rgba(255,255,255,0.15)"/>
+<line x1="43" y1="55" x2="57" y2="55" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+<path d="M48 52 L48 58 M45 55 L51 55" stroke="rgba(253,230,138,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+<ellipse cx="50" cy="66" rx="3" ry="3" fill="rgba(253,230,138,0.4)" filter="url(#hglow)"/>
+<ellipse cx="44" cy="65" rx="2" ry="2" fill="rgba(255,255,255,0.5)" filter="url(#hglow)"/>
+<ellipse cx="56" cy="65" rx="2" ry="2" fill="rgba(255,255,255,0.5)" filter="url(#hglow)"/>`;
+  /* ── ar_titan1 — Armadura Titán ── */
+  if(aid==='ar_titan1') return `
+<path d="M37 50 Q50 46 63 50 L65 72 Q50 76 35 72 Z" fill="rgba(255,255,255,0.07)"/>
+<path d="M44 50 L45 78 M55 50 L54 78" stroke="rgba(239,68,68,0.3)" stroke-width="2"/>
+<rect x="42" y="50" width="16" height="9" rx="2" fill="rgba(100,100,100,0.35)"/>
+<line x1="42" y1="55" x2="58" y2="55" stroke="rgba(220,220,220,0.3)" stroke-width="1.5"/>
+<ellipse cx="50" cy="54" rx="5" ry="2.5" fill="rgba(200,200,200,0.25)"/>
+<ellipse cx="43" cy="65" rx="2.5" ry="2.5" fill="rgba(239,68,68,0.5)" filter="url(#hglow)"/>
+<ellipse cx="57" cy="65" rx="2.5" ry="2.5" fill="rgba(239,68,68,0.5)" filter="url(#hglow)"/>
+<ellipse cx="50" cy="72" rx="3" ry="2" fill="rgba(239,68,68,0.35)" filter="url(#hglow)"/>`;
+  /* ── ar_divine1 — Armadura Divina ── */
+  if(aid==='ar_divine1') return `
+<path d="M37 50 Q50 46 63 50 L65 72 Q50 76 35 72 Z" fill="rgba(186,230,253,0.1)"/>
+<path d="M44 50 L45 78 M55 50 L54 78" stroke="rgba(186,230,253,0.4)" stroke-width="1.5"/>
+<rect x="42" y="50" width="16" height="8" rx="2" fill="rgba(186,230,253,0.15)"/>
+<line x1="42" y1="54" x2="58" y2="54" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+<path d="M47 51 L47 57 M44 54 L50 54" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" stroke-linecap="round"/>
+<ellipse cx="50" cy="53" rx="4" ry="2" fill="rgba(186,230,253,0.35)" filter="url(#hglow)"/>
+<ellipse cx="43" cy="64" rx="2.5" ry="2.5" fill="rgba(186,230,253,0.55)" filter="url(#hglow)"/>
+<ellipse cx="57" cy="64" rx="2.5" ry="2.5" fill="rgba(186,230,253,0.55)" filter="url(#hglow)"/>
+<ellipse cx="50" cy="72" rx="3.5" ry="2" fill="rgba(186,230,253,0.4)" filter="url(#hglow)"/>`;
+  /* genérico final */
+  return `
+<path d="M38 50 Q50 48 62 50 L64 68 Q50 72 36 68 Z" fill="rgba(255,255,255,0.08)"/>
+<path d="M44 50 L46 78 M54 50 L52 78" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>`;
+})()}
 
 <!-- BRAZO IZQUIERDO -->
 <ellipse cx="32" cy="60" rx="9" ry="18" transform="rotate(10 32 60)" fill="${sc}" filter="url(#hsh)"/>
@@ -25696,48 +25954,413 @@ ${!hasArmor?`<line x1="50" y1="44" x2="50" y2="78" stroke="rgba(0,0,0,0.15)" str
 <ellipse cx="72" cy="76" rx="7" ry="7" fill="url(#hskin)" filter="url(#hsh)"/>
 <ellipse cx="70" cy="73" rx="4" ry="4" fill="rgba(255,255,255,0.25)"/>
 
-${hasWeapon?`<!-- ARMA equipada -->
-<rect x="78" y="18" width="5" height="62" rx="2" fill="${cls==='mage'?'#5b21b6':'#374151'}" filter="url(#hsh)"/>
-<rect x="78" y="18" width="5" height="62" rx="2" fill="${cls==='mage'?'#5b21b6':'#374151'}"/>
-${cls==='mage'?
-`<ellipse cx="80" cy="14" rx="9" ry="9" fill="#7c3aed" filter="url(#hglow)"/>
-<ellipse cx="80" cy="14" rx="6" ry="6" fill="#a78bfa" filter="url(#hglow)"/>
-<ellipse cx="77" cy="11" rx="2.5" ry="2.5" fill="rgba(255,255,255,0.8)"/>`:
-`<polygon points="80,8 84,18 76,18" fill="#9ca3af" filter="url(#hsh)"/>
-<polygon points="80,8 84,18 76,18" fill="#d1d5db"/>
-<rect x="73" y="64" width="14" height="5" rx="2" fill="#fbbf24" filter="url(#hglow)"/>
-<rect x="77" y="68" width="6" height="12" rx="2" fill="#7c3aed"/>
-<ellipse cx="80" cy="81" rx="4" ry="3" fill="#fbbf24" filter="url(#hglow)"/>`}
-<line x1="80" y1="16" x2="80" y2="66" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
-`:`<!-- Puño cerrado sin arma -->
+${(()=>{
+  const wid = eq.weapon||'';
+  /* ── wp_stick — Palo ── */
+  if(wid==='wp_stick') return `
+<rect x="79" y="22" width="4" height="68" rx="2" fill="#92400e" filter="url(#hsh)"/>
+<rect x="79" y="22" width="2" height="68" rx="1" fill="rgba(255,255,255,0.18)"/>
+<ellipse cx="81" cy="22" rx="3" ry="3" fill="#78350f"/>`;
+  /* ── wp_dagger1 — Daga de Piedra ── */
+  if(wid==='wp_dagger1') return `
+<rect x="80" y="52" width="4" height="22" rx="2" fill="#78350f" filter="url(#hsh)"/>
+<rect x="77" y="46" width="8" height="4" rx="1" fill="#6b7280" filter="url(#hsh)"/>
+<polygon points="81,24 84,46 78,46" fill="#9ca3af" filter="url(#hsh)"/>
+<polygon points="81,24 83,46 79,46" fill="#d1d5db"/>
+<line x1="81" y1="26" x2="81" y2="44" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>`;
+  /* ── wp_bow1 — Arco Rústico ── */
+  if(wid==='wp_bow1') return `
+<path d="M84,18 Q96,45 84,72" stroke="#92400e" stroke-width="3.5" fill="none" stroke-linecap="round" filter="url(#hsh)"/>
+<path d="M84,18 Q96,45 84,72" stroke="#b45309" stroke-width="2" fill="none" stroke-linecap="round"/>
+<line x1="84" y1="18" x2="84" y2="72" stroke="#fde68a" stroke-width="1" stroke-dasharray="2,2"/>
+<line x1="81" y1="44" x2="87" y2="42" stroke="#fde68a" stroke-width="1.5"/>`;
+  /* ── wp_sword1 — Espada Corta ── */
+  if(wid==='wp_sword1') return `
+<rect x="80" y="54" width="5" height="20" rx="2" fill="#374151" filter="url(#hsh)"/>
+<rect x="76" y="48" width="11" height="4" rx="1.5" fill="#6b7280" filter="url(#hsh)"/>
+<polygon points="82,22 86,48 78,48" fill="#9ca3af" filter="url(#hsh)"/>
+<polygon points="82,22 84,48 80,48" fill="#e5e7eb"/>
+<line x1="82" y1="24" x2="82" y2="46" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>
+<rect x="80" y="60" width="3" height="6" rx="1" fill="#fbbf24"/>`;
+  /* ── wp_knife1 — Cuchillo de Caza ── */
+  if(wid==='wp_knife1') return `
+<rect x="80" y="54" width="4" height="20" rx="2" fill="#78350f" filter="url(#hsh)"/>
+<rect x="77" y="49" width="9" height="3" rx="1" fill="#4b5563" filter="url(#hsh)"/>
+<path d="M78,28 L86,49 L78,49 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M82,28 L86,49 L82,49 Z" fill="#d1d5db"/>
+<path d="M78,35 Q84,42 86,49" stroke="rgba(255,255,255,0.4)" stroke-width="0.8" fill="none"/>`;
+  /* ── wp_shield_s — Escudo Pequeño ── */
+  if(wid==='wp_shield_s') return `
+<path d="M16,52 Q16,30 27,28 Q38,30 38,52 Q32,64 27,68 Q22,64 16,52 Z" fill="#1e40af" filter="url(#hsh)"/>
+<path d="M18,52 Q18,33 27,31 Q36,33 36,52 Q31,62 27,65 Q23,62 18,52 Z" fill="#2563eb"/>
+<path d="M22,38 Q27,34 32,38 L32,52 L27,58 L22,52 Z" fill="rgba(255,255,255,0.12)"/>
+<line x1="27" y1="31" x2="27" y2="65" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+<line x1="18" y1="48" x2="36" y2="48" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+<ellipse cx="27" cy="48" rx="4" ry="4" fill="rgba(255,255,255,0.25)"/>`;
+  /* ── wp_staff1 — Bastón de Madera ── */
+  if(wid==='wp_staff1') return `
+<rect x="79" y="26" width="4" height="62" rx="2" fill="#78350f" filter="url(#hsh)"/>
+<rect x="79" y="26" width="2" height="62" rx="1" fill="rgba(255,255,255,0.15)"/>
+<ellipse cx="81" cy="20" rx="9" ry="9" fill="#15803d" filter="url(#hglow)"/>
+<ellipse cx="81" cy="20" rx="6" ry="6" fill="#22c55e" filter="url(#hglow)"/>
+<ellipse cx="78" cy="17" rx="2.5" ry="2.5" fill="rgba(255,255,255,0.75)"/>
+<ellipse cx="81" cy="20" rx="3" ry="3" fill="rgba(255,255,255,0.2)"/>`;
+  /* ── wp_sword2 — Espada de Acero ── */
+  if(wid==='wp_sword2') return `
+<rect x="80" y="56" width="5" height="20" rx="2" fill="#292524" filter="url(#hsh)"/>
+<rect x="75" y="50" width="13" height="5" rx="2" fill="#4b5563" filter="url(#hsh)"/>
+<polygon points="82,18 86,50 78,50" fill="#6b7280" filter="url(#hsh)"/>
+<polygon points="82,18 84.5,50 79.5,50" fill="#d1d5db"/>
+<line x1="82" y1="20" x2="82" y2="48" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
+<rect x="80" y="62" width="3" height="8" rx="1.5" fill="#fbbf24" filter="url(#hglow)"/>
+<ellipse cx="81" cy="76" rx="3.5" ry="3" fill="#fbbf24" filter="url(#hglow)"/>`;
+  /* ── wp_dagger2 — Daga Encantada ── */
+  if(wid==='wp_dagger2') return `
+<rect x="80" y="52" width="4" height="22" rx="2" fill="#4c1d95" filter="url(#hsh)"/>
+<rect x="76" y="46" width="10" height="4" rx="1.5" fill="#7c3aed" filter="url(#hsh)"/>
+<polygon points="82,22 86,46 78,46" fill="#a78bfa" filter="url(#hsh)"/>
+<polygon points="82,22 84,46 80,46" fill="#c4b5fd"/>
+<line x1="82" y1="24" x2="82" y2="44" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
+<ellipse cx="82" cy="20" rx="4" ry="4" fill="#7c3aed" filter="url(#hglow)"/>
+<ellipse cx="82" cy="20" rx="2" ry="2" fill="#e9d5ff" filter="url(#hglow)"/>`;
+  /* ── wp_axe1 — Hacha de Hierro ── */
+  if(wid==='wp_axe1') return `
+<rect x="80" y="30" width="4" height="62" rx="2" fill="#374151" filter="url(#hsh)"/>
+<rect x="80" y="30" width="2" height="62" rx="1" fill="rgba(255,255,255,0.15)"/>
+<path d="M75,18 Q88,14 90,28 Q88,36 80,34 Q76,28 75,18 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M77,20 Q87,16 89,27 Q87,33 81,32 Z" fill="#9ca3af"/>
+<line x1="82" y1="16" x2="80" y2="32" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>`;
+  /* ── wp_crossbow — Ballesta ── */
+  if(wid==='wp_crossbow') return `
+<rect x="80" y="48" width="4" height="42" rx="2" fill="#374151" filter="url(#hsh)"/>
+<rect x="73" y="52" width="18" height="5" rx="2" fill="#4b5563" filter="url(#hsh)"/>
+<rect x="73" y="52" width="18" height="3" rx="1.5" fill="#6b7280"/>
+<rect x="79" y="44" width="6" height="10" rx="2" fill="#374151" filter="url(#hsh)"/>
+<line x1="73" y1="54" x2="91" y2="54" stroke="#fde68a" stroke-width="0.8"/>
+<rect x="81" y="40" width="2" height="14" rx="1" fill="#9ca3af"/>
+<polygon points="82,36 84,42 80,42" fill="#d1d5db" filter="url(#hsh)"/>`;
+  /* ── wp_saber1 — Sable Ágil ── */
+  if(wid==='wp_saber1') return `
+<rect x="80" y="56" width="4" height="20" rx="2" fill="#292524" filter="url(#hsh)"/>
+<rect x="75" y="50" width="12" height="4" rx="2" fill="#4b5563" filter="url(#hsh)"/>
+<path d="M82,20 Q90,36 83,50 L79,50 Q86,36 78,20 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M82,20 Q89,36 83,50 L81,50 Q88,36 80,20 Z" fill="#e5e7eb"/>
+<path d="M82,22 Q88,36 83,48" stroke="rgba(255,255,255,0.55)" stroke-width="0.8" fill="none"/>
+<ellipse cx="81" cy="74" rx="3" ry="2.5" fill="#fbbf24" filter="url(#hglow)"/>`;
+  /* ── wp_staff2 — Bastón Arcano ── */
+  if(wid==='wp_staff2') return `
+<rect x="79" y="26" width="4" height="62" rx="2" fill="#4c1d95" filter="url(#hsh)"/>
+<rect x="79" y="26" width="2" height="62" rx="1" fill="rgba(255,255,255,0.2)"/>
+<ellipse cx="81" cy="18" rx="10" ry="10" fill="#7c3aed" filter="url(#hglow)"/>
+<ellipse cx="81" cy="18" rx="7" ry="7" fill="#a78bfa" filter="url(#hglow)"/>
+<ellipse cx="78" cy="15" rx="3" ry="3" fill="rgba(255,255,255,0.85)"/>
+<path d="M75,18 L87,18 M81,12 L81,24" stroke="#c4b5fd" stroke-width="1" opacity="0.6"/>`;
+  /* ── wp_sword3 — Espadón ── */
+  if(wid==='wp_sword3') return `
+<rect x="80" y="58" width="6" height="22" rx="2.5" fill="#1f2937" filter="url(#hsh)"/>
+<rect x="74" y="51" width="15" height="6" rx="2" fill="#374151" filter="url(#hsh)"/>
+<rect x="74" y="51" width="15" height="3" rx="1.5" fill="#6b7280"/>
+<polygon points="83,14 88,51 78,51" fill="#6b7280" filter="url(#hsh)"/>
+<polygon points="83,14 86,51 80,51" fill="#d1d5db"/>
+<line x1="83" y1="16" x2="83" y2="49" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+<rect x="80" y="68" width="4" height="8" rx="2" fill="#7c3aed"/>`;
+  /* ── wp_shield_m — Escudo Redondo ── */
+  if(wid==='wp_shield_m') return `
+<circle cx="25" cy="52" r="14" fill="#1e3a8a" filter="url(#hsh)"/>
+<circle cx="25" cy="52" r="12" fill="#1d4ed8"/>
+<circle cx="25" cy="52" r="7" fill="rgba(255,255,255,0.1)"/>
+<circle cx="25" cy="52" r="3" fill="#fbbf24" filter="url(#hglow)"/>
+<line x1="25" y1="40" x2="25" y2="64" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+<line x1="13" y1="52" x2="37" y2="52" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+<circle cx="25" cy="52" r="12" fill="none" stroke="#3b82f6" stroke-width="1.5"/>`;
+  /* ── wp_axe2 — Hacha de Batalla ── */
+  if(wid==='wp_axe2') return `
+<rect x="80" y="28" width="4" height="64" rx="2" fill="#374151" filter="url(#hsh)"/>
+<rect x="80" y="28" width="2" height="64" rx="1" fill="rgba(255,255,255,0.15)"/>
+<path d="M74,14 Q90,10 92,26 Q90,36 80,33 Q75,26 74,14 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M76,16 Q89,12 91,25 Q89,33 81,31 Z" fill="#9ca3af"/>
+<path d="M74,42 Q90,46 92,32 Q90,38 80,36 Q75,38 74,42 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M76,40 Q89,44 91,33 Q89,37 81,35 Z" fill="#9ca3af"/>
+<line x1="83" y1="14" x2="81" y2="32" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>`;
+  /* ── wp_dagger3 — Daga de Sombra ── */
+  if(wid==='wp_dagger3') return `
+<rect x="80" y="52" width="4" height="22" rx="2" fill="#1f2937" filter="url(#hsh)"/>
+<rect x="76" y="46" width="10" height="4" rx="1.5" fill="#374151" filter="url(#hsh)"/>
+<polygon points="82,20 86,46 78,46" fill="#4b5563" filter="url(#hsh)"/>
+<polygon points="82,20 85,46 79,46" fill="#6b7280"/>
+<line x1="82" y1="22" x2="82" y2="44" stroke="rgba(167,139,250,0.7)" stroke-width="1"/>
+<ellipse cx="82" cy="18" rx="3.5" ry="3.5" fill="#7c3aed" filter="url(#hglow)"/>
+<ellipse cx="82" cy="18" rx="1.5" ry="1.5" fill="#e9d5ff"/>`;
+  /* ── wp_sword4 — Espada Larga ── */
+  if(wid==='wp_sword4') return `
+<rect x="80" y="58" width="5" height="22" rx="2" fill="#292524" filter="url(#hsh)"/>
+<rect x="74" y="51" width="14" height="5" rx="2" fill="#4b5563" filter="url(#hsh)"/>
+<rect x="74" y="51" width="14" height="2.5" rx="1.5" fill="#9ca3af"/>
+<polygon points="82,14 87,51 77,51" fill="#6b7280" filter="url(#hsh)"/>
+<polygon points="82,14 85,51 79,51" fill="#e5e7eb"/>
+<line x1="82" y1="16" x2="82" y2="49" stroke="rgba(255,255,255,0.65)" stroke-width="1.2"/>
+<rect x="80" y="66" width="3" height="10" rx="1.5" fill="#b45309"/>
+<ellipse cx="81" cy="78" rx="3.5" ry="2.5" fill="#fbbf24" filter="url(#hglow)"/>`;
+  /* ── wp_staff3 — Cetro Lunar ── */
+  if(wid==='wp_staff3') return `
+<rect x="79" y="28" width="4" height="60" rx="2" fill="#1e1b4b" filter="url(#hsh)"/>
+<rect x="79" y="28" width="2" height="60" rx="1" fill="rgba(255,255,255,0.18)"/>
+<path d="M72,14 Q81,8 90,14 Q88,24 81,22 Q74,24 72,14 Z" fill="#6d28d9" filter="url(#hglow)"/>
+<path d="M74,15 Q81,10 88,15 Q86,22 81,21 Q76,22 74,15 Z" fill="#a78bfa" filter="url(#hglow)"/>
+<ellipse cx="81" cy="14" rx="4" ry="4" fill="#e9d5ff" filter="url(#hglow)"/>
+<ellipse cx="78" cy="12" rx="1.5" ry="1.5" fill="rgba(255,255,255,0.9)"/>
+<ellipse cx="84" cy="18" rx="1" ry="1" fill="rgba(255,255,255,0.7)"/>`;
+  /* ── wp_axe3 — Hacha de Doble Filo ── */
+  if(wid==='wp_axe3') return `
+<rect x="80" y="26" width="4" height="66" rx="2" fill="#374151" filter="url(#hsh)"/>
+<rect x="80" y="26" width="2" height="66" rx="1" fill="rgba(255,255,255,0.15)"/>
+<path d="M73,12 Q90,8 93,24 Q90,32 80,30 Q74,24 73,12 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M75,14 Q89,10 92,23 Q89,29 81,28 Z" fill="#d1d5db"/>
+<path d="M73,44 Q90,48 93,34 Q90,38 80,36 Q74,38 73,44 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M75,42 Q89,46 92,35 Q89,37 81,35 Z" fill="#d1d5db"/>
+<rect x="78" y="28" width="6" height="8" rx="1" fill="#fbbf24" filter="url(#hglow)"/>`;
+  /* ── wp_lance1 — Lanza de Acero ── */
+  if(wid==='wp_lance1') return `
+<rect x="81" y="20" width="3" height="72" rx="1.5" fill="#4b5563" filter="url(#hsh)"/>
+<rect x="81" y="20" width="1.5" height="72" rx="1" fill="rgba(255,255,255,0.2)"/>
+<polygon points="82,8 86,22 78,22" fill="#9ca3af" filter="url(#hsh)"/>
+<polygon points="82,8 85,22 79,22" fill="#e5e7eb"/>
+<line x1="82" y1="10" x2="82" y2="20" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
+<rect x="79" y="64" width="7" height="4" rx="2" fill="#374151" filter="url(#hsh)"/>`;
+  /* ── wp_sword5 — Espada de Fuego ── */
+  if(wid==='wp_sword5') return `
+<rect x="80" y="56" width="5" height="22" rx="2" fill="#7c2d12" filter="url(#hsh)"/>
+<rect x="74" y="50" width="14" height="5" rx="2" fill="#92400e" filter="url(#hsh)"/>
+<rect x="74" y="50" width="14" height="2.5" rx="1.5" fill="#fbbf24"/>
+<polygon points="82,14 87,50 77,50" fill="#ef4444" filter="url(#hsh)"/>
+<polygon points="82,14 85,50 79,50" fill="#fca5a5"/>
+<line x1="82" y1="16" x2="82" y2="48" stroke="#fde68a" stroke-width="1.2"/>
+<ellipse cx="82" cy="12" rx="4" ry="5" fill="#f97316" filter="url(#hglow)" opacity="0.9"/>
+<ellipse cx="82" cy="10" rx="2" ry="3" fill="#fde68a" filter="url(#hglow)"/>`;
+  /* ── wp_shield_l — Escudo Vikingo ── */
+  if(wid==='wp_shield_l') return `
+<path d="M14,42 Q14,28 26,26 Q38,28 38,42 L38,58 Q26,70 14,58 Z" fill="#7c2d12" filter="url(#hsh)"/>
+<path d="M16,42 Q16,30 26,28 Q36,30 36,42 L36,57 Q26,67 16,57 Z" fill="#b45309"/>
+<circle cx="26" cy="46" r="8" fill="#78350f" filter="url(#hsh)"/>
+<circle cx="26" cy="46" r="6" fill="#d97706"/>
+<circle cx="26" cy="46" r="3" fill="#fbbf24" filter="url(#hglow)"/>
+<line x1="26" y1="28" x2="26" y2="67" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<line x1="15" y1="46" x2="37" y2="46" stroke="rgba(0,0,0,0.3)" stroke-width="1.5"/>
+<ellipse cx="26" cy="32" rx="3" ry="2" fill="rgba(255,255,255,0.2)"/>`;
+  /* ── wp_sword6 — Espada Rúnica ── */
+  if(wid==='wp_sword6') return `
+<rect x="80" y="57" width="5" height="22" rx="2" fill="#1e1b4b" filter="url(#hsh)"/>
+<rect x="74" y="50" width="14" height="5" rx="2" fill="#3730a3" filter="url(#hsh)"/>
+<rect x="74" y="50" width="14" height="2.5" rx="1.5" fill="#818cf8"/>
+<polygon points="82,14 87,50 77,50" fill="#4338ca" filter="url(#hsh)"/>
+<polygon points="82,14 85,50 79,50" fill="#a5b4fc"/>
+<line x1="82" y1="16" x2="82" y2="48" stroke="#e0e7ff" stroke-width="1"/>
+<ellipse cx="79" cy="28" rx="1.5" ry="1.5" fill="#818cf8" filter="url(#hglow)"/>
+<ellipse cx="85" cy="36" rx="1.5" ry="1.5" fill="#818cf8" filter="url(#hglow)"/>
+<ellipse cx="79" cy="44" rx="1.5" ry="1.5" fill="#818cf8" filter="url(#hglow)"/>`;
+  /* ── wp_axe4 — Hacha Legendaria ── */
+  if(wid==='wp_axe4') return `
+<rect x="80" y="24" width="5" height="68" rx="2.5" fill="#292524" filter="url(#hsh)"/>
+<rect x="80" y="24" width="2.5" height="68" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+<path d="M72,10 Q92,4 96,22 Q93,34 82,31 Q74,24 72,10 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M74,12 Q91,7 94,21 Q91,31 83,29 Z" fill="#e5e7eb"/>
+<path d="M72,46 Q92,52 96,36 Q93,38 82,36 Q74,38 72,46 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M74,44 Q91,50 94,37 Q91,39 83,37 Z" fill="#e5e7eb"/>
+<rect x="78" y="28" width="8" height="10" rx="2" fill="#fbbf24" filter="url(#hglow)"/>
+<ellipse cx="82" cy="33" rx="3" ry="3" fill="#fde68a" filter="url(#hglow)"/>`;
+  /* ── wp_scythe — Guadaña Oscura ── */
+  if(wid==='wp_scythe') return `
+<rect x="81" y="18" width="3" height="74" rx="1.5" fill="#1f2937" filter="url(#hsh)"/>
+<rect x="81" y="18" width="1.5" height="74" rx="1" fill="rgba(255,255,255,0.12)"/>
+<path d="M82,18 Q100,14 98,34 Q94,44 82,38 Q90,28 82,18 Z" fill="#374151" filter="url(#hsh)"/>
+<path d="M82,20 Q98,16 96,33 Q92,42 82,37 Q89,27 82,20 Z" fill="#6b7280"/>
+<path d="M82,22 Q96,18 94,32 Q91,40 83,36" stroke="#a78bfa" stroke-width="0.8" fill="none" opacity="0.7"/>
+<ellipse cx="82" cy="18" rx="3" ry="3" fill="#7c3aed" filter="url(#hglow)"/>`;
+  /* ── wp_shield_g — Escudo de Plata ── */
+  if(wid==='wp_shield_g') return `
+<path d="M14,44 Q14,28 26,26 Q38,28 38,44 L38,60 Q26,72 14,60 Z" fill="#374151" filter="url(#hsh)"/>
+<path d="M16,44 Q16,30 26,28 Q36,30 36,44 L36,59 Q26,69 16,59 Z" fill="#9ca3af"/>
+<path d="M19,44 Q19,33 26,31 Q33,33 33,44 L33,57 Q26,65 19,57 Z" fill="#d1d5db"/>
+<circle cx="26" cy="46" r="6" fill="#e5e7eb" filter="url(#hsh)"/>
+<circle cx="26" cy="46" r="4" fill="#f9fafb"/>
+<circle cx="26" cy="46" r="2" fill="#9ca3af"/>
+<ellipse cx="26" cy="32" rx="3" ry="2" fill="rgba(255,255,255,0.5)"/>`;
+  /* ── wp_lance2 — Lanza Sagrada ── */
+  if(wid==='wp_lance2') return `
+<rect x="81" y="18" width="3.5" height="74" rx="1.5" fill="#78350f" filter="url(#hsh)"/>
+<rect x="81" y="18" width="1.8" height="74" rx="1" fill="rgba(255,255,255,0.22)"/>
+<polygon points="82,6 87,20 77,20" fill="#fbbf24" filter="url(#hglow)"/>
+<polygon points="82,6 85,20 79,20" fill="#fde68a"/>
+<line x1="82" y1="8" x2="82" y2="18" stroke="rgba(255,255,255,0.8)" stroke-width="1.2"/>
+<rect x="78" y="62" width="9" height="4" rx="2" fill="#d97706" filter="url(#hsh)"/>
+<ellipse cx="82" cy="64" rx="2.5" ry="1.5" fill="#fbbf24" filter="url(#hglow)"/>
+<ellipse cx="82" cy="8" rx="3" ry="3" fill="#fde68a" filter="url(#hglow)"/>`;
+  /* ── wp_sword7 — Espadón del Caos ── */
+  if(wid==='wp_sword7') return `
+<rect x="80" y="56" width="6" height="24" rx="2.5" fill="#1c1917" filter="url(#hsh)"/>
+<rect x="73" y="49" width="16" height="6" rx="2.5" fill="#292524" filter="url(#hsh)"/>
+<rect x="73" y="49" width="16" height="3" rx="1.5" fill="#ef4444" opacity="0.8"/>
+<polygon points="83,12 89,49 77,49" fill="#374151" filter="url(#hsh)"/>
+<polygon points="83,12 86,49 80,49" fill="#6b7280"/>
+<line x1="83" y1="14" x2="83" y2="47" stroke="#ef4444" stroke-width="1" opacity="0.8"/>
+<ellipse cx="80" cy="28" rx="1.5" ry="1.5" fill="#ef4444" filter="url(#hglow)"/>
+<ellipse cx="86" cy="36" rx="1.5" ry="1.5" fill="#ef4444" filter="url(#hglow)"/>
+<ellipse cx="80" cy="44" rx="1.5" ry="1.5" fill="#ef4444" filter="url(#hglow)"/>
+<ellipse cx="83" cy="10" rx="4" ry="4" fill="#dc2626" filter="url(#hglow)"/>`;
+  /* ── wp_flame_bow — Arco de Llamas ── */
+  if(wid==='wp_flame_bow') return `
+<path d="M84,16 Q98,44 84,72" stroke="#c2410c" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#hsh)"/>
+<path d="M84,16 Q98,44 84,72" stroke="#f97316" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M84,16 Q98,44 84,72" stroke="#fde68a" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.6"/>
+<line x1="84" y1="16" x2="84" y2="72" stroke="#fbbf24" stroke-width="1" stroke-dasharray="2,2"/>
+<line x1="81" y1="43" x2="87" y2="41" stroke="#fde68a" stroke-width="1.5"/>
+<ellipse cx="84" cy="16" rx="4" ry="4" fill="#ef4444" filter="url(#hglow)"/>
+<ellipse cx="84" cy="72" rx="4" ry="4" fill="#ef4444" filter="url(#hglow)"/>`;
+  /* ── wp_saber2 — Sable Bendito ── */
+  if(wid==='wp_saber2') return `
+<rect x="80" y="56" width="5" height="22" rx="2" fill="#78350f" filter="url(#hsh)"/>
+<rect x="74" y="50" width="13" height="5" rx="2" fill="#d97706" filter="url(#hsh)"/>
+<rect x="74" y="50" width="13" height="2.5" rx="1.5" fill="#fde68a"/>
+<path d="M82,16 Q92,32 85,50 L79,50 Q86,32 78,16 Z" fill="#fbbf24" filter="url(#hsh)"/>
+<path d="M82,16 Q91,32 85,50 L81,50 Q89,32 80,16 Z" fill="#fef3c7"/>
+<line x1="82" y1="18" x2="83" y2="48" stroke="rgba(255,255,255,0.8)" stroke-width="1"/>
+<ellipse cx="82" cy="13" rx="5" ry="5" fill="#fbbf24" filter="url(#hglow)"/>
+<ellipse cx="82" cy="13" rx="2.5" ry="2.5" fill="#fff" filter="url(#hglow)"/>`;
+  /* ── wp_axe5 — Hacha de Fuego ── */
+  if(wid==='wp_axe5') return `
+<rect x="80" y="24" width="5" height="68" rx="2.5" fill="#7c2d12" filter="url(#hsh)"/>
+<rect x="80" y="24" width="2.5" height="68" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+<path d="M72,10 Q92,4 96,22 Q93,34 82,31 Q74,24 72,10 Z" fill="#ef4444" filter="url(#hsh)"/>
+<path d="M74,12 Q91,7 94,21 Q91,31 83,29 Z" fill="#fca5a5"/>
+<path d="M72,46 Q92,52 96,36 Q93,38 82,36 Q74,38 72,46 Z" fill="#ef4444" filter="url(#hsh)"/>
+<path d="M74,44 Q91,50 94,37 Q91,39 83,37 Z" fill="#fca5a5"/>
+<ellipse cx="82" cy="8" rx="4" ry="4" fill="#f97316" filter="url(#hglow)"/>
+<ellipse cx="82" cy="8" rx="2" ry="2" fill="#fde68a" filter="url(#hglow)"/>
+<rect x="78" y="28" width="8" height="10" rx="2" fill="#f97316" filter="url(#hglow)"/>`;
+  /* ── wp_shield_r — Escudo del Guerrero ── */
+  if(wid==='wp_shield_r') return `
+<path d="M13,42 Q13,26 26,24 Q39,26 39,42 L39,60 Q26,74 13,60 Z" fill="#1e3a8a" filter="url(#hsh)"/>
+<path d="M15,42 Q15,28 26,26 Q37,28 37,42 L37,59 Q26,71 15,59 Z" fill="#1d4ed8"/>
+<path d="M18,42 Q18,32 26,30 Q34,32 34,42 L34,57 Q26,67 18,57 Z" fill="#2563eb"/>
+<circle cx="26" cy="46" r="7" fill="#1e40af" filter="url(#hsh)"/>
+<circle cx="26" cy="46" r="5" fill="#fbbf24" filter="url(#hglow)"/>
+<circle cx="26" cy="46" r="3" fill="#fde68a" filter="url(#hglow)"/>
+<line x1="26" y1="26" x2="26" y2="71" stroke="rgba(251,191,36,0.5)" stroke-width="1.5"/>
+<line x1="14" y1="46" x2="38" y2="46" stroke="rgba(251,191,36,0.5)" stroke-width="1.5"/>
+<ellipse cx="26" cy="30" rx="4" ry="2.5" fill="rgba(255,255,255,0.25)"/>`;
+  /* ── wp_glaive — Glaive Épico ── */
+  if(wid==='wp_glaive') return `
+<rect x="81" y="20" width="3.5" height="72" rx="1.5" fill="#1f2937" filter="url(#hsh)"/>
+<rect x="81" y="20" width="1.8" height="72" rx="1" fill="rgba(255,255,255,0.2)"/>
+<path d="M82,8 Q94,10 93,26 Q90,34 82,28 Q88,20 82,8 Z" fill="#6b7280" filter="url(#hsh)"/>
+<path d="M82,10 Q93,12 92,25 Q89,32 83,27 Q88,20 82,10 Z" fill="#d1d5db"/>
+<path d="M82,10 Q91,14 90,24" stroke="rgba(255,255,255,0.6)" stroke-width="0.8" fill="none"/>
+<rect x="78" y="60" width="9" height="4" rx="2" fill="#fbbf24" filter="url(#hglow)"/>
+<ellipse cx="82" cy="62" rx="3" ry="2" fill="#fde68a" filter="url(#hglow)"/>
+<ellipse cx="82" cy="8" rx="3.5" ry="3.5" fill="#a78bfa" filter="url(#hglow)"/>`;
+  /* ── wp_staff4 — Báculo del Origen ── */
+  if(wid==='wp_staff4') return `
+<rect x="79" y="26" width="4.5" height="62" rx="2" fill="#134e4a" filter="url(#hsh)"/>
+<rect x="79" y="26" width="2" height="62" rx="1" fill="rgba(255,255,255,0.2)"/>
+<ellipse cx="81" cy="16" rx="12" ry="12" fill="#0f766e" filter="url(#hglow)"/>
+<ellipse cx="81" cy="16" rx="9" ry="9" fill="#14b8a6" filter="url(#hglow)"/>
+<ellipse cx="81" cy="16" rx="5" ry="5" fill="#5eead4" filter="url(#hglow)"/>
+<ellipse cx="78" cy="13" rx="2.5" ry="2.5" fill="rgba(255,255,255,0.9)"/>
+<path d="M72,16 L90,16 M81,8 L81,24" stroke="#99f6e4" stroke-width="0.8" opacity="0.7"/>
+<ellipse cx="85" cy="20" rx="1.5" ry="1.5" fill="#fff" opacity="0.8"/>`;
+  /* ── wp_katana — Katana Divina ── */
+  if(wid==='wp_katana') return `
+<rect x="81" y="56" width="4" height="22" rx="1.5" fill="#1c1917" filter="url(#hsh)"/>
+<rect x="77" y="50" width="10" height="5" rx="2" fill="#d97706" filter="url(#hsh)"/>
+<rect x="77" y="50" width="10" height="2.5" rx="1.5" fill="#fde68a"/>
+<path d="M83,12 Q86,32 83,50 L79,50 Q82,32 79,12 Z" fill="#9ca3af" filter="url(#hsh)"/>
+<path d="M83,12 Q86,32 83,50 L81,50 Q84,32 81,12 Z" fill="#f9fafb"/>
+<line x1="82" y1="14" x2="82" y2="48" stroke="rgba(255,255,255,0.75)" stroke-width="0.8"/>
+<ellipse cx="82" cy="10" rx="4" ry="4" fill="#fbbf24" filter="url(#hglow)"/>
+<ellipse cx="82" cy="10" rx="2" ry="2" fill="#fff" filter="url(#hglow)"/>
+<ellipse cx="85" cy="26" rx="1" ry="1" fill="#fbbf24" filter="url(#hglow)"/>
+<ellipse cx="80" cy="38" rx="1" ry="1" fill="#fbbf24" filter="url(#hglow)"/>`;
+  /* ── wp_shield_u — Escudo Último ── */
+  if(wid==='wp_shield_u') return `
+<path d="M12,42 Q12,24 26,22 Q40,24 40,42 L40,62 Q26,76 12,62 Z" fill="#1e1b4b" filter="url(#hsh)"/>
+<path d="M14,42 Q14,26 26,24 Q38,26 38,42 L38,61 Q26,73 14,61 Z" fill="#3730a3"/>
+<path d="M17,42 Q17,30 26,28 Q35,30 35,42 L35,59 Q26,69 17,59 Z" fill="#4338ca"/>
+<circle cx="26" cy="46" r="9" fill="#1e1b4b" filter="url(#hsh)"/>
+<circle cx="26" cy="46" r="7" fill="#4f46e5" filter="url(#hglow)"/>
+<circle cx="26" cy="46" r="4" fill="#818cf8" filter="url(#hglow)"/>
+<circle cx="26" cy="46" r="2" fill="#e0e7ff" filter="url(#hglow)"/>
+<line x1="26" y1="24" x2="26" y2="73" stroke="rgba(129,140,248,0.5)" stroke-width="1.5"/>
+<line x1="13" y1="46" x2="39" y2="46" stroke="rgba(129,140,248,0.5)" stroke-width="1.5"/>
+<ellipse cx="26" cy="28" rx="4" ry="2.5" fill="rgba(255,255,255,0.2)"/>`;
+  /* sin arma */
+  return `
 <ellipse cx="74" cy="76" rx="6" ry="6" fill="url(#hskin)" filter="url(#hsh)"/>
-<ellipse cx="72" cy="73" rx="3.5" ry="3.5" fill="rgba(255,255,255,0.25)"/>
-`}
+<ellipse cx="72" cy="73" rx="3.5" ry="3.5" fill="rgba(255,255,255,0.25)"/>`;
+})()}
 
 <!-- CUELLO -->
 <ellipse cx="50" cy="41" rx="8" ry="9" fill="url(#hskin)" filter="url(#hsh)"/>
 <ellipse cx="47" cy="38" rx="5" ry="6" fill="rgba(255,255,255,0.2)"/>
 
-${eq.helm?`<!-- YELMO equipado -->
-<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q60 26 50 26 Q40 26 30 32 Z" fill="#6b7280" filter="url(#hsh)"/>
-<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q60 26 50 26 Q40 26 30 32 Z" fill="url(#hshirt)" filter="url(#hsh)"/>
-<ellipse cx="42" cy="18" rx="12" ry="8" fill="rgba(255,255,255,0.2)"/>
-<!-- Visor -->
-<rect x="32" y="28" width="36" height="7" rx="3" fill="rgba(0,0,0,0.75)"/>
-<line x1="32" y1="31" x2="68" y2="31" stroke="rgba(96,165,250,0.6)" stroke-width="0.8"/>
-<rect x="32" y="28" width="36" height="7" rx="3" fill="none" stroke="#6b7280" stroke-width="1"/>
-<!-- Cimera -->
-<rect x="47" y="2" width="6" height="10" rx="3" fill="#fbbf24" filter="url(#hglow)"/>
-<ellipse cx="50" cy="10" rx="4" ry="4" fill="#fbbf24" filter="url(#hglow)"/>
-`:
-`<!-- CABELLO -->
+${(()=>{
+  const hid = eq.helm||'';
+  if(!hid) return `<!-- CABELLO -->
 <path d="M31 32 Q30 8 50 6 Q70 8 70 32 Q62 24 50 22 Q38 24 31 32 Z" fill="url(#hhair)" filter="url(#hsh)"/>
 <ellipse cx="42" cy="16" rx="10" ry="6" fill="rgba(255,255,255,0.15)"/>
-<!-- Mechones -->
 <path d="M35 14 Q32 6 30 2 Q34 8 36 14" fill="${p.hair}"/>
 <path d="M50 10 Q50 2 52 -2 Q52 4 50 10" fill="${p.hair}"/>
-<path d="M64 12 Q68 4 70 0 Q66 6 64 12" fill="${p.hair}"/>
-`}
+<path d="M64 12 Q68 4 70 0 Q66 6 64 12" fill="${p.hair}"/>`;
+  /* ot_helm1 - Yelmo de Cuero */
+  if(hid==='ot_helm1') return `
+<path d="M30 32 Q30 10 50 8 Q70 10 70 32 Q62 26 50 24 Q38 26 30 32 Z" fill="#8B4513" filter="url(#hsh)"/>
+<path d="M32 30 Q32 12 50 10 Q68 12 68 30 Q62 25 50 23 Q38 25 32 30 Z" fill="#a0522d"/>
+<path d="M34 28 Q34 14 50 13 Q66 14 66 28" fill="none" stroke="rgba(200,140,70,0.4)" stroke-width="1.5"/>
+<ellipse cx="42" cy="18" rx="10" ry="6" fill="rgba(255,255,255,0.12)"/>
+<path d="M30 28 Q28 24 30 20" fill="none" stroke="rgba(180,120,60,0.5)" stroke-width="2" stroke-linecap="round"/>
+<path d="M70 28 Q72 24 70 20" fill="none" stroke="rgba(180,120,60,0.5)" stroke-width="2" stroke-linecap="round"/>`;
+  /* ot_helm2 - Yelmo de Bronce */
+  if(hid==='ot_helm2') return `
+<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#c8903a" filter="url(#hsh)"/>
+<path d="M32 30 Q32 10 50 8 Q68 10 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#e8b050"/>
+<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.18)"/>
+<rect x="33" y="29" width="34" height="5" rx="2" fill="#a06820" filter="url(#hsh)"/>
+<rect x="35" y="30" width="30" height="3" rx="1.5" fill="rgba(220,170,70,0.5)"/>`;
+  /* ot_helm3 - Yelmo de Acero */
+  if(hid==='ot_helm3') return `
+<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#909098" filter="url(#hsh)"/>
+<path d="M32 30 Q32 10 50 8 Q68 10 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#c8c8d0"/>
+<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.2)"/>
+<path d="M38 26 L50 20 L62 26" fill="rgba(90,90,100,0.5)" stroke="rgba(70,70,80,0.4)" stroke-width="0.5"/>
+<rect x="32" y="29" width="36" height="5" rx="1.5" fill="rgba(70,70,80,0.6)" filter="url(#hsh)"/>
+<circle cx="50" cy="14" r="4" fill="rgba(180,180,200,0.5)"/>`;
+  /* ot_helm4 - Casco Runico */
+  if(hid==='ot_helm4') return `
+<path d="M29 32 Q29 8 50 6 Q71 8 71 32 Q63 25 50 23 Q37 25 29 32 Z" fill="#707078" filter="url(#hsh)"/>
+<path d="M31 30 Q31 10 50 8 Q69 10 69 30 Q63 24 50 22 Q37 24 31 30 Z" fill="#a0a0a8"/>
+<path d="M29 22 Q26 18 25 13 Q26 9 29 11 Q28 17 29 22 Z" fill="#707078" filter="url(#hsh)"/>
+<path d="M71 22 Q74 18 75 13 Q74 9 71 11 Q72 17 71 22 Z" fill="#707078" filter="url(#hsh)"/>
+<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.18)"/>
+<line x1="50" y1="6" x2="50" y2="32" stroke="rgba(200,200,210,0.35)" stroke-width="2.5"/>
+<rect x="31" y="29" width="38" height="5" rx="1.5" fill="rgba(50,50,60,0.7)" filter="url(#hsh)"/>
+<ellipse cx="38" cy="20" rx="2" ry="3" fill="#8090ff" filter="url(#hglow)" opacity="0.8"/>
+<ellipse cx="62" cy="20" rx="2" ry="3" fill="#8090ff" filter="url(#hglow)" opacity="0.8"/>
+<ellipse cx="50" cy="12" rx="2.5" ry="2.5" fill="#a0b0ff" filter="url(#hglow)" opacity="0.7"/>`;
+  /* ot_helm5 - Corona del Guerrero */
+  if(hid==='ot_helm5') return `
+<path d="M30 32 Q30 10 50 8 Q70 10 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#c8a020" filter="url(#hsh)"/>
+<path d="M32 30 Q32 12 50 10 Q68 12 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#ffe040"/>
+<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.25)"/>
+<path d="M30 12 L30 4 L38 9 L50 4 L62 9 L70 4 L70 12" stroke="#8B6800" stroke-width="2" fill="#c8a020" filter="url(#hsh)"/>
+<circle cx="30" cy="4" r="3" fill="#e00020" filter="url(#hglow)"/>
+<circle cx="50" cy="4" r="3" fill="#0040e0" filter="url(#hglow)"/>
+<circle cx="70" cy="4" r="3" fill="#00a020" filter="url(#hglow)"/>
+<rect x="32" y="29" width="36" height="5" rx="2" fill="rgba(140,100,0,0.6)" filter="url(#hsh)"/>
+<path d="M34 31 Q50 29 66 31" stroke="rgba(255,240,100,0.5)" stroke-width="1" fill="none"/>`;
+  return `
+<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q60 26 50 26 Q40 26 30 32 Z" fill="#6b7280" filter="url(#hsh)"/>
+<ellipse cx="42" cy="18" rx="12" ry="8" fill="rgba(255,255,255,0.2)"/>
+<rect x="32" y="28" width="36" height="7" rx="3" fill="rgba(0,0,0,0.75)"/>`;
+})()}
 
 <!-- CABEZA -->
 <ellipse cx="50" cy="24" rx="20" ry="20" fill="url(#hskin)" filter="url(#hsh)"/>
@@ -25773,6 +26396,45 @@ ${eq.helm?`<!-- YELMO equipado -->
 
 <!-- NIVEL -->
 <text x="50" y="126" text-anchor="middle" font-size="7" font-weight="900" fill="#fbbf24" filter="url(#hglow)">Nv.${lv}</text>
+
+<!-- ACCESORIOS OVERLAY -->
+${(()=>{
+  const oid = eq.other||'';
+  /* ── ot_amulet1 — Amuleto de Vida (rojo, cuello) ── */
+  if(oid==='ot_amulet1') return `
+<ellipse cx="50" cy="42" rx="4" ry="4" fill="#dc2626" filter="url(#hglow)" opacity="0.9"/>
+<ellipse cx="50" cy="42" rx="2.5" ry="2.5" fill="#fca5a5" filter="url(#hglow)"/>
+<line x1="46" y1="42" x2="54" y2="42" stroke="#dc2626" stroke-width="0.8" opacity="0.6"/>`;
+  /* ── ot_amulet2 — Amuleto Arcano (púrpura, cuello) ── */
+  if(oid==='ot_amulet2') return `
+<ellipse cx="50" cy="42" rx="4.5" ry="4.5" fill="#7c3aed" filter="url(#hglow)" opacity="0.9"/>
+<ellipse cx="50" cy="42" rx="2.5" ry="2.5" fill="#c4b5fd" filter="url(#hglow)"/>
+<ellipse cx="47" cy="40" rx="1" ry="1" fill="rgba(255,255,255,0.8)"/>
+<line x1="45" y1="42" x2="55" y2="42" stroke="#a78bfa" stroke-width="0.8" opacity="0.6"/>`;
+  /* ── ot_amulet3 — Amuleto de Oro (dorado, cuello) ── */
+  if(oid==='ot_amulet3') return `
+<ellipse cx="50" cy="42" rx="4.5" ry="4.5" fill="#d97706" filter="url(#hglow)" opacity="0.9"/>
+<ellipse cx="50" cy="42" rx="2.5" ry="2.5" fill="#fde68a" filter="url(#hglow)"/>
+<ellipse cx="48" cy="40" rx="1.2" ry="1.2" fill="rgba(255,255,255,0.85)"/>
+<line x1="45" y1="42" x2="55" y2="42" stroke="#fbbf24" stroke-width="0.8" opacity="0.6"/>`;
+  /* ── ot_ring1 — Anillo de Poder (rojo, mano derecha) ── */
+  if(oid==='ot_ring1') return `
+<circle cx="76" cy="76" r="3.5" fill="none" stroke="#dc2626" stroke-width="1.5" filter="url(#hglow)"/>
+<ellipse cx="76" cy="73" rx="2" ry="1.5" fill="#ef4444" filter="url(#hglow)" opacity="0.9"/>`;
+  /* ── ot_ring2 — Anillo Sello (dorado, mano derecha) ── */
+  if(oid==='ot_ring2') return `
+<circle cx="76" cy="76" r="3.5" fill="none" stroke="#d97706" stroke-width="1.5" filter="url(#hglow)"/>
+<ellipse cx="76" cy="73" rx="2" ry="1.5" fill="#fbbf24" filter="url(#hglow)" opacity="0.9"/>
+<ellipse cx="76" cy="73" rx="1" ry="0.8" fill="rgba(255,255,255,0.8)"/>`;
+  /* ── ot_gem_shield — Escudo de Gema (brazo izquierdo) ── */
+  if(oid==='ot_gem_shield') return `
+<path d="M14,50 Q14,36 24,34 Q34,36 34,50 L34,62 Q24,72 14,62 Z" fill="#0369a1" filter="url(#hglow)"/>
+<path d="M16,50 Q16,38 24,36 Q32,38 32,50 L32,61 Q24,69 16,61 Z" fill="#0ea5e9"/>
+<ellipse cx="24" cy="52" rx="6" ry="6" fill="#38bdf8" filter="url(#hglow)"/>
+<ellipse cx="24" cy="52" rx="4" ry="4" fill="#bae6fd" filter="url(#hglow)"/>
+<ellipse cx="22" cy="50" rx="2" ry="2" fill="rgba(255,255,255,0.9)"/>`;
+  return '';
+})()}
 </svg>`;}
 
 // ══════════════════════════════════════════════════════════════
