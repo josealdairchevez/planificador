@@ -6638,11 +6638,11 @@
         .hab-routine-tag.anytime { background:rgba(99,102,241,0.1);color:#818cf8; }
 
         /* ── GRÁFICO ACTIVIDAD POR DÍA ──────────────────────── */
-        .hab-weekday-chart { margin-bottom:12px;display:flex;flex-direction:column;gap:0; }
+        .hab-weekday-chart { margin-top:16px;margin-bottom:12px;border-top:1px solid rgba(255,255,255,0.07);padding-top:14px; }
         .hab-wdc-title {
             font-size:0.62rem;font-weight:900;color:#888;
             text-transform:uppercase;letter-spacing:1.2px;
-            padding:6px 0 14px 0;margin:0;line-height:1;
+            display:block;margin-bottom:12px;
         }
         .hab-wdc-bars {
             display:flex;gap:5px;align-items:flex-end;height:90px;padding:4px 0;
@@ -16193,8 +16193,8 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
                 <div id="habStrengthList"></div>
 
                 <!-- Gráfico actividad por día de semana -->
-                <div class="hab-weekday-chart">
-                    <div class="hab-wdc-title">📊 Actividad por día de la semana</div>
+                <div class="hab-weekday-chart" style="margin-top:20px;">
+                    <div class="hab-wdc-title" style="display:block;margin-bottom:14px;">📊 Actividad por día de la semana</div>
                     <div class="hab-wdc-bars" id="habWdcBars"></div>
                 </div>
 
