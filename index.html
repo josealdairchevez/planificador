@@ -17147,7 +17147,7 @@ function renderHabHero() {
         const si = equippedId ? allItems.find(i=>i&&i.id===equippedId) : null;
         const ic = {weapon:'⚔️',armor:'🛡️',other:'💍'};
         const nm = {weapon:'Arma',armor:'Armadura',other:'Otros'};
-        const svgEl = si && typeof getEquipSVG==='function' ? getEquipSVG(si.id, si.type) : null;
+        const svgEl = si && typeof getEquipSVG==='function' ? getEquipSVG(si.id, si.type, 36) : null;
         return `<div style="background:rgba(255,255,255,0.04);border:1.5px solid ${si?'rgba(167,139,250,0.5)':'rgba(255,255,255,0.07)'};border-radius:10px;padding:6px;text-align:center;">
           <div style="width:36px;height:36px;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;">${svgEl||`<span style='font-size:1.2rem;opacity:0.3;'>${ic[slot]}</span>`}</div>
           <div style="font-size:0.44rem;color:${si?'#c4b5fd':'#555'};margin-top:2px;font-weight:800;line-height:1.2;">${si?si.name:nm[slot]}</div>
@@ -22530,11 +22530,10 @@ function getEquipSVG(id, type) {
 }
 
 // ── SVGs REALISTAS Y ÚNICOS DE EQUIPAMIENTO ──────────────────
-function getEquipSVG(id, type) {
+function getEquipSVG(id, type, size) {
+    size = size || 54;
     var s = {
-
-// Palo: vara cilíndrica de madera nudosa, más gruesa en el centro
-'wp_stick':'<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="stk_g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c8a064"/><stop offset="40%" stop-color="#e0b87a"/><stop offset="100%" stop-color="#7a5030"/></linearGradient></defs><ellipse cx="22" cy="32" rx="3.5" ry="18" transform="rotate(-30 22 32)" fill="url(#stk_g)"/><ellipse cx="22" cy="32" rx="1.5" ry="18" transform="rotate(-30 22 32)" fill="none" stroke="rgba(100,60,20,0.3)" stroke-width="1"/><circle cx="35" cy="12" r="2.5" fill="#7a5030" opacity="0.7"/><circle cx="13" cy="44" r="1.5" fill="#5a3a18" opacity="0.8"/></svg>',
+// Palo: vara cilíndrica de madera nudosa, más gruesa en el centro xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="stk_g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c8a064"/><stop offset="40%" stop-color="#e0b87a"/><stop offset="100%" stop-color="#7a5030"/></linearGradient></defs><ellipse cx="22" cy="32" rx="3.5" ry="18" transform="rotate(-30 22 32)" fill="url(#stk_g)"/><ellipse cx="22" cy="32" rx="1.5" ry="18" transform="rotate(-30 22 32)" fill="none" stroke="rgba(100,60,20,0.3)" stroke-width="1"/><circle cx="35" cy="12" r="2.5" fill="#7a5030" opacity="0.7"/><circle cx="13" cy="44" r="1.5" fill="#5a3a18" opacity="0.8"/></svg>',
 
 // Daga de Piedra: hoja corta triangular con filo irregular tipo obsidiana
 'wp_dagger1':'<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="dg1_g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4a4a5a"/><stop offset="50%" stop-color="#7a7a8a"/><stop offset="100%" stop-color="#2a2a3a"/></linearGradient></defs><polygon points="27,8 22,30 25,32 27,30 29,32 32,30" fill="url(#dg1_g)"/><polygon points="25,28 22,30 25,32 27,30" fill="rgba(0,0,0,0.3)"/><polygon points="29,28 32,30 29,32 27,30" fill="rgba(255,255,255,0.15)"/><rect x="22" y="32" width="10" height="3" rx="1" fill="#5c3a1a"/><rect x="23" y="35" width="8" height="10" rx="1.5" fill="#3a2010" stroke="#2a1008" stroke-width="0.5"/><line x1="26" y1="35" x2="26" y2="45" stroke="rgba(200,150,80,0.3)" stroke-width="0.8"/></svg>',
@@ -22733,7 +22732,9 @@ function getEquipSVG(id, type) {
         };
         svg = fb[type] || fb.weapon;
     }
-    return '<div style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;">' + svg + '</div>';
+    // Hacer que el SVG escale con el contenedor
+    svg = svg.replace('<svg ', '<svg width="100%" height="100%" style="display:block;" ');
+    return '<div style="width:'+size+'px;height:'+size+'px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">' + svg + '</div>';
 }
 window.getEquipSVG = getEquipSVG; // ← exponer globalmente para panel Héroe
 
@@ -22833,7 +22834,7 @@ function renderEquipment() {
 
                 badgeHtml +
 
-                '<div style="width:54px;height:54px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;">' + getEquipSVG(item.id, item.type) + '</div>' +
+                getEquipSVG(item.id, item.type) +
 
                 '<div style="font-size:0.48rem;color:' + nameColor + ';font-weight:800;line-height:1.2;margin-bottom:3px;">' + item.name + '</div>' +
 
@@ -23891,7 +23892,7 @@ window.openInventoryPanel = function() {
             ['weapon','armor','other'].forEach(function(sl) {
                 var eid   = equip[sl];
                 var it    = eid ? allEq.find(function(i){ return i.id===eid; }) : null;
-                var svgEl = it && typeof window.getEquipSVG==='function' ? window.getEquipSVG(it.id,it.type) : null;
+                var svgEl = it && typeof window.getEquipSVG==='function' ? window.getEquipSVG(it.id,it.type,40) : null;
                 var slotIcon = {weapon:'⚔️',armor:'🛡️',other:'💍'}[sl];
                 var slotName = {weapon:'Arma',armor:'Armadura',other:'Otros'}[sl];
                 content += '<div style="background:rgba(139,92,246,0.15);border:1.5px solid '+(it?'#a78bfa':'rgba(255,255,255,0.08)')+';border-radius:14px;padding:10px 6px;text-align:center;">' +
@@ -23911,7 +23912,7 @@ window.openInventoryPanel = function() {
                 content += '<div style="font-size:0.58rem;color:#34d399;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">🎒 Comprados — toca para equipar</div>';
                 content += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
                 notEquipped.forEach(function(it) {
-                    var svgEl = typeof window.getEquipSVG==='function' ? window.getEquipSVG(it.id,it.type) : null;
+                    var svgEl = typeof window.getEquipSVG==='function' ? window.getEquipSVG(it.id,it.type,40) : null;
                     var statStr = [(it.atk>0?'ATK+'+it.atk:''),(it.def>0?'DEF+'+it.def:'')].filter(Boolean).join(' ');
                     content += '<div onclick="window._invEquipItem(\''+it.id+'\')" style="background:rgba(16,185,129,0.1);border:1.5px solid rgba(52,211,153,0.5);border-radius:14px;padding:10px 6px;text-align:center;cursor:pointer;position:relative;">' +
                         '<div style="width:40px;height:40px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;">'+(svgEl||'<span style="font-size:1.4rem;">⚔️</span>')+'</div>' +
@@ -26669,7 +26670,7 @@ window.renderHabHero = function() {
         const si = equippedId ? allItems.find(i=>i&&i.id===equippedId) : null;
         const ic = {weapon:'⚔️',armor:'🛡️',other:'💍'};
         const nm = {weapon:'Arma',armor:'Armadura',other:'Otros'};
-        const svgEl = si && typeof getEquipSVG==='function' ? getEquipSVG(si.id, si.type) : null;
+        const svgEl = si && typeof getEquipSVG==='function' ? getEquipSVG(si.id, si.type, 36) : null;
         return `<div style="background:rgba(255,255,255,0.04);border:1.5px solid ${si?'rgba(167,139,250,0.5)':'rgba(255,255,255,0.07)'};border-radius:10px;padding:6px;text-align:center;">
           <div style="width:36px;height:36px;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;">${svgEl||`<span style='font-size:1.2rem;opacity:0.3;'>${ic[slot]}</span>`}</div>
           <div style="font-size:0.44rem;color:${si?'#c4b5fd':'#555'};margin-top:2px;font-weight:800;line-height:1.2;">${si?si.name:nm[slot]}</div>
