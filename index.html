@@ -23843,39 +23843,87 @@ window.openInventoryPanel = function() {
     var old = document.getElementById('_invPanelOverlay');
     if (old) old.remove();
 
-    var hero   = _getPreviewHero();
+    // Usar loadHero real para tener purchased array correcto
+    var hero   = typeof loadHero==='function' ? loadHero() : {};
     var inv    = typeof loadInv==='function' ? loadInv() : {};
     var pets   = typeof loadPets==='function' ? loadPets() : {};
     var eqDB   = window._HAB_EQUIP_DB || {weapon:[],armor:[],other:[]};
     var allEq  = [...(eqDB.weapon||[]),...(eqDB.armor||[]),...(eqDB.other||[])];
-    var equip  = hero.equipment||{};
+    var equip  = hero.equipment || {};
+    var purchased = hero.purchased || [];
 
     var overlay = document.createElement('div');
     overlay.id  = '_invPanelOverlay';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99996;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.82);backdrop-filter:blur(8px);';
     overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
 
+    // Función para equipar desde inventario
+    window._invEquipItem = function(itemId) {
+        var h = typeof loadHero==='function' ? loadHero() : {};
+        var item = allEq.find(function(i){ return i.id===itemId; });
+        if (!item) return;
+        h.equipment = h.equipment || {};
+        h.equipment[item.type] = itemId;
+        // Recalcular stats
+        var newAtk=5, newDef=3;
+        Object.values(h.equipment).forEach(function(eid){
+            ['weapon','armor','other'].forEach(function(cat){
+                var found=(eqDB[cat]||[]).find(function(i){return i.id===eid;});
+                if(found){newAtk+=(found.atk||0);newDef+=(found.def||0);}
+            });
+        });
+        h.stats=h.stats||{}; h.stats.atk=newAtk; h.stats.def=newDef;
+        if(typeof saveHero==='function') saveHero(h);
+        if(typeof renderHabHero==='function') renderHabHero();
+        if(typeof renderEquipment==='function') renderEquipment();
+        // Refrescar inventario
+        document.getElementById('_invPanelOverlay').remove();
+        window.openInventoryPanel();
+    };
+
     function buildContent(tab) {
         var content = '';
 
         if (tab === 'equip') {
-            var slots = ['weapon','armor','other'];
-            var slotName = {weapon:'Arma',armor:'Armadura',other:'Otros'};
-            var slotIcon = {weapon:'⚔️',armor:'🛡️',other:'💍'};
-            content = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">';
-            slots.forEach(function(sl) {
-                var eid = equip[sl];
-                var it  = eid ? allEq.find(function(i){ return i.id===eid; }) : null;
-                var svgEl = it && typeof getEquipSVG==='function' ? getEquipSVG(it.id,it.type) : null;
-                content +=
-                    '<div style="background:rgba(139,92,246,0.1);border:1.5px solid '+(it?'rgba(168,85,247,0.55)':'rgba(255,255,255,0.08)')+';border-radius:16px;padding:12px 6px;text-align:center;">' +
-                    '<div style="width:44px;height:44px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;">'+(svgEl||'<span style="font-size:1.6rem;opacity:0.25;">'+slotIcon[sl]+'</span>')+'</div>' +
-                    '<div style="font-size:0.5rem;color:'+(it?'#c4b5fd':'#444')+';font-weight:800;line-height:1.3;">'+(it?it.name:slotName[sl])+'</div>' +
-                    (it?'<div style="font-size:0.42rem;color:#a78bfa;margin-top:2px;">'+(it.atk>0?'ATK+'+it.atk:'')+(it.def>0?' DEF+'+it.def:'')+'</div>':'') +
+            // Sección 1: Equipo equipado actualmente
+            content += '<div style="font-size:0.58rem;color:#a78bfa;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚔️ Equipado ahora</div>';
+            content += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">';
+            ['weapon','armor','other'].forEach(function(sl) {
+                var eid   = equip[sl];
+                var it    = eid ? allEq.find(function(i){ return i.id===eid; }) : null;
+                var svgEl = it && typeof window.getEquipSVG==='function' ? window.getEquipSVG(it.id,it.type) : null;
+                var slotIcon = {weapon:'⚔️',armor:'🛡️',other:'💍'}[sl];
+                var slotName = {weapon:'Arma',armor:'Armadura',other:'Otros'}[sl];
+                content += '<div style="background:rgba(139,92,246,0.15);border:1.5px solid '+(it?'#a78bfa':'rgba(255,255,255,0.08)')+';border-radius:14px;padding:10px 6px;text-align:center;">' +
+                    '<div style="width:40px;height:40px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;">'+(svgEl||'<span style="font-size:1.4rem;opacity:0.2;">'+slotIcon+'</span>')+'</div>' +
+                    '<div style="font-size:0.46rem;color:'+(it?'#c4b5fd':'#444')+';font-weight:800;line-height:1.2;">'+(it?it.name:slotName)+'</div>' +
+                    (it?'<div style="font-size:0.4rem;color:#a78bfa;">'+[(it.atk>0?'ATK+'+it.atk:''),(it.def>0?'DEF+'+it.def:'')].filter(Boolean).join(' ')+'</div>':'') +
                     '</div>';
             });
             content += '</div>';
-            content += '<div style="font-size:0.6rem;color:#6b7280;text-align:center;">Equipa items desde la Tienda ⚔️</div>';
+
+            // Sección 2: Items comprados disponibles para equipar
+            var purchasedItems = purchased.map(function(id){ return allEq.find(function(i){ return i.id===id; }); }).filter(Boolean);
+            var notEquipped = purchasedItems.filter(function(it){ return !Object.values(equip).includes(it.id); });
+
+            if (notEquipped.length) {
+                content += '<div style="height:1px;background:rgba(255,255,255,0.07);margin-bottom:12px;"></div>';
+                content += '<div style="font-size:0.58rem;color:#34d399;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">🎒 Comprados — toca para equipar</div>';
+                content += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
+                notEquipped.forEach(function(it) {
+                    var svgEl = typeof window.getEquipSVG==='function' ? window.getEquipSVG(it.id,it.type) : null;
+                    var statStr = [(it.atk>0?'ATK+'+it.atk:''),(it.def>0?'DEF+'+it.def:'')].filter(Boolean).join(' ');
+                    content += '<div onclick="window._invEquipItem(\''+it.id+'\')" style="background:rgba(16,185,129,0.1);border:1.5px solid rgba(52,211,153,0.5);border-radius:14px;padding:10px 6px;text-align:center;cursor:pointer;position:relative;">' +
+                        '<div style="width:40px;height:40px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;">'+(svgEl||'<span style="font-size:1.4rem;">⚔️</span>')+'</div>' +
+                        '<div style="font-size:0.46rem;color:#6ee7b7;font-weight:800;line-height:1.2;">' + it.name + '</div>' +
+                        (statStr?'<div style="font-size:0.4rem;color:#34d399;">'+statStr+'</div>':'') +
+                        '<div style="margin-top:5px;font-size:0.48rem;font-weight:900;color:#fff;background:rgba(16,185,129,0.4);border-radius:8px;padding:2px 6px;">Equipar</div>' +
+                        '</div>';
+                });
+                content += '</div>';
+            } else if (!purchasedItems.length) {
+                content += '<div style="text-align:center;padding:20px 0;color:#444;font-size:0.72rem;">Sin items comprados aún.<br>¡Ve a la Tienda! ⚔️</div>';
+            }
         }
 
         if (tab === 'eggs') {
@@ -23932,7 +23980,7 @@ window.openInventoryPanel = function() {
 
         if (tab === 'seasonal') {
             var mySeas = inv.seasonal||[];
-            if (!mySeas.length) { content = '<div style="text-align:center;padding:30px 0;"><div style="font-size:3rem;margin-bottom:12px;">🌸</div><div style="color:#555;font-size:0.75rem;">Sin items estacionales.<br>¡Consíguelos en la Tienda!</div></div>'; }
+            if (!mySeas.length) { content = '<div style="text-align:center;padding:30px 0;"><div style="font-size:3rem;margin-bottom:12px;">🌸</div><div style="color:#555;font-size:0.75rem;">Sin items estacionales.</div></div>'; }
             else {
                 content = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">';
                 mySeas.forEach(function(itemId) {
@@ -23971,7 +24019,7 @@ window.openInventoryPanel = function() {
         if (inner) {
             inner.innerHTML =
                 '<div style="display:flex;gap:6px;margin-bottom:16px;">'+tabsHtml+'</div>' +
-                '<div style="overflow-y:auto;max-height:45vh;padding-right:2px;">'+buildContent(_activeTab)+'</div>';
+                '<div style="overflow-y:auto;max-height:52vh;padding-right:2px;">'+buildContent(_activeTab)+'</div>';
         }
     }
 
