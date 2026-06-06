@@ -22533,10 +22533,6 @@ function getEquipSVG(id, type) {
 function getEquipSVG(id, type) {
     var s = {
 
-// ═══════════════════════════════════════════════════════
-// WEAPONS — cada arma con su forma real única
-// ═══════════════════════════════════════════════════════
-
 // Palo: vara cilíndrica de madera nudosa, más gruesa en el centro
 'wp_stick':'<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="stk_g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c8a064"/><stop offset="40%" stop-color="#e0b87a"/><stop offset="100%" stop-color="#7a5030"/></linearGradient></defs><ellipse cx="22" cy="32" rx="3.5" ry="18" transform="rotate(-30 22 32)" fill="url(#stk_g)"/><ellipse cx="22" cy="32" rx="1.5" ry="18" transform="rotate(-30 22 32)" fill="none" stroke="rgba(100,60,20,0.3)" stroke-width="1"/><circle cx="35" cy="12" r="2.5" fill="#7a5030" opacity="0.7"/><circle cx="13" cy="44" r="1.5" fill="#5a3a18" opacity="0.8"/></svg>',
 
@@ -22739,6 +22735,7 @@ function getEquipSVG(id, type) {
     }
     return '<div style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;">' + svg + '</div>';
 }
+window.getEquipSVG = getEquipSVG; // ← exponer globalmente para panel Héroe
 
 let _equipTab = 'weapon';
 
@@ -22768,6 +22765,7 @@ function renderEquipment() {
 
     const items = EQUIP_DB[_equipTab] || [];
     const inv   = loadInv ? loadInv() : {};
+    const purchased = hero.purchased || [];
 
     // Stats totales del equipo equipado (para mostrar en header)
     let totalAtk = 0, totalDef = 0;
@@ -22786,53 +22784,63 @@ function renderEquipment() {
         '<span style="font-size:0.65rem;color:#fbbf24;font-weight:900;margin-left:auto;">🪙 ' + (hero.coins||0) + '  💎 ' + (hero.gems||0) + '</span>' +
         '</div>';
 
-    // Grid de ítems estilo Habit Hunter
+    // Grid de ítems con 3 estados: equipado / comprado / no comprado
     const grid = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
         items.filter(function(item){ return item.id && item.id !== '_w' && item.id !== '_m' && item.id !== '_r' && item.id !== '_h'; })
         .map(function(item) {
-            const isEquipped = Object.values(equip).includes(item.id);
-            const canAfford  = item.currency === 'gem'
+            const isEquipped  = Object.values(equip).includes(item.id);
+            const isPurchased = !isEquipped && purchased.includes(item.id);
+            const canAfford   = item.currency === 'gem'
                 ? (hero.gems||0) >= item.cost
                 : (hero.coins||0) >= item.cost;
-            const currIcon   = item.currency === 'gem' ? '💎' : '🪙';
+            const currIcon    = item.currency === 'gem' ? '💎' : '🪙';
+
+            // Colores según estado
+            var bgColor, borderColor, nameColor, priceColor, badgeHtml;
+            if (isEquipped) {
+                bgColor     = 'rgba(139,92,246,0.22)';
+                borderColor = '#a78bfa';
+                nameColor   = '#c4b5fd';
+                priceColor  = '#a78bfa';
+                badgeHtml   = '<span style="position:absolute;top:4px;right:5px;font-size:0.52rem;background:#7c3aed;color:#fff;border-radius:6px;padding:1px 5px;font-weight:900;">✓ Equipado</span>';
+            } else if (isPurchased) {
+                bgColor     = 'rgba(16,185,129,0.12)';
+                borderColor = 'rgba(52,211,153,0.6)';
+                nameColor   = '#6ee7b7';
+                priceColor  = '#34d399';
+                badgeHtml   = '<span style="position:absolute;top:4px;right:5px;font-size:0.52rem;background:rgba(16,185,129,0.3);color:#6ee7b7;border-radius:6px;padding:1px 5px;font-weight:900;border:1px solid #34d399;">✓ Comprado</span>';
+            } else {
+                bgColor     = 'rgba(255,255,255,0.04)';
+                borderColor = canAfford ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)';
+                nameColor   = '#aaa';
+                priceColor  = canAfford ? (item.currency === 'gem' ? '#67e8f9' : '#fbbf24') : '#555';
+                badgeHtml   = !canAfford ? '<span style="position:absolute;top:4px;left:5px;font-size:0.7rem;opacity:0.5;">🔒</span>' : '';
+            }
 
             // Build stat label
             var statParts = [];
             if (item.atk > 0) statParts.push('ATK +' + item.atk);
             if (item.def > 0) statParts.push('DEF +' + item.def);
             if (item.hp  > 0) statParts.push('HP +'  + item.hp);
-            if (item.spd > 0) statParts.push('SPD +' + item.spd);
-            if (item.xpm > 0) statParts.push('XP +'  + item.xpm + '%');
-            if (item.gld > 0) statParts.push('ORO +' + item.gld + '%');
             const statLabel = statParts.join(' · ') || '—';
 
             return '<div onclick="window.showEquipItemPopup(\'' + item.id + '\',\'' + _equipTab + '\')" ' +
-                'style="position:relative;background:' + (isEquipped ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.04)') + ';' +
-                'border:1.5px solid ' + (isEquipped ? '#a78bfa' : (!canAfford ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)')) + ';' +
+                'style="position:relative;background:' + bgColor + ';' +
+                'border:1.5px solid ' + borderColor + ';' +
                 'border-radius:14px;padding:10px 6px 8px;text-align:center;cursor:pointer;' +
                 'transition:transform 0.15s,border-color 0.2s;min-height:110px;' +
                 'display:flex;flex-direction:column;align-items:center;justify-content:space-between;">' +
 
-                // Badge equipado
-                (isEquipped ? '<span style="position:absolute;top:4px;right:5px;font-size:0.55rem;' +
-                    'background:#a78bfa;color:#fff;border-radius:6px;padding:1px 4px;font-weight:900;">✓</span>' : '') +
+                badgeHtml +
 
-                // Lock si no puede pagar
-                (!canAfford && !isEquipped ? '<span style="position:absolute;top:4px;left:5px;font-size:0.7rem;opacity:0.5;">🔒</span>' : '') +
-
-                // Icono grande
                 '<div style="width:54px;height:54px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;">' + getEquipSVG(item.id, item.type) + '</div>' +
 
-                // Nombre
-                '<div style="font-size:0.48rem;color:' + (isEquipped ? '#c4b5fd' : '#aaa') + ';' +
-                'font-weight:800;line-height:1.2;margin-bottom:3px;">' + item.name + '</div>' +
+                '<div style="font-size:0.48rem;color:' + nameColor + ';font-weight:800;line-height:1.2;margin-bottom:3px;">' + item.name + '</div>' +
 
-                // Stat
                 '<div style="font-size:0.44rem;color:#a78bfa;font-weight:700;margin-bottom:4px;">' + statLabel + '</div>' +
 
-                // Precio
-                '<div style="font-size:0.58rem;font-weight:900;color:' + (!canAfford && !isEquipped ? '#666' : (item.currency === 'gem' ? '#67e8f9' : '#fbbf24')) + ';">' +
-                currIcon + item.cost + '</div>' +
+                '<div style="font-size:0.58rem;font-weight:900;color:' + priceColor + ';">' +
+                (isEquipped ? '✓' : isPurchased ? '🔄 Equipar' : currIcon + item.cost) + '</div>' +
 
                 '</div>';
         }).join('') +
@@ -22870,8 +22878,11 @@ window.buyEquipItemV2 = function(itemId, category) {
     else        hero.coins -= cost;
 
     // Desequipar el anterior del mismo slot si lo hay
-    hero.equipment = hero.equipment || {};
+    hero.equipment  = hero.equipment  || {};
+    hero.purchased  = hero.purchased  || [];
     hero.equipment[item.type] = itemId;
+    // Guardar en array de comprados si no estaba ya
+    if (!hero.purchased.includes(itemId)) hero.purchased.push(itemId);
 
     // Recalcular stats del héroe según equipo
     var newAtk = 5, newDef = 3;
@@ -22899,10 +22910,11 @@ window.showEquipItemPopup = function(itemId, category) {
     const item  = items.find(function(i){ return i.id === itemId; });
     if (!item) return;
 
-    const isEquipped = Object.values(hero.equipment||{}).includes(itemId);
-    const isGem      = item.currency === 'gem';
-    const currIcon   = isGem ? '💎' : '🪙';
-    const canAfford  = isGem ? (hero.gems||0) >= item.cost : (hero.coins||0) >= item.cost;
+    const isEquipped  = Object.values(hero.equipment||{}).includes(itemId);
+    const isPurchased = !isEquipped && (hero.purchased||[]).includes(itemId);
+    const isGem       = item.currency === 'gem';
+    const currIcon    = isGem ? '💎' : '🪙';
+    const canAfford   = isGem ? (hero.gems||0) >= item.cost : (hero.coins||0) >= item.cost;
 
     var statParts = [];
     if (item.atk > 0) statParts.push('⚔️ ATK +' + item.atk);
@@ -22928,6 +22940,8 @@ window.showEquipItemPopup = function(itemId, category) {
 
     var btnHtml = isEquipped
         ? '<div style="flex:1;padding:15px;border-radius:18px;background:rgba(139,92,246,0.2);border:1.5px solid #a78bfa;text-align:center;font-size:0.82rem;font-weight:900;color:#c4b5fd;">✓ Ya equipado</div>'
+        : isPurchased
+        ? '<div onclick="window.buyEquipItemV2(\'' + itemId + '\',\'' + category + '\');document.getElementById(\'_equipPopupOverlay\').remove();" style="flex:1;padding:15px;border-radius:18px;background:linear-gradient(135deg,#059669,#34d399);border:none;text-align:center;font-size:0.85rem;font-weight:900;color:#fff;cursor:pointer;animation:_popGlow 2s infinite;">🔄 Equipar</div>'
         : (!canAfford
             ? '<div style="flex:1;padding:15px;border-radius:18px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);text-align:center;font-size:0.82rem;font-weight:900;color:#555;">🔒 Sin fondos</div>'
             : '<div onclick="window.buyEquipItemV2(\'' + itemId + '\',\'' + category + '\');document.getElementById(\'_equipPopupOverlay\').remove();" style="flex:1;padding:15px;border-radius:18px;background:linear-gradient(135deg,#7c3aed,#a855f7,#ec4899);border:none;text-align:center;font-size:0.85rem;font-weight:900;color:#fff;cursor:pointer;animation:_popGlow 2s infinite;">Comprar ' + currIcon + item.cost + '</div>'
