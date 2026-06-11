@@ -6977,7 +6977,7 @@
         }
         .hab-boss-canvas-wrap {
             width: 110px;
-            height: 110px;
+            height: 130px;
             flex-shrink: 0;
             border-radius: 16px;
             overflow: hidden;
@@ -7382,11 +7382,11 @@
             padding: 14px;
         }
         .hab-hero-canvas-wrap {
-            width: 100px;
-            height: 120px;
+            width: 120px;
+            height: 148px;
             flex-shrink: 0;
             border-radius: 14px;
-            overflow: hidden;
+            overflow: visible;
             background: radial-gradient(circle at 50% 30%, rgba(167,139,250,0.2), transparent 70%);
             border: 1.5px solid rgba(167,139,250,0.2);
         }
@@ -7403,8 +7403,8 @@
 
         @media (max-width: 768px) {
             #habitModal::before, #habitModal::after { animation: none !important; }
-            .hab-boss-canvas-wrap  { width: 76px; height: 76px; }
-            .hab-hero-canvas-wrap  { width: 84px; height: 100px; }
+            .hab-boss-canvas-wrap  { width: 110px; height: 130px; overflow: hidden; }
+            .hab-hero-canvas-wrap  { width: 110px; height: 135px; overflow: visible; }
         }
         /* MEJORA: `will-change` avisa al navegador que estas capas se van a componer,
            evitando recálculos de paint en cada frame con backdrop-filter activo */
@@ -17044,6 +17044,10 @@ function renderHabStats() {
 
 // ── Tab HÉROE ─────────────────────────────────────────────────
 function renderHabHero() {
+    // Delegar a la versión nueva si está disponible
+    if (window.renderHabHero && window.renderHabHero !== renderHabHero) {
+        return window.renderHabHero();
+    }
     const hero = JSON.parse(localStorage.getItem('jch_hero_v1')||'null') ||
         {coins:0,gems:0,level:1,hp:100,maxHp:100,xp:0,xpNext:100,class:'warrior',equipment:{},bossIndex:0,bossesDefeated:0,bossHp:100,inventory:[]};
     const CLASSES = window._HAB_CLASSES||[
@@ -17111,7 +17115,7 @@ function renderHabHero() {
     </div>
     <div class="hab-boss-3d-panel" style="margin-top:10px;">
       <div class="hab-boss-3d-inner">
-        <div class="hab-boss-canvas-wrap" id="habBossSVGWrap" style="width:90px;height:90px;flex-shrink:0;"></div>
+        <div class="hab-boss-canvas-wrap" id="habBossSVGWrap" style="width:110px;height:130px;flex-shrink:0;overflow:hidden;"></div>
         <div class="hab-boss-3d-info">
           <div class="hab-boss-3d-name">${boss.name}</div>
           <div class="hab-boss-3d-sub">🎁 ${boss.reward}</div>
@@ -17128,7 +17132,7 @@ function renderHabHero() {
 
     // Inyectar SVGs directamente
     if (typeof window.drawHero3D === 'function') window.drawHero3D('habHeroSVGWrap');
-    if (typeof window.drawBoss3D === 'function') window.drawBoss3D('habBossSVGWrap', bossI);
+    if (typeof window.drawBoss3D === 'function') setTimeout(function(){ window.drawBoss3D('habBossSVGWrap', bossI); }, 150);
 
     // Clases e inventario
     const detEl = document.getElementById('habHeroDetails');
@@ -22533,7 +22537,8 @@ function getEquipSVG(id, type) {
 function getEquipSVG(id, type, size) {
     size = size || 54;
     var s = {
-// Palo: vara cilíndrica de madera nudosa, más gruesa en el centro xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="stk_g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c8a064"/><stop offset="40%" stop-color="#e0b87a"/><stop offset="100%" stop-color="#7a5030"/></linearGradient></defs><ellipse cx="22" cy="32" rx="3.5" ry="18" transform="rotate(-30 22 32)" fill="url(#stk_g)"/><ellipse cx="22" cy="32" rx="1.5" ry="18" transform="rotate(-30 22 32)" fill="none" stroke="rgba(100,60,20,0.3)" stroke-width="1"/><circle cx="35" cy="12" r="2.5" fill="#7a5030" opacity="0.7"/><circle cx="13" cy="44" r="1.5" fill="#5a3a18" opacity="0.8"/></svg>',
+// Palo: vara cilíndrica de madera nudosa, más gruesa en el centro
+'wp_stick':'<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="stk_g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c8a064"/><stop offset="40%" stop-color="#e0b87a"/><stop offset="100%" stop-color="#7a5030"/></linearGradient></defs><ellipse cx="22" cy="32" rx="3.5" ry="18" transform="rotate(-30 22 32)" fill="url(#stk_g)"/><ellipse cx="22" cy="32" rx="1.5" ry="18" transform="rotate(-30 22 32)" fill="none" stroke="rgba(100,60,20,0.3)" stroke-width="1"/><circle cx="35" cy="12" r="2.5" fill="#7a5030" opacity="0.7"/><circle cx="13" cy="44" r="1.5" fill="#5a3a18" opacity="0.8"/></svg>',
 
 // Daga de Piedra: hoja corta triangular con filo irregular tipo obsidiana
 'wp_dagger1':'<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="dg1_g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4a4a5a"/><stop offset="50%" stop-color="#7a7a8a"/><stop offset="100%" stop-color="#2a2a3a"/></linearGradient></defs><polygon points="27,8 22,30 25,32 27,30 29,32 32,30" fill="url(#dg1_g)"/><polygon points="25,28 22,30 25,32 27,30" fill="rgba(0,0,0,0.3)"/><polygon points="29,28 32,30 29,32 27,30" fill="rgba(255,255,255,0.15)"/><rect x="22" y="32" width="10" height="3" rx="1" fill="#5c3a1a"/><rect x="23" y="35" width="8" height="10" rx="1.5" fill="#3a2010" stroke="#2a1008" stroke-width="0.5"/><line x1="26" y1="35" x2="26" y2="45" stroke="rgba(200,150,80,0.3)" stroke-width="0.8"/></svg>',
@@ -25678,6 +25683,17 @@ function svgHero(hero){
     const cls = hero.class||'warrior';
     const eq  = hero.equipment||{};
     const lv  = hero.level||1;
+
+    // ── EVOLUCIÓN VISUAL POR NIVEL ──────────────────────────────
+    // Nivel 1-4:   aspecto básico, sin aura
+    // Nivel 5-9:   aura visible, ligero brillo
+    // Nivel 10-19: aura media, efectos más brillantes
+    // Nivel 20+:   aura épica, partículas doradas
+    const lvTier = lv >= 20 ? 4 : lv >= 10 ? 3 : lv >= 5 ? 2 : 1;
+    const auraOpacity = lvTier === 1 ? 0.1 : lvTier === 2 ? 0.28 : lvTier === 3 ? 0.45 : 0.65;
+    const auraRx      = lvTier === 1 ? 38   : lvTier === 2 ? 44   : lvTier === 3 ? 48   : 52;
+    const showGlow    = lvTier >= 2;
+    const showParticles = lvTier >= 4;
     // Detectar si tiene arma y armadura desde EQUIP_DB (claves: weapon, armor, other)
     const hasWeapon = !!eq.weapon;
     const hasArmor  = !!eq.armor;
@@ -25685,7 +25701,7 @@ function svgHero(hero){
     // Compatibilidad con sistema legacy (claves: shield, helm, boots, amulet)
     const hasShield = !!eq.shield || (eq.weapon && (eq.weapon.startsWith('wp_shield')));
     const P = {
-        warrior:{skin:'#f5c6a0',skinD:'#c8956c',hair:'#5c2d0e',shirt:'#ef4444',shirtD:'#b91c1c',pants:'#7f1d1d',boots:'#292524',aura:'#ef4444'},
+        warrior:{skin:'#fde7c8',skinD:'#e8b88a',hair:'#facc15',shirt:'#16a34a',shirtD:'#14532d',pants:'#1d4ed8',boots:'#1e293b',aura:'#facc15'},
         mage:   {skin:'#ead5f5',skinD:'#c4a0d5',hair:'#5b21b6',shirt:'#7c3aed',shirtD:'#4c1d95',pants:'#4c1d95',boots:'#1e1065',aura:'#a78bfa'},
         rogue:  {skin:'#c8e6c9',skinD:'#a5d6a7',hair:'#1b5e20',shirt:'#16a34a',shirtD:'#14532d',pants:'#064e3b',boots:'#0a0a0a',aura:'#10b981'},
         healer: {skin:'#b3e5fc',skinD:'#81d4fa',hair:'#0d47a1',shirt:'#1565c0',shirtD:'#0d47a1',pants:'#1a237e',boots:'#0a0a1a',aura:'#60a5fa'},
@@ -25721,21 +25737,29 @@ function svgHero(hero){
     const sc = ac.c;
     const sd = ac.d;
 
-    return `<svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+    return `<svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" overflow="visible">
 <defs>
   <radialGradient id="haura" cx="50%" cy="50%"><stop offset="0%" stop-color="${p.aura}" stop-opacity="0.35"/><stop offset="100%" stop-color="transparent"/></radialGradient>
   <radialGradient id="hskin" cx="30%" cy="25%"><stop offset="0%" stop-color="#fff5" stop-opacity="0.9"/><stop offset="40%" stop-color="${p.skin}"/><stop offset="100%" stop-color="${p.skinD}"/></radialGradient>
   <radialGradient id="hshirt" cx="28%" cy="22%"><stop offset="0%" stop-color="${sc}cc"/><stop offset="50%" stop-color="${sc}"/><stop offset="100%" stop-color="${sd}"/></radialGradient>
   <radialGradient id="hpants" cx="35%" cy="30%"><stop offset="0%" stop-color="${p.pants}"/><stop offset="100%" stop-color="${p.boots}"/></radialGradient>
   <radialGradient id="hhair" cx="30%" cy="20%"><stop offset="0%" stop-color="${p.hair}cc"/><stop offset="100%" stop-color="${p.hair}"/></radialGradient>
-  <radialGradient id="heye" cx="20%" cy="20%"><stop offset="0%" stop-color="#fff"/><stop offset="35%" stop-color="${p.aura}"/><stop offset="100%" stop-color="#000"/></radialGradient>
+  <radialGradient id="heye" cx="20%" cy="20%"><stop offset="0%" stop-color="#fff"/><stop offset="35%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1d4ed8"/></radialGradient>
   <filter id="hglow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   <filter id="hsh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.5)"/></filter>
 </defs>
-<!-- Aura -->
-<ellipse cx="50" cy="70" rx="46" ry="52" fill="url(#haura)"/>
+<!-- Aura dinámica según nivel -->
+<ellipse cx="50" cy="70" rx="${auraRx}" ry="${Math.round(auraRx*1.1)}" fill="url(#haura)" opacity="${auraOpacity}"/>
+${showGlow ? `<!-- Glow de nivel ${lv} -->
+<ellipse cx="50" cy="60" rx="${Math.round(auraRx*0.6)}" ry="${Math.round(auraRx*0.65)}" fill="${p.aura}" opacity="${lvTier===2?'0.06':lvTier===3?'0.1':'0.18'}"/>` : ''}
+${showParticles ? `<!-- Partículas épicas nivel 20+ -->
+<circle cx="28" cy="35" r="2" fill="${p.aura}" opacity="0.7" filter="url(#hglow)"/>
+<circle cx="72" cy="32" r="1.5" fill="${p.aura}" opacity="0.65" filter="url(#hglow)"/>
+<circle cx="22" cy="60" r="1.5" fill="${p.aura}" opacity="0.6" filter="url(#hglow)"/>
+<circle cx="78" cy="58" r="2" fill="${p.aura}" opacity="0.65" filter="url(#hglow)"/>
+<circle cx="50" cy="18" r="1.5" fill="#fef08a" opacity="0.8" filter="url(#hglow)"/>` : ''}
 <!-- Sombra suelo -->
-<ellipse cx="50" cy="128" rx="22" ry="4" fill="rgba(0,0,0,0.3)"/>
+<ellipse cx="50" cy="122" rx="22" ry="4" fill="rgba(0,0,0,0.3)"/>
 
 ${hasShield?`<!-- Escudo equipado -->
 <path d="M18 56 L18 80 L28 88 L28 56 Z" fill="#1e40af" filter="url(#hsh)"/>
@@ -25780,17 +25804,17 @@ ${(()=>{
 <ellipse cx="62" cy="117" rx="4.5" ry="1.8" fill="rgba(96,165,250,0.25)" filter="url(#hglow)"/>`;
   /* sin botas o accesorios no-bota */
   return `
-<ellipse cx="39" cy="120" rx="11" ry="6" fill="${p.boots}" filter="url(#hsh)"/>
-<ellipse cx="62" cy="119" rx="10" ry="5.5" fill="${p.boots}" filter="url(#hsh)"/>
-<ellipse cx="36" cy="117" rx="7" ry="4" fill="rgba(255,255,255,0.12)"/>
-<ellipse cx="59" cy="116" rx="6" ry="3.5" fill="rgba(255,255,255,0.1)"/>`;
+<ellipse cx="39" cy="113" rx="11" ry="6" fill="${p.boots}" filter="url(#hsh)"/>
+<ellipse cx="62" cy="112" rx="10" ry="5.5" fill="${p.boots}" filter="url(#hsh)"/>
+<ellipse cx="36" cy="110" rx="7" ry="4" fill="rgba(255,255,255,0.12)"/>
+<ellipse cx="59" cy="109" rx="6" ry="3.5" fill="rgba(255,255,255,0.1)"/>`;
 })()}
 
-<!-- PIERNAS -->
-<ellipse cx="40" cy="100" rx="10" ry="20" fill="url(#hpants)" filter="url(#hsh)"/>
-<ellipse cx="61" cy="99" rx="9" ry="19" fill="${p.pants}" filter="url(#hsh)"/>
-<ellipse cx="37" cy="92" rx="6" ry="10" fill="rgba(255,255,255,0.1)"/>
-<ellipse cx="58" cy="91" rx="5.5" ry="9" fill="rgba(255,255,255,0.08)"/>
+<!-- PIERNAS — más cortas para proporción chibi -->
+<ellipse cx="40" cy="95" rx="10" ry="16" fill="url(#hpants)" filter="url(#hsh)"/>
+<ellipse cx="61" cy="94" rx="9" ry="15" fill="${p.pants}" filter="url(#hsh)"/>
+<ellipse cx="37" cy="88" rx="6" ry="8" fill="rgba(255,255,255,0.1)"/>
+<ellipse cx="58" cy="87" rx="5.5" ry="7" fill="rgba(255,255,255,0.08)"/>
 
 <!-- CINTURÓN -->
 <rect x="34" y="79" width="33" height="5" rx="2.5" fill="${hasArmor?'#b45309':'#3f3f46'}" filter="url(#hsh)"/>
@@ -26361,70 +26385,6 @@ ${(()=>{
 <ellipse cx="72" cy="73" rx="3.5" ry="3.5" fill="rgba(255,255,255,0.25)"/>`;
 })()}
 
-<!-- CUELLO -->
-<ellipse cx="50" cy="41" rx="8" ry="9" fill="url(#hskin)" filter="url(#hsh)"/>
-<ellipse cx="47" cy="38" rx="5" ry="6" fill="rgba(255,255,255,0.2)"/>
-
-${(()=>{
-  const hid = eq.helm||'';
-  if(!hid) return `<!-- CABELLO -->
-<path d="M31 32 Q30 8 50 6 Q70 8 70 32 Q62 24 50 22 Q38 24 31 32 Z" fill="url(#hhair)" filter="url(#hsh)"/>
-<ellipse cx="42" cy="16" rx="10" ry="6" fill="rgba(255,255,255,0.15)"/>
-<path d="M35 14 Q32 6 30 2 Q34 8 36 14" fill="${p.hair}"/>
-<path d="M50 10 Q50 2 52 -2 Q52 4 50 10" fill="${p.hair}"/>
-<path d="M64 12 Q68 4 70 0 Q66 6 64 12" fill="${p.hair}"/>`;
-  /* ot_helm1 - Yelmo de Cuero */
-  if(hid==='ot_helm1') return `
-<path d="M30 32 Q30 10 50 8 Q70 10 70 32 Q62 26 50 24 Q38 26 30 32 Z" fill="#8B4513" filter="url(#hsh)"/>
-<path d="M32 30 Q32 12 50 10 Q68 12 68 30 Q62 25 50 23 Q38 25 32 30 Z" fill="#a0522d"/>
-<path d="M34 28 Q34 14 50 13 Q66 14 66 28" fill="none" stroke="rgba(200,140,70,0.4)" stroke-width="1.5"/>
-<ellipse cx="42" cy="18" rx="10" ry="6" fill="rgba(255,255,255,0.12)"/>
-<path d="M30 28 Q28 24 30 20" fill="none" stroke="rgba(180,120,60,0.5)" stroke-width="2" stroke-linecap="round"/>
-<path d="M70 28 Q72 24 70 20" fill="none" stroke="rgba(180,120,60,0.5)" stroke-width="2" stroke-linecap="round"/>`;
-  /* ot_helm2 - Yelmo de Bronce */
-  if(hid==='ot_helm2') return `
-<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#c8903a" filter="url(#hsh)"/>
-<path d="M32 30 Q32 10 50 8 Q68 10 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#e8b050"/>
-<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.18)"/>
-<rect x="33" y="29" width="34" height="5" rx="2" fill="#a06820" filter="url(#hsh)"/>
-<rect x="35" y="30" width="30" height="3" rx="1.5" fill="rgba(220,170,70,0.5)"/>`;
-  /* ot_helm3 - Yelmo de Acero */
-  if(hid==='ot_helm3') return `
-<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#909098" filter="url(#hsh)"/>
-<path d="M32 30 Q32 10 50 8 Q68 10 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#c8c8d0"/>
-<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.2)"/>
-<path d="M38 26 L50 20 L62 26" fill="rgba(90,90,100,0.5)" stroke="rgba(70,70,80,0.4)" stroke-width="0.5"/>
-<rect x="32" y="29" width="36" height="5" rx="1.5" fill="rgba(70,70,80,0.6)" filter="url(#hsh)"/>
-<circle cx="50" cy="14" r="4" fill="rgba(180,180,200,0.5)"/>`;
-  /* ot_helm4 - Casco Runico */
-  if(hid==='ot_helm4') return `
-<path d="M29 32 Q29 8 50 6 Q71 8 71 32 Q63 25 50 23 Q37 25 29 32 Z" fill="#707078" filter="url(#hsh)"/>
-<path d="M31 30 Q31 10 50 8 Q69 10 69 30 Q63 24 50 22 Q37 24 31 30 Z" fill="#a0a0a8"/>
-<path d="M29 22 Q26 18 25 13 Q26 9 29 11 Q28 17 29 22 Z" fill="#707078" filter="url(#hsh)"/>
-<path d="M71 22 Q74 18 75 13 Q74 9 71 11 Q72 17 71 22 Z" fill="#707078" filter="url(#hsh)"/>
-<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.18)"/>
-<line x1="50" y1="6" x2="50" y2="32" stroke="rgba(200,200,210,0.35)" stroke-width="2.5"/>
-<rect x="31" y="29" width="38" height="5" rx="1.5" fill="rgba(50,50,60,0.7)" filter="url(#hsh)"/>
-<ellipse cx="38" cy="20" rx="2" ry="3" fill="#8090ff" filter="url(#hglow)" opacity="0.8"/>
-<ellipse cx="62" cy="20" rx="2" ry="3" fill="#8090ff" filter="url(#hglow)" opacity="0.8"/>
-<ellipse cx="50" cy="12" rx="2.5" ry="2.5" fill="#a0b0ff" filter="url(#hglow)" opacity="0.7"/>`;
-  /* ot_helm5 - Corona del Guerrero */
-  if(hid==='ot_helm5') return `
-<path d="M30 32 Q30 10 50 8 Q70 10 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#c8a020" filter="url(#hsh)"/>
-<path d="M32 30 Q32 12 50 10 Q68 12 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#ffe040"/>
-<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.25)"/>
-<path d="M30 12 L30 4 L38 9 L50 4 L62 9 L70 4 L70 12" stroke="#8B6800" stroke-width="2" fill="#c8a020" filter="url(#hsh)"/>
-<circle cx="30" cy="4" r="3" fill="#e00020" filter="url(#hglow)"/>
-<circle cx="50" cy="4" r="3" fill="#0040e0" filter="url(#hglow)"/>
-<circle cx="70" cy="4" r="3" fill="#00a020" filter="url(#hglow)"/>
-<rect x="32" y="29" width="36" height="5" rx="2" fill="rgba(140,100,0,0.6)" filter="url(#hsh)"/>
-<path d="M34 31 Q50 29 66 31" stroke="rgba(255,240,100,0.5)" stroke-width="1" fill="none"/>`;
-  return `
-<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q60 26 50 26 Q40 26 30 32 Z" fill="#6b7280" filter="url(#hsh)"/>
-<ellipse cx="42" cy="18" rx="12" ry="8" fill="rgba(255,255,255,0.2)"/>
-<rect x="32" y="28" width="36" height="7" rx="3" fill="rgba(0,0,0,0.75)"/>`;
-})()}
-
 <!-- CABEZA -->
 <ellipse cx="50" cy="24" rx="20" ry="20" fill="url(#hskin)" filter="url(#hsh)"/>
 <ellipse cx="44" cy="19" rx="13" ry="13" fill="rgba(255,255,255,0.2)"/>
@@ -26434,28 +26394,88 @@ ${(()=>{
 <ellipse cx="70" cy="23" rx="4" ry="5.5" fill="url(#hskin)" filter="url(#hsh)"/>
 <ellipse cx="70" cy="23" rx="2.5" ry="3.5" fill="${p.skinD}88"/>
 
-<!-- OJOS -->
+${(()=>{
+  const hid = eq.helm||'';
+  if(!hid) return `<!-- CABELLO espigado amarillo brillante uniforme -->
+<defs>
+  <linearGradient id="hHairGrad" x1="0%" y1="100%" x2="10%" y2="0%">
+    <stop offset="0%" stop-color="#eab308"/>
+    <stop offset="100%" stop-color="#fef9c3"/>
+  </linearGradient>
+</defs>
+<!-- BASE unificada mismo color que los picos -->
+<path d="M27,30 Q26,12 35,7 Q50,3 65,7 Q74,12 73,30 Q65,22 50,20 Q35,22 27,30 Z" fill="url(#hHairGrad)" filter="url(#hsh)"/>
+<!-- Pico izquierdo -->
+<path d="M33,22 Q35,10 40,5 Q45,10 44,22 Q40,17 37,17 Q34,17 33,22 Z" fill="url(#hHairGrad)" filter="url(#hsh)"/>
+<!-- Pico central -->
+<path d="M43,20 Q47,5 52,2 Q57,5 58,20 Q54,15 51,14 Q48,15 43,20 Z" fill="url(#hHairGrad)" filter="url(#hsh)"/>
+<!-- Pico derecho -->
+<path d="M55,21 Q60,8 66,5 Q70,10 67,22 Q63,17 60,17 Q57,17 55,21 Z" fill="url(#hHairGrad)" filter="url(#hsh)"/>
+<!-- Mechones laterales mismo gradiente -->
+<path d="M27,30 Q24,25 25,18 Q28,20 30,26 Z" fill="#eab308" filter="url(#hsh)"/>
+<path d="M73,30 Q76,25 75,18 Q72,20 70,26 Z" fill="#eab308" filter="url(#hsh)"/>
+<!-- Brillo en picos -->
+<ellipse cx="51" cy="7" rx="3" ry="5" fill="rgba(254,249,195,0.55)"/>
+<ellipse cx="39" cy="11" rx="2" ry="4" fill="rgba(254,249,195,0.4)"/>
+<ellipse cx="63" cy="11" rx="2" ry="4" fill="rgba(254,249,195,0.4)"/>`;
+  /* ot_helm1 - Yelmo de Cuero */
+  if(hid==='ot_helm1') return `
+<path d="M30 32 Q30 10 50 8 Q70 10 70 32 Q62 26 50 24 Q38 26 30 32 Z" fill="#8B4513" filter="url(#hsh)"/>
+<path d="M32 30 Q32 12 50 10 Q68 12 68 30 Q62 25 50 23 Q38 25 32 30 Z" fill="#a0522d"/>
+<ellipse cx="42" cy="18" rx="10" ry="6" fill="rgba(255,255,255,0.12)"/>`;
+  /* ot_helm2 - Yelmo de Bronce */
+  if(hid==='ot_helm2') return `
+<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#c8903a" filter="url(#hsh)"/>
+<path d="M32 30 Q32 10 50 8 Q68 10 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#e8b050"/>
+<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.18)"/>`;
+  /* ot_helm3 - Yelmo de Acero */
+  if(hid==='ot_helm3') return `
+<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#909098" filter="url(#hsh)"/>
+<path d="M32 30 Q32 10 50 8 Q68 10 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#c8c8d0"/>
+<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.2)"/>`;
+  /* ot_helm4 - Casco Runico */
+  if(hid==='ot_helm4') return `
+<path d="M29 32 Q29 8 50 6 Q71 8 71 32 Q63 25 50 23 Q37 25 29 32 Z" fill="#707078" filter="url(#hsh)"/>
+<path d="M31 30 Q31 10 50 8 Q69 10 69 30 Q63 24 50 22 Q37 24 31 30 Z" fill="#a0a0a8"/>
+<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.18)"/>`;
+  /* ot_helm5 - Corona del Guerrero */
+  if(hid==='ot_helm5') return `
+<path d="M30 32 Q30 10 50 8 Q70 10 70 32 Q62 25 50 23 Q38 25 30 32 Z" fill="#c8a020" filter="url(#hsh)"/>
+<path d="M32 30 Q32 12 50 10 Q68 12 68 30 Q62 24 50 22 Q38 24 32 30 Z" fill="#ffe040"/>
+<ellipse cx="42" cy="17" rx="11" ry="7" fill="rgba(255,255,255,0.25)"/>
+<path d="M30 12 L30 4 L38 9 L50 4 L62 9 L70 4 L70 12" stroke="#8B6800" stroke-width="2" fill="#c8a020" filter="url(#hsh)"/>`;
+  return `
+<path d="M30 32 Q30 8 50 6 Q70 8 70 32 Q60 26 50 26 Q40 26 30 32 Z" fill="#6b7280" filter="url(#hsh)"/>
+<ellipse cx="42" cy="18" rx="12" ry="8" fill="rgba(255,255,255,0.2)"/>`;
+})()}
+
+<!-- CUELLO — visible y limpio sin crear líneas de títere -->
+<ellipse cx="50" cy="46" rx="7" ry="6" fill="url(#hskin)"/>
+
+<!-- OJOS grandes estilo anime azul - Habit Hunter -->
 <!-- Ojo izquierdo -->
-<ellipse cx="42" cy="22" rx="5.5" ry="6" fill="white" filter="url(#hsh)"/>
-<ellipse cx="42.5" cy="22.5" rx="4" ry="4.5" fill="url(#heye)"/>
-<ellipse cx="42.5" cy="22.5" rx="2" ry="2.5" fill="#000"/>
-<ellipse cx="40.5" cy="20" rx="1.8" ry="1.8" fill="rgba(255,255,255,0.95)"/>
-<ellipse cx="44" cy="24.5" rx="0.7" ry="0.7" fill="rgba(255,255,255,0.6)"/>
+<ellipse cx="42" cy="23" rx="6" ry="7" fill="white" filter="url(#hsh)"/>
+<ellipse cx="42.5" cy="23.5" rx="4.5" ry="5.5" fill="url(#heye)"/>
+<ellipse cx="42.5" cy="23.5" rx="2.2" ry="3" fill="#1e40af"/>
+<ellipse cx="40.5" cy="21" rx="2" ry="2" fill="rgba(255,255,255,0.95)"/>
+<ellipse cx="44" cy="25.5" rx="0.8" ry="0.8" fill="rgba(255,255,255,0.7)"/>
 <!-- Ojo derecho -->
-<ellipse cx="58" cy="21" rx="5" ry="5.5" fill="white" filter="url(#hsh)"/>
-<ellipse cx="58.5" cy="21.5" rx="3.5" ry="4" fill="url(#heye)"/>
-<ellipse cx="58.5" cy="21.5" rx="1.8" ry="2.2" fill="#000"/>
-<ellipse cx="56.5" cy="19" rx="1.6" ry="1.6" fill="rgba(255,255,255,0.95)"/>
-<!-- Cejas -->
-<path d="M37 16 Q42 14 47 16" stroke="${p.hair}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-<path d="M53 15 Q58 13 62 15" stroke="${p.hair}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<ellipse cx="58" cy="22" rx="5.5" ry="6.5" fill="white" filter="url(#hsh)"/>
+<ellipse cx="58.5" cy="22.5" rx="4" ry="5" fill="url(#heye)"/>
+<ellipse cx="58.5" cy="22.5" rx="2" ry="2.8" fill="#1e40af"/>
+<ellipse cx="56.5" cy="20" rx="1.8" ry="1.8" fill="rgba(255,255,255,0.95)"/>
+<!-- Cejas expresivas hacia abajo (expresión decidida) -->
+<path d="M36 15 Q42 12 47 14" stroke="${p.hair}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M53 13 Q58 11 63 13" stroke="${p.hair}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 
 <!-- NARIZ -->
 <path d="M49 26 L47 32 L53 32" stroke="${p.skinD}" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 
-<!-- BOCA / SONRISA -->
-<path d="M44 37 Q50 41 56 37" stroke="${p.skinD}bb" stroke-width="2" fill="none" stroke-linecap="round"/>
-<path d="M45 38 Q50 40 55 38" stroke="${p.skinD}66" stroke-width="1" fill="none"/>
+<!-- BOCA — sonrisa simple y amigable -->
+<path d="M45 35 Q50 39 55 35" stroke="#a0522d" stroke-width="2" fill="none" stroke-linecap="round"/>
+<!-- Mejillas rosadas sutiles -->
+<ellipse cx="37" cy="31" rx="4" ry="2.5" fill="#f9a8d4" opacity="0.4"/>
+<ellipse cx="63" cy="31" rx="4" ry="2.5" fill="#f9a8d4" opacity="0.4"/>
 
 <!-- NIVEL -->
 <text x="50" y="126" text-anchor="middle" font-size="7" font-weight="900" fill="#fbbf24" filter="url(#hglow)">Nv.${lv}</text>
@@ -26506,48 +26526,51 @@ ${(()=>{
 window.drawBoss3D = function(containerId, bossIndex) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    // Mapeo directo: cada posición del array BOSSES tiene su SVG
-    // BOSSES[0]=Goblin, [1]=Lobo Zombie, [2]=Troll, [3]=Oso Zombie,
-    // [4]=Espectro, [5]=Ghoul, [6]=Momia, [7]=Hombre Lobo,
-    // [8]=Vampiro Noble, [9]=Gigante Maldito, [10]=Golem Piedra,
-    // [11]=Caballero Vampiro, [12]=Golem Fuego, [13]=Demonio Ancestral,
-    // [14]=Hidra, [15]=Dragón Verde, [16]=Demonio Oscuro,
-    // [17]=Dragón Azul, [18]=Dragón Rojo, [19]=Dragón Negro
-    const svgMap = [
-        6,  // 0 Goblin del Caos      → BOSS_SVGS[6]
-        7,  // 1 Lobo Zombie          → BOSS_SVGS[7]
-        8,  // 2 Troll del Pantano    → BOSS_SVGS[8]
-        9,  // 3 Oso Zombie           → BOSS_SVGS[9]
-        10, // 4 Espectro             → BOSS_SVGS[10]
-        11, // 5 Ghoul Devorador      → BOSS_SVGS[11]
-        12, // 6 Momia Ancestral      → BOSS_SVGS[12]
-        13, // 7 Hombre Lobo          → BOSS_SVGS[13]
-        14, // 8 Vampiro Noble        → BOSS_SVGS[14]
-        15, // 9 Gigante Maldito      → BOSS_SVGS[15]
-        16, // 10 Golem de Piedra     → BOSS_SVGS[16]
-        17, // 11 Caballero Vampiro   → BOSS_SVGS[17]
-        18, // 12 Golem de Fuego      → BOSS_SVGS[18]
-        19, // 13 Demonio Ancestral   → BOSS_SVGS[19]
-        20, // 14 Hidra Legendaria    → BOSS_SVGS[20]
-        21, // 15 Dragón Verde        → BOSS_SVGS[21] único
-        22, // 16 Demonio Oscuro      → BOSS_SVGS[22] único
-        23, // 17 Dragón Azul         → BOSS_SVGS[23] único
-        24, // 18 Dragón Rojo         → BOSS_SVGS[24] único
-        25, // 19 Dragón Negro        → BOSS_SVGS[25] único
-    ];
-    const idx = Math.min(bossIndex || 0, svgMap.length - 1);
+
+    const svgMap = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25];
+    const idx    = Math.min(bossIndex || 0, svgMap.length - 1);
     const svgIdx = Math.min(svgMap[idx], BOSS_SVGS.length - 1);
+
     el.innerHTML = BOSS_SVGS[svgIdx]();
-    el.style.display = 'flex';
-    el.style.alignItems = 'center';
+    el.style.display        = 'flex';
+    el.style.alignItems     = 'flex-start';
     el.style.justifyContent = 'center';
-    /* Asegurar que el SVG interno escale al contenedor sin recortarse */
+    el.style.overflow       = 'hidden';
+
     var svgEl = el.querySelector('svg');
-    if (svgEl) {
-        svgEl.style.width   = '110px';
-        svgEl.style.height  = '110px';
-        svgEl.style.display = 'block';
+    if (!svgEl) return;
+
+    // Leer dimensiones del style inline (funciona aunque el elemento esté oculto)
+    var cW = parseInt(el.style.width)  || 110;
+    var cH = parseInt(el.style.height) || 110;
+
+    // Leer viewBox para saber las dimensiones reales del SVG
+    var vb = svgEl.getAttribute('viewBox');
+    var vbY = 0, vbW = 110, vbH = 110;
+    if (vb) {
+        var p = vb.trim().split(/[\s,]+/);
+        if (p.length === 4) {
+            vbY = parseFloat(p[1]);
+            vbW = parseFloat(p[2]);
+            vbH = parseFloat(p[3]);
+        }
     }
+    // Altura total real incluyendo offset negativo
+    var totalH = vbH + (vbY < 0 ? Math.abs(vbY) : 0);
+
+    // Escala para que el SVG quepa en el contenedor sin recorte
+    var scale = Math.min(cW / vbW, cH / totalH);
+    var finalW = Math.round(vbW  * scale);
+    var finalH = Math.round(totalH * scale);
+
+    // Ajustar viewBox para incluir el offset negativo
+    svgEl.setAttribute('viewBox', '0 ' + vbY + ' ' + vbW + ' ' + totalH);
+    svgEl.setAttribute('width',  finalW);
+    svgEl.setAttribute('height', finalH);
+    svgEl.style.width   = finalW + 'px';
+    svgEl.style.height  = finalH + 'px';
+    svgEl.style.display = 'block';
+    svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 };
 
 window.drawHero3D = function(containerId) {
@@ -26632,26 +26655,10 @@ window.renderHabHero = function() {
         </div>
       </div>
     </div>
-    <div class="hab-boss-3d-panel" style="margin-top:10px;">
-      <div class="hab-boss-3d-inner">
-        <div class="hab-boss-canvas-wrap" id="habBossSVGWrap" style="width:90px;height:90px;flex-shrink:0;"></div>
-        <div class="hab-boss-3d-info">
-          <div class="hab-boss-3d-name">${boss.name}</div>
-          <div class="hab-boss-3d-sub">🎁 ${boss.reward}</div>
-          <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap;">
-            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(251,191,36,0.13);border:1px solid rgba(251,191,36,0.35);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:#fbbf24;">⭐ +${boss.xpReward} XP al vencer</span>
-            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(167,139,250,0.13);border:1px solid rgba(167,139,250,0.35);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:#a78bfa;">Boss #${bossI+1}/20</span>
-            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(${bHpPct>60?'34,197,94':bHpPct>30?'234,179,8':'239,68,68'},0.13);border:1px solid rgba(${bHpPct>60?'34,197,94':bHpPct>30?'234,179,8':'239,68,68'},0.4);border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;color:${bHpPct>60?'#22c55e':bHpPct>30?'#eab308':'#ef4444'};">${bHpPct}% HP</span>
-          </div>
-          <div class="hab-boss-3d-hp-bar" style="margin-top:6px;"><div class="hab-boss-3d-hp-fill" style="width:${bHpPct}%;background:linear-gradient(90deg,${bHpPct>60?'#16a34a,#22c55e':bHpPct>30?'#b45309,#eab308':'#b91c1c,#ef4444'});"></div></div>
-          <div class="hab-boss-3d-hp-text" style="display:flex;justify-content:space-between;">${Math.max(0,hero.bossHp||boss.maxHp)}/${boss.maxHp} HP <span style="color:#555;">⚔️ Completa hábitos para atacar</span></div>
-        </div>
-      </div>
-    </div>`;
+    <div id="habHeroBossPanel" style="display:none;"></div>`;
 
-    // Inyectar SVGs directamente
+    // Solo héroe — el boss ya está en el panel HOY
     window.drawHero3D('habHeroSVGWrap');
-    window.drawBoss3D('habBossSVGWrap', bossI);
 
     // Clases e inventario
     const detEl = document.getElementById('habHeroDetails');
@@ -26729,8 +26736,87 @@ window.renderBossMini = function() {
           </div>
           <div class="hab-boss-3d-name">${boss.name}</div>
           <div class="hab-boss-3d-sub">⚔️ ¡Completa hábitos para atacar!</div>
+          <!-- Badges premium: XP + Boss# + HP% -->
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;">
+            <span style="display:inline-flex;align-items:center;gap:3px;
+              background:linear-gradient(135deg,rgba(251,191,36,0.2),rgba(251,191,36,0.08));
+              border:1px solid rgba(251,191,36,0.5);border-radius:20px;
+              padding:2px 8px;font-size:0.58rem;font-weight:900;color:#fbbf24;">
+              ⭐ +${boss.xpReward} XP al vencer
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:3px;
+              background:linear-gradient(135deg,rgba(167,139,250,0.2),rgba(167,139,250,0.08));
+              border:1px solid rgba(167,139,250,0.5);border-radius:20px;
+              padding:2px 8px;font-size:0.58rem;font-weight:900;color:#c4b5fd;">
+              Boss #${bossI+1}/20
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:3px;
+              background:linear-gradient(135deg,rgba(${pct>60?'34,197,94':pct>30?'234,179,8':'239,68,68'},0.2),rgba(${pct>60?'34,197,94':pct>30?'234,179,8':'239,68,68'},0.05));
+              border:1px solid rgba(${pct>60?'34,197,94':pct>30?'234,179,8':'239,68,68'},0.5);
+              border-radius:20px;padding:2px 8px;font-size:0.58rem;font-weight:900;
+              color:${pct>60?'#4ade80':pct>30?'#fbbf24':'#f87171'};">
+              ${pct}% HP
+            </span>
+          </div>
           <div class="hab-boss-3d-hp-bar">
             <div class="hab-boss-3d-hp-fill" id="habBossHpBar" style="width:${pct}%;background:${hpColor}"></div>
+          </div>
+          <div class="hab-boss-3d-hp-text">${Math.round(bossHp)} / ${boss.maxHp} HP · ${pct}%</div>
+          <div class="hab-boss-reward-row">🎁 Recompensa: ${boss.reward} · +${boss.xpReward||50} XP</div>
+        </div>
+
+        </div>
+      </div>
+    </div>`;
+};
+
+// Versión para panel HÉROE — ID único para evitar conflicto con panel HOY
+window.renderBossMiniHero = function() {
+    const hero  = JSON.parse(localStorage.getItem('jch_hero_v1')||'null')||{bossIndex:0,bossHp:100};
+    const BOSSES= window._HAB_BOSSES||[
+        {name:'Goblin del Caos',     maxHp:100,  xpReward:50,   reward:'⚔️ Espada de Inicio',         type:'Bestia',   lv:'Nv.1'},
+        {name:'Lobo Zombie',         maxHp:180,  xpReward:80,   reward:'🦴 Colmillo Maldito',          type:'No-muerto',lv:'Nv.2'},
+        {name:'Troll del Pantano',   maxHp:280,  xpReward:120,  reward:'🛡️ Escudo de Barro',           type:'Bestia',   lv:'Nv.3'},
+        {name:'Oso Zombie',          maxHp:380,  xpReward:160,  reward:'🐾 Garra Putrefacta',          type:'No-muerto',lv:'Nv.4'},
+        {name:'Espectro',            maxHp:500,  xpReward:220,  reward:'🔮 Orbe Oscuro',               type:'Espectral',lv:'Nv.5'},
+        {name:'Ghoul Devorador',     maxHp:650,  xpReward:290,  reward:'🦷 Colmillo del Vacío',        type:'No-muerto',lv:'Nv.6'},
+        {name:'Momia Ancestral',     maxHp:800,  xpReward:370,  reward:'📜 Pergamino Maldito',         type:'No-muerto',lv:'Nv.7'},
+        {name:'Hombre Lobo',         maxHp:980,  xpReward:460,  reward:'🌕 Piedra Lunar',              type:'Hombre-bestia',lv:'Nv.8'},
+        {name:'Vampiro Noble',       maxHp:1150, xpReward:560,  reward:'🩸 Capa de Sangre',            type:'No-muerto',lv:'Nv.9'},
+        {name:'Gigante Maldito',     maxHp:1350, xpReward:680,  reward:'🪨 Roca del Titán',            type:'Gigante',  lv:'Nv.10'},
+        {name:'Golem de Piedra',     maxHp:1550, xpReward:820,  reward:'⚙️ Núcleo Pétreo',            type:'Constructo',lv:'Nv.11'},
+        {name:'Caballero Vampiro',   maxHp:1780, xpReward:980,  reward:'🗡️ Espada Oscura',            type:'No-muerto',lv:'Nv.12'},
+        {name:'Golem de Fuego',      maxHp:2050, xpReward:1200, reward:'💎 Gema del Campeón',          type:'Constructo',lv:'Nv.13'},
+        {name:'Demonio Ancestral',   maxHp:2400, xpReward:1450, reward:'🌟 Estrella Legendaria',       type:'Demonio',  lv:'Nv.14'},
+        {name:'Hidra Legendaria',    maxHp:2800, xpReward:1750, reward:'🏆 Escama de Hidra',           type:'Bestia',   lv:'Nv.15'},
+        {name:'Dragón Verde',        maxHp:3200, xpReward:2100, reward:'🌿 Corazón del Bosque',        type:'Dragón',   lv:'Nv.16'},
+        {name:'Demonio Oscuro',      maxHp:3700, xpReward:2500, reward:'🔱 Tridente Infernal',         type:'Demonio',  lv:'Nv.17'},
+        {name:'Dragón Azul',         maxHp:4300, xpReward:3000, reward:'⚡ Escama Tormentosa',         type:'Dragón',   lv:'Nv.18'},
+        {name:'Dragón Rojo',         maxHp:5000, xpReward:3600, reward:'🔥 Corazón de Llamas',        type:'Dragón',   lv:'Nv.19'},
+        {name:'Dragón Negro',        maxHp:6000, xpReward:4500, reward:'👑 Corona del Campeón Eterno', type:'Dragón',   lv:'Nv.20'},
+    ];
+    const bossI = Math.min(hero.bossIndex||0,19);
+    const boss  = BOSSES[bossI];
+    const rawHp = parseFloat(hero.bossHp);
+    const bossHp = (!isNaN(rawHp) && rawHp <= boss.maxHp && rawHp >= 0) ? rawHp : boss.maxHp;
+    const pct   = Math.round((bossHp / boss.maxHp) * 100);
+    const hpColor = pct > 60 ? 'linear-gradient(90deg,#7f1d1d,#dc2626,#ef4444,#fca5a5)' :
+                    pct > 30 ? 'linear-gradient(90deg,#78350f,#d97706,#fbbf24)' :
+                               'linear-gradient(90deg,#450a0a,#b91c1c,#ef4444)';
+    return `<div class="hab-boss-3d-panel" style="margin-bottom:14px;">
+      <div class="hab-boss-3d-inner">
+        <div id="habBossMiniSVGHero" style="width:110px;height:110px;flex-shrink:0;border-radius:16px;overflow:hidden;
+          background:radial-gradient(circle at 50% 35%,rgba(239,68,68,0.25),rgba(120,0,0,0.3) 60%,transparent 80%);
+          border:1.5px solid rgba(239,68,68,0.3);box-shadow:0 0 20px rgba(239,68,68,0.2),inset 0 0 15px rgba(0,0,0,0.5);"></div>
+        <div class="hab-boss-3d-info">
+          <div class="hab-boss-badges">
+            <span class="hab-boss-badge lv">${boss.lv||'Nv.1'}</span>
+            <span class="hab-boss-badge type">${boss.type||'Bestia'}</span>
+          </div>
+          <div class="hab-boss-3d-name">${boss.name}</div>
+          <div class="hab-boss-3d-sub">⚔️ ¡Completa hábitos para atacar!</div>
+          <div class="hab-boss-3d-hp-bar">
+            <div class="hab-boss-3d-hp-fill" style="width:${pct}%;background:${hpColor}"></div>
           </div>
           <div class="hab-boss-3d-hp-text">${Math.round(bossHp)} / ${boss.maxHp} HP · ${pct}%</div>
           <div class="hab-boss-reward-row">🎁 Recompensa: ${boss.reward} · +${boss.xpReward||50} XP</div>
@@ -26738,8 +26824,6 @@ window.renderBossMini = function() {
       </div>
     </div>`;
 };
-
-// Redibujar hero al cambiar clase
 const _origSelCls = window.selectHeroClass;
 window.selectHeroClass = function(cls) {
     _origSelCls && _origSelCls(cls);
@@ -26750,7 +26834,7 @@ window.selectHeroClass = function(cls) {
 // Solo redibujar hero al cambiar clase
 
 // FIX DEFINITIVO: MutationObserver que redibuja el boss SVG automáticamente
-// cada vez que habBossMiniSVG aparece en el DOM vacío (tras cambio de tab)
+// Observer para habBossMiniSVG (panel HOY)
 (function() {
     function redrawBossIfEmpty() {
         var el = document.getElementById('habBossMiniSVG');
@@ -26759,11 +26843,9 @@ window.selectHeroClass = function(cls) {
             window.drawBoss3D('habBossMiniSVG', Math.min(hero.bossIndex||0, 19));
         }
     }
-    // Observar cambios en el contenedor principal de hábitos
     var observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(m) {
             if (m.addedNodes.length > 0) {
-                // Pequeño delay para que el innerHTML del padre termine
                 setTimeout(redrawBossIfEmpty, 50);
             }
         });
@@ -26775,8 +26857,35 @@ window.selectHeroClass = function(cls) {
         if (container) {
             observer.observe(container, { childList: true, subtree: true });
         }
-        // También observar el body por si el panel se monta más tarde
         observer.observe(document.body, { childList: true, subtree: false });
+    });
+})();
+
+// Observer para habBossSVGWrap (panel HÉROE) — misma lógica que HOY
+(function() {
+    function redrawHeroBossIfEmpty() {
+        var el = document.getElementById('habBossSVGWrap');
+        if (el && el.innerHTML.trim() === '' && typeof window.drawBoss3D === 'function') {
+            var hero = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
+            setTimeout(function() {
+                window.drawBoss3D('habBossSVGWrap', Math.min(hero.bossIndex||0, 19));
+            }, 150);
+        }
+    }
+    var heroObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            if (m.addedNodes.length > 0) {
+                setTimeout(redrawHeroBossIfEmpty, 50);
+            }
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        var container = document.getElementById('habTab-heroe') ||
+                        document.querySelector('.hab-module');
+        if (container) {
+            heroObserver.observe(container, { childList: true, subtree: true });
+        }
+        heroObserver.observe(document.body, { childList: true, subtree: false });
     });
 })();
 
