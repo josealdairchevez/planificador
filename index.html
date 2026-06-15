@@ -20087,6 +20087,54 @@ window.renderHabToday = function() {
         el.innerHTML = `<div class="hab-empty"><div class="hab-empty-icon">🌱</div><div class="hab-empty-text">No hay hábitos para hoy.<br>¡Crea tu primer hábito en ➕!</div></div>`;
         return;
     }
+
+    // ── ORDENAMIENTO DE HÁBITOS (quirúrgico — solo reordena `due`) ──
+    // Grupos: 0=Con recordatorio (por hora) · 1=Sin recordatorio positivo
+    //         2=Sin recordatorio negativo   · 3=Completados totalmente
+    (function() {
+        var _today = todayKey();
+        function _toMin(t) {
+            if (!t || typeof t !== 'string') return 9999;
+            var p = t.split(':').map(Number);
+            return (p[0]||0)*60 + (p[1]||0);
+        }
+        function _qtyToday(h) {
+            try {
+                var qty = JSON.parse(localStorage.getItem('jch_qty_v1')||'{}');
+                return qty[h.id+'_'+_today] || 0;
+            } catch(e) { return 0; }
+        }
+        function _group(h) {
+            var ht     = h.habitType || 'check';
+            var isQty  = ht === 'quantity' || ht === 'timer';
+            var isNeg  = h.type === 'negative';
+            // ¿Completado totalmente hoy?
+            var done   = isQty
+                ? _qtyToday(h) >= (h.qtyTarget || 1)
+                : (h.log||[]).includes(_today);
+            if (done) return { g: 3, m: 9999 };
+            // ¿Tiene recordatorio activo?
+            if (h.reminderOn) {
+                var rt = null;
+                if (isQty && h.reminderTimes && h.reminderTimes.length > 0) {
+                    var n  = _qtyToday(h);
+                    rt = h.reminderTimes[Math.min(n, h.reminderTimes.length-1)] || h.reminderTime || null;
+                } else {
+                    rt = h.reminderTime || null;
+                }
+                if (rt) return { g: 0, m: _toMin(rt) };
+            }
+            return { g: isNeg ? 2 : 1, m: 0 };
+        }
+        due.sort(function(a, b) {
+            var ga = _group(a), gb = _group(b);
+            if (ga.g !== gb.g) return ga.g - gb.g;
+            if (ga.m !== gb.m) return ga.m - gb.m;
+            return (a.name||'').localeCompare(b.name||'');
+        });
+    })();
+    // ── FIN ORDENAMIENTO ─────────────────────────────────────
+
     el.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
             <span style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;">Progreso de hoy</span>
@@ -20095,18 +20143,79 @@ window.renderHabToday = function() {
         <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;margin-bottom:1rem;overflow:hidden;">
             <div id="habTodayBar" style="height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:6px;transition:width 0.5s;"></div>
         </div>
-        ${due.map(h => {
-            let card = window.renderHabitCardHabitica(h, false);
-            // Inyectar data-habid en el div RAIZ .hab-card para que closest() funcione
-            // sin importar en qué elemento hijo haga clic el usuario
-            // FIX: inyectar data-habid sin sobreescribir el style existente
-            // (que ya contiene --hab-card-color del color del hábito)
-            card = card.replace(
-                'id="habCard-' + h.id + '" style="--hab-card-color:' + (h.color||'#10b981') + ';"',
-                'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="--hab-card-color:' + (h.color||'#10b981') + ';cursor:pointer;"'
-            );
-            return card;
-        }).join('')}
+        ${(function() {
+            // ── Separadores premium + cards ordenadas ────────
+            var _sepSeen = {};
+            var _sepCfg  = {
+                0: { col:'#a78bfa', col2:'#7c3aed', bg:'rgba(124,58,237,0.08)', icon:'⏰', label:'Con Recordatorio',  glow:'rgba(167,139,250,0.35)' },
+                1: { col:'#94a3b8', col2:'#64748b', bg:'rgba(100,116,139,0.06)', icon:'📋', label:'Sin Recordatorio',  glow:'rgba(148,163,184,0.25)' },
+                2: { col:'#f87171', col2:'#dc2626', bg:'rgba(220,38,38,0.08)',   icon:'🚫', label:'Hábitos a Evitar',  glow:'rgba(248,113,113,0.35)' },
+                3: { col:'#34d399', col2:'#059669', bg:'rgba(5,150,105,0.07)',   icon:'✅', label:'Completados',       glow:'rgba(52,211,153,0.30)' },
+            };
+            // Calcular grupo de cada hábito (misma lógica del sort)
+            var _today2 = todayKey();
+            function _g2(h) {
+                var ht=h.habitType||'check', isQ=ht==='quantity'||ht==='timer', isN=h.type==='negative';
+                var qty=0;
+                try { var q=JSON.parse(localStorage.getItem('jch_qty_v1')||'{}'); qty=q[h.id+'_'+_today2]||0; } catch(e){}
+                var done=isQ ? qty>=(h.qtyTarget||1) : (h.log||[]).includes(_today2);
+                if(done) return 3;
+                if(h.reminderOn){
+                    var rt=null;
+                    if(isQ&&h.reminderTimes&&h.reminderTimes.length>0){ var nn=qty; rt=h.reminderTimes[Math.min(nn,h.reminderTimes.length-1)]||h.reminderTime||null; }
+                    else { rt=h.reminderTime||null; }
+                    if(rt) return 0;
+                }
+                return isN?2:1;
+            }
+            return due.map(function(h) {
+                var g   = _g2(h);
+                var cfg = _sepCfg[g] || _sepCfg[1];
+                var sep = '';
+                if (!_sepSeen[g]) {
+                    _sepSeen[g] = true;
+                    sep = '<div style="' +
+                        'display:flex;align-items:center;gap:10px;' +
+                        'margin:' + (Object.keys(_sepSeen).length === 1 ? '2px' : '18px') + ' 0 8px;' +
+                        'padding:0 2px;' +
+                        '">' +
+                        // Línea izquierda
+                        '<div style="' +
+                            'flex:1;height:1.5px;border-radius:2px;' +
+                            'background:linear-gradient(90deg,transparent,' + cfg.col + '66);' +
+                        '"></div>' +
+                        // Badge central
+                        '<div style="' +
+                            'display:flex;align-items:center;gap:5px;' +
+                            'padding:4px 12px;border-radius:20px;' +
+                            'background:' + cfg.bg + ';' +
+                            'border:1.5px solid ' + cfg.col + '44;' +
+                            'box-shadow:0 2px 12px ' + cfg.glow + ',0 0 0 1px ' + cfg.col + '18 inset;' +
+                            'backdrop-filter:blur(6px);' +
+                        '">' +
+                            '<span style="font-size:0.75rem;line-height:1;">' + cfg.icon + '</span>' +
+                            '<span style="' +
+                                'font-size:0.58rem;font-weight:900;' +
+                                'color:' + cfg.col + ';' +
+                                'text-transform:uppercase;letter-spacing:1.5px;' +
+                                'text-shadow:0 0 8px ' + cfg.glow + ';' +
+                            '">' + cfg.label + '</span>' +
+                        '</div>' +
+                        // Línea derecha
+                        '<div style="' +
+                            'flex:1;height:1.5px;border-radius:2px;' +
+                            'background:linear-gradient(90deg,' + cfg.col + '66,transparent);' +
+                        '"></div>' +
+                    '</div>';
+                }
+                var card = window.renderHabitCardHabitica(h, false);
+                card = card.replace(
+                    'id="habCard-' + h.id + '" style="--hab-card-color:' + (h.color||'#10b981') + ';"',
+                    'id="habCard-' + h.id + '" data-habid="' + h.id + '" style="--hab-card-color:' + (h.color||'#10b981') + ';cursor:pointer;"'
+                );
+                return sep + card;
+            }).join('');
+        })()}
     `;
     // Event delegation: clic en cualquier parte de la card abre el modal
     // Excluye botones de acción + − 🗑️ para que sigan funcionando
