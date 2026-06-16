@@ -20644,13 +20644,8 @@ window.claimQuest = function(id) {
     const goldEl = document.getElementById('habRewardGold');
     if (goldEl) goldEl.textContent = '🪙 ' + (hero.coins || 0);
 
-    const t = document.getElementById('habStreakToast');
-    if (t) {
-        t.textContent = q.icon+' Quest completada: +'+q.reward.xp+' XP · +'+q.reward.gold+'🪙'+(q.gemReward?' · +'+q.gemReward+'💎':'');
-        t.style.background='linear-gradient(135deg,'+q.color+','+q.color+'aa)';
-        t.classList.add('show');
-        setTimeout(()=>t.classList.remove('show'),3500);
-    }
+    // Toast original suprimido — reemplazado por mini-toast premium (Par 2)
+    // showMiniToast2 se dispara desde el override de claimQuest en el script de Par 2
 
     renderHabQuests();
     if (typeof updateHabitBadge==='function') updateHabitBadge();
