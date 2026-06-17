@@ -31423,14 +31423,14 @@ window._buyRewardFromModal = function(id) {
 
     list.addEventListener('click', function(e) {
       // Ignorar clic en papelera (deleteReward)
-      if (e.target.closest('[title="Eliminar"]') || e.target.closest('[onclick*="deleteReward"]')) return;
+      if (e.target.closest('[title="Eliminar"]') ||
+          (e.target.getAttribute('onclick')||'').includes('deleteReward')) return;
 
       var card = e.target.closest('.hab-reward-card');
       if (!card) return;
-      if (card.classList.contains('locked')) return; // bloqueada = no tiene fondos? dejar abirir igual para ver info
+      // Abrir modal para TODAS las cards (locked o no — el modal muestra si puede canjear)
 
-      // Obtener id del reward del onclick del trash o del data-attr
-      // El id está en el onclick del trash: deleteReward('prXXX')
+      // Obtener id del reward del onclick del trash
       var trashEl = card.querySelector('[onclick*="deleteReward"]');
       if (!trashEl) return;
       var match = (trashEl.getAttribute('onclick')||'').match(/deleteReward\('([^']+)'\)/);
@@ -31460,7 +31460,15 @@ window._buyRewardFromModal = function(id) {
   var _prevSwitch = window.switchHabTab;
   window.switchHabTab = function(tab) {
     if (typeof _prevSwitch === 'function') _prevSwitch.apply(this, arguments);
-    if (tab === 'premios') setTimeout(_attachRewardListener, 120);
+    if (tab === 'recompensas') {
+      // Forzar actualización de monedas y clases locked/can-buy
+      setTimeout(function() {
+        if (typeof window._hrpApplyFilter === 'function') {
+          window._hrpApplyFilter(window._hrpActiveFilter || 'all', null);
+        }
+        _attachRewardListener();
+      }, 80);
+    }
   };
 })();
 
