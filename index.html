@@ -23503,7 +23503,21 @@ window._buySD = function(el) {
 };
 window._showSD = function(el) {
     var id = el ? el.getAttribute('data-scrid') : null;
-    if (id) window.showScrollDetail(id);
+    if (!id) return;
+    // Sonido al presionar el botón del pergamino
+    try {
+        var ctx1 = new (window.AudioContext||window.webkitAudioContext)();
+        var osc1 = ctx1.createOscillator();
+        var g1   = ctx1.createGain();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(900, ctx1.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(1400, ctx1.currentTime + 0.06);
+        g1.gain.setValueAtTime(0.12, ctx1.currentTime);
+        g1.gain.exponentialRampToValueAtTime(0.001, ctx1.currentTime + 0.12);
+        osc1.connect(g1); g1.connect(ctx1.destination);
+        osc1.start(); osc1.stop(ctx1.currentTime + 0.12);
+    } catch(e) {}
+    window.showScrollDetail(id);
 };
 
 function renderScrollShop() {
@@ -23519,8 +23533,9 @@ function renderScrollShop() {
         var isOwned  = owned.indexOf(scr.id) >= 0 || done.indexOf(scr.id) >= 0;
         var isLocked = false;
         if (!isOwned) {
-            if (scr.currency === 'quest') {
-                isLocked = owned.indexOf(scr.reqVal) < 0 && done.indexOf(scr.reqVal) < 0;
+            if (scr.reqType === 'quest') {
+                // Bloqueado si la parte anterior NO está COMPLETADA (solo done desbloquea)
+                isLocked = done.indexOf(scr.reqVal) < 0;
             } else {
                 isLocked = (hero.level||1) < (scr.reqVal||1);
             }
@@ -23564,6 +23579,23 @@ function renderScrollShop() {
 window.showScrollDetail = function(scrId) {
     var scr  = SCROLLS_DB.filter(function(s){ return s.id===scrId; })[0];
     if (!scr) return;
+    // Sonido al abrir la ventana emergente del pergamino
+    try {
+        var ctxD = new (window.AudioContext||window.webkitAudioContext)();
+        var notesD = [523.25, 659.25, 783.99];
+        notesD.forEach(function(freq, i) {
+            var oscD = ctxD.createOscillator();
+            var gD   = ctxD.createGain();
+            oscD.type = 'sine';
+            oscD.frequency.setValueAtTime(freq, ctxD.currentTime + i * 0.07);
+            gD.gain.setValueAtTime(0, ctxD.currentTime + i * 0.07);
+            gD.gain.linearRampToValueAtTime(0.08, ctxD.currentTime + i * 0.07 + 0.02);
+            gD.gain.exponentialRampToValueAtTime(0.001, ctxD.currentTime + i * 0.07 + 0.25);
+            oscD.connect(gD); gD.connect(ctxD.destination);
+            oscD.start(ctxD.currentTime + i * 0.07);
+            oscD.stop(ctxD.currentTime + i * 0.07 + 0.28);
+        });
+    } catch(e) {}
     var hero   = loadHero();
     var inv    = loadInv();
     var owned  = inv.scrolls     || [];
@@ -23571,7 +23603,7 @@ window.showScrollDetail = function(scrId) {
     var isOwned= owned.indexOf(scr.id)>=0 || done.indexOf(scr.id)>=0;
     var isLock = false;
     if (!isOwned) {
-        if (scr.currency==='quest') isLock = owned.indexOf(scr.reqVal)<0 && done.indexOf(scr.reqVal)<0;
+        if (scr.reqType==='quest') isLock = done.indexOf(scr.reqVal)<0;
         else isLock = (hero.level||1) < (scr.reqVal||1);
     }
     var noFunds = !isOwned && !isLock && (
@@ -23651,15 +23683,17 @@ window.buyScroll = function(scrId) {
     var done   = inv.scrollsDone;
     if (owned.indexOf(scr.id)>=0 || done.indexOf(scr.id)>=0) return;
 
-    if (scr.currency==='quest') {
-        if (owned.indexOf(scr.reqVal)<0 && done.indexOf(scr.reqVal)<0) { showBuyToast('Requisito: '+scr.req); return; }
+    // Verificar prerequisito de quest (independiente del currency)
+    if (scr.reqType === 'quest') {
+        if (done.indexOf(scr.reqVal) < 0) { showBuyToast('🔒 Completa primero: ' + scr.req); return; }
     } else {
-        if ((hero.level||1) < (scr.reqVal||1)) { showBuyToast('Necesitas '+scr.req); return; }
-        if (scr.currency==='gem'  && (hero.gems||0)  < scr.cost) { showBuyToast('Necesitas '+scr.cost+'💎'); return; }
-        if (scr.currency==='gold' && (hero.coins||0) < scr.cost) { showBuyToast('Necesitas '+scr.cost+'🪙'); return; }
-        if (scr.currency==='gem')  hero.gems  = (hero.gems||0)  - scr.cost;
-        if (scr.currency==='gold') hero.coins = (hero.coins||0) - scr.cost;
+        if ((hero.level||1) < (scr.reqVal||1)) { showBuyToast('Necesitas ' + scr.req); return; }
     }
+    // Verificar fondos y descontar coste
+    if (scr.currency === 'gem'  && (hero.gems||0)  < scr.cost) { showBuyToast('Necesitas ' + scr.cost + '💎'); return; }
+    if (scr.currency === 'gold' && (hero.coins||0) < scr.cost) { showBuyToast('Necesitas ' + scr.cost + '🪙'); return; }
+    if (scr.currency === 'gem')  hero.gems  = (hero.gems||0)  - scr.cost;
+    if (scr.currency === 'gold') hero.coins = (hero.coins||0) - scr.cost;
 
     var habits   = loadHabits();
     var totalNow = habits.reduce(function(s,h){ return s+(h.log||[]).length; },0);
@@ -23670,6 +23704,23 @@ window.buyScroll = function(scrId) {
     saveHero(hero); saveInv(inv);
     if (typeof updateGoldDisplays==='function') updateGoldDisplays(hero);
     renderScrollShop();
+    // Sonido épico al comprar/activar un pergamino
+    try {
+        var ctxB = new (window.AudioContext||window.webkitAudioContext)();
+        var notesB = [523.25, 659.25, 783.99, 1046.50];
+        notesB.forEach(function(freq, i) {
+            var oscB = ctxB.createOscillator();
+            var gB   = ctxB.createGain();
+            oscB.type = 'square';
+            oscB.frequency.value = freq;
+            gB.gain.setValueAtTime(0, ctxB.currentTime + i * 0.12);
+            gB.gain.linearRampToValueAtTime(0.12, ctxB.currentTime + i * 0.12 + 0.04);
+            gB.gain.exponentialRampToValueAtTime(0.001, ctxB.currentTime + i * 0.12 + 0.5);
+            oscB.connect(gB); gB.connect(ctxB.destination);
+            oscB.start(ctxB.currentTime + i * 0.12);
+            oscB.stop(ctxB.currentTime + i * 0.12 + 0.55);
+        });
+    } catch(e) {}
     showBuyToast('📜 Activada! '+scr.habitReq+' hábitos para ganar +'+scr.xpReward+' XP · +'+scr.goldReward+'🪙');
 };
 
@@ -30231,23 +30282,40 @@ window.showPurchaseSuccessModal = function(opts) {
   }
 
   var svgPart = opts.svgHtml
-    ? '<div style="width:80px;height:90px;margin:0 auto;">' + opts.svgHtml + '</div>'
-    : '<div style="font-size:3.2rem;line-height:1;filter:drop-shadow(0 0 14px '+col+');">' + opts.icon + '</div>';
+    // FIX: centrar SVG con flex dentro del círculo
+    ? '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">' + opts.svgHtml + '</div>'
+    : '<div style="font-size:3.2rem;line-height:1;filter:drop-shadow(0 0 14px #00e5ff);">' + opts.icon + '</div>';
+
+  // FIX: color cyan brillante para borde y glow del círculo
+  var circleGlow = '0 0 50px rgba(0,229,255,0.75),0 0 100px rgba(0,229,255,0.30),inset 0 0 30px rgba(0,229,255,0.15)';
+  var circleBorder = '2.5px solid rgba(0,229,255,0.70)';
 
   var html =
     '<div class="g1-stars">' + starsHTML + '</div>' +
 
-    // Sello de verificación animado
-    '<div style="font-size:1.6rem;margin-bottom:10px;' +
-      'animation:g1Float 2s ease-in-out infinite;' +
-      'filter:drop-shadow(0 0 10px #22c55e);">✅</div>' +
+    // FIX: Check premium animado — badge pill en lugar de emoji suelto
+    '<div style="' +
+      'display:inline-flex;align-items:center;gap:6px;' +
+      'background:linear-gradient(135deg,rgba(0,229,255,0.15),rgba(34,197,94,0.15));' +
+      'border:1.5px solid rgba(0,229,255,0.45);' +
+      'border-radius:20px;padding:5px 14px;' +
+      'margin-bottom:14px;' +
+      'box-shadow:0 0 16px rgba(0,229,255,0.30);' +
+      'animation:g1Float 2.5s ease-in-out infinite;' +
+    '">' +
+      '<svg width="14" height="14" viewBox="0 0 14 14" fill="none">' +
+        '<circle cx="7" cy="7" r="6.5" stroke="#00e5ff" stroke-width="1.2"/>' +
+        '<path d="M3.5 7L5.8 9.5L10.5 4.5" stroke="#00e5ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>' +
+      '<span style="font-size:0.6rem;font-weight:900;color:#00e5ff;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 0 8px rgba(0,229,255,0.6);">Compra Exitosa</span>' +
+    '</div>' +
 
-    // Icono del item
+    // Icono del item — círculo con cyan brillante
     '<div class="g1-icon-wrap" style="' +
       'width:96px;height:96px;' +
       'background:radial-gradient(circle at 35% 35%,#0f1820,#050a12);' +
-      'box-shadow:0 0 50px '+col+'88,0 0 100px '+col+'22,inset 0 0 30px '+col+'22;' +
-      'border:2px solid '+col+'55;' +
+      'box-shadow:' + circleGlow + ';' +
+      'border:' + circleBorder + ';' +
     '">' + svgPart + '</div>' +
 
     // Tipo
@@ -30801,6 +30869,189 @@ window.showBossDefeatedModal = function(boss) {
       if (typeof window.showBossDefeatedModal === 'function') window.showBossDefeatedModal(boss);
     }, 800);
   };
+})();
+
+</script>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  MEJORAS TIENDA — Sonido al clic + Modal éxito correcto
+//  Huevos · Pociones · Estacional
+// ══════════════════════════════════════════════════════════════
+
+// ── Helper: sonido clic premium item tienda ──────────────────
+function _playSoundShop(type) {
+    try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (type === 'click') {
+            // Clic en item: tono suave ascendente doble
+            [660, 880].forEach(function(freq, i) {
+                var o = ctx.createOscillator(), g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.value = freq;
+                g.gain.setValueAtTime(0, ctx.currentTime + i * 0.06);
+                g.gain.linearRampToValueAtTime(0.10, ctx.currentTime + i * 0.06 + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.06 + 0.18);
+                o.connect(g); g.connect(ctx.destination);
+                o.start(ctx.currentTime + i * 0.06);
+                o.stop(ctx.currentTime + i * 0.06 + 0.20);
+            });
+        } else if (type === 'buy') {
+            // Compra exitosa: fanfarria ascendente 4 notas
+            [523, 659, 784, 1047].forEach(function(freq, i) {
+                var o = ctx.createOscillator(), g = ctx.createGain();
+                o.type = 'triangle';
+                o.frequency.value = freq;
+                g.gain.setValueAtTime(0, ctx.currentTime + i * 0.10);
+                g.gain.linearRampToValueAtTime(0.13, ctx.currentTime + i * 0.10 + 0.03);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.10 + 0.45);
+                o.connect(g); g.connect(ctx.destination);
+                o.start(ctx.currentTime + i * 0.10);
+                o.stop(ctx.currentTime + i * 0.10 + 0.48);
+            });
+        }
+    } catch(e) {}
+}
+
+// ── 1. Sonido al abrir cualquier popup de tienda ──────────────
+// Parchamos showEggPopup, showPotionPopup, showSeasonalPopup y showEquipItemPopup
+(function() {
+    ['showEggPopup','showPotionPopup','showSeasonalPopup','showEquipItemPopup'].forEach(function(fnName) {
+        var prev = window[fnName];
+        if (typeof prev !== 'function') return;
+        window[fnName] = function() {
+            _playSoundShop('click');
+            prev.apply(this, arguments);
+        };
+    });
+})();
+
+// ── 2. Override correcto buyEgg con verificación de éxito ─────
+(function() {
+    var _prevEgg = window.buyEgg;
+    window.buyEgg = function(eggId) {
+        // Leer gemas ANTES
+        var heroBefore = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
+        var gemsBefore = heroBefore.gems || 0;
+
+        if (typeof _prevEgg === 'function') _prevEgg.apply(this, arguments);
+
+        // Leer gemas DESPUÉS — si bajaron, la compra fue exitosa
+        setTimeout(function() {
+            try {
+                var heroAfter = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
+                var gemsAfter = heroAfter.gems || 0;
+                if (gemsAfter >= gemsBefore) return; // no se compró
+
+                _playSoundShop('buy');
+
+                var EGGS = window._HAB_EGGS_DB || [];
+                var egg  = EGGS.find(function(e) { return e.id === eggId; });
+                if (!egg) return;
+                var db = window.PET_DB ? (window.PET_DB[eggId] || {}) : {};
+                var col = db.color || '#fbbf24';
+
+                // Chips de beneficio
+                var benefitStr = '';
+                if (db.benefit === 'coinsMult') benefitStr = '+' + (db.bonusVal*100) + '% Monedas por hábito';
+                else if (db.benefit === 'xpMult') benefitStr = '+' + (db.bonusVal*100) + '% XP por hábito';
+                else if (db.benefit === 'hpRegen') benefitStr = '+' + db.bonusVal + ' HP por hábito';
+                else if (db.benefit === 'gemChance') benefitStr = '+' + (db.bonusVal*100) + '% probabilidad gemas';
+
+                window.showPurchaseSuccessModal({
+                    icon:     egg.icon || '🥚',
+                    name:     (db.name || egg.name || 'Huevo') ,
+                    type:     'egg',
+                    desc:     (db.desc || 'Un misterio esperando nacer.') + ' Combínalo con una Poción en el Inventario para eclosionarlo.',
+                    statLine: benefitStr ? ('✦ ' + benefitStr) : '🥚 Eclosiona en el Inventario',
+                    cost:     egg.cost,
+                    currency: 'gem',
+                    col:      col,
+                });
+            } catch(e) { console.warn('[BuyEgg modal]', e); }
+        }, 350);
+    };
+})();
+
+// ── 3. Override correcto buyPotion con verificación de éxito ──
+(function() {
+    var _prevPot = window.buyPotion;
+    window.buyPotion = function(potId) {
+        var heroBefore = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
+        var gemsBefore = heroBefore.gems || 0;
+
+        if (typeof _prevPot === 'function') _prevPot.apply(this, arguments);
+
+        setTimeout(function() {
+            try {
+                var heroAfter = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
+                if ((heroAfter.gems || 0) >= gemsBefore) return; // no se compró
+
+                _playSoundShop('buy');
+
+                var POTS = window._HAB_POTIONS_DB || [];
+                var pot  = POTS.find(function(p) { return p.id === potId; });
+                if (!pot) return;
+
+                var potColors = {
+                    pot_base:'#3b82f6', pot_desert:'#f59e0b', pot_golden:'#f97316',
+                    pot_zombie:'#22c55e', pot_skeleton:'#e2e8f0', pot_shadow:'#6366f1',
+                    pot_rainbow:'#ec4899', pot_glass:'#67e8f9', pot_royal:'#dc2626', pot_fairy:'#f9a8d4',
+                };
+                var col = potColors[potId] || '#a855f7';
+
+                window.showPurchaseSuccessModal({
+                    icon:     '🧪',
+                    name:     'Poción ' + (pot.name || potId),
+                    type:     'potion',
+                    desc:     'Poción mágica de eclosión. Ve al Inventario → tab Mascotas → selecciona un huevo y presiona Eclosionar.',
+                    statLine: '🥚 Eclosiona 1 huevo + esta poción → mascota nueva',
+                    cost:     pot.cost,
+                    currency: 'gem',
+                    col:      col,
+                });
+            } catch(e) { console.warn('[BuyPotion modal]', e); }
+        }, 350);
+    };
+})();
+
+// ── 4. Override buySeasonalItem con modal premium ─────────────
+(function() {
+    var _prevSeasonal = window.buySeasonalItem;
+    window.buySeasonalItem = function(itemId, setName, cost) {
+        var heroBefore = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
+        var coinsBefore = heroBefore.coins || 0;
+
+        if (typeof _prevSeasonal === 'function') _prevSeasonal.apply(this, arguments);
+
+        setTimeout(function() {
+            try {
+                var heroAfter = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
+                if ((heroAfter.coins || 0) >= coinsBefore) return; // no se compró
+
+                _playSoundShop('buy');
+
+                // Buscar datos del item
+                var item = null;
+                (window._HAB_SEASONAL || []).forEach(function(s) {
+                    s.items.forEach(function(i) { if (i.id === itemId) item = i; });
+                });
+                if (!item) return;
+
+                window.showPurchaseSuccessModal({
+                    icon:     item.icon || '🌸',
+                    name:     item.name || itemId,
+                    type:     'seasonal',
+                    desc:     'Item exclusivo de temporada — Set "' + setName + '". Disponible en tu Inventario permanentemente.',
+                    statLine: '🌸 Set ' + setName + ' · Edición Limitada',
+                    cost:     cost,
+                    currency: 'gold',
+                    col:      '#ec4899',
+                });
+            } catch(e) { console.warn('[BuySeasonal modal]', e); }
+        }, 350);
+    };
 })();
 
 </script>
