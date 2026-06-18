@@ -7478,23 +7478,43 @@ function _hrpApplyFilter(f, btn) {
         card.style.display = show ? 'flex' : 'none';
 
         var costEl = card.querySelector('.hab-reward-cost');
+        // Obtener id del reward desde el botón de papelera
+        var trashEl2 = card.querySelector('[onclick*="deleteReward"]');
+        var rIdMatch = trashEl2 ? (trashEl2.getAttribute('onclick')||'').match(/deleteReward\('([^']+)'\)/) : null;
+        var rId2 = rIdMatch ? rIdMatch[1] : null;
+
         if (coins >= cost) {
             card.classList.remove('locked');
             card.style.cursor = 'pointer';
+            // Onclick directo en la card y en el costEl
+            if (rId2) {
+                card.onclick = function(e) {
+                    if ((e.target.getAttribute('onclick')||'').includes('deleteReward')) return;
+                    if (typeof window.showRewardModal === 'function') window.showRewardModal(rId2);
+                };
+            }
             if (costEl) {
                 costEl.style.background  = 'rgba(16,185,129,0.18)';
                 costEl.style.color       = '#34d399';
                 costEl.style.borderColor = 'rgba(16,185,129,0.4)';
                 costEl.textContent       = '🪙 ' + cost + ' — ¡Canjear!';
+                costEl.style.cursor      = 'pointer';
             }
         } else {
             card.classList.add('locked');
-            card.style.cursor = 'default';
+            card.style.cursor = 'pointer'; // también abre modal aunque no pueda comprar
+            if (rId2) {
+                card.onclick = function(e) {
+                    if ((e.target.getAttribute('onclick')||'').includes('deleteReward')) return;
+                    if (typeof window.showRewardModal === 'function') window.showRewardModal(rId2);
+                };
+            }
             if (costEl) {
                 costEl.style.background  = 'rgba(100,116,139,0.12)';
                 costEl.style.color       = '#94a3b8';
                 costEl.style.borderColor = 'rgba(100,116,139,0.25)';
                 costEl.textContent       = '🪙 ' + cost + ' monedas';
+                costEl.style.cursor      = 'pointer';
             }
         }
     });
