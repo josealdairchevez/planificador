@@ -4960,6 +4960,153 @@
         .hab-class-icon { font-size:1.2rem;display:block;margin-bottom:2px; }
         .hab-class-name { font-size:0.58rem;font-weight:900;color:#ccc;text-transform:uppercase; }
 
+        /* ── Trofeos y Colecciones — botón, modal y tarjetas premium ── */
+        @keyframes tcBtnGlow {
+            0%,100%{box-shadow:0 0 0 0 var(--tc-glow-btn,rgba(251,191,36,0)),0 4px 24px rgba(0,0,0,0.35);}
+            50%    {box-shadow:0 0 24px 6px rgba(251,191,36,0.22),0 4px 24px rgba(0,0,0,0.35);}
+        }
+        @keyframes tcCardGlow {
+            0%,100%{opacity:0.4;} 50%{opacity:1;}
+        }
+        @keyframes tcCardFloat {
+            0%,100%{transform:translateY(0);} 50%{transform:translateY(-2px);}
+        }
+        @keyframes tcSheetIn {
+            from{transform:translateY(100%);} to{transform:translateY(0);}
+        }
+        @keyframes tcOverlayIn {
+            from{background:rgba(0,0,0,0);} to{background:rgba(0,0,0,0.72);}
+        }
+        @keyframes tcIconPulse {
+            0%,100%{transform:scale(1) rotate(0deg);filter:drop-shadow(0 0 8px var(--tc-glow));}
+            50%    {transform:scale(1.08) rotate(-3deg);filter:drop-shadow(0 0 18px var(--tc-glow));}
+        }
+        /* Botón principal */
+        .hab-trophy-btn {
+            width:100%;display:flex;align-items:center;gap:10px;
+            background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.06));
+            border:1.5px solid rgba(251,191,36,0.4);border-radius:14px;
+            padding:11px 14px;cursor:pointer;position:relative;overflow:hidden;
+            margin:0.8rem 0 0.4rem;font-family:inherit;
+            animation:tcBtnGlow 3s ease-in-out infinite;
+            transition:transform 0.15s, border-color 0.2s;
+        }
+        .hab-trophy-btn:active{transform:scale(0.97);}
+        .hab-trophy-btn-glow {
+            position:absolute;inset:0;
+            background:linear-gradient(90deg,transparent,rgba(251,191,36,0.08),transparent);
+            animation:rvBtnShine 2.8s linear infinite;
+        }
+        .hab-trophy-btn-icon{font-size:1.5rem;flex-shrink:0;animation:tcCardFloat 2.4s ease-in-out infinite;}
+        .hab-trophy-btn-text{flex:1;text-align:left;}
+        .hab-trophy-btn-title{font-size:0.62rem;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:1.5px;}
+        .hab-trophy-btn-sub{font-size:0.52rem;color:#a78bfa;font-weight:700;margin-top:1px;}
+        .hab-trophy-btn-arrow{font-size:1.2rem;color:#fbbf24;opacity:0.7;}
+        /* Overlay */
+        .tc-overlay {
+            position:fixed;inset:0;z-index:9100;
+            background:rgba(0,0,0,0);display:flex;align-items:flex-end;
+            transition:background 0.28s;
+        }
+        .tc-overlay.tc-show{background:rgba(0,0,0,0.72);}
+        /* Sheet */
+        .tc-sheet {
+            width:100%;max-height:90vh;background:#0d0d1a;
+            border-radius:24px 24px 0 0;border-top:1px solid rgba(255,255,255,0.08);
+            display:flex;flex-direction:column;overflow:hidden;
+            transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .tc-overlay.tc-show .tc-sheet{transform:translateY(0);}
+        .tc-handle{width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:12px auto 0;}
+        .tc-header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 4px;}
+        .tc-title{font-size:0.8rem;font-weight:900;color:#fbbf24;text-transform:uppercase;letter-spacing:1.5px;}
+        .tc-close{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;
+            width:28px;height:28px;font-size:0.7rem;color:#888;cursor:pointer;font-family:inherit;}
+        /* Tabs */
+        .tc-tabs{display:flex;gap:4px;padding:8px 14px;overflow-x:auto;scrollbar-width:none;}
+        .tc-tabs::-webkit-scrollbar{display:none;}
+        .tc-tab{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:0.55rem;font-weight:800;
+            background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
+            color:#666;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+        .tc-tab.active{background:rgba(251,191,36,0.15);border-color:rgba(251,191,36,0.5);color:#fbbf24;}
+        /* Contenido scrollable */
+        .tc-content{overflow-y:auto;flex:1;padding:10px 14px 24px;scrollbar-width:thin;
+            scrollbar-color:rgba(255,255,255,0.1) transparent;}
+        /* Summary */
+        .tc-summary{font-size:0.55rem;color:#666;font-weight:700;text-align:center;
+            margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;}
+        /* Grid de tarjetas */
+        .tc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+        .tc-grid-sm{grid-template-columns:repeat(3,1fr);gap:6px;}
+        /* Tarjeta individual */
+        .tc-card {
+            position:relative;display:flex;flex-direction:column;align-items:center;
+            gap:4px;padding:10px 6px 8px;border-radius:16px;cursor:pointer;
+            background:linear-gradient(160deg,color-mix(in srgb,var(--tc-col) 15%,#0d0d1a),#0a0a18);
+            border:1.5px solid color-mix(in srgb,var(--tc-col) 40%,transparent);
+            transition:transform 0.18s,box-shadow 0.18s;
+            animation:tcCardFloat 3s ease-in-out infinite;
+        }
+        .tc-card:nth-child(2n){animation-delay:0.5s;}
+        .tc-card:nth-child(3n){animation-delay:1s;}
+        .tc-card:not(.locked):active{transform:scale(0.94);}
+        .tc-card.locked{opacity:0.38;cursor:default;animation:none;}
+        .tc-card.equipped{border-color:var(--tc-col);box-shadow:0 0 16px var(--tc-glow),inset 0 0 12px color-mix(in srgb,var(--tc-col) 8%,transparent);}
+        .tc-card-sm{padding:7px 4px 6px;border-radius:12px;}
+        /* Glow animado dentro de la tarjeta */
+        .tc-card-glow{position:absolute;inset:0;border-radius:inherit;
+            background:radial-gradient(circle at 50% 0%,color-mix(in srgb,var(--tc-col) 20%,transparent),transparent 70%);
+            animation:tcCardGlow 2.6s ease-in-out infinite;}
+        .tc-card-badge{position:absolute;top:4px;right:4px;font-size:0.38rem;font-weight:900;
+            background:var(--tc-col);color:#000;border-radius:6px;padding:1px 5px;text-transform:uppercase;}
+        .tc-card-icon{font-size:1.6rem;line-height:1;filter:drop-shadow(0 0 6px var(--tc-glow));
+            animation:tcIconPulse 3.2s ease-in-out infinite;}
+        .tc-card-name{font-size:0.46rem;font-weight:900;color:#f1f5f9;text-align:center;line-height:1.2;}
+        .tc-card-rarity{font-size:0.42rem;font-weight:700;color:var(--tc-col);text-transform:uppercase;letter-spacing:0.5px;}
+        .tc-card-stats{display:flex;gap:4px;margin-top:2px;}
+        .tc-stat-atk{font-size:0.44rem;font-weight:900;color:#f87171;background:rgba(248,113,113,0.12);
+            border-radius:6px;padding:1px 5px;}
+        .tc-stat-def{font-size:0.44rem;font-weight:900;color:#60a5fa;background:rgba(96,165,250,0.12);
+            border-radius:6px;padding:1px 5px;}
+        .tc-locked-text{font-size:0.42rem;color:#444;font-weight:600;}
+        /* Collection groups */
+        .tc-collection-group{margin-bottom:16px;}
+        .tc-collection-title{font-size:0.55rem;font-weight:900;color:#888;text-transform:uppercase;
+            letter-spacing:1.2px;margin-bottom:8px;padding-left:2px;}
+        /* Empty state */
+        .tc-empty{text-align:center;padding:40px 20px;color:#555;font-size:0.7rem;}
+        /* Detail overlay */
+        .tc-detail-overlay{position:fixed;inset:0;z-index:9200;background:rgba(0,0,0,0);
+            display:flex;align-items:flex-end;transition:background 0.22s;}
+        .tc-detail-overlay.tc-show{background:rgba(0,0,0,0.82);}
+        .tc-detail-sheet{width:100%;background:linear-gradient(160deg,#0d0d1a,#12121f);
+            border-radius:28px 28px 0 0;padding:20px 24px 36px;
+            transform:translateY(100%);transition:transform 0.24s cubic-bezier(0.34,1.56,0.64,1);
+            border-top:1.5px solid color-mix(in srgb,var(--tc-col) 35%,transparent);}
+        .tc-detail-overlay.tc-show .tc-detail-sheet{transform:translateY(0);}
+        .tc-detail-header{display:flex;justify-content:flex-end;margin-bottom:8px;}
+        .tc-detail-icon-wrap{display:flex;justify-content:center;margin-bottom:8px;}
+        .tc-detail-icon{font-size:3.5rem;filter:drop-shadow(0 0 20px var(--tc-glow));
+            animation:tcIconPulse 2.8s ease-in-out infinite;}
+        .tc-detail-rarity-badge{display:inline-block;margin:0 auto 8px;padding:3px 14px;
+            border-radius:20px;font-size:0.5rem;font-weight:900;text-transform:uppercase;
+            letter-spacing:1.5px;display:block;text-align:center;}
+        .tc-detail-name{font-size:1.2rem;font-weight:900;color:#fff;text-align:center;margin-bottom:6px;}
+        .tc-detail-source{font-size:0.55rem;color:#666;text-align:center;margin-bottom:8px;}
+        .tc-detail-desc{font-size:0.6rem;color:#94a3b8;text-align:center;line-height:1.5;
+            margin-bottom:16px;padding:0 8px;}
+        .tc-detail-stats{display:flex;justify-content:center;gap:16px;margin-bottom:14px;}
+        .tc-detail-stat-item{text-align:center;}
+        .tc-detail-stat-val{font-size:1.4rem;font-weight:900;}
+        .tc-detail-stat-lbl{font-size:0.45rem;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+        .tc-detail-type-badge{text-align:center;font-size:0.52rem;color:#666;margin-bottom:16px;}
+        .tc-detail-actions{display:flex;justify-content:center;gap:10px;}
+        .tc-detail-btn{padding:14px 32px;border-radius:16px;font-size:0.75rem;font-weight:900;
+            border:none;cursor:pointer;font-family:inherit;transition:transform 0.15s;}
+        .tc-detail-btn:active{transform:scale(0.95);}
+        .tc-detail-btn-equip{color:#fff;}
+        .tc-detail-btn-unequip{background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);color:#94a3b8;}
+
         /* Tienda de Pociones de Vida — premium e interactiva */
         @keyframes habPotionGlow {
             0%, 100% { box-shadow:0 0 8px var(--pglow), inset 0 0 12px rgba(255,255,255,0.03); }
@@ -17488,6 +17635,11 @@ window.toggleHabit = function(id) {
             window.showHabFloat(null, `💥 El boss contraataca: -${bossCounterDmg} HP`, '#ef4444');
         }
 
+        // Verificar si algún pergamino de misión activo ya cumplió su requisito de hábitos
+        setTimeout(function() {
+            if (typeof window.checkScrollsCompletion === 'function') window.checkScrollsCompletion();
+        }, 50);
+
         // Boss derrotado
         if(hero.bossHp<=0){
             hero.bossesDefeated=(hero.bossesDefeated||0)+1;
@@ -22330,7 +22482,444 @@ function loadInv()    { return JSON.parse(localStorage.getItem(INV_KEY)||'{}'); 
 function saveInv(i)   { localStorage.setItem(INV_KEY, JSON.stringify(i)); }
 function loadHabits() { return JSON.parse(localStorage.getItem(HABITS_KEY)||'[]'); }
 
-let _marketTab = 'equip';
+// ── FASE 1: BASE DE DATOS DE TROFEOS Y COLECCIONES ────────────
+// 50 trofeos: 20 de bosses derrotados + 30 de quests completadas.
+// Cada uno tiene tipo (weapon/armor/other), stats ATK/DEF, y metadatos de origen.
+const TROPHY_DB = [
+    // ── Trofeos de Bosses derrotados (20) ──
+    { id:'boss_t1', icon:'⚔️', name:'Espada de Inicio', type:'weapon', atk:2, def:1, source:'boss', sourceId:'Goblin del Caos', desc:'Trofeo obtenido al derrotar a Goblin del Caos.' },
+    { id:'boss_t2', icon:'🦴', name:'Colmillo Maldito', type:'weapon', atk:3, def:1, source:'boss', sourceId:'Lobo Zombie', desc:'Trofeo obtenido al derrotar a Lobo Zombie.' },
+    { id:'boss_t3', icon:'🛡️', name:'Escudo de Barro', type:'armor', atk:2, def:4, source:'boss', sourceId:'Troll del Pantano', desc:'Trofeo obtenido al derrotar a Troll del Pantano.' },
+    { id:'boss_t4', icon:'🐾', name:'Garra Putrefacta', type:'weapon', atk:5, def:2, source:'boss', sourceId:'Oso Zombie', desc:'Trofeo obtenido al derrotar a Oso Zombie.' },
+    { id:'boss_t5', icon:'🔮', name:'Orbe Oscuro', type:'other', atk:4, def:4, source:'boss', sourceId:'Espectro', desc:'Trofeo obtenido al derrotar a Espectro.' },
+    { id:'boss_t6', icon:'🦷', name:'Colmillo del Vacío', type:'weapon', atk:8, def:2, source:'boss', sourceId:'Ghoul Devorador', desc:'Trofeo obtenido al derrotar a Ghoul Devorador.' },
+    { id:'boss_t7', icon:'📜', name:'Pergamino Maldito', type:'other', atk:5, def:5, source:'boss', sourceId:'Momia Ancestral', desc:'Trofeo obtenido al derrotar a Momia Ancestral.' },
+    { id:'boss_t8', icon:'🌕', name:'Piedra Lunar', type:'other', atk:6, def:6, source:'boss', sourceId:'Hombre Lobo', desc:'Trofeo obtenido al derrotar a Hombre Lobo.' },
+    { id:'boss_t9', icon:'🩸', name:'Capa de Sangre', type:'armor', atk:4, def:11, source:'boss', sourceId:'Vampiro Noble', desc:'Trofeo obtenido al derrotar a Vampiro Noble.' },
+    { id:'boss_t10', icon:'🪨', name:'Roca del Titán', type:'armor', atk:5, def:12, source:'boss', sourceId:'Gigante Maldito', desc:'Trofeo obtenido al derrotar a Gigante Maldito.' },
+    { id:'boss_t11', icon:'⚙️', name:'Núcleo Pétreo', type:'other', atk:8, def:8, source:'boss', sourceId:'Golem de Piedra', desc:'Trofeo obtenido al derrotar a Golem de Piedra.' },
+    { id:'boss_t12', icon:'🗡️', name:'Espada Oscura', type:'weapon', atk:15, def:4, source:'boss', sourceId:'Caballero Vampiro', desc:'Trofeo obtenido al derrotar a Caballero Vampiro.' },
+    { id:'boss_t13', icon:'💎', name:'Gema del Campeón', type:'other', atk:10, def:10, source:'boss', sourceId:'Golem de Fuego', desc:'Trofeo obtenido al derrotar a Golem de Fuego.' },
+    { id:'boss_t14', icon:'🌟', name:'Estrella Legendaria', type:'other', atk:10, def:10, source:'boss', sourceId:'Demonio Ancestral', desc:'Trofeo obtenido al derrotar a Demonio Ancestral.' },
+    { id:'boss_t15', icon:'🏆', name:'Escama de Hidra', type:'armor', atk:7, def:18, source:'boss', sourceId:'Hidra Legendaria', desc:'Trofeo obtenido al derrotar a Hidra Legendaria.' },
+    { id:'boss_t16', icon:'🌿', name:'Corazón del Bosque', type:'other', atk:11, def:11, source:'boss', sourceId:'Dragón Verde', desc:'Trofeo obtenido al derrotar a Dragón Verde.' },
+    { id:'boss_t17', icon:'🔱', name:'Tridente Infernal', type:'weapon', atk:21, def:6, source:'boss', sourceId:'Demonio Oscuro', desc:'Trofeo obtenido al derrotar a Demonio Oscuro.' },
+    { id:'boss_t18', icon:'⚡', name:'Escama Tormentosa', type:'armor', atk:9, def:22, source:'boss', sourceId:'Dragón Azul', desc:'Trofeo obtenido al derrotar a Dragón Azul.' },
+    { id:'boss_t19', icon:'🔥', name:'Corazón de Llamas', type:'other', atk:14, def:14, source:'boss', sourceId:'Dragón Rojo', desc:'Trofeo obtenido al derrotar a Dragón Rojo.' },
+    { id:'boss_t20', icon:'👑', name:'Corona del Campeón Eterno', type:'armor', atk:10, def:24, source:'boss', sourceId:'Dragón Negro', desc:'Trofeo obtenido al derrotar a Dragón Negro.' },
+    // ── Trofeos de Quests completadas (30) ──
+    { id:'quest_t1', icon:'🏅', name:'Medalla Inicio', type:'other', atk:1, def:1, source:'quest', sourceId:'q1', desc:'Trofeo obtenido al completar la misión "Primera Aventura".' },
+    { id:'quest_t2', icon:'🥾', name:'Botas del Viajero', type:'armor', atk:1, def:2, source:'quest', sourceId:'q2', desc:'Trofeo obtenido al completar la misión "Primeros Pasos".' },
+    { id:'quest_t3', icon:'🧤', name:'Guantes Férreos', type:'armor', atk:1, def:2, source:'quest', sourceId:'q3', desc:'Trofeo obtenido al completar la misión "Semana de Fuego".' },
+    { id:'quest_t4', icon:'📘', name:'Libro de Sabiduría', type:'other', atk:2, def:2, source:'quest', sourceId:'q4', desc:'Trofeo obtenido al completar la misión "Semana Épica".' },
+    { id:'quest_t5', icon:'⌛', name:'Reloj de Arena', type:'other', atk:2, def:2, source:'quest', sourceId:'q5', desc:'Trofeo obtenido al completar la misión "Pomodoro Iniciado".' },
+    { id:'quest_t6', icon:'⚔️', name:'Espada del Cazador', type:'weapon', atk:4, def:1, source:'quest', sourceId:'q6', desc:'Trofeo obtenido al completar la misión "Cazador de Bosses".' },
+    { id:'quest_t7', icon:'🎯', name:'Dardo Certero', type:'weapon', atk:5, def:2, source:'quest', sourceId:'q7', desc:'Trofeo obtenido al completar la misión "Décimo Hábito".' },
+    { id:'quest_t8', icon:'⚡', name:'Amuleto del Rayo', type:'other', atk:3, def:3, source:'quest', sourceId:'q8', desc:'Trofeo obtenido al completar la misión "Racha Imparable".' },
+    { id:'quest_t9', icon:'⏱️', name:'Reloj del Tiempo', type:'other', atk:4, def:4, source:'quest', sourceId:'q9', desc:'Trofeo obtenido al completar la misión "Pomodoro Maestro".' },
+    { id:'quest_t10', icon:'🧭', name:'Brújula Mágica', type:'other', atk:4, def:4, source:'quest', sourceId:'q10', desc:'Trofeo obtenido al completar la misión "Explorador".' },
+    { id:'quest_t11', icon:'🛡️', name:'Escudo de Plata', type:'armor', atk:3, def:7, source:'quest', sourceId:'q11', desc:'Trofeo obtenido al completar la misión "Veinte Victorias".' },
+    { id:'quest_t12', icon:'👑', name:'Corona Dorada', type:'armor', atk:3, def:7, source:'quest', sourceId:'q12', desc:'Trofeo obtenido al completar la misión "El Mes del Héroe".' },
+    { id:'quest_t13', icon:'🌟', name:'Estrella de Platino', type:'other', atk:5, def:5, source:'quest', sourceId:'q13', desc:'Trofeo obtenido al completar la misión "Racha Legendaria".' },
+    { id:'quest_t14', icon:'🔴', name:'Cristal del Tiempo', type:'other', atk:5, def:5, source:'quest', sourceId:'q14', desc:'Trofeo obtenido al completar la misión "Maestro del Pomo".' },
+    { id:'quest_t15', icon:'💫', name:'Orbe Mágico', type:'other', atk:5, def:5, source:'quest', sourceId:'q15', desc:'Trofeo obtenido al completar la misión "Medio Centenar".' },
+    { id:'quest_t16', icon:'🐉', name:'Escama de Dragón', type:'armor', atk:4, def:10, source:'quest', sourceId:'q16', desc:'Trofeo obtenido al completar la misión "Cazador Élite".' },
+    { id:'quest_t17', icon:'🌍', name:'Atlas Ancestral', type:'other', atk:6, def:6, source:'quest', sourceId:'q17', desc:'Trofeo obtenido al completar la misión "Gran Explorador".' },
+    { id:'quest_t18', icon:'🌟', name:'Estrella Legendaria', type:'other', atk:7, def:7, source:'quest', sourceId:'q18', desc:'Trofeo obtenido al completar la misión "Centurión".' },
+    { id:'quest_t19', icon:'🔮', name:'Orbe de Dominio', type:'other', atk:7, def:7, source:'quest', sourceId:'q19', desc:'Trofeo obtenido al completar la misión "Racha Épica".' },
+    { id:'quest_t20', icon:'⚗️', name:'Alambique del Maestro', type:'other', atk:7, def:7, source:'quest', sourceId:'q20', desc:'Trofeo obtenido al completar la misión "Maestro Supremo".' },
+    { id:'quest_t21', icon:'☠️', name:'Cráneo de Jefe', type:'weapon', atk:13, def:4, source:'quest', sourceId:'q21', desc:'Trofeo obtenido al completar la misión "Señor de los Bosses".' },
+    { id:'quest_t22', icon:'🏰', name:'Castillo de Cristal', type:'armor', atk:5, def:13, source:'quest', sourceId:'q22', desc:'Trofeo obtenido al completar la misión "Leyenda Viviente".' },
+    { id:'quest_t23', icon:'💎', name:'Shard de Cristal', type:'other', atk:8, def:8, source:'quest', sourceId:'q23', desc:'Trofeo obtenido al completar la misión "Primer Jefe Caído".' },
+    { id:'quest_t24', icon:'💎', name:'Gema de Disciplina', type:'other', atk:8, def:8, source:'quest', sourceId:'q24', desc:'Trofeo obtenido al completar la misión "Racista de 21 Días".' },
+    { id:'quest_t25', icon:'⭐', name:'Medalla de Constancia', type:'other', atk:9, def:9, source:'quest', sourceId:'q25', desc:'Trofeo obtenido al completar la misión "Quincena Perfecta".' },
+    { id:'quest_t26', icon:'💪', name:'Trofeo de Hierro', type:'weapon', atk:16, def:5, source:'quest', sourceId:'q26', desc:'Trofeo obtenido al completar la misión "75 Victorias".' },
+    { id:'quest_t27', icon:'🏰', name:'Escudo de Cristal', type:'armor', atk:6, def:16, source:'quest', sourceId:'q27', desc:'Trofeo obtenido al completar la misión "Señor de Hábitos".' },
+    { id:'quest_t28', icon:'🔥', name:'Cronómetro Épico', type:'other', atk:10, def:10, source:'quest', sourceId:'q28', desc:'Trofeo obtenido al completar la misión "Pomodoro Élite".' },
+    { id:'quest_t29', icon:'🌍', name:'Mapa del Cosmos', type:'other', atk:10, def:10, source:'quest', sourceId:'q29', desc:'Trofeo obtenido al completar la misión "Atlas del Mundo".' },
+    { id:'quest_t30', icon:'👑', name:'Corona del Campeón', type:'armor', atk:7, def:18, source:'quest', sourceId:'q30', desc:'Trofeo obtenido al completar la misión "Trescientas Leyendas".' },
+];
+window._HAB_TROPHIES = TROPHY_DB;
+
+// Mapa nombre-visible -> id de trofeo, para reconciliar hero.inventory (strings legacy)
+// con el catálogo real de TROPHY_DB.
+const TROPHY_NAME_MAP = {};
+TROPHY_DB.forEach(function(t) {
+    TROPHY_NAME_MAP[t.icon + ' ' + t.name] = t.id;
+});
+
+// Devuelve la lista de trofeos que el héroe realmente posee (objetos completos del catálogo),
+// reconciliando los strings antiguos de hero.inventory con TROPHY_DB por nombre.
+window.getOwnedTrophies = function() {
+    var hero = loadHero();
+    var rawList = hero.inventory || [];
+    var seen = {};
+    var owned = [];
+    rawList.forEach(function(raw) {
+        var tid = TROPHY_NAME_MAP[raw];
+        if (tid && !seen[tid]) {
+            seen[tid] = true;
+            var t = TROPHY_DB.find(function(x){ return x.id === tid; });
+            if (t) owned.push(t);
+        }
+    });
+    return owned;
+};
+
+// Fecha de obtención de un trofeo: se guarda la primera vez que se detecta en inventario.
+window.getTrophyObtainedDate = function(trophyId) {
+    var hero = loadHero();
+    hero.trophyDates = hero.trophyDates || {};
+    if (!hero.trophyDates[trophyId]) {
+        hero.trophyDates[trophyId] = new Date().toISOString().slice(0,10);
+        saveHero(hero);
+    }
+    return hero.trophyDates[trophyId];
+};
+
+// Equipar / desequipar un trofeo en su slot correspondiente (weapon/armor/other).
+// Un trofeo equipado ocupa el MISMO slot que un arma/armadura normal de EQUIP_DB,
+// así que equipar un trofeo desequipa automáticamente cualquier item normal de ese slot,
+// y viceversa (se valida desde buyEquipItemV2 en otra fase).
+window.equipTrophy = function(trophyId) {
+    var t = TROPHY_DB.find(function(x){ return x.id === trophyId; });
+    if (!t) return false;
+    var hero = loadHero();
+    hero.equippedTrophies = hero.equippedTrophies || {};
+    hero.equippedTrophies[t.type] = trophyId;
+    // Al equipar un trofeo, se desequipa cualquier item normal del mismo slot
+    hero.equipment = hero.equipment || {};
+    delete hero.equipment[t.type];
+    recalcHeroStats(hero);
+    saveHero(hero);
+    return true;
+};
+
+window.unequipTrophy = function(slotType) {
+    var hero = loadHero();
+    hero.equippedTrophies = hero.equippedTrophies || {};
+    delete hero.equippedTrophies[slotType];
+    recalcHeroStats(hero);
+    saveHero(hero);
+};
+
+// Recalcula hero.stats.atk/def sumando: base + equipo normal (EQUIP_DB) + trofeos equipados.
+// Reemplaza el cálculo simple que vivía dentro de buyEquipItemV2 para incluir también trofeos.
+function recalcHeroStats(hero) {
+    hero.stats = hero.stats || {};
+    var atk = 5, def = 3;
+    var equip = hero.equipment || {};
+    ['weapon','armor','other'].forEach(function(slot) {
+        var id = equip[slot];
+        if (!id) return;
+        var item = (EQUIP_DB.weapon||[]).concat(EQUIP_DB.armor||[],EQUIP_DB.other||[]).find(function(i){ return i.id===id; });
+        if (item) { atk += item.atk||0; def += item.def||0; }
+    });
+    var eqTrophies = hero.equippedTrophies || {};
+    ['weapon','armor','other'].forEach(function(slot) {
+        var tid = eqTrophies[slot];
+        if (!tid) return;
+        var t = TROPHY_DB.find(function(x){ return x.id===tid; });
+        if (t) { atk += t.atk||0; def += t.def||0; }
+    });
+    hero.stats.atk = atk;
+    hero.stats.def = def;
+}
+window.recalcHeroStats = recalcHeroStats;
+
+// ── FASE 2: Botón "Trofeos y Colecciones" + Ventana modal ──────
+window.renderTrophyButton = function() {
+    var wrap = document.getElementById('habTrophyBtnWrap');
+    if (!wrap) return;
+    var owned = window.getOwnedTrophies();
+    var total = TROPHY_DB.length;
+    var pct = Math.round(owned.length / total * 100);
+    wrap.innerHTML =
+      '<button class="hab-trophy-btn" onclick="window.openTrophyModal()">' +
+        '<div class="hab-trophy-btn-glow"></div>' +
+        '<div class="hab-trophy-btn-icon">🏆</div>' +
+        '<div class="hab-trophy-btn-text">' +
+          '<div class="hab-trophy-btn-title">TROFEOS Y COLECCIONES</div>' +
+          '<div class="hab-trophy-btn-sub">' + owned.length + '/' + total + ' obtenidos · ' + pct + '%</div>' +
+        '</div>' +
+        '<div class="hab-trophy-btn-arrow">›</div>' +
+      '</button>';
+};
+
+window._trophyTab = 'trophies';
+
+window.openTrophyModal = function() {
+    var old = document.getElementById('_trophyOverlay');
+    if (old) old.remove();
+    var overlay = document.createElement('div');
+    overlay.id = '_trophyOverlay';
+    overlay.className = 'tc-overlay';
+    overlay.innerHTML =
+      '<div class="tc-sheet" id="_trophySheet">' +
+        '<div class="tc-handle"></div>' +
+        '<div class="tc-header">' +
+          '<div class="tc-title">🏆 Trofeos y Colecciones</div>' +
+          '<button class="tc-close" onclick="window.closeTrophyModal()">✕</button>' +
+        '</div>' +
+        '<div class="tc-tabs">' +
+          '<button class="tc-tab active" data-tab="trophies" onclick="window._switchTrophyTab(\'trophies\',this)">🏆 Trofeos</button>' +
+          '<button class="tc-tab" data-tab="collections" onclick="window._switchTrophyTab(\'collections\',this)">📿 Colecciones</button>' +
+          '<button class="tc-tab" data-tab="eggs" onclick="window._switchTrophyTab(\'eggs\',this)">🥚 Huevos</button>' +
+          '<button class="tc-tab" data-tab="fusions" onclick="window._switchTrophyTab(\'fusions\',this)">⚗️ Fusiones</button>' +
+        '</div>' +
+        '<div class="tc-content" id="_trophyContent"></div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('tc-show'); });
+    window._renderTrophyTabContent('trophies');
+};
+
+window.closeTrophyModal = function() {
+    var overlay = document.getElementById('_trophyOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('tc-show');
+    setTimeout(function() { overlay.remove(); }, 280);
+};
+
+window._switchTrophyTab = function(tab, btn) {
+    window._trophyTab = tab;
+    document.querySelectorAll('.tc-tab').forEach(function(b){ b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    window._renderTrophyTabContent(tab);
+};
+
+// Determina el "rango" visual de un trofeo según su poder total (atk+def),
+// usado para el color de aura/borde de la tarjeta premium.
+function getTrophyRarity(t) {
+    var power = (t.atk||0) + (t.def||0);
+    if (power >= 25) return { name:'Legendario', col:'#fbbf24', col2:'#f59e0b', glow:'rgba(251,191,36,0.55)' };
+    if (power >= 14) return { name:'Épico',      col:'#c084fc', col2:'#9333ea', glow:'rgba(192,132,252,0.5)' };
+    if (power >= 6)  return { name:'Raro',       col:'#38bdf8', col2:'#0284c7', glow:'rgba(56,189,248,0.45)' };
+    return                 { name:'Común',       col:'#94a3b8', col2:'#64748b', glow:'rgba(148,163,184,0.35)' };
+}
+
+window._renderTrophyTabContent = function(tab) {
+    var content = document.getElementById('_trophyContent');
+    if (!content) return;
+    var hero = loadHero();
+    var owned = window.getOwnedTrophies();
+    var ownedIds = owned.map(function(t){ return t.id; });
+    var eqTrophies = hero.equippedTrophies || {};
+
+    if (tab === 'trophies') {
+        content.innerHTML =
+          '<div class="tc-summary">' + owned.length + ' / ' + TROPHY_DB.length + ' trofeos obtenidos</div>' +
+          '<div class="tc-grid">' +
+            TROPHY_DB.map(function(t) {
+                var isOwned = ownedIds.indexOf(t.id) >= 0;
+                var isEquipped = eqTrophies[t.type] === t.id;
+                var rarity = getTrophyRarity(t);
+                return '<div class="tc-card' + (isOwned?'':' locked') + (isEquipped?' equipped':'') + '" ' +
+                  'style="--tc-col:' + rarity.col + ';--tc-col2:' + rarity.col2 + ';--tc-glow:' + rarity.glow + ';" ' +
+                  (isOwned ? 'onclick="window.showTrophyDetail(\''+t.id+'\')"' : '') + '>' +
+                  '<div class="tc-card-glow"></div>' +
+                  (isEquipped ? '<div class="tc-card-badge">EQUIPADO</div>' : '') +
+                  '<div class="tc-card-icon">' + (isOwned ? t.icon : '🔒') + '</div>' +
+                  '<div class="tc-card-name">' + (isOwned ? t.name : '???') + '</div>' +
+                  '<div class="tc-card-rarity">' + rarity.name + '</div>' +
+                  (isOwned ? '<div class="tc-card-stats">' +
+                    (t.atk>0?'<span class="tc-stat-atk">⚔️'+t.atk+'</span>':'') +
+                    (t.def>0?'<span class="tc-stat-def">🛡️'+t.def+'</span>':'') +
+                  '</div>' : '<div class="tc-card-stats"><span class="tc-locked-text">Bloqueado</span></div>') +
+                  '</div>';
+            }).join('') +
+          '</div>';
+    } else if (tab === 'collections') {
+        window._renderCollectionsTab(content, owned, ownedIds);
+    } else if (tab === 'eggs') {
+        window._renderEggsTab(content);
+    } else if (tab === 'fusions') {
+        window._renderFusionsTab(content, owned, ownedIds);
+    }
+};
+
+// ── Tab: Colecciones (agrupadas por tipo) ─────────────────────
+window._renderCollectionsTab = function(content, owned, ownedIds) {
+    var hero = loadHero();
+    var eqTrophies = hero.equippedTrophies || {};
+    var groups = { weapon:'⚔️ Armas', armor:'🛡️ Armaduras', other:'💎 Objetos Especiales' };
+    var html = '';
+    Object.keys(groups).forEach(function(type) {
+        var items = TROPHY_DB.filter(function(t){ return t.type === type; });
+        var ownedOfType = items.filter(function(t){ return ownedIds.indexOf(t.id) >= 0; });
+        html += '<div class="tc-collection-group">' +
+          '<div class="tc-collection-title">' + groups[type] + ' · ' + ownedOfType.length + '/' + items.length + '</div>' +
+          '<div class="tc-grid tc-grid-sm">' +
+            items.map(function(t) {
+                var isOwned = ownedIds.indexOf(t.id) >= 0;
+                var isEquipped = eqTrophies[t.type] === t.id;
+                var rarity = getTrophyRarity(t);
+                return '<div class="tc-card' + (isOwned?'':' locked') + (isEquipped?' equipped':'') + ' tc-card-sm" ' +
+                  'style="--tc-col:' + rarity.col + ';--tc-col2:' + rarity.col2 + ';--tc-glow:' + rarity.glow + ';" ' +
+                  (isOwned ? 'onclick="window.showTrophyDetail(\''+t.id+'\')"' : '') + '>' +
+                  '<div class="tc-card-glow"></div>' +
+                  (isEquipped ? '<div class="tc-card-badge">✓</div>' : '') +
+                  '<div class="tc-card-icon">' + (isOwned ? t.icon : '🔒') + '</div>' +
+                  '<div class="tc-card-name">' + (isOwned ? t.name : '???') + '</div>' +
+                  (isOwned ? '<div class="tc-card-stats">' +
+                    (t.atk>0?'<span class="tc-stat-atk">⚔️'+t.atk+'</span>':'') +
+                    (t.def>0?'<span class="tc-stat-def">🛡️'+t.def+'</span>':'') +
+                  '</div>' : '') +
+                  '</div>';
+            }).join('') +
+          '</div></div>';
+    });
+    content.innerHTML = html;
+};
+
+// ── Tab: Huevos (de pergaminos de misión) ─────────────────────
+window._renderEggsTab = function(content) {
+    var inv = loadInv();
+    var eggs = inv.items ? inv.items.filter(function(it){ return typeof it === 'string' && it.startsWith('egg_'); }) : [];
+    var PET_ICONS = { egg_bunny:'🐰', egg_turtle:'🐢', egg_whale:'🐳', egg_seahorse:'🦄', egg_horse:'🐴', egg_unicorn:'🦄', egg_zombie:'🧟', egg_base:'🥚', egg_desert:'🏜️', egg_golden:'✨' };
+    if (!eggs.length) {
+        content.innerHTML = '<div class="tc-empty"><div style="font-size:2.5rem;margin-bottom:10px;">🥚</div><div>Aún no tienes huevos</div><div style="font-size:0.62rem;color:#555;margin-top:6px;">Completa pergaminos de misión para obtenerlos</div></div>';
+        return;
+    }
+    var counts = {};
+    eggs.forEach(function(e){ counts[e] = (counts[e]||0)+1; });
+    content.innerHTML =
+      '<div class="tc-summary">' + eggs.length + ' huevo' + (eggs.length>1?'s':'') + ' disponible' + (eggs.length>1?'s':'') + '</div>' +
+      '<div class="tc-grid">' +
+        Object.keys(counts).map(function(eggId) {
+            var icon = PET_ICONS[eggId] || '🥚';
+            var name = eggId.replace('egg_','').replace(/_/g,' ');
+            name = name.charAt(0).toUpperCase() + name.slice(1);
+            return '<div class="tc-card" style="--tc-col:#a78bfa;--tc-col2:#7c3aed;--tc-glow:rgba(167,139,250,0.5);">' +
+              '<div class="tc-card-glow"></div>' +
+              '<div class="tc-card-icon">' + icon + '</div>' +
+              '<div class="tc-card-name">Huevo ' + name + '</div>' +
+              '<div class="tc-card-rarity">×' + counts[eggId] + '</div>' +
+              '<div class="tc-card-stats"><span style="font-size:0.5rem;color:#a78bfa;">Eclosiona en Inventario</span></div>' +
+              '</div>';
+        }).join('') +
+      '</div>';
+};
+
+// ── Tab: Fusiones (placeholder — Fase 5) ─────────────────────
+window._renderFusionsTab = function(content, owned, ownedIds) {
+    // Recetas de fusión: 2 trofeos específicos -> 1 resultado más poderoso
+    var RECIPES = [
+        { id:'fus_shadowblade', name:'Filo de Sombra', icon:'🌑', needs:['boss_t1','boss_t2'], type:'weapon', atk:8, def:2, desc:'La espada de inicio fundida con el colmillo maldito.' },
+        { id:'fus_titanknight', name:'Armadura Titán', icon:'⚫', needs:['boss_t3','boss_t10'], type:'armor', atk:3, def:22, desc:'El escudo de barro y la roca del titán, forjados juntos.' },
+        { id:'fus_soulstone', name:'Piedra del Alma', icon:'🔯', needs:['boss_t5','boss_t8'], type:'other', atk:12, def:12, desc:'El orbe oscuro y la piedra lunar, fundidos en uno.' },
+        { id:'fus_dragonheart', name:'Corazón Dragón', icon:'🐉', needs:['boss_t19','boss_t18'], type:'other', atk:20, def:18, desc:'El corazón de llamas y la escama tormentosa fusionados.' },
+        { id:'fus_champion', name:'Corona Suprema', icon:'👑', needs:['boss_t20','quest_t30'], type:'armor', atk:14, def:32, desc:'Las dos coronas más poderosas, unidas para siempre.' },
+        { id:'fus_huntersoul', name:'Alma del Cazador', icon:'🎯', needs:['quest_t6','quest_t7'], type:'weapon', atk:11, def:3, desc:'La espada del cazador y el dardo certero, una sola arma.' },
+        { id:'fus_warlord', name:'Señor de la Guerra', icon:'⚔️', needs:['boss_t12','boss_t17'], type:'weapon', atk:26, def:8, desc:'La espada oscura y el tridente infernal, fuerza suprema.' },
+        { id:'fus_mysticorb', name:'Orbe Místico Supremo', icon:'🔮', needs:['boss_t5','quest_t19'], type:'other', atk:14, def:14, desc:'El orbe oscuro y el orbe de dominio, poder arcano total.' },
+    ];
+
+    if (!owned.length || owned.length < 2) {
+        content.innerHTML = '<div class="tc-empty"><div style="font-size:2.5rem;margin-bottom:10px;">⚗️</div><div style="color:#c084fc;font-weight:800;">Sistema de Fusiones</div><div style="font-size:0.62rem;color:#555;margin-top:8px;">Necesitas al menos 2 trofeos para fusionar.</div></div>';
+        return;
+    }
+
+    var hero = loadHero();
+    var fusedIds = hero.fusedTrophies || [];
+
+    var html = '<div class="tc-summary">⚗️ Combinaciones disponibles</div><div style="display:flex;flex-direction:column;gap:8px;">';
+    RECIPES.forEach(function(r) {
+        var canFuse = r.needs.every(function(id){ return ownedIds.indexOf(id) >= 0; });
+        var alreadyFused = fusedIds.indexOf(r.id) >= 0;
+        var t1 = TROPHY_DB.find(function(t){ return t.id === r.needs[0]; });
+        var t2 = TROPHY_DB.find(function(t){ return t.id === r.needs[1]; });
+        if (!t1 || !t2) return;
+        html += '<div style="background:' + (canFuse && !alreadyFused ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.03)') + ';border:1.5px solid ' + (canFuse && !alreadyFused ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.07)') + ';border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;">'
+            + '<div style="font-size:1.6rem;flex-shrink:0;">' + (alreadyFused ? r.icon : (canFuse ? r.icon : '🔒')) + '</div>'
+            + '<div style="flex:1;">'
+            +   '<div style="font-size:0.6rem;font-weight:900;color:' + (canFuse ? '#e2e8f0' : '#444') + ';">' + r.name + '</div>'
+            +   '<div style="font-size:0.5rem;color:#666;margin:2px 0;">' + t1.icon + ' ' + t1.name + ' + ' + t2.icon + ' ' + t2.name + '</div>'
+            +   '<div style="font-size:0.48rem;color:#a78bfa;">⚔️' + r.atk + ' 🛡️' + r.def + ' · ' + (r.type==='weapon'?'Arma':r.type==='armor'?'Armadura':'Objeto') + '</div>'
+            + '</div>'
+            + (alreadyFused
+                ? '<div style="font-size:0.5rem;color:#34d399;font-weight:800;">✅ Obtenido</div>'
+                : (canFuse
+                    ? '<button style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:10px;padding:6px 10px;font-size:0.5rem;font-weight:900;color:#fff;cursor:pointer;font-family:inherit;" onclick="window._performFusion(\'' + r.id + '\')">FUSIONAR</button>'
+                    : '<div style="font-size:0.48rem;color:#333;font-weight:700;">Faltan trofeos</div>'))
+            + '</div>';
+    });
+    html += '</div>';
+    content.innerHTML = html;
+};
+
+window._performFusion = function(recipeId) {
+    var RECIPES = [
+        { id:'fus_shadowblade', name:'Filo de Sombra', icon:'🌑', needs:['boss_t1','boss_t2'], type:'weapon', atk:8, def:2 },
+        { id:'fus_titanknight', name:'Armadura Titán', icon:'⚫', needs:['boss_t3','boss_t10'], type:'armor', atk:3, def:22 },
+        { id:'fus_soulstone', name:'Piedra del Alma', icon:'🔯', needs:['boss_t5','boss_t8'], type:'other', atk:12, def:12 },
+        { id:'fus_dragonheart', name:'Corazón Dragón', icon:'🐉', needs:['boss_t19','boss_t18'], type:'other', atk:20, def:18 },
+        { id:'fus_champion', name:'Corona Suprema', icon:'👑', needs:['boss_t20','quest_t30'], type:'armor', atk:14, def:32 },
+        { id:'fus_huntersoul', name:'Alma del Cazador', icon:'🎯', needs:['quest_t6','quest_t7'], type:'weapon', atk:11, def:3 },
+        { id:'fus_warlord', name:'Señor de la Guerra', icon:'⚔️', needs:['boss_t12','boss_t17'], type:'weapon', atk:26, def:8 },
+        { id:'fus_mysticorb', name:'Orbe Místico Supremo', icon:'🔮', needs:['boss_t5','quest_t19'], type:'other', atk:14, def:14 },
+    ];
+    var r = RECIPES.find(function(x){ return x.id === recipeId; });
+    if (!r) return;
+    var hero = loadHero();
+    hero.fusedTrophies = hero.fusedTrophies || [];
+    if (hero.fusedTrophies.indexOf(r.id) >= 0) return;
+    // Agregar el resultado al catálogo temporal y al inventario del héroe
+    hero.fusedTrophies.push(r.id);
+    // Agregar al inventory como string compatible con el sistema legacy
+    hero.inventory = hero.inventory || [];
+    hero.inventory.push(r.icon + ' ' + r.name);
+    saveHero(hero);
+    if (typeof window.showHabFloat === 'function') {
+        window.showHabFloat(null, '⚗️ ¡' + r.name + ' creado! +' + r.atk + 'ATK +' + r.def + 'DEF', '#a78bfa');
+    }
+    // Refrescar el tab de fusiones
+    var owned = window.getOwnedTrophies();
+    var ownedIds = owned.map(function(t){ return t.id; });
+    window._renderFusionsTab(document.getElementById('_trophyContent'), owned, ownedIds);
+    window.renderTrophyButton();
+};
+
+// ── Modal de detalle de trofeo ────────────────────────────────
+window.showTrophyDetail = function(trophyId) {
+    var t = TROPHY_DB.find(function(x){ return x.id === trophyId; });
+    if (!t) return;
+    var hero = loadHero();
+    var eqTrophies = hero.equippedTrophies || {};
+    var isEquipped = eqTrophies[t.type] === t.id;
+    var rarity = getTrophyRarity(t);
+    var dateObtained = window.getTrophyObtainedDate(trophyId);
+    var old = document.getElementById('_trophyDetail');
+    if (old) old.remove();
+    var overlay = document.createElement('div');
+    overlay.id = '_trophyDetail';
+    overlay.className = 'tc-detail-overlay';
+    overlay.innerHTML =
+      '<div class="tc-detail-sheet" style="--tc-col:'+rarity.col+';--tc-col2:'+rarity.col2+';--tc-glow:'+rarity.glow+';">' +
+        '<div class="tc-detail-header">' +
+          '<button class="tc-close" onclick="document.getElementById(\'_trophyDetail\').remove()">✕</button>' +
+        '</div>' +
+        '<div class="tc-detail-icon-wrap"><div class="tc-detail-icon">'+t.icon+'</div></div>' +
+        '<div class="tc-detail-rarity-badge" style="background:'+rarity.col+'22;color:'+rarity.col+';border:1px solid '+rarity.col+'55;">'+rarity.name+'</div>' +
+        '<div class="tc-detail-name">'+t.name+'</div>' +
+        '<div class="tc-detail-source">'+(t.source==='boss'?'⚔️ Derrotando a: '+t.sourceId:'📜 Misión completada')+' · '+dateObtained+'</div>' +
+        '<div class="tc-detail-desc">'+t.desc+'</div>' +
+        '<div class="tc-detail-stats">' +
+          (t.atk>0?'<div class="tc-detail-stat-item"><div class="tc-detail-stat-val" style="color:#f87171;">+'+t.atk+'</div><div class="tc-detail-stat-lbl">ATAQUE</div></div>':'') +
+          (t.def>0?'<div class="tc-detail-stat-item"><div class="tc-detail-stat-val" style="color:#60a5fa;">+'+t.def+'</div><div class="tc-detail-stat-lbl">DEFENSA</div></div>':'') +
+          '<div class="tc-detail-stat-item"><div class="tc-detail-stat-val" style="color:#a78bfa;">'+rarity.name+'</div><div class="tc-detail-stat-lbl">RAREZA</div></div>' +
+        '</div>' +
+        '<div class="tc-detail-type-badge">Tipo: '+(t.type==='weapon'?'⚔️ Arma':t.type==='armor'?'🛡️ Armadura':'💎 Objeto')+'</div>' +
+        '<div class="tc-detail-actions">' +
+          (isEquipped
+            ? '<button class="tc-detail-btn tc-detail-btn-unequip" onclick="window.unequipTrophy(\''+t.type+'\');document.getElementById(\'_trophyDetail\').remove();window._renderTrophyTabContent(window._trophyTab);window.renderTrophyButton();if(window.renderHabHero)window.renderHabHero();">Desequipar</button>'
+            : '<button class="tc-detail-btn tc-detail-btn-equip" style="background:linear-gradient(135deg,'+rarity.col2+','+rarity.col+');box-shadow:0 4px 20px '+rarity.glow+';" onclick="window.equipTrophy(\''+trophyId+'\');document.getElementById(\'_trophyDetail\').remove();window._renderTrophyTabContent(window._trophyTab);window.renderTrophyButton();if(window.renderHabHero)window.renderHabHero();">⚡ Equipar</button>') +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function(){ overlay.classList.add('tc-show'); });
+};
+
 let _classFilter = 'warrior';
 
 // ── BASE DE DATOS DEL MERCADO ─────────────────────────────────
@@ -23111,24 +23700,20 @@ window.buyEquipItemV2 = function(itemId, category) {
     // Desequipar el anterior del mismo slot si lo hay
     hero.equipment  = hero.equipment  || {};
     hero.purchased  = hero.purchased  || [];
+    // Exclusión mutua: si hay un trofeo equipado en este slot, desequiparlo
+    hero.equippedTrophies = hero.equippedTrophies || {};
+    if (hero.equippedTrophies[item.type]) {
+        delete hero.equippedTrophies[item.type];
+    }
     hero.equipment[item.type] = itemId;
     // Guardar en array de comprados si no estaba ya
     if (!hero.purchased.includes(itemId)) hero.purchased.push(itemId);
 
-    // Recalcular stats del héroe según equipo
-    var newAtk = 5, newDef = 3;
-    Object.values(hero.equipment).forEach(function(eid) {
-        ['weapon','armor','other'].forEach(function(cat) {
-            const found = (EQUIP_DB[cat]||[]).find(function(i){ return i.id === eid; });
-            if (found) { newAtk += (found.atk||0); newDef += (found.def||0); }
-        });
-    });
-    hero.stats = hero.stats || {};
-    hero.stats.atk = newAtk;
-    hero.stats.def = newDef;
+    // Recalcular stats del héroe según equipo normal + trofeos equipados
+    recalcHeroStats(hero);
 
     saveHero(hero);
-    showBuyToast('⚔️ ' + item.name + ' equipado! ATK:' + newAtk + ' DEF:' + newDef);
+    showBuyToast('⚔️ ' + item.name + ' equipado! ATK:' + hero.stats.atk + ' DEF:' + hero.stats.def);
     if (typeof playSparkleSound === 'function') playSparkleSound();
     renderEquipment();
     if (typeof renderHabHero === 'function') renderHabHero();
@@ -23628,6 +24213,78 @@ function canBuyScroll(scr, hero, inv) {
     return 'available';
 }
 
+// ── Progreso dinámico de pergaminos activos ───────────────────
+// Calcula cuántos hábitos se han completado desde que se activó el pergamino,
+// cuántos faltan, y si ya se cumplió el requisito (habitReq).
+function getScrollProgress(scr, inv, habits) {
+    inv = inv || loadInv();
+    habits = habits || loadHabits();
+    var startCount = (inv.scrollProgress && inv.scrollProgress[scr.id] != null)
+        ? inv.scrollProgress[scr.id] : 0;
+    var totalNow = habits.reduce(function(s,h){ return s+(h.log||[]).length; }, 0);
+    var doneCount = Math.max(0, totalNow - startCount);
+    var remaining = Math.max(0, (scr.habitReq||0) - doneCount);
+    return {
+        done: doneCount,
+        remaining: remaining,
+        req: scr.habitReq || 0,
+        pct: scr.habitReq ? Math.min(100, Math.round(doneCount / scr.habitReq * 100)) : 0,
+        completed: doneCount >= (scr.habitReq||0),
+    };
+}
+
+// Revisa todos los pergaminos activos (no completados) y, si alguno ya cumplió
+// su requisito de hábitos, entrega automáticamente la recompensa (XP + monedas)
+// y lo mueve de "scrolls" (activo) a "scrollsDone" (completado).
+window.checkScrollsCompletion = function() {
+    var hero = loadHero();
+    var inv  = loadInv();
+    var habits = loadHabits();
+    var owned = inv.scrolls || [];
+    var done  = inv.scrollsDone || [];
+    var changed = false;
+
+    owned.slice().forEach(function(scrId) {
+        var scr = SCROLLS_DB.find(function(s){ return s.id === scrId; });
+        if (!scr) return;
+        var prog = getScrollProgress(scr, inv, habits);
+        if (!prog.completed) return;
+
+        // Completar: otorgar recompensa, mover a scrollsDone, quitar de scrolls activos
+        hero.xp    = (hero.xp||0)    + (scr.xpReward||0);
+        hero.coins = (hero.coins||0) + (scr.goldReward||0);
+        while (hero.xp >= (hero.xpNext||100)) {
+            hero.xp -= hero.xpNext;
+            hero.level = (hero.level||1) + 1;
+            hero.xpNext = Math.round((hero.xpNext||100) * 1.5);
+            hero.maxHp = (hero.maxHp||100) + (hero.class==='warrior'?30:20);
+            hero.hp = hero.maxHp;
+        }
+        // Agregar items de recompensa al inventario, si tiene
+        if (scr.items && scr.items.length) {
+            inv.items = inv.items || [];
+            scr.items.forEach(function(it){ inv.items.push(it); });
+        }
+
+        owned.splice(owned.indexOf(scrId), 1);
+        done.push(scrId);
+        changed = true;
+
+        if (typeof window.showHabFloat === 'function') {
+            window.showHabFloat(null, '📜 ¡Pergamino completado! +'+scr.xpReward+' XP · +'+scr.goldReward+'🪙', '#fbbf24');
+        }
+    });
+
+    if (changed) {
+        inv.scrolls = owned;
+        inv.scrollsDone = done;
+        saveHero(hero);
+        saveInv(inv);
+        if (typeof renderScrollShop === 'function') renderScrollShop();
+        if (typeof updateGoldDisplays === 'function') updateGoldDisplays(hero);
+    }
+};
+
 // ── TIENDA DE PERGAMINOS DE MISIÓN ────────────────────────────
 /* Helpers para pergaminos */
 window._closeScrollModal = function() {
@@ -23698,11 +24355,22 @@ function renderScrollShop() {
             });
         }
 
+        var descOrProgress = scr.desc;
+        if (isOwned && done.indexOf(scr.id) < 0) {
+            // Activo pero aún no completado: mostrar progreso dinámico real
+            var prog = getScrollProgress(scr, inv, loadHabits());
+            descOrProgress = prog.remaining > 0
+                ? '📊 ' + prog.done + '/' + prog.req + ' hábitos · faltan ' + prog.remaining
+                : '✅ ¡Listo para completarse!';
+        } else if (done.indexOf(scr.id) >= 0) {
+            descOrProgress = '✅ Misión completada — recompensa obtenida';
+        }
+
         html += '<div class="hab-shop-item" style="'+borderCol+'cursor:pointer;" onclick="_showSD(this)" data-scrid="'+scr.id+'">' 
              +  '<div class="hab-shop-icon">'+scr.icon+'</div>'
              +  '<div class="hab-shop-info">'
              +    '<div class="hab-shop-name">'+scr.name+badge+'</div>'
-             +    '<div class="hab-shop-desc">'+scr.desc+'</div>'
+             +    '<div class="hab-shop-desc">'+descOrProgress+'</div>'
              +    '<div class="hab-shop-stat">+'+scr.xpReward+' XP · +'+scr.goldReward+'🪙 · '+scr.req+'</div>'
              +    (itemIcons ? '<div style="margin-top:3px;">'+itemIcons+'</div>' : '')
              +  '</div>'
@@ -23758,6 +24426,25 @@ window.showScrollDetail = function(scrId) {
         modal.onclick = function(e){ if(e.target===modal) modal.style.display='none'; };
     }
 
+    var isDoneFlag = done.indexOf(scr.id)>=0;
+    var isActiveFlag = isOwned && !isDoneFlag;
+    var progHtml = '';
+    if (isActiveFlag) {
+        var prog = getScrollProgress(scr, inv, loadHabits());
+        progHtml = '<div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:12px;padding:10px;margin-bottom:6px;">'
+            +  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+            +    '<span style="font-size:0.52rem;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">Progreso de la misión</span>'
+            +    '<span style="font-size:0.62rem;font-weight:900;color:'+(prog.completed?'#34d399':'#f1f5f9')+';">'+prog.done+'/'+prog.req+'</span>'
+            +  '</div>'
+            +  '<div style="background:rgba(255,255,255,0.07);border-radius:6px;height:8px;overflow:hidden;">'
+            +    '<div style="height:100%;width:'+prog.pct+'%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:6px;transition:width 0.5s;"></div>'
+            +  '</div>'
+            +  '<div style="font-size:0.55rem;color:'+(prog.completed?'#34d399':'#94a3b8')+';margin-top:6px;text-align:center;font-weight:700;">'
+            +    (prog.completed ? '✅ ¡Misión lista! Vuelve a abrir el panel para reclamar' : '📊 Te faltan '+prog.remaining+' hábito'+(prog.remaining===1?'':'s')+' para completarla')
+            +  '</div>'
+            +'</div>';
+    }
+
     var itemsHtml = '';
     if (scr.items && scr.items.length) {
         itemsHtml += '<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border-radius:12px;">';
@@ -23784,6 +24471,7 @@ window.showScrollDetail = function(scrId) {
         +  '<div style="font-size:0.92rem;font-weight:900;color:#f1f5f9;line-height:1.3;margin-bottom:4px;">'+scr.name+'</div>'
         +  '<div style="font-size:0.6rem;color:#64748b;line-height:1.4;">'+scr.desc+'</div>'
         +'</div>'
+        +progHtml
         +'<div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:10px;margin-bottom:6px;">'
         +  '<div style="font-size:0.52rem;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Recompensas</div>'
         +  '<div style="display:flex;gap:6px;">'
@@ -27110,17 +27798,28 @@ window.renderHabHero = function() {
         const ic = {weapon:'⚔️',armor:'🛡️',other:'💍'};
         const nm = {weapon:'Arma',armor:'Armadura',other:'Otros'};
         const svgEl = si && typeof getEquipSVG==='function' ? getEquipSVG(si.id, si.type, 36) : null;
+        // Trofeo equipado en este slot (tiene prioridad visual si no hay item normal)
+        const eqTrophies = (hero.equippedTrophies)||{};
+        const tid = eqTrophies[slot];
+        const TROPHIES = window._HAB_TROPHIES||[];
+        const tr = tid ? TROPHIES.find(function(t){return t.id===tid;}) : null;
+        if (tr) {
+          return `<div style="background:rgba(251,191,36,0.08);border:1.5px solid rgba(251,191,36,0.45);border-radius:10px;padding:6px;text-align:center;position:relative;cursor:pointer;" onclick="window.showTrophyDetail('${tr.id}')">
+            <div style="position:absolute;top:3px;right:4px;font-size:0.35rem;font-weight:900;background:#fbbf24;color:#000;border-radius:4px;padding:1px 4px;">TROFEO</div>
+            <div style="font-size:1.4rem;margin:2px 0 2px;filter:drop-shadow(0 0 6px rgba(251,191,36,0.7));">${tr.icon}</div>
+            <div style="font-size:0.42rem;color:#fbbf24;margin-top:1px;font-weight:800;line-height:1.2;">${tr.name}</div>
+            <div style="font-size:0.38rem;color:#a78bfa;font-weight:700;">${tr.atk>0?'ATK+'+tr.atk:''}${tr.def>0?' DEF+'+tr.def:''}</div>
+          </div>`;
+        }
         return `<div style="background:rgba(255,255,255,0.04);border:1.5px solid ${si?'rgba(167,139,250,0.5)':'rgba(255,255,255,0.07)'};border-radius:10px;padding:6px;text-align:center;">
           <div style="width:36px;height:36px;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;">${svgEl||`<span style='font-size:1.2rem;opacity:0.3;'>${ic[slot]}</span>`}</div>
           <div style="font-size:0.44rem;color:${si?'#c4b5fd':'#555'};margin-top:2px;font-weight:800;line-height:1.2;">${si?si.name:nm[slot]}</div>
           ${si?`<div style="font-size:0.4rem;color:#a78bfa;font-weight:700;">${si.atk>0?'ATK+'+si.atk:''}${si.def>0?' DEF+'+si.def:''}</div>`:''}
         </div>`;}).join('')}
     </div>
-    <div style="font-size:0.62rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.4rem 0;">🎒 Inventario</div>
-    <div style="display:flex;flex-wrap:wrap;gap:5px;">${(hero.inventory||[]).length
-      ?hero.inventory.map(it=>`<span style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:3px 8px;font-size:0.62rem;color:#fbbf24;">${it}</span>`).join('')
-      :'<span style="font-size:0.7rem;color:#444;">Sin items. ¡Compra en 🛒 Tienda!</span>'}</div>
+    <div id="habTrophyBtnWrap"></div>
     <div id="habPotionShopWrap"></div>`;
+    if (typeof window.renderTrophyButton === 'function') window.renderTrophyButton();
     if (typeof window.renderHpPotionShop === 'function') window.renderHpPotionShop();
 
     // Panel mascota equipada
