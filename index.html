@@ -24580,7 +24580,13 @@ window.switchHabTab = function(tab, el) {
         const hero = loadHero();
         const goldEl = document.getElementById('habShopGold');
         if (goldEl) goldEl.textContent = '🪙 '+(hero.coins||0)+'  💎'+(hero.gems||0);
-        renderEquipment();
+        setTimeout(function() {
+            renderEquipment();
+            // Forzar inicialización del sub-tab activo para garantizar carga en primera apertura
+            if (typeof window._setEquipTab === 'function') {
+                window._setEquipTab(typeof _equipTab !== 'undefined' ? _equipTab : 'weapon');
+            }
+        }, 80);
     }
     if (tab === 'quests') { renderScrollShop(); }
 };
