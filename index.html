@@ -5107,6 +5107,209 @@
         .tc-detail-btn-equip{color:#fff;}
         .tc-detail-btn-unequip{background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);color:#94a3b8;}
 
+        /* ── Timer Premium por paso/tarea ──────────────────────── */
+        @keyframes timerPulseRing {
+            0%  { transform:scale(1);   opacity:0.8; }
+            50% { transform:scale(1.06); opacity:1;  }
+            100%{ transform:scale(1);   opacity:0.8; }
+        }
+        @keyframes timerBtnShine {
+            0%   { left:-100%; }
+            100% { left:200%;  }
+        }
+        @keyframes timerOverlayIn {
+            from { opacity:0; } to { opacity:1; }
+        }
+        @keyframes timerSheetIn {
+            from { transform:translateY(60px) scale(0.96); opacity:0; }
+            to   { transform:translateY(0)    scale(1);    opacity:1; }
+        }
+        @keyframes timerCountdownPulse {
+            0%,100% { text-shadow: 0 0 20px var(--tc-glow,#00d2ff), 0 0 40px var(--tc-glow,#00d2ff); }
+            50%     { text-shadow: 0 0 40px var(--tc-glow,#00d2ff), 0 0 80px var(--tc-glow,#00d2ff), 0 0 120px var(--tc-glow,#00d2ff); }
+        }
+        @keyframes timerRingDash {
+            from { stroke-dashoffset: 565; }
+        }
+        @keyframes timerConfetti {
+            0%   { transform:translateY(0) rotate(0deg); opacity:1; }
+            100% { transform:translateY(-120px) rotate(720deg); opacity:0; }
+        }
+        @keyframes timerWinPulse {
+            0%,100% { transform:scale(1);    }
+            20%     { transform:scale(1.15); }
+            40%     { transform:scale(0.95); }
+            60%     { transform:scale(1.1);  }
+            80%     { transform:scale(0.97); }
+        }
+
+        /* Botón temporizador inline */
+        .step-timer-btn {
+            display:inline-flex;align-items:center;gap:5px;
+            background:linear-gradient(135deg,rgba(0,210,255,0.18),rgba(139,92,246,0.18));
+            border:1.5px solid rgba(0,210,255,0.45);border-radius:10px;
+            padding:4px 10px;font-size:0.58rem;font-weight:900;color:#00d2ff;
+            cursor:pointer;position:relative;overflow:hidden;
+            font-family:inherit;letter-spacing:0.5px;margin-left:6px;
+            transition:transform 0.15s,box-shadow 0.15s;
+            box-shadow:0 0 10px rgba(0,210,255,0.15);
+            flex-shrink:0;
+        }
+        .step-timer-btn::before {
+            content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);
+            animation:timerBtnShine 2.4s linear infinite;
+        }
+        .step-timer-btn:active { transform:scale(0.94); }
+        .step-timer-btn-icon { font-size:0.75rem; }
+
+        /* Overlay del modal timer */
+        .timer-modal-overlay {
+            position:fixed;inset:0;z-index:9500;
+            background:rgba(0,0,0,0);
+            display:flex;align-items:center;justify-content:center;
+            animation:timerOverlayIn 0.22s ease forwards;
+            padding:16px;
+        }
+        .timer-modal-overlay.visible { background:rgba(0,0,0,0.82); }
+
+        /* Sheet del modal timer */
+        .timer-modal-sheet {
+            width:100%;max-width:360px;
+            background:linear-gradient(160deg,#07091a 0%,#0d1030 50%,#0a0820 100%);
+            border-radius:28px;padding:28px 22px 24px;
+            border:1.5px solid var(--tm-col,rgba(0,210,255,0.4));
+            box-shadow:0 0 60px var(--tm-glow,rgba(0,210,255,0.25)),
+                       0 0 120px var(--tm-glow,rgba(0,210,255,0.1)),
+                       inset 0 0 40px rgba(0,0,0,0.5);
+            animation:timerSheetIn 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards;
+            position:relative;overflow:hidden;
+        }
+        .timer-modal-sheet::before {
+            content:'';position:absolute;inset:0;
+            background:radial-gradient(ellipse at 50% 0%,var(--tm-glow,rgba(0,210,255,0.12)) 0%,transparent 65%);
+            pointer-events:none;
+        }
+
+        /* Contenido del modal */
+        .tm-close-btn {
+            position:absolute;top:14px;right:14px;
+            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+            border-radius:50%;width:28px;height:28px;font-size:0.7rem;color:#888;
+            cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;
+        }
+        .tm-step-num {
+            font-size:0.48rem;font-weight:900;color:var(--tm-col,#00d2ff);
+            text-transform:uppercase;letter-spacing:2px;text-align:center;
+            margin-bottom:4px;opacity:0.8;
+        }
+        .tm-title {
+            font-size:1rem;font-weight:900;color:#fff;text-align:center;
+            line-height:1.3;margin-bottom:6px;
+        }
+        .tm-desc {
+            font-size:0.62rem;color:#94a3b8;text-align:center;line-height:1.5;
+            margin-bottom:14px;padding:0 4px;min-height:18px;
+        }
+        .tm-rewards {
+            display:flex;justify-content:center;gap:8px;margin-bottom:20px;
+        }
+        .tm-reward-chip {
+            display:flex;align-items:center;gap:4px;
+            padding:4px 10px;border-radius:10px;
+            font-size:0.6rem;font-weight:900;
+        }
+        .tm-reward-coins {
+            background:rgba(251,191,36,0.12);color:#fbbf24;
+            border:1px solid rgba(251,191,36,0.4);
+        }
+        .tm-reward-xp {
+            background:rgba(167,139,250,0.12);color:#c084fc;
+            border:1px solid rgba(167,139,250,0.4);
+        }
+        .tm-reward-time {
+            background:rgba(0,210,255,0.1);color:#00d2ff;
+            border:1px solid rgba(0,210,255,0.35);
+        }
+
+        /* Anillo del temporizador SVG */
+        .tm-ring-wrap {
+            display:flex;justify-content:center;margin-bottom:18px;position:relative;
+        }
+        .tm-ring-svg { transform:rotate(-90deg); }
+        .tm-ring-bg  { fill:none;stroke:rgba(255,255,255,0.06);stroke-width:8; }
+        .tm-ring-fg  {
+            fill:none;stroke:var(--tm-col,#00d2ff);stroke-width:8;
+            stroke-linecap:round;stroke-dasharray:565;stroke-dashoffset:0;
+            transition:stroke-dashoffset 1s linear,stroke 0.3s;
+            filter:drop-shadow(0 0 8px var(--tm-glow,rgba(0,210,255,0.8)));
+        }
+        .tm-time-display {
+            position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            text-align:center;
+        }
+        .tm-time-num {
+            font-size:2.2rem;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;
+            animation:timerCountdownPulse 2s ease-in-out infinite;
+            line-height:1;
+        }
+        .tm-time-lbl {
+            font-size:0.45rem;color:var(--tm-col,#00d2ff);font-weight:700;
+            text-transform:uppercase;letter-spacing:1.5px;margin-top:2px;
+        }
+
+        /* Botones de control */
+        .tm-controls { display:flex;gap:8px;justify-content:center; }
+        .tm-btn {
+            padding:13px 24px;border-radius:16px;font-size:0.72rem;font-weight:900;
+            border:none;cursor:pointer;font-family:inherit;
+            transition:transform 0.15s,box-shadow 0.15s;flex:1;max-width:140px;
+        }
+        .tm-btn:active { transform:scale(0.95); }
+        .tm-btn-start {
+            background:linear-gradient(135deg,var(--tm-col2,#0284c7),var(--tm-col,#00d2ff));
+            color:#fff;box-shadow:0 4px 20px var(--tm-glow,rgba(0,210,255,0.4));
+        }
+        .tm-btn-pause {
+            background:rgba(255,255,255,0.07);color:#cbd5e1;
+            border:1.5px solid rgba(255,255,255,0.12);
+        }
+        .tm-btn-reset {
+            background:rgba(239,68,68,0.1);color:#f87171;
+            border:1.5px solid rgba(239,68,68,0.3);
+        }
+
+        /* Pantalla de victoria */
+        .tm-win-screen {
+            display:none;flex-direction:column;align-items:center;justify-content:center;
+            text-align:center;padding:10px 0;
+        }
+        .tm-win-screen.visible { display:flex; }
+        .tm-win-icon {
+            font-size:3.5rem;margin-bottom:10px;
+            animation:timerWinPulse 0.6s ease forwards;
+        }
+        .tm-win-title {
+            font-size:1.1rem;font-weight:900;color:#fbbf24;margin-bottom:6px;
+            text-shadow:0 0 20px rgba(251,191,36,0.6);
+        }
+        .tm-win-sub { font-size:0.65rem;color:#94a3b8;margin-bottom:16px;line-height:1.5; }
+        .tm-win-rewards {
+            display:flex;gap:10px;justify-content:center;margin-bottom:18px;
+        }
+        .tm-win-reward {
+            text-align:center;padding:8px 14px;border-radius:12px;
+        }
+        .tm-win-reward-val { font-size:1.1rem;font-weight:900; }
+        .tm-win-reward-lbl { font-size:0.45rem;color:#666;font-weight:700;text-transform:uppercase;letter-spacing:1px; }
+        .tm-confetti-wrap {
+            position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:28px;
+        }
+        .tm-confetti-piece {
+            position:absolute;bottom:10%;font-size:1.1rem;
+            animation:timerConfetti 1.2s ease-out forwards;
+        }
+
         /* Tienda de Pociones de Vida — premium e interactiva */
         @keyframes habPotionGlow {
             0%, 100% { box-shadow:0 0 8px var(--pglow), inset 0 0 12px rgba(255,255,255,0.03); }
@@ -5719,8 +5922,12 @@
         }
         .hab-zone.current {
             border-color:var(--zone-color,#3b82f6);
-            box-shadow:0 0 15px var(--zone-glow,rgba(59,130,246,0.3));
-            animation:habZonePulse 2s ease-in-out infinite;
+            border-width:2.5px;
+            box-shadow:0 0 24px var(--zone-glow,rgba(59,130,246,0.6)),
+                       0 0 48px var(--zone-glow,rgba(59,130,246,0.25)),
+                       inset 0 0 16px rgba(255,255,255,0.06);
+            animation:habZonePulse 1.8s ease-in-out infinite;
+            transform:scale(1.04);
         }
         .hab-zone.zone-selected {
             border-color:var(--zone-color,#3b82f6) !important;
@@ -5729,8 +5936,8 @@
             animation:none !important;
         }
         @keyframes habZonePulse {
-            0%,100%{box-shadow:0 0 10px var(--zone-glow,rgba(59,130,246,0.3));}
-            50%{box-shadow:0 0 22px var(--zone-glow,rgba(59,130,246,0.5));}
+            0%,100%{box-shadow:0 0 18px var(--zone-glow,rgba(59,130,246,0.5)),inset 0 0 10px rgba(255,255,255,0.04);transform:scale(1.04);}
+            50%{box-shadow:0 0 36px var(--zone-glow,rgba(59,130,246,0.75)),0 0 60px var(--zone-glow,rgba(59,130,246,0.3)),inset 0 0 18px rgba(255,255,255,0.08);transform:scale(1.06);}
         }
         .hab-zone-icon { font-size:1.5rem;display:block;margin-bottom:3px; }
         .hab-zone-name { font-size:0.6rem;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px; }
@@ -9756,7 +9963,7 @@ window.hrpFilter        = _hrpApplyFilter;
             
             // Persistencia Total (Guardar en LocalStorage)
             let customMethods = JSON.parse(localStorage.getItem('jch_custom_methods')) || {};
-            customMethods[methodId] = { name: '📁 ' + name, tasks: tasksHtml, _totalSubs: validSubtasks, _doneSubs: 0 }; // Agregamos icono de carpeta
+            customMethods[methodId] = { name: '📁 ' + name, tasks: tasksHtml, _totalSubs: validTasks, _doneSubs: 0 }; // Agregamos icono de carpeta
             localStorage.setItem('jch_custom_methods', JSON.stringify(customMethods));
 
             // Inyección en tiempo real a la interfaz
@@ -20360,7 +20567,6 @@ function flashDeath() {
 const _origSwitch = window.switchHabTab;
 window.switchHabTab = function(tab, el) {
     _origSwitch && _origSwitch(tab, el);
-    if (tab === 'tienda')      renderHabShop();
     if (tab === 'recompensas') renderHabRewards();
     if (tab === 'heroe')       renderHabHero();
 };
@@ -20693,7 +20899,7 @@ window.renderHabMap = function() {
         if (unlocked && isCurrent) {
             const nextZ = ZONES[i+1];
             const toNext = nextZ ? (nextZ.req - totalDone) : 0;
-            progLabel = '📍 Actual' + (nextZ && toNext > 0 ? '<br><span style="font-size:0.45rem;color:#888;">Sig. zona: ' + toNext + ' háb.</span>' : '');
+            progLabel = '<span style="display:inline-block;background:var(--zone-color,#3b82f6);color:#fff;font-size:0.44rem;font-weight:900;padding:2px 7px;border-radius:8px;letter-spacing:0.5px;">📍 ZONA ACTUAL</span>' + (nextZ && toNext > 0 ? '<br><span style="font-size:0.45rem;color:#888;">Sig. zona: ' + toNext + ' háb.</span>' : '');
         } else if (unlocked) {
             progLabel = '✅ Visitada';
         } else {
@@ -20711,7 +20917,7 @@ window.renderHabMap = function() {
     }).join('');
 
     // Seleccionar zona 0 (Bosque) por defecto al abrir el mapa
-    setTimeout(function() { selectZone(0); }, 60);
+    setTimeout(function() { selectZone(currentZoneIdx); }, 60);
 };
 
 window.selectZone = function(i) {
@@ -22626,6 +22832,284 @@ function recalcHeroStats(hero) {
     hero.stats.def = def;
 }
 window.recalcHeroStats = recalcHeroStats;
+
+// ── TEMPORIZADOR PREMIUM POR PASO/TAREA ────────────────────────
+(function() {
+    var _tmInterval = null;
+    var _tmSecondsLeft = 0;
+    var _tmTotalSeconds = 0;
+    var _tmRunning = false;
+
+    window.openStepTimer = function(title, desc, minutes, coins, xp) {
+        var old = document.getElementById('_stepTimerOverlay');
+        if (old) old.remove();
+        clearInterval(_tmInterval);
+        _tmRunning = false;
+        _tmTotalSeconds = Math.max(1, (parseFloat(minutes) || 5)) * 60;
+        _tmSecondsLeft = _tmTotalSeconds;
+
+        // Color dinámico según duración
+        var col, col2, glow, emoji;
+        if (minutes <= 10)       { col='#00d2ff'; col2='#0284c7'; glow='rgba(0,210,255,0.45)'; emoji='⚡'; }
+        else if (minutes <= 20)  { col='#a78bfa'; col2='#7c3aed'; glow='rgba(167,139,250,0.45)'; emoji='🔮'; }
+        else if (minutes <= 35)  { col='#34d399'; col2='#059669'; glow='rgba(52,211,153,0.45)'; emoji='🌿'; }
+        else                     { col='#f59e0b'; col2='#d97706'; glow='rgba(245,158,11,0.45)'; emoji='🔥'; }
+
+        var overlay = document.createElement('div');
+        overlay.id = '_stepTimerOverlay';
+        overlay.className = 'timer-modal-overlay';
+        overlay.style.cssText = '--tm-col:'+col+';--tm-col2:'+col2+';--tm-glow:'+glow+';--tc-glow:'+col+';';
+        overlay.innerHTML =
+          '<div class="timer-modal-sheet" style="--tm-col:'+col+';--tm-col2:'+col2+';--tm-glow:'+glow+';">' +
+            '<div class="tm-confetti-wrap" id="_tmConfetti"></div>' +
+            '<button class="tm-close-btn" onclick="window.closeStepTimer()">✕</button>' +
+            // Panel normal
+            '<div id="_tmMain">' +
+              '<div class="tm-step-num">'+emoji+' TEMPORIZADOR DE PASO</div>' +
+              '<div class="tm-title">'+title+'</div>' +
+              '<div class="tm-desc">'+desc+'</div>' +
+              '<div class="tm-rewards">' +
+                '<div class="tm-reward-chip tm-reward-time">⏱ '+minutes+' min</div>' +
+                '<div class="tm-reward-chip tm-reward-coins">🪙 +'+coins+'</div>' +
+                '<div class="tm-reward-chip tm-reward-xp">⚡ +'+xp+' XP</div>' +
+              '</div>' +
+              '<div class="tm-ring-wrap">' +
+                '<svg class="tm-ring-svg" width="160" height="160" viewBox="0 0 200 200">' +
+                  '<circle class="tm-ring-bg" cx="100" cy="100" r="90"/>' +
+                  '<circle class="tm-ring-fg" id="_tmRing" cx="100" cy="100" r="90"/>' +
+                '</svg>' +
+                '<div class="tm-time-display">' +
+                  '<div class="tm-time-num" id="_tmTimeNum">'+_fmtTime(_tmSecondsLeft)+'</div>' +
+                  '<div class="tm-time-lbl">restante</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="tm-controls">' +
+                '<button class="tm-btn tm-btn-start" id="_tmBtnStart" onclick="window._tmToggle()">▶ Iniciar</button>' +
+                '<button class="tm-btn tm-btn-reset" onclick="window._tmReset()">↺ Reset</button>' +
+              '</div>' +
+            '</div>' +
+            // Pantalla de victoria
+            '<div class="tm-win-screen" id="_tmWin">' +
+              '<div class="tm-win-icon">🏆</div>' +
+              '<div class="tm-win-title">¡Paso Completado!</div>' +
+              '<div class="tm-win-sub">Has completado el temporizador.<br>¡Excelente concentración y disciplina!</div>' +
+              '<div class="tm-win-rewards">' +
+                '<div class="tm-win-reward" style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);">' +
+                  '<div class="tm-win-reward-val" style="color:#fbbf24;">+'+coins+'🪙</div>' +
+                  '<div class="tm-win-reward-lbl">Monedas</div>' +
+                '</div>' +
+                '<div class="tm-win-reward" style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);">' +
+                  '<div class="tm-win-reward-val" style="color:#c084fc;">+'+xp+'⚡</div>' +
+                  '<div class="tm-win-reward-lbl">XP</div>' +
+                '</div>' +
+                '<div class="tm-win-reward" style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);">' +
+                  '<div class="tm-win-reward-val" style="color:#34d399;">'+minutes+'m</div>' +
+                  '<div class="tm-win-reward-lbl">Completados</div>' +
+                '</div>' +
+              '</div>' +
+              '<button class="tm-btn tm-btn-start" style="max-width:200px;" onclick="window.closeStepTimer()">✨ ¡Genial!</button>' +
+            '</div>' +
+          '</div>';
+        document.body.appendChild(overlay);
+        requestAnimationFrame(function() { overlay.classList.add('visible'); });
+        _updateRing();
+    };
+
+    function _fmtTime(s) {
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    function _updateRing() {
+        var ring = document.getElementById('_tmRing');
+        var num  = document.getElementById('_tmTimeNum');
+        if (!ring || !num) return;
+        var pct = _tmSecondsLeft / _tmTotalSeconds;
+        ring.style.strokeDashoffset = (565 * (1 - pct)).toFixed(2);
+        // Color dinámico: verde→amarillo→rojo según tiempo restante
+        if (pct > 0.5)       { ring.style.stroke = 'var(--tm-col)'; }
+        else if (pct > 0.25) { ring.style.stroke = '#f59e0b'; }
+        else                  { ring.style.stroke = '#ef4444'; }
+        num.textContent = _fmtTime(_tmSecondsLeft);
+    }
+
+    window._tmToggle = function() {
+        var btn = document.getElementById('_tmBtnStart');
+        if (_tmRunning) {
+            clearInterval(_tmInterval); _tmRunning = false;
+            if (btn) btn.textContent = '▶ Continuar';
+        } else {
+            _tmPlaySound('start');
+            _tmRunning = true;
+            if (btn) btn.textContent = '⏸ Pausar';
+            _tmInterval = setInterval(function() {
+                if (_tmSecondsLeft <= 0) {
+                    clearInterval(_tmInterval); _tmRunning = false;
+                    _tmPlaySound('complete');
+                    _tmWin(); return;
+                }
+                _tmSecondsLeft--;
+                _updateRing();
+            }, 1000);
+        }
+    };
+
+    window._tmReset = function() {
+        clearInterval(_tmInterval); _tmRunning = false;
+        _tmSecondsLeft = _tmTotalSeconds;
+        var btn = document.getElementById('_tmBtnStart');
+        if (btn) btn.textContent = '▶ Iniciar';
+        _updateRing();
+    };
+
+    function _tmWin() {
+        var main = document.getElementById('_tmMain');
+        var win  = document.getElementById('_tmWin');
+        if (main) main.style.display = 'none';
+        if (win)  win.classList.add('visible');
+        // Confeti
+        var confWrap = document.getElementById('_tmConfetti');
+        if (confWrap) {
+            var emojis = ['🎉','⭐','🌟','✨','🏆','🎊','💫','🔥','💎','🎯'];
+            for (var i = 0; i < 14; i++) {
+                (function(idx) {
+                    setTimeout(function() {
+                        var piece = document.createElement('div');
+                        piece.className = 'tm-confetti-piece';
+                        piece.textContent = emojis[idx % emojis.length];
+                        piece.style.left = (10 + Math.random() * 80) + '%';
+                        piece.style.animationDelay = (Math.random() * 0.4) + 's';
+                        piece.style.animationDuration = (0.9 + Math.random() * 0.6) + 's';
+                        confWrap.appendChild(piece);
+                        setTimeout(function() { if (piece.parentNode) piece.remove(); }, 2000);
+                    }, idx * 80);
+                })(i);
+            }
+        }
+    }
+
+    window.closeStepTimer = function() {
+        clearInterval(_tmInterval); _tmRunning = false;
+        // Sonido de cierre (acorde positivo simple)
+        _tmPlaySound('close');
+        var ov = document.getElementById('_stepTimerOverlay');
+        if (ov) { ov.classList.remove('visible'); setTimeout(function() { if (ov.parentNode) ov.remove(); }, 220); }
+    };
+
+    // ── Sonidos motivadores con Web Audio API ──────────────────
+    function _tmPlaySound(type) {
+        try {
+            var ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (type === 'start') {
+                // Click motivador: dos notas ascendentes rápidas
+                [[440,0,0.08],[660,0.08,0.12]].forEach(function(n) {
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.type = 'sine'; o.frequency.value = n[0];
+                    g.gain.setValueAtTime(0, ctx.currentTime+n[1]);
+                    g.gain.linearRampToValueAtTime(0.18, ctx.currentTime+n[1]+0.02);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+n[1]+n[2]);
+                    o.connect(g); g.connect(ctx.destination);
+                    o.start(ctx.currentTime+n[1]); o.stop(ctx.currentTime+n[1]+n[2]+0.05);
+                });
+            } else if (type === 'complete') {
+                // Fanfare de logro: secuencia ascendente de 6 notas
+                [[523,0,0.15],[659,0.15,0.15],[784,0.3,0.15],[1047,0.45,0.15],[784,0.6,0.1],[1047,0.7,0.4]].forEach(function(n) {
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.type = 'sine'; o.frequency.value = n[0];
+                    g.gain.setValueAtTime(0, ctx.currentTime+n[1]);
+                    g.gain.linearRampToValueAtTime(0.22, ctx.currentTime+n[1]+0.03);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+n[1]+n[2]);
+                    o.connect(g); g.connect(ctx.destination);
+                    o.start(ctx.currentTime+n[1]); o.stop(ctx.currentTime+n[1]+n[2]+0.05);
+                });
+                // Armónico adicional para riqueza
+                [[1318,0.45,0.35],[1568,0.6,0.3]].forEach(function(n) {
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.type = 'triangle'; o.frequency.value = n[0];
+                    g.gain.setValueAtTime(0, ctx.currentTime+n[1]);
+                    g.gain.linearRampToValueAtTime(0.1, ctx.currentTime+n[1]+0.04);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+n[1]+n[2]);
+                    o.connect(g); g.connect(ctx.destination);
+                    o.start(ctx.currentTime+n[1]); o.stop(ctx.currentTime+n[1]+n[2]+0.05);
+                });
+            } else if (type === 'close') {
+                // Acorde positivo de cierre
+                [[523,0,0.12],[659,0.06,0.12],[784,0.12,0.18]].forEach(function(n) {
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.type = 'sine'; o.frequency.value = n[0];
+                    g.gain.setValueAtTime(0, ctx.currentTime+n[1]);
+                    g.gain.linearRampToValueAtTime(0.14, ctx.currentTime+n[1]+0.02);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+n[1]+n[2]);
+                    o.connect(g); g.connect(ctx.destination);
+                    o.start(ctx.currentTime+n[1]); o.stop(ctx.currentTime+n[1]+n[2]+0.05);
+                });
+            }
+        } catch(e) {}
+    }
+
+    // Inyectar botón ⏱ en cada .check-item al renderizarse
+    function _injectTimerBtns(root) {
+        (root || document).querySelectorAll('.check-item:not([data-timer-injected])').forEach(function(item) {
+            item.setAttribute('data-timer-injected', '1');
+            var timeBadge = item.querySelector('.time-badge');
+            var cb = item.querySelector('.rutina-cb');
+            var textEl = item.querySelector('.check-text');
+            if (!timeBadge) return;
+            var mins = parseFloat((timeBadge.textContent.match(/[\d.]+/) || ['5'])[0]) || 5;
+            var coins = parseInt(cb && cb.getAttribute('data-coins') || '10');
+            var xp    = parseInt(cb && cb.getAttribute('data-xp')    || '100');
+            // Extraer título y descripción del texto del paso
+            // Extraer título limpio — ignorar los badges de tiempo/monedas/XP
+            var clone = textEl ? textEl.cloneNode(true) : null;
+            if (clone) {
+                clone.querySelectorAll('.time-badge,.coin-badge,.xp-badge,.step-timer-btn').forEach(function(el){ el.remove(); });
+            }
+            var rawText = clone ? clone.textContent.trim() : '';
+            // Quitar número de paso al inicio ("1. ", "2. " etc)
+            var titleMatch = rawText.match(/^\s*(?:\d+\.\s*)?([^\n]{3,80})/);
+            var title = titleMatch ? titleMatch[1].trim() : ('Paso ' + mins + ' min');
+            var desc  = rawText.replace(title, '').trim().substring(0, 120);
+            var btn = document.createElement('button');
+            btn.className = 'step-timer-btn';
+            btn.innerHTML = '<span class="step-timer-btn-icon">⏱</span>' + mins + 'm';
+            btn.title = 'Iniciar temporizador: ' + mins + ' minutos';
+            btn.onclick = function(e) {
+                e.stopPropagation(); e.preventDefault();
+                window.openStepTimer(title, desc || 'Concéntrate en este paso.', mins, coins, xp);
+            };
+            // Insertar el botón dentro del check-text, después del time-badge
+            if (timeBadge.parentNode === textEl) {
+                timeBadge.insertAdjacentElement('afterend', btn);
+            } else {
+                textEl ? textEl.insertBefore(btn, textEl.firstChild) : item.appendChild(btn);
+            }
+        });
+    }
+    window._injectTimerBtns = _injectTimerBtns;
+
+    // Observer que detecta nuevos .check-item en el DOM y les agrega el botón
+    var _timerObserver = new MutationObserver(function(mutations) {
+        var needsInjection = false;
+        mutations.forEach(function(m) {
+            m.addedNodes.forEach(function(n) {
+                if (n.nodeType === 1) {
+                    if (n.classList && n.classList.contains('check-item')) needsInjection = true;
+                    else if (n.querySelector && n.querySelector('.check-item:not([data-timer-injected])')) needsInjection = true;
+                }
+            });
+        });
+        if (needsInjection) setTimeout(_injectTimerBtns, 50);
+    });
+    _timerObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+
+    // Inyectar en los que ya existen al cargar
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(_injectTimerBtns, 200); });
+    } else {
+        setTimeout(_injectTimerBtns, 200);
+    }
+})();
 
 // ── FASE 2: Botón "Trofeos y Colecciones" + Ventana modal ──────
 window.renderTrophyButton = function() {
