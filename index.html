@@ -33164,5 +33164,25 @@ window._buyRewardFromModal = function(id) {
 
 </script>
 
+<!-- ── Registro del Service Worker principal para PWA instalable ── -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+      .then(function(reg) {
+        console.log('[JCH] SW principal registrado:', reg.scope);
+        // Escuchar el evento beforeinstallprompt para instalación PWA
+        window.addEventListener('beforeinstallprompt', function(e) {
+          console.log('[JCH] PWA lista para instalar');
+          window._pwaInstallPrompt = e;
+        });
+      })
+      .catch(function(err) {
+        console.warn('[JCH] SW principal no se pudo registrar:', err);
+      });
+  });
+}
+</script>
+
 </body>
 </html>
