@@ -3,7 +3,7 @@
   "short_name": "Háb JCH",
   "description": "Centro de Comando Analítico, Automatizado y Gamificado",
   "id": "/planificador/",
-  "start_url": "./splash.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
