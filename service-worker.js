@@ -4,10 +4,10 @@
 //  Cache-first para assets propios
 //  Network-first para Firebase (con fallback offline)
 // ═══════════════════════════════════════════════════
- 
+
 const CACHE_VERSION = 'v5';
 const CACHE_NAME = 'planificador-jch-' + CACHE_VERSION;
- 
+
 // ── Archivos propios que SIEMPRE deben estar cacheados offline ──
 const ASSETS_PROPIOS = [
   './splash.html',
@@ -16,7 +16,7 @@ const ASSETS_PROPIOS = [
   './icon-192.png',
   './icon-512.png',
 ];
- 
+
 // ── URLs de Firebase SDK a cachear (para uso offline parcial) ──
 const FIREBASE_URLS = [
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js',
@@ -24,7 +24,7 @@ const FIREBASE_URLS = [
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js',
 ];
- 
+
 // ─────────────────────────────────────────────────────────────────
 //  INSTALL — cachear todos los assets propios inmediatamente
 // ─────────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ self.addEventListener('install', e => {
       .then(() => self.skipWaiting())
   );
 });
- 
+
 // ─────────────────────────────────────────────────────────────────
 //  ACTIVATE — limpiar caches viejos
 // ─────────────────────────────────────────────────────────────────
@@ -62,19 +62,19 @@ self.addEventListener('activate', e => {
       .then(() => self.clients.claim())
   );
 });
- 
+
 // ─────────────────────────────────────────────────────────────────
 //  FETCH — estrategia inteligente por tipo de recurso
 // ─────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
- 
+
   // 1. Ignorar peticiones que no son GET
   if (e.request.method !== 'GET') return;
- 
+
   // 2. Ignorar peticiones de extensiones del navegador
   if (url.protocol === 'chrome-extension:') return;
- 
+
   // 3. Assets PROPIOS del planificador → Cache First
   //    (funciona offline siempre)
   if (
@@ -102,7 +102,7 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
- 
+
   // 4. Firebase SDK (gstatic) → Cache First con fallback de red
   if (url.hostname.includes('gstatic.com') || url.hostname.includes('googleapis.com')) {
     e.respondWith(
@@ -119,7 +119,7 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
- 
+
   // 5. Firebase API (firestore, auth, fcm) → Network First
   //    Si no hay red, devuelve respuesta vacía sin romper la app
   if (
@@ -136,7 +136,7 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
- 
+
   // 6. Todo lo demás → intentar red, luego caché
   e.respondWith(
     fetch(e.request)
@@ -150,26 +150,26 @@ self.addEventListener('fetch', e => {
       .catch(() => caches.match(e.request))
   );
 });
- 
+
 // ─────────────────────────────────────────────────────────────────
 //  NOTIFICACIONES PROGRAMADAS (TimestampTrigger)
 // ─────────────────────────────────────────────────────────────────
 self.addEventListener('message', async e => {
   if (!e.data) return;
- 
+
   if (e.data.type === 'SCHEDULE_NOTIFICATIONS') {
     const reminders = e.data.reminders || [];
- 
+
     // Cancelar notificaciones anteriores
     try {
       const scheduled = await self.registration.getNotifications({ tag: 'jch-scheduled' });
       scheduled.forEach(n => n.close());
     } catch(_) {}
- 
+
     for (const r of reminders) {
       const msUntilFire = r.fireAt - Date.now();
       if (msUntilFire < -60000) continue;
- 
+
       const opts = {
         body: r.body,
         icon: './icon-192.png',
@@ -179,11 +179,11 @@ self.addEventListener('message', async e => {
         tag: 'jch-' + r.evId + '-' + r.fireAt,
         data: { url: './index.html' }
       };
- 
+
       if ('TimestampTrigger' in self) {
         opts.showTrigger = new TimestampTrigger(r.fireAt);
       }
- 
+
       try {
         await self.registration.showNotification(r.title, opts);
       } catch(err) {
@@ -192,25 +192,25 @@ self.addEventListener('message', async e => {
       }
     }
   }
- 
+
   if (e.data.type === 'SET_REMINDERS') {
     _mem = e.data.reminders || [];
     schedCheck();
   }
 });
- 
+
 // ─────────────────────────────────────────────────────────────────
 //  TIMER FALLBACK (recordatorios cuando app está abierta)
 // ─────────────────────────────────────────────────────────────────
 let _mem = [];
 let _ct = null;
- 
+
 function schedCheck() {
   if (_ct) clearTimeout(_ct);
   doCheck();
   _ct = setTimeout(schedCheck, 20000);
 }
- 
+
 function doCheck() {
   const now = Date.now();
   const fire = _mem.filter(r => r.fireAt <= now + 10000);
@@ -226,7 +226,7 @@ function doCheck() {
     }).catch(() => {});
   });
 }
- 
+
 // ─────────────────────────────────────────────────────────────────
 //  CLICK EN NOTIFICACIÓN → abrir app
 // ─────────────────────────────────────────────────────────────────
@@ -242,11 +242,10 @@ self.addEventListener('notificationclick', e => {
       })
   );
 });
- 
+
 // ─────────────────────────────────────────────────────────────────
 //  PERIODIC SYNC
 // ─────────────────────────────────────────────────────────────────
 self.addEventListener('periodicsync', e => {
   if (e.tag === 'jch-periodic') e.waitUntil(Promise.resolve(doCheck()));
 });
- 
