@@ -15,17 +15,54 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Solo necesitamos manejar qué pasa cuando el usuario toca la notificación
+// ── CLAVE: manejar notificaciones en segundo plano / app cerrada ──
+messaging.onBackgroundMessage(function(payload) {
+    console.log('[FCM-SW] Mensaje en background:', payload);
+
+    // Extraer datos del mensaje (soporta notification y data)
+    const title = (payload.notification && payload.notification.title)
+        || (payload.data && payload.data.title)
+        || '⏰ Recordatorio';
+
+    const body = (payload.notification && payload.notification.body)
+        || (payload.data && payload.data.body)
+        || 'Tienes un hábito pendiente';
+
+    const icon = (payload.notification && payload.notification.icon)
+        || './icon-192.png';
+
+    const notificationOptions = {
+        body: body,
+        icon: icon,
+        badge: './icon-192.png',
+        vibrate: [400, 100, 400, 100, 800],
+        requireInteraction: true,
+        tag: 'jch-reminder-' + Date.now(),
+        data: {
+            url: './index.html',
+            payload: payload
+        },
+        actions: [
+            { action: 'open', title: '📋 Abrir app' },
+            { action: 'dismiss', title: '✕ Cerrar' }
+        ]
+    };
+
+    return self.registration.showNotification(title, notificationOptions);
+});
+
+// ── Click en la notificación → abrir app ──
 self.addEventListener('notificationclick', function(e) {
     e.notification.close();
     if (e.action === 'dismiss') return;
-    
+
     e.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(cs) {
-            for (var c of cs) {
-                if (c.url.includes('planificador') && 'focus' in c) return c.focus();
-            }
-            if (clients.openWindow) return clients.openWindow('./index.html');
-        })
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(function(cs) {
+                for (var c of cs) {
+                    if (c.url.includes('planificador') && 'focus' in c) return c.focus();
+                }
+                if (clients.openWindow) return clients.openWindow('./index.html');
+            })
     );
 });
