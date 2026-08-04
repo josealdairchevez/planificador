@@ -1,131 +1,133 @@
 // =====================================================================
-// ⚙️ MÓDULO DE TEMPORIZADOR ESTRICTO (Cálculo Delta) - Planificador JCH
+// ⚙️ MOTOR MAESTRO DE TIEMPOS (Cálculo Delta) - Planificador JCH
 // =====================================================================
+const motoresTemporales = {};
 
-// ── 1. ESTADO GLOBAL DEL CRONÓMETRO ──
-let cronoIntervalo = null;
-let tiempoInicioSesion = null;
-let tiempoAcumuladoReal = 0; // Se mide estrictamente en milisegundos
-let estaCorriendo = false;
-
-
-// ── 2. CENTINELAS DE INTERRUPCIÓN (Page Visibility API) ──
-
-// Vigila cuando la app pasa a segundo plano o regresa
 document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-        salvarEstadoDeEmergencia();
-    } else if (document.visibilityState === "visible") {
-        restaurarMatematicaDelta();
-    }
+    if (document.visibilityState === "hidden") salvarEstadoMasivo();
+    else if (document.visibilityState === "visible") restaurarMatematicaMasiva();
 });
 
-// Vigila si el usuario recarga la página o Android la mata por completo
-window.addEventListener("beforeunload", () => {
-    salvarEstadoDeEmergencia();
-});
+window.addEventListener("beforeunload", salvarEstadoMasivo);
+window.addEventListener('load', restaurarMatematicaMasiva);
 
-// Arranque en frío: Cuando la app carga desde cero
-window.addEventListener('load', () => {
-    restaurarMatematicaDelta();
-});
-
-// Función estricta de guardado en memoria permanente
-function salvarEstadoDeEmergencia() {
-    if (estaCorriendo) {
-        localStorage.setItem('jch_crono_ultimo_vistazo', Date.now().toString());
-        localStorage.setItem('jch_crono_acumulado', tiempoAcumuladoReal.toString());
-        localStorage.setItem('jch_crono_activo', 'true');
-    }
-}
-
-
-// ── 3. EL CÁLCULO DELTA (Motor Matemático) ──
-function restaurarMatematicaDelta() {
-    const cronoEstabaActivo = localStorage.getItem('jch_crono_activo');
-    
-    if (cronoEstabaActivo === 'true') {
-        const ultimoVistazo = parseInt(localStorage.getItem('jch_crono_ultimo_vistazo')) || Date.now();
-        const acumuladoEnMemoria = parseInt(localStorage.getItem('jch_crono_acumulado')) || 0;
-        
-        const ahora = Date.now();
-        
-        // La matemática inquebrantable (Tiempo actual - Tiempo de guardado)
-        const tiempoEnLasSombras = ahora - ultimoVistazo;
-        
-        tiempoAcumuladoReal = acumuladoEnMemoria + tiempoEnLasSombras;
-        tiempoInicioSesion = ahora; 
-        estaCorriendo = true;
-        
-        pintarInterfazCronometro();
-        
-        if (!cronoIntervalo) {
-            cronoIntervalo = setInterval(() => {
-                tiempoAcumuladoReal += (Date.now() - tiempoInicioSesion);
-                tiempoInicioSesion = Date.now();
-                pintarInterfazCronometro();
-            }, 1000);
+function salvarEstadoMasivo() {
+    const ahora = Date.now().toString();
+    for (const id in motoresTemporales) {
+        const motor = motoresTemporales[id];
+        if (motor.estaCorriendo) {
+            localStorage.setItem(`jch_vis_${id}`, ahora);
+            localStorage.setItem(`jch_ac_${id}`, motor.acumulado.toString());
+            localStorage.setItem(`jch_act_${id}`, 'true');
         }
     }
 }
 
-
-// ── 4. CONTROLADORES DEL USUARIO Y RENDERIZADO VISUAL ──
-
-function iniciarCronometro() {
-    if (estaCorriendo) return; // Evita que se creen bucles dobles si el usuario hace doble clic
-    
-    estaCorriendo = true;
-    tiempoInicioSesion = Date.now();
-    localStorage.setItem('jch_crono_activo', 'true');
-
-    if (!cronoIntervalo) {
-        cronoIntervalo = setInterval(() => {
-            tiempoAcumuladoReal += (Date.now() - tiempoInicioSesion);
-            tiempoInicioSesion = Date.now(); 
-            pintarInterfazCronometro();
-        }, 1000);
+function restaurarMatematicaMasiva() {
+    const ahora = Date.now();
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('jch_act_') && localStorage.getItem(key) === 'true') {
+            const id = key.replace('jch_act_', '');
+            const configJSON = localStorage.getItem(`jch_cfg_${id}`);
+            if (!configJSON) continue;
+            
+            const config = JSON.parse(configJSON);
+            const ultimoVistazo = parseInt(localStorage.getItem(`jch_vis_${id}`)) || ahora;
+            const acumuladoMemoria = parseInt(localStorage.getItem(`jch_ac_${id}`)) || 0;
+            const delta = ahora - ultimoVistazo;
+            
+            motoresTemporales[id] = {
+                tipo: config.tipo,
+                meta: config.meta,
+                acumulado: acumuladoMemoria + delta,
+                inicio: ahora,
+                estaCorriendo: true,
+                intervalo: null
+            };
+            
+            ejecutarCicloVisual(id);
+            arrancarIntervalo(id);
+        }
     }
 }
 
-function pausarCronometro() {
-    estaCorriendo = false;
-    
-    if (cronoIntervalo) {
-        clearInterval(cronoIntervalo);
-        cronoIntervalo = null;
+function iniciarReloj(id, tipo, minutosMeta = 0) {
+    let motor = motoresTemporales[id];
+    if (!motor) {
+        const metaMilisegundos = minutosMeta * 60 * 1000;
+        motor = { tipo: tipo, meta: metaMilisegundos, acumulado: parseInt(localStorage.getItem(`jch_ac_${id}`)) || 0, inicio: null, estaCorriendo: false, intervalo: null };
+        motoresTemporales[id] = motor;
+        localStorage.setItem(`jch_cfg_${id}`, JSON.stringify({ tipo: tipo, meta: metaMilisegundos }));
     }
-    
-    localStorage.setItem('jch_crono_activo', 'false');
-    localStorage.setItem('jch_crono_acumulado', tiempoAcumuladoReal.toString());
+    if (motor.estaCorriendo) return; 
+
+    motor.estaCorriendo = true;
+    motor.inicio = Date.now();
+    localStorage.setItem(`jch_act_${id}`, 'true');
+    arrancarIntervalo(id);
 }
 
-function reiniciarCronometro() {
-    pausarCronometro();
-    
-    // Destrucción total de los datos del cronómetro actual
-    tiempoAcumuladoReal = 0;
-    tiempoInicioSesion = null;
-    localStorage.removeItem('jch_crono_ultimo_vistazo');
-    localStorage.setItem('jch_crono_acumulado', '0');
-    
-    pintarInterfazCronometro();
+function pausarReloj(id) {
+    const motor = motoresTemporales[id];
+    if (!motor) return;
+    motor.estaCorriendo = false;
+    if (motor.intervalo) { clearInterval(motor.intervalo); motor.intervalo = null; }
+    localStorage.setItem(`jch_act_${id}`, 'false');
+    localStorage.setItem(`jch_ac_${id}`, motor.acumulado.toString());
 }
 
-// Única función con permisos para modificar el DOM (HTML)
-function pintarInterfazCronometro() {
-    let segundosTotales = Math.floor(tiempoAcumuladoReal / 1000);
+function reiniciarReloj(id) {
+    pausarReloj(id);
+    const motor = motoresTemporales[id];
+    if (!motor) return;
+    motor.acumulado = 0;
+    motor.inicio = null;
+    localStorage.removeItem(`jch_vis_${id}`);
+    localStorage.setItem(`jch_ac_${id}`, '0');
+    ejecutarCicloVisual(id);
+}
+
+function arrancarIntervalo(id) {
+    const motor = motoresTemporales[id];
+    const velocidadRefresco = motor.tipo === 'cronometro-ms' ? 50 : 1000;
+    if (!motor.intervalo) {
+        motor.intervalo = setInterval(() => {
+            const ahora = Date.now();
+            motor.acumulado += (ahora - motor.inicio);
+            motor.inicio = ahora;
+            ejecutarCicloVisual(id);
+        }, velocidadRefresco);
+    }
+}
+
+function ejecutarCicloVisual(id) {
+    const motor = motoresTemporales[id];
+    const displayElement = document.getElementById(id);
+    if (!displayElement) return; 
+
+    let tiempoAProcesar = motor.acumulado;
+
+    if (motor.tipo === 'temporizador') {
+        tiempoAProcesar = motor.meta - motor.acumulado;
+        if (tiempoAProcesar <= 0) {
+            tiempoAProcesar = 0;
+            pausarReloj(id);
+            console.log(`¡Reloj ${id} finalizado!`);
+        }
+    }
+
+    let segundosTotales = Math.floor(tiempoAProcesar / 1000);
     let minutos = Math.floor(segundosTotales / 60);
     let segundos = segundosTotales % 60;
-
+    
     let textoMinutos = minutos.toString().padStart(2, '0');
     let textoSegundos = segundos.toString().padStart(2, '0');
 
-    // ⚠️ ATENCIÓN: Reemplaza 'mi-cronometro' con el ID real que tenga tu etiqueta de texto en el HTML
-    const displayElement = document.getElementById('mi-cronometro');
-    
-    // Salvaguarda técnica: Solo intenta pintar si el elemento HTML ya existe en la pantalla
-    if (displayElement) {
+    if (motor.tipo === 'cronometro-ms') {
+        let decimas = Math.floor((tiempoAProcesar % 1000) / 100);
+        displayElement.innerText = `${textoMinutos}:${textoSegundos}.${decimas}`;
+    } else {
         displayElement.innerText = `${textoMinutos}:${textoSegundos}`;
     }
 }
