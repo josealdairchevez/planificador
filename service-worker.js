@@ -205,3 +205,26 @@ function doCheck() {
 self.addEventListener('periodicsync', e => {
   if (e.tag === 'jch-periodic') e.waitUntil(Promise.resolve(doCheck()));
 });
+
+// ── RECEPTOR FIREBASE BACKGROUND (El eslabón perdido) ──
+messaging.onBackgroundMessage((payload) => {
+  console.log('[Service Worker] Paquete FCM recibido en background:', payload);
+
+  // Extraemos los datos enviados desde index.js
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'Planificador JCH';
+  
+  const notificationOptions = {
+    body: payload.notification?.body || payload.data?.body || 'Tienes un recordatorio pendiente.',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    vibrate: [500, 200, 500, 200, 800],
+    requireInteraction: true,
+    data: { 
+      url: './index.html', 
+      evId: payload.data?.evId 
+    },
+    tag: 'fcm-jch-' + Date.now() // Etiqueta única para evitar el agrupamiento silencioso de Android
+  };
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
+});
