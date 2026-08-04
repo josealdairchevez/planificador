@@ -16266,7 +16266,7 @@ function registerFCMToken(){
     try{ messaging=firebase.messaging(); }catch(e){
       console.warn('[JCH] FCM messaging no disponible:',e.message); return;
     }
-    var swUrl='https://josealdairchevez.github.io/planificador/firebase-messaging-sw.js';
+    var swUrl='./service-worker.js';
     navigator.serviceWorker.register(swUrl)
       .then(function(reg){ return reg.update().then(function(){ return reg; }); })
       .then(function(reg){
