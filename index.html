@@ -3586,8 +3586,14 @@
         /* ═══════════════════════════════════════════════════════════
            CALENDAR_P3: Modal Crear Evento / Proyecto / Tarea
            ═══════════════════════════════════════════════════════════ */
-        #calRepeatBackdrop,#calMonthBackdrop,#calDayBackdrop {
+        #calMonthBackdrop,#calDayBackdrop {
             position:fixed;inset:0;z-index:8200;background:rgba(0,2,10,0.88);
+            backdrop-filter:blur(16px);opacity:0;visibility:hidden;
+            transition:opacity 0.3s ease,visibility 0.3s ease;
+        }
+        /* calRepeatBackdrop necesita z-index superior al calEventModal (8401) para verse al editar */
+        #calRepeatBackdrop {
+            position:fixed;inset:0;z-index:8402;background:rgba(0,2,10,0.88);
             backdrop-filter:blur(16px);opacity:0;visibility:hidden;
             transition:opacity 0.3s ease,visibility 0.3s ease;
         }
@@ -3987,7 +3993,7 @@
         /* ═══ CALENDAR_P5: Repeat Modal ═══ */
         #calRepeatModal {
             position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);
-            z-index:8301;width:min(98vw,700px);border-radius:20px 20px 0 0;
+            z-index:8403;width:min(98vw,700px);border-radius:20px 20px 0 0;
             padding:1.5rem;
             background:linear-gradient(145deg,rgba(4,12,28,0.99),rgba(2,8,20,0.99));
             border-top:1px solid rgba(0,210,255,0.15);
@@ -13262,6 +13268,7 @@ window.hrpFilter        = _hrpApplyFilter;
     let calSelectedColor = '#10b981';
     let calCurrentType   = 'evento';         // evento | proyecto | tarea
     let calRepeatMode    = 'none';
+    window.calRepeatMode = calRepeatMode;
     let calAllday        = false;
     let calTimePicking   = 'start';          // start | end
     let calStartH = 10, calStartM = 0, calStartAmPm = 'AM';
@@ -13954,6 +13961,7 @@ window.hrpFilter        = _hrpApplyFilter;
             calAllday        = existingEvent.allDay || false;
             calSelectedColor = existingEvent.color  || colDefaults[type];
             calRepeatMode    = existingEvent.repeat || 'none';
+            window.calRepeatMode = calRepeatMode;
             // Restore labels
             window._calCurrentLabels = [...(existingEvent.labels || [])];
             const lpEdit = document.getElementById('calLabelsContainer');
@@ -14002,6 +14010,7 @@ window.hrpFilter        = _hrpApplyFilter;
             calAllday = false;
             calSelectedColor = colDefaults[type];
             calRepeatMode    = 'none';
+            window.calRepeatMode = calRepeatMode;
             // Auto-hora aproximada del sistema
             const nowD = new Date();
             let autoH = nowD.getHours(), autoM = nowD.getMinutes();
@@ -14289,11 +14298,13 @@ window.hrpFilter        = _hrpApplyFilter;
     window.closeCalRepeat = function() {
         document.getElementById('calRepeatBackdrop').classList.remove('show-cal');
         document.getElementById('calRepeatModal').classList.remove('show-cal');
+        window.calActiveContext = 'cal';
     };
     window.setCalRepeat = function(mode, el) {
         document.querySelectorAll('.cal-repeat-tab').forEach(t => t.classList.remove('active'));
         if (el) el.classList.add('active');
         calRepeatMode = mode;
+        window.calRepeatMode = calRepeatMode;
         const cfg = document.getElementById('calRepeatConfig');
         if (!cfg) return;
         const endDate = localDateStr(calViewDate);
@@ -19160,6 +19171,7 @@ window.habCronoStart = function() {
         if (btnLap)   { btnLap.style.display = ''; }
         if (timeEl)   { timeEl.classList.add('running'); }
         _cronoState.interval = setInterval(habCronoTick, 100);
+        habCronoSaveDelta();
     } else {
         // Detener y guardar toma automáticamente
         habCronoLap();
@@ -19175,6 +19187,7 @@ window.habCronoLap = function() {
     _cronoState.running = false;
     _cronoState.elapsed = 0;
     _cronoState.startTs = 0;
+    habCronoSaveDelta();
 
     var btnStart = document.getElementById('habCronoBtnStart');
     var btnLap   = document.getElementById('habCronoBtnLap');
@@ -19197,6 +19210,7 @@ window.habCronoReset = function() {
     _cronoState.elapsed = 0;
     _cronoState.startTs = 0;
     _cronoState.laps    = [];
+    habCronoSaveDelta();
 
     var btnStart = document.getElementById('habCronoBtnStart');
     var btnLap   = document.getElementById('habCronoBtnLap');
@@ -19218,6 +19232,60 @@ function habCronoTick() {
     if (!el) return;
     var elapsed = Date.now() - _cronoState.startTs;
     el.textContent = fmtMs(elapsed);
+}
+
+// ── CÁLCULO DELTA: persistencia de la toma en curso ─────────
+var CRONO_DELTA_KEY = 'jch_crono_delta_v1';
+
+function habCronoSaveDelta() {
+    if (!_cronoState.running) { localStorage.removeItem(CRONO_DELTA_KEY); return; }
+    localStorage.setItem(CRONO_DELTA_KEY, JSON.stringify({
+        startTs:    _cronoState.startTs,
+        habitId:    _cronoState.habitId,
+        habitName:  _cronoState.habitName,
+        habitColor: _cronoState.habitColor,
+        laps:       _cronoState.laps
+    }));
+}
+
+function habCronoRestoreDelta() {
+    var raw;
+    try { raw = JSON.parse(localStorage.getItem(CRONO_DELTA_KEY) || 'null'); } catch (e) { raw = null; }
+    if (!raw || !raw.startTs) return;
+
+    _cronoState.habitId    = raw.habitId;
+    _cronoState.habitName  = raw.habitName;
+    _cronoState.habitColor = raw.habitColor;
+    _cronoState.laps       = raw.laps || [];
+    _cronoState.startTs    = raw.startTs;
+    _cronoState.running    = true;
+
+    var sel = document.getElementById('habCronoSelect');
+    if (sel && raw.habitId) sel.value = raw.habitId;
+    var btnStart = document.getElementById('habCronoBtnStart');
+    var btnLap   = document.getElementById('habCronoBtnLap');
+    var timeEl   = document.getElementById('habCronoTime');
+    if (btnStart) { btnStart.textContent = '⏹ Detener'; btnStart.className = 'hab-crono-btn stop'; }
+    if (btnLap)   { btnLap.style.display = ''; }
+    if (timeEl)   { timeEl.classList.add('running'); }
+
+    clearInterval(_cronoState.interval);
+    _cronoState.interval = setInterval(habCronoTick, 100);
+    habCronoTick();
+    habCronoRenderLaps();
+    habCronoRenderStats();
+    habCronoRenderChart();
+}
+
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') habCronoSaveDelta();
+    else if (document.visibilityState === 'visible') habCronoRestoreDelta();
+});
+window.addEventListener('beforeunload', habCronoSaveDelta);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', habCronoRestoreDelta);
+} else {
+    habCronoRestoreDelta();
 }
 
 // ── Render tomas ──────────────────────────────────────────
@@ -21327,51 +21395,96 @@ function updatePomoDisplay() {
     }
 }
 
+// ── CÁLCULO DELTA: persistencia del Pomodoro en segundo plano ──
+const POMO_DELTA_KEY = 'jch_pomo_delta_v1';
+
+function pomoSaveDelta() {
+    if (!_pomoState.running) { localStorage.removeItem(POMO_DELTA_KEY); return; }
+    localStorage.setItem(POMO_DELTA_KEY, JSON.stringify({
+        phase: _pomoState.phase,
+        targetEndTs: Date.now() + _pomoState.remaining * 1000,
+        sessions: _pomoState.sessions,
+        todaySessions: _pomoState.todaySessions
+    }));
+}
+
+function pomoRestoreDelta() {
+    let raw;
+    try { raw = JSON.parse(localStorage.getItem(POMO_DELTA_KEY) || 'null'); } catch (e) { raw = null; }
+    if (!raw) return;
+    clearInterval(_pomoInterval);
+    _pomoState.phase = raw.phase;
+    _pomoState.remaining = Math.max(0, Math.round((raw.targetEndTs - Date.now()) / 1000));
+    _pomoState.sessions = raw.sessions || _pomoState.sessions;
+    _pomoState.todaySessions = raw.todaySessions || _pomoState.todaySessions;
+    _pomoState.running = true;
+    _pomoInterval = setInterval(pomoTick, 1000);
+    updatePomoDisplay();
+}
+
+function pomoTick() {
+    _pomoState.remaining--;
+    if (_pomoState.remaining <= 0) {
+        // Cambiar fase
+        const workMins  = parseInt(document.getElementById('habPomoWork')?.value  || 25);
+        const breakMins = parseInt(document.getElementById('habPomoBreak')?.value || 5);
+        if (_pomoState.phase==='work') {
+            _pomoState.sessions++;
+            _pomoState.todaySessions++;
+            _pomoState.phase='break';
+            _pomoState.remaining=breakMins*60;
+            // Guardar sesión y dar recompensa
+            const pomo=JSON.parse(localStorage.getItem(POMO_KEY)||'{}');
+            pomo.totalSessions=(pomo.totalSessions||0)+1;
+            pomo.todaySessions=(pomo.todaySessions||0)+1;
+            localStorage.setItem(POMO_KEY,JSON.stringify(pomo));
+            const hero=loadHero(); hero.xp=(hero.xp||0)+15; hero.coins=(hero.coins||0)+5; saveHero(hero);
+            // Marcar hábito vinculado
+            const habSel=document.getElementById('habPomoHabitSel');
+            if(habSel&&habSel.value&&typeof habitPlus==='function') habitPlus(habSel.value,null);
+            const t=document.getElementById('habStreakToast');
+            if(t){t.textContent='🍅 ¡Sesión Pomodoro completada! +15 XP +5🪙';t.style.background='linear-gradient(135deg,#ef4444,#dc2626)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+            if(typeof playSparkleSound==='function') playSparkleSound();
+        } else {
+            _pomoState.phase='work';
+            _pomoState.remaining=workMins*60;
+        }
+    }
+    pomoSaveDelta();
+    updatePomoDisplay();
+}
+
 window.togglePomo = function() {
     if (_pomoState.running) {
         clearInterval(_pomoInterval); _pomoState.running=false;
+        localStorage.removeItem(POMO_DELTA_KEY);
     } else {
         _pomoState.running=true;
-        _pomoInterval = setInterval(() => {
-            _pomoState.remaining--;
-            if (_pomoState.remaining <= 0) {
-                // Cambiar fase
-                const workMins  = parseInt(document.getElementById('habPomoWork')?.value  || 25);
-                const breakMins = parseInt(document.getElementById('habPomoBreak')?.value || 5);
-                if (_pomoState.phase==='work') {
-                    _pomoState.sessions++;
-                    _pomoState.todaySessions++;
-                    _pomoState.phase='break';
-                    _pomoState.remaining=breakMins*60;
-                    // Guardar sesión y dar recompensa
-                    const pomo=JSON.parse(localStorage.getItem(POMO_KEY)||'{}');
-                    pomo.totalSessions=(pomo.totalSessions||0)+1;
-                    pomo.todaySessions=(pomo.todaySessions||0)+1;
-                    localStorage.setItem(POMO_KEY,JSON.stringify(pomo));
-                    const hero=loadHero(); hero.xp=(hero.xp||0)+15; hero.coins=(hero.coins||0)+5; saveHero(hero);
-                    // Marcar hábito vinculado
-                    const habSel=document.getElementById('habPomoHabitSel');
-                    if(habSel&&habSel.value&&typeof habitPlus==='function') habitPlus(habSel.value,null);
-                    const t=document.getElementById('habStreakToast');
-                    if(t){t.textContent='🍅 ¡Sesión Pomodoro completada! +15 XP +5🪙';t.style.background='linear-gradient(135deg,#ef4444,#dc2626)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-                    if(typeof playSparkleSound==='function') playSparkleSound();
-                } else {
-                    _pomoState.phase='work';
-                    _pomoState.remaining=workMins*60;
-                }
-            }
-            updatePomoDisplay();
-        }, 1000);
+        pomoSaveDelta();
+        _pomoInterval = setInterval(pomoTick, 1000);
     }
     updatePomoDisplay();
 };
 
 window.resetPomo = function() {
     clearInterval(_pomoInterval);
+    localStorage.removeItem(POMO_DELTA_KEY);
     const workMins=parseInt(document.getElementById('habPomoWork')?.value||25);
     _pomoState={running:false,phase:'work',remaining:workMins*60,sessions:_pomoState.sessions,todaySessions:_pomoState.todaySessions};
     updatePomoDisplay();
 };
+
+// Recalcular al volver a primer plano / cargar la app (motor de Cálculo Delta)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') pomoSaveDelta();
+    else if (document.visibilityState === 'visible') pomoRestoreDelta();
+});
+window.addEventListener('beforeunload', pomoSaveDelta);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', pomoRestoreDelta);
+} else {
+    pomoRestoreDelta();
+}
 
 window.updatePomoConfig = function() {
     if(!_pomoState.running) {
@@ -22839,14 +22952,30 @@ window.recalcHeroStats = recalcHeroStats;
     var _tmSecondsLeft = 0;
     var _tmTotalSeconds = 0;
     var _tmRunning = false;
+    var _tmStepId = null;
+    var _tmTargetEndTs = 0;
+    var _tmCoins = 0;
+    var _tmXp = 0;
+    var TM_DELTA_KEY = 'jch_steptimer_delta_v1';
 
-    window.openStepTimer = function(title, desc, minutes, coins, xp) {
+    window.openStepTimer = function(title, desc, minutes, coins, xp, stepId) {
         var old = document.getElementById('_stepTimerOverlay');
         if (old) old.remove();
         clearInterval(_tmInterval);
         _tmRunning = false;
+        _tmStepId = stepId || ('paso_' + String(title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').substring(0,40) + '_' + minutes);
+        _tmCoins = coins;
+        _tmXp = xp;
         _tmTotalSeconds = Math.max(1, (parseFloat(minutes) || 5)) * 60;
-        _tmSecondsLeft = _tmTotalSeconds;
+
+        // Cálculo Delta: si esta misma tarea tenía una toma en curso, retomar el tiempo real restante
+        var _saved = _tmLoadDelta();
+        if (_saved && _saved.stepId === _tmStepId && _saved.running && _saved.targetEndTs > Date.now()) {
+            _tmSecondsLeft = Math.max(0, Math.round((_saved.targetEndTs - Date.now()) / 1000));
+        } else {
+            _tmSecondsLeft = _tmTotalSeconds;
+        }
+
 
         // Color dinámico según duración
         var col, col2, glow, emoji;
@@ -22939,31 +23068,90 @@ window.recalcHeroStats = recalcHeroStats;
         if (_tmRunning) {
             clearInterval(_tmInterval); _tmRunning = false;
             if (btn) btn.textContent = '▶ Continuar';
+            _tmSaveDelta();
         } else {
             _tmPlaySound('start');
             _tmRunning = true;
+            _tmTargetEndTs = Date.now() + _tmSecondsLeft * 1000;
             if (btn) btn.textContent = '⏸ Pausar';
-            _tmInterval = setInterval(function() {
-                if (_tmSecondsLeft <= 0) {
-                    clearInterval(_tmInterval); _tmRunning = false;
-                    _tmPlaySound('complete');
-                    _tmWin(); return;
-                }
-                _tmSecondsLeft--;
-                _updateRing();
-            }, 1000);
+            _tmSaveDelta();
+            _tmInterval = setInterval(_tmTick, 1000);
         }
     };
+
+    function _tmTick() {
+        // Cálculo Delta: el tiempo restante se recalcula desde el reloj real,
+        // no se descuenta a mano — así no se pierde precisión si el tick se atrasa.
+        _tmSecondsLeft = Math.max(0, Math.round((_tmTargetEndTs - Date.now()) / 1000));
+        if (_tmSecondsLeft <= 0) {
+            clearInterval(_tmInterval); _tmRunning = false;
+            _tmClearDelta();
+            _tmPlaySound('complete');
+            _tmWin(); return;
+        }
+        _updateRing();
+    }
 
     window._tmReset = function() {
         clearInterval(_tmInterval); _tmRunning = false;
         _tmSecondsLeft = _tmTotalSeconds;
+        _tmClearDelta();
         var btn = document.getElementById('_tmBtnStart');
         if (btn) btn.textContent = '▶ Iniciar';
         _updateRing();
     };
 
-    var _tmTargetCb = null; // referencia al checkbox del paso activo
+    // ── Persistencia Cálculo Delta de la toma en curso ─────────
+    function _tmSaveDelta() {
+        if (!_tmRunning) { localStorage.removeItem(TM_DELTA_KEY); return; }
+        var titleEl = document.querySelector('#_stepTimerOverlay .tm-title');
+        var descEl  = document.querySelector('#_stepTimerOverlay .tm-desc');
+        localStorage.setItem(TM_DELTA_KEY, JSON.stringify({
+            stepId: _tmStepId,
+            title: titleEl ? titleEl.textContent : '',
+            desc:  descEl ? descEl.textContent : '',
+            minutes: _tmTotalSeconds / 60,
+            coins: _tmCoins,
+            xp: _tmXp,
+            targetEndTs: _tmTargetEndTs,
+            running: true
+        }));
+    }
+
+    function _tmLoadDelta() {
+        try { return JSON.parse(localStorage.getItem(TM_DELTA_KEY) || 'null'); } catch (e) { return null; }
+    }
+
+    function _tmClearDelta() { localStorage.removeItem(TM_DELTA_KEY); }
+
+    // Reabrir automáticamente el modal si la app se cerró por completo
+    // mientras un temporizador de paso seguía corriendo
+    function _tmColdRestore() {
+        var saved = _tmLoadDelta();
+        if (!saved || !saved.running || !saved.targetEndTs) return;
+        if (Date.now() >= saved.targetEndTs) { _tmClearDelta(); return; }
+        window.openStepTimer(saved.title, saved.desc, saved.minutes, saved.coins, saved.xp, saved.stepId);
+        _tmTargetEndTs = saved.targetEndTs;
+        _tmRunning = true;
+        var btn = document.getElementById('_tmBtnStart');
+        if (btn) btn.textContent = '⏸ Pausar';
+        _tmInterval = setInterval(_tmTick, 1000);
+        _updateRing();
+    }
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') _tmSaveDelta();
+        else if (document.visibilityState === 'visible' && _tmRunning) _tmTick();
+    });
+    window.addEventListener('beforeunload', _tmSaveDelta);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _tmColdRestore);
+    } else {
+        _tmColdRestore();
+    }
+
+    
+var _tmTargetCb = null; // referencia al checkbox del paso activo
 
     function _tmWin() {
         var main = document.getElementById('_tmMain');
@@ -23026,6 +23214,7 @@ window.recalcHeroStats = recalcHeroStats;
 
     window.closeStepTimer = function() {
         clearInterval(_tmInterval); _tmRunning = false;
+        _tmClearDelta();
         // Sonido de cierre
         _tmPlaySound('close');
         // ── Auto-marcar el check del paso si el timer se completó ──
@@ -23037,7 +23226,8 @@ window.recalcHeroStats = recalcHeroStats;
         if (ov) { ov.classList.remove('visible'); setTimeout(function() { if (ov.parentNode) ov.remove(); }, 220); }
     };
 
-    // ── Sonidos motivadores con Web Audio API ──────────────────
+    
+// ── Sonidos motivadores con Web Audio API ──────────────────
     function _tmPlaySound(type) {
         try {
             var ctx = new (window.AudioContext || window.webkitAudioContext)();
