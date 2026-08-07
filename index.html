@@ -3953,23 +3953,28 @@
         /* ═══ CALENDAR_P4: Time Picker Circular ═══ */
         #calTimePickerModal {
             position:fixed;top:50%;left:50%;transform:translate(-50%,-60%) scale(0.92);
-            z-index:8501;width:min(94vw,400px);border-radius:20px;padding:0;overflow:hidden;
+            z-index:8501;width:min(94vw,400px);border-radius:24px;padding:0;overflow:hidden;
             display:flex;flex-direction:column;
-            background:rgba(2,10,25,0.99);
-            border:1px solid rgba(0,210,255,0.2);
-            box-shadow:0 30px 80px rgba(0,0,0,0.9),0 0 30px rgba(0,210,255,0.1);
+            background:linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
+            border:1px solid rgba(0,210,255,0.22);
+            box-shadow:
+                0 0 0 1px rgba(177,0,255,0.10),
+                0 0 60px rgba(0,210,255,0.16),
+                0 30px 80px -20px rgba(0,0,0,0.9);
             opacity:0;visibility:hidden;transition:all 0.2s ease;
         }
         #calTimePickerModal.show-cal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
         .cal-tp-header{
             display:flex;align-items:center;justify-content:space-between;
             padding:1.2rem 1.4rem 0.8rem;
-            background:linear-gradient(145deg,rgba(0,20,50,0.98),rgba(0,10,30,0.99));
+            background:linear-gradient(145deg,rgba(10,14,34,0.99),rgba(3,6,20,0.99));
             border-bottom:1px solid rgba(0,210,255,0.15);
         }
         .cal-tp-time-display{
-            font-size:2.8rem;font-weight:900;color:#fff;letter-spacing:2px;
-            text-shadow:0 0 20px rgba(0,210,255,0.5);
+            font-family:'Fredoka One',cursive;
+            font-size:2.6rem;font-weight:400;color:#22e3ff;letter-spacing:1px;
+            text-shadow:0 0 22px rgba(0,210,255,0.85), 0 0 46px rgba(177,0,255,0.4);
+            animation: htpBreathe 2.4s ease-in-out infinite;
         }
         .cal-tp-ampm-col{display:flex;flex-direction:column;gap:4px;justify-content:center;}
         .cal-tp-ampm-btn{
@@ -3977,18 +3982,117 @@
             border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);
             background:transparent;cursor:pointer;transition:all 0.3s;
         }
-        .cal-tp-ampm-btn.active{background:rgba(0,210,255,0.3);color:#fff;border-color:#00d2ff;}
+        .cal-tp-ampm-btn.active{
+            background:linear-gradient(120deg,#00d2ff,#7c3aed);color:#031018;border-color:transparent;
+            box-shadow:0 0 16px rgba(0,210,255,0.55);
+        }
         .cal-tp-clock-area{
             background:rgba(2,10,25,0.98);padding:1.4rem;display:flex;flex-direction:column;align-items:center;gap:1rem;
             border-top:1px solid rgba(0,210,255,0.1);
         }
-        #calClockSvg{width:220px;height:220px;cursor:pointer;}
+        #calClockSvg{
+            width:220px;height:220px;cursor:pointer;
+            filter:drop-shadow(0 0 24px rgba(0,210,255,0.10));
+        }
+        .ctp-num-selected{ filter:drop-shadow(0 0 8px rgba(34,227,255,0.9)); }
+        .ctp-hand-selected{ filter:drop-shadow(0 0 6px rgba(34,227,255,0.85)); }
         .cal-tp-actions{display:flex;justify-content:flex-end;gap:12px;padding:0.8rem 1.4rem;background:rgba(2,10,25,0.98);border-top:1px solid rgba(0,210,255,0.1);}
         .cal-tp-action-btn{
             background:none;border:none;font-size:0.85rem;font-weight:900;
-            color:#00d2ff;cursor:pointer;padding:6px 12px;border-radius:8px;transition:all 0.3s;text-transform:uppercase;letter-spacing:1px;
+            color:#94a3b8;cursor:pointer;padding:8px 14px;border-radius:10px;transition:all 0.3s;text-transform:uppercase;letter-spacing:1px;
         }
-        .cal-tp-action-btn:hover{background:rgba(0,210,255,0.1);}
+        .cal-tp-action-btn:hover{background:rgba(148,163,184,0.1);}
+        .cal-tp-action-btn.ctp-confirm{
+            color:#031018;background:linear-gradient(120deg,#00d2ff,#7c3aed);
+            box-shadow:0 6px 20px -6px rgba(0,210,255,0.6);
+        }
+        .cal-tp-action-btn.ctp-confirm:hover{box-shadow:0 8px 26px -6px rgba(0,210,255,0.85);background:linear-gradient(120deg,#00d2ff,#7c3aed);}
+        /* ═══════════════════════════════════════════════════════════
+           CAL DATE PICKER — calendario premium para INICIO/FIN
+           (reemplaza el <input type="date"> nativo del navegador)
+           ═══════════════════════════════════════════════════════════ */
+        .cal-tp-date-trigger {
+            background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.25);
+            color:#a8c8ff; font-size:0.78rem; font-weight:700; font-family:'Nunito',sans-serif;
+            border-radius:8px; padding:4px 10px; cursor:pointer; letter-spacing:0.2px;
+            transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;
+        }
+        .cal-tp-date-trigger:hover {
+            background:rgba(0,210,255,0.16); border-color:rgba(0,210,255,0.5);
+            box-shadow:0 0 14px rgba(0,210,255,0.2);
+        }
+
+        #calDatePickerBackdrop {
+            position:fixed; inset:0; z-index:8600;
+            background:radial-gradient(circle at 50% 30%, rgba(30,10,50,0.55), rgba(0,2,10,0.92));
+            backdrop-filter:blur(14px);
+            opacity:0; visibility:hidden; transition:opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #calDatePickerBackdrop.show-cdp { opacity:1; visibility:visible; }
+
+        #calDatePickerPopup {
+            position:fixed; left:50%; top:50%; z-index:8601;
+            transform:translate(-50%,-50%) scale(0.9); width:min(92vw,320px);
+            border-radius:22px; padding:1.1rem 1rem 1.2rem;
+            background:linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
+            border:1px solid rgba(0,210,255,0.2);
+            box-shadow:
+                0 0 0 1px rgba(177,0,255,0.10),
+                0 0 50px rgba(0,210,255,0.15),
+                0 30px 70px -20px rgba(0,0,0,0.85);
+            opacity:0; visibility:hidden;
+            transition:opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(.2,.9,.25,1.1);
+        }
+        #calDatePickerPopup.show-cdp { opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
+
+        .cdp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.9rem; }
+        .cdp-month-label {
+            font-family:'Fredoka One',cursive; font-size:1.15rem; color:#fff;
+            text-shadow:0 0 14px rgba(0,210,255,0.5);
+        }
+        .cdp-nav-btn {
+            width:30px; height:30px; border-radius:9px; border:1px solid rgba(0,210,255,0.25);
+            background:rgba(0,210,255,0.08); color:#7ee8ff; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; font-size:0.95rem;
+            transition:background 0.2s,box-shadow 0.2s;
+        }
+        .cdp-nav-btn:hover { background:rgba(0,210,255,0.18); box-shadow:0 0 14px rgba(0,210,255,0.25); }
+
+        .cdp-weekdays, .cdp-grid {
+            display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center;
+        }
+        .cdp-weekdays div {
+            font-family:'Nunito',sans-serif; font-size:0.62rem; font-weight:800;
+            color:#8fb8ff; opacity:0.75; text-transform:uppercase; padding-bottom:6px;
+        }
+        .cdp-day {
+            aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+            border-radius:10px; font-family:'Nunito',sans-serif; font-size:0.82rem; font-weight:700;
+            color:rgba(255,255,255,0.85); cursor:pointer; background:transparent;
+            transition:background 0.15s, color 0.15s, box-shadow 0.15s;
+        }
+        .cdp-day.outside { color:rgba(255,255,255,0.22); }
+        .cdp-day:hover:not(.selected) { background:rgba(0,210,255,0.12); }
+        .cdp-day.today { box-shadow:inset 0 0 0 1px rgba(0,210,255,0.55); color:#7ee8ff; }
+        .cdp-day.selected {
+            background:linear-gradient(120deg,#00d2ff,#7c3aed); color:#031018; font-weight:900;
+            box-shadow:0 0 18px rgba(0,210,255,0.6);
+        }
+
+        .cdp-footer {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-top:0.9rem; padding-top:0.7rem; border-top:1px solid rgba(255,255,255,0.07);
+        }
+        .cdp-footer-btn {
+            background:none; border:none; cursor:pointer; font-family:'Nunito',sans-serif;
+            font-weight:800; font-size:0.78rem; padding:6px 10px; border-radius:8px;
+            transition:background 0.2s;
+        }
+        .cdp-footer-hoy { color:#22e3ff; }
+        .cdp-footer-hoy:hover { background:rgba(0,210,255,0.1); }
+        .cdp-footer-cerrar { color:#94a3b8; }
+        .cdp-footer-cerrar:hover { background:rgba(148,163,184,0.1); }
+
 
         /* ═══ CALENDAR_P5: Repeat Modal ═══ */
         #calRepeatModal {
@@ -5464,6 +5568,162 @@
         .hab-reminder-add-btn:disabled, .hab-reminder-add-btn.maxed {
             opacity:0.4; cursor:not-allowed; pointer-events:none;
         }
+        /* ═══════════════════════════════════════════════════════════
+           HAB TIME PICKER — Anillo de Compromiso (reemplazo premium
+           del <input type="time"> nativo para recordatorios de hábitos)
+           ═══════════════════════════════════════════════════════════ */
+        .hab-reminder-item-trigger {
+            flex:1; background:rgba(99,102,241,0.10); border:1px solid rgba(99,102,241,0.25);
+            border-radius:8px; padding:4px 10px; color:#e0e7ff;
+            font-size:0.78rem; font-weight:700; font-family:'Nunito',sans-serif;
+            letter-spacing:0.3px; cursor:pointer; text-align:left;
+            transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;
+        }
+        .hab-reminder-item-trigger:hover, .hab-reminder-item-trigger:focus-visible {
+            background:rgba(99,102,241,0.18); border-color:rgba(129,140,248,0.55);
+            box-shadow:0 0 0 3px rgba(99,102,241,0.15);
+            outline:none;
+        }
+
+        #habTimePickerBackdrop {
+            position:fixed; inset:0; z-index:9500;
+            background:radial-gradient(circle at 50% 30%, rgba(30,10,50,0.55), rgba(0,2,10,0.92));
+            backdrop-filter:blur(18px);
+            opacity:0; visibility:hidden;
+            transition:opacity 0.35s ease, visibility 0.35s ease;
+        }
+        #habTimePickerBackdrop.show-htp { opacity:1; visibility:visible; }
+
+        #habTimePickerModal {
+            position:fixed; left:50%; top:50%; z-index:9501;
+            transform:translate(-50%,-50%) scale(0.88); width:min(94vw,380px);
+            border-radius:28px; padding:1.6rem 1.4rem 1.4rem;
+            background:linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
+            border:1px solid rgba(0,210,255,0.18);
+            box-shadow:
+                0 0 0 1px rgba(177,0,255,0.10),
+                0 0 60px rgba(0,210,255,0.16),
+                0 30px 70px -20px rgba(0,0,0,0.85);
+            opacity:0; visibility:hidden;
+            transition:opacity 0.35s ease, visibility 0.35s ease, transform 0.35s cubic-bezier(.2,.9,.25,1.15);
+        }
+        #habTimePickerModal.show-htp { opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
+
+        .htp-eyebrow {
+            font-family:'Nunito',sans-serif; font-size:0.68rem; font-weight:800;
+            letter-spacing:1.6px; text-transform:uppercase; text-align:center;
+            color:#8fb8ff; opacity:0.85; margin-bottom:2px;
+        }
+        .htp-eyebrow-spark { color:#00d2ff; }
+
+        .htp-display {
+            display:flex; align-items:baseline; justify-content:center; gap:6px;
+            margin:0.35rem 0 1.1rem;
+            font-family:'Fredoka One',cursive;
+        }
+        .htp-display-seg {
+            font-size:2.7rem; line-height:1; cursor:pointer; padding:2px 6px; border-radius:12px;
+            color:rgba(255,255,255,0.38);
+            text-shadow:0 0 18px rgba(0,210,255,0.0);
+            transition:color 0.25s, text-shadow 0.25s;
+        }
+        .htp-display-seg.active {
+            color:#22e3ff;
+            text-shadow:0 0 22px rgba(0,210,255,0.85), 0 0 46px rgba(177,0,255,0.45);
+            animation: htpBreathe 2.4s ease-in-out infinite;
+        }
+        .htp-display-colon { font-size:2.4rem; color:rgba(255,255,255,0.25); font-family:'Fredoka One',cursive; }
+        @keyframes htpBreathe {
+            0%,100% { text-shadow:0 0 22px rgba(0,210,255,0.85), 0 0 46px rgba(177,0,255,0.45); }
+            50%     { text-shadow:0 0 30px rgba(0,210,255,1), 0 0 62px rgba(177,0,255,0.75); }
+        }
+
+        .htp-dial-wrap { position:relative; width:250px; height:250px; margin:0 auto; }
+        .htp-dial-face {
+            position:absolute; inset:0; border-radius:50%;
+            background:
+                radial-gradient(circle at 50% 42%, rgba(0,210,255,0.09), transparent 60%),
+                radial-gradient(circle, rgba(12,18,42,0.95), rgba(4,7,20,0.98) 72%);
+            border:1px solid rgba(0,210,255,0.14);
+            box-shadow:inset 0 0 40px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(177,0,255,0.06);
+        }
+        .htp-dial-center {
+            position:absolute; left:50%; top:50%; width:9px; height:9px; margin:-4.5px;
+            border-radius:50%; background:#00d2ff; z-index:5;
+            box-shadow:0 0 10px 3px rgba(0,210,255,0.8);
+        }
+        .htp-hand {
+            position:absolute; left:50%; top:50%; width:2px; height:0;
+            background:linear-gradient(180deg, rgba(0,210,255,0.95), rgba(177,0,255,0.65));
+            transform-origin:top center; z-index:3; border-radius:2px;
+            box-shadow:0 0 8px rgba(0,210,255,0.55);
+            transition:height 0.25s ease, transform 0.12s linear;
+        }
+        .htp-hand-knob {
+            position:absolute; left:50%; top:0; width:38px; height:38px; margin:-19px 0 0 -19px;
+            border-radius:50%;
+            background:radial-gradient(circle at 35% 30%, #7ee8ff, #00d2ff 55%, #6d28d9 130%);
+            box-shadow:0 0 0 6px rgba(0,210,255,0.14), 0 0 22px rgba(0,210,255,0.75), 0 0 40px rgba(177,0,255,0.4);
+            z-index:4;
+        }
+        .htp-num {
+            position:absolute; width:34px; height:34px; margin:-17px;
+            display:flex; align-items:center; justify-content:center;
+            border-radius:50%; font-family:'Nunito',sans-serif; font-weight:800;
+            color:rgba(255,255,255,0.72); font-size:0.92rem;
+            pointer-events:none; user-select:none;
+            transition:color 0.15s, font-size 0.15s, text-shadow 0.15s;
+        }
+        .htp-num.inner { font-size:0.72rem; color:rgba(255,255,255,0.42); }
+        .htp-num.selected {
+            color:#22e3ff; font-weight:900;
+            text-shadow:0 0 10px rgba(34,227,255,0.95), 0 0 20px rgba(0,210,255,0.55);
+        }
+
+        .htp-toggle-row { display:flex; justify-content:center; margin-top:1.15rem; }
+        .htp-kbd-btn {
+            background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.28);
+            color:#7ee8ff; border-radius:12px; padding:9px 14px; cursor:pointer;
+            font-size:1.05rem; line-height:1; transition:background 0.2s,box-shadow 0.2s;
+        }
+        .htp-kbd-btn:hover { background:rgba(0,210,255,0.16); box-shadow:0 0 18px rgba(0,210,255,0.25); }
+
+        .htp-kbd-panel { display:none; padding:0.4rem 0 0.6rem; }
+        .htp-kbd-panel.active { display:block; }
+        .htp-dial-wrap.hidden { display:none; }
+        .htp-kbd-row { display:flex; align-items:center; justify-content:center; gap:14px; }
+        .htp-kbd-field { display:flex; flex-direction:column; align-items:center; gap:6px; }
+        .htp-kbd-input {
+            width:88px; text-align:center; background:rgba(0,210,255,0.06);
+            border:none; border-bottom:2px solid rgba(0,210,255,0.4);
+            color:#fff; font-family:'Fredoka One',cursive; font-size:2.1rem;
+            padding:6px 0; outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+        }
+        .htp-kbd-input:focus { border-color:#00d2ff; box-shadow:0 6px 18px -6px rgba(0,210,255,0.6); }
+        .htp-kbd-label { font-family:'Nunito',sans-serif; font-size:0.65rem; letter-spacing:1px;
+            text-transform:uppercase; color:#8fb8ff; opacity:0.8; }
+        .htp-kbd-colon { font-family:'Fredoka One',cursive; font-size:2rem; color:rgba(255,255,255,0.35); }
+
+        .htp-actions {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-top:1.3rem; padding-top:0.9rem; border-top:1px solid rgba(255,255,255,0.07);
+        }
+        .htp-action {
+            background:none; border:none; cursor:pointer;
+            font-family:'Nunito',sans-serif; font-weight:800; font-size:0.82rem;
+            padding:8px 10px; border-radius:10px; transition:background 0.2s,color 0.2s;
+        }
+        .htp-action-clear   { color:#f87171; }
+        .htp-action-clear:hover   { background:rgba(248,113,113,0.1); }
+        .htp-action-cancel  { color:#94a3b8; }
+        .htp-action-cancel:hover  { background:rgba(148,163,184,0.1); }
+        .htp-action-confirm {
+            color:#031018; background:linear-gradient(120deg,#00d2ff,#7c3aed);
+            box-shadow:0 6px 20px -6px rgba(0,210,255,0.6);
+            padding:9px 18px;
+        }
+        .htp-action-confirm:hover { box-shadow:0 8px 26px -6px rgba(0,210,255,0.85); transform:translateY(-1px); }
+
         .hab-reminder-toggle-row {
             display:flex; align-items:center; gap:10px; margin-bottom:4px;
         }
@@ -10023,6 +10283,8 @@ window.hrpFilter        = _hrpApplyFilter;
                     endTime:   etTime,
                     color:     projSelectedColor || '#10b981',
                     repeat:    projRepeatVal || 'none',
+                    repeatEvery: window.calRepeatEveryVal || 1,
+                    repeatEnd: (window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null),
                     reminders: reminders,
                     subtasks:  calSubtasks,
                     labels:    [...projCurrentLabels],
@@ -11755,6 +12017,8 @@ window.hrpFilter        = _hrpApplyFilter;
                     endTime:   etTime,
                     color:     taskSelectedColor || '#f97316',
                     repeat:    taskRepeatVal || 'none',
+                    repeatEvery: window.calRepeatEveryVal || 1,
+                    repeatEnd: (window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null),
                     reminders: reminders,
                     subtasks:  calSubtasks,
                     labels:    [...taskCurrentLabels],
@@ -13269,6 +13533,9 @@ window.hrpFilter        = _hrpApplyFilter;
     let calCurrentType   = 'evento';         // evento | proyecto | tarea
     let calRepeatMode    = 'none';
     window.calRepeatMode = calRepeatMode;
+    let calRepeatEveryVal = 1;        // "cada cuántos días/semanas/meses/años"
+    let calRepeatEndType  = 'always'; // 'always' | 'until' | 'count'
+    let calRepeatEndValue = null;     // fecha 'YYYY-MM-DD' o número de veces, según el tipo
     let calAllday        = false;
     let calTimePicking   = 'start';          // start | end
     let calStartH = 10, calStartM = 0, calStartAmPm = 'AM';
@@ -13895,10 +14162,19 @@ window.hrpFilter        = _hrpApplyFilter;
             const check = new Date(dateStr + 'T12:00:00');
             if (check < start) return false;
             const diffDays = Math.round((check - start) / 86400000);
-            if (ev.repeat === 'daily') return true;
-            if (ev.repeat === 'weekly') return diffDays % 7 === 0;
-            if (ev.repeat === 'monthly') return check.getDate() === start.getDate();
-            if (ev.repeat === 'yearly') return check.getDate() === start.getDate() && check.getMonth() === start.getMonth();
+            const every = ev.repeatEvery || 1;
+            if (ev.repeat === 'daily') return diffDays % every === 0;
+            if (ev.repeat === 'weekly') return diffDays % (7 * every) === 0;
+            if (ev.repeat === 'monthly') {
+                if (check.getDate() !== start.getDate()) return false;
+                const monthDiff = (check.getFullYear() - start.getFullYear()) * 12 + (check.getMonth() - start.getMonth());
+                return monthDiff >= 0 && monthDiff % every === 0;
+            }
+            if (ev.repeat === 'yearly') {
+                if (!(check.getDate() === start.getDate() && check.getMonth() === start.getMonth())) return false;
+                const yearDiff = check.getFullYear() - start.getFullYear();
+                return yearDiff >= 0 && yearDiff % every === 0;
+            }
             return false;
         });
     }
@@ -14092,6 +14368,8 @@ window.hrpFilter        = _hrpApplyFilter;
             endTime:   etTime,
             color:     calSelectedColor,
             repeat:    calRepeatMode,
+            repeatEvery: calRepeatEveryVal || 1,
+            repeatEnd: window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null,
             reminders,
             subtasks,
             labels,
@@ -14352,6 +14630,40 @@ window.hrpFilter        = _hrpApplyFilter;
             };
         }, 50);
     };
+    // Lee el estado actual del panel de configuración (intervalo + finalización)
+    // y lo guarda en las variables compartidas, para que el guardado del
+    // proyecto/tarea/evento pueda incluirlo. Se llama al confirmar (Listo).
+    window.calReadRepeatConfig = function() {
+        const nInput = document.getElementById('calRepeatN');
+        calRepeatEveryVal = nInput ? (parseInt(nInput.value) || 1) : 1;
+
+        const activeEndTab = document.querySelector('#calRepeatEndTabs .cal-repeat-tab.active');
+        calRepeatEndType = activeEndTab ? (activeEndTab.dataset.end || 'always') : 'always';
+
+        if (calRepeatEndType === 'until') {
+            const dateInput = document.querySelector('#calRepeatEndDetail input[type="date"]');
+            calRepeatEndValue = dateInput ? dateInput.value : null;
+            if (!calRepeatEndValue) calRepeatEndType = 'always';
+        } else if (calRepeatEndType === 'count') {
+            const numInput = document.querySelector('#calRepeatEndDetail input[type="number"]');
+            calRepeatEndValue = numInput ? (parseInt(numInput.value) || null) : null;
+            if (!calRepeatEndValue) calRepeatEndType = 'always';
+        } else {
+            calRepeatEndValue = null;
+        }
+        // Espejo a window.* — saveNewProject/saveNewTask viven en otro bloque
+        // <script> (el puente de contexto compartido) y no pueden leer estas
+        // variables `let` directamente, solo a través de window.
+        window.calRepeatEveryVal = calRepeatEveryVal;
+        window.calRepeatEndType  = calRepeatEndType;
+        window.calRepeatEndValue = calRepeatEndValue;
+    }
+    window.calGetRepeatEndObject = function() {
+        if (calRepeatEndType === 'until') return { until: calRepeatEndValue };
+        if (calRepeatEndType === 'count') return { count: calRepeatEndValue };
+        return null;
+    };
+
     window.confirmCalRepeat = function() {
         updateCalRepeatDisplay();
         closeCalRepeat();
@@ -14412,17 +14724,121 @@ window.hrpFilter        = _hrpApplyFilter;
         if (playSound !== false) playPopSound();
     };
 
-    function renderCalTimePicker() {
+    
+// ═══════════════════════════════════════════════════════════
+// CAL DATE PICKER premium — reemplaza el <input type="date">
+// nativo. Sigue escribiendo en #calTpDate (oculto) para no
+// tocar la lógica existente de openProjTimePicker/openTaskTimePicker/
+// confirmCalTimePicker, que ya leen y escriben ese mismo campo.
+// ═══════════════════════════════════════════════════════════
+const CDP_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const CDP_MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+let cdpViewYear = new Date().getFullYear();
+let cdpViewMonth = new Date().getMonth();
+
+function cdpFormatTriggerText(dateStr) {
+    if (!dateStr) return 'Elegir fecha';
+    const [y,m,d] = dateStr.split('-').map(Number);
+    return d + ' ' + CDP_MESES_ABR[m-1] + ' ' + y;
+}
+
+function cdpSyncTrigger() {
+    const input = document.getElementById('calTpDate');
+    const trigger = document.getElementById('calTpDateTrigger');
+    if (input && trigger) trigger.textContent = cdpFormatTriggerText(input.value);
+}
+
+window.openCalDatePicker = function() {
+    const input = document.getElementById('calTpDate');
+    let y = cdpViewYear, m = cdpViewMonth;
+    if (input && input.value) {
+        const parts = input.value.split('-').map(Number);
+        y = parts[0]; m = parts[1] - 1;
+    }
+    cdpViewYear = y; cdpViewMonth = m;
+    cdpRenderGrid();
+    document.getElementById('calDatePickerBackdrop').classList.add('show-cdp');
+    document.getElementById('calDatePickerPopup').classList.add('show-cdp');
+};
+
+window.closeCalDatePicker = function() {
+    document.getElementById('calDatePickerBackdrop').classList.remove('show-cdp');
+    document.getElementById('calDatePickerPopup').classList.remove('show-cdp');
+};
+
+window.cdpChangeMonth = function(delta) {
+    cdpViewMonth += delta;
+    if (cdpViewMonth < 0) { cdpViewMonth = 11; cdpViewYear--; }
+    else if (cdpViewMonth > 11) { cdpViewMonth = 0; cdpViewYear++; }
+    cdpRenderGrid();
+};
+
+function cdpRenderGrid() {
+    const lbl = document.getElementById('cdpMonthLabel');
+    if (lbl) lbl.textContent = CDP_MESES[cdpViewMonth] + ' ' + cdpViewYear;
+
+    const grid = document.getElementById('cdpGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const input = document.getElementById('calTpDate');
+    const selected = input && input.value ? input.value : '';
+    const today = new Date();
+    const todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+
+    const firstDow = new Date(cdpViewYear, cdpViewMonth, 1).getDay();
+    const daysInMonth = new Date(cdpViewYear, cdpViewMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(cdpViewYear, cdpViewMonth, 0).getDate();
+
+    const cells = [];
+    for (let i = firstDow - 1; i >= 0; i--) {
+        cells.push({ day: daysInPrevMonth - i, outside: true, y: cdpViewMonth === 0 ? cdpViewYear-1 : cdpViewYear, m: cdpViewMonth === 0 ? 11 : cdpViewMonth - 1 });
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+        cells.push({ day: d, outside: false, y: cdpViewYear, m: cdpViewMonth });
+    }
+    let next = 1;
+    while (cells.length % 7 !== 0 || cells.length < 42) {
+        cells.push({ day: next++, outside: true, y: cdpViewMonth === 11 ? cdpViewYear+1 : cdpViewYear, m: cdpViewMonth === 11 ? 0 : cdpViewMonth + 1 });
+        if (cells.length >= 42) break;
+    }
+
+    cells.forEach(c => {
+        const dateStr = c.y + '-' + String(c.m+1).padStart(2,'0') + '-' + String(c.day).padStart(2,'0');
+        const btn = document.createElement('div');
+        btn.className = 'cdp-day' + (c.outside ? ' outside' : '') + (dateStr === todayStr ? ' today' : '') + (dateStr === selected ? ' selected' : '');
+        btn.textContent = c.day;
+        btn.onclick = () => cdpSelectDate(dateStr);
+        grid.appendChild(btn);
+    });
+}
+
+function cdpSelectDate(dateStr) {
+    const input = document.getElementById('calTpDate');
+    if (input) input.value = dateStr;
+    if (typeof updateCalTpDateLabel === 'function') updateCalTpDateLabel();
+    cdpSyncTrigger();
+    if (typeof playMenuSound === 'function') playMenuSound();
+    closeCalDatePicker();
+}
+
+window.cdpSelectToday = function() {
+    const t = new Date();
+    cdpSelectDate(t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'));
+};
+
+function renderCalTimePicker() {
+        cdpSyncTrigger();
         const svg = document.getElementById('calClockSvg');
         if (!svg) return;
         svg.innerHTML = '';
         const R = 100;
 
-        // Fondo reloj
+        // Fondo reloj — mismo lenguaje premium oscuro que el Anillo de Compromiso
         const bg = doc('circle');
         bg.setAttribute('cx',0); bg.setAttribute('cy',0); bg.setAttribute('r', R);
-        bg.setAttribute('fill','#f0f4f8'); bg.setAttribute('stroke','#dde');
-        bg.setAttribute('stroke-width','1');
+        bg.setAttribute('fill','#0a0e22'); bg.setAttribute('stroke','rgba(0,210,255,0.25)');
+        bg.setAttribute('stroke-width','1.5');
         svg.appendChild(bg);
 
         const nums = calTpPhase === 'hour'
@@ -14435,27 +14851,30 @@ window.hrpFilter        = _hrpApplyFilter;
             const isSelected = calTpPhase === 'hour' ? n === calTpHour : n === calTpMinute;
 
             if (isSelected) {
-                const selCirc = doc('circle');
-                selCirc.setAttribute('cx', x); selCirc.setAttribute('cy', y); selCirc.setAttribute('r', '16');
-                selCirc.setAttribute('fill', '#00a0c0');
-                svg.appendChild(selCirc);
                 const selLine = doc('line');
                 selLine.setAttribute('x1',0); selLine.setAttribute('y1',0);
                 selLine.setAttribute('x2', x*0.75); selLine.setAttribute('y2', y*0.75);
-                selLine.setAttribute('stroke','#00a0c0'); selLine.setAttribute('stroke-width','2.5');
+                selLine.setAttribute('stroke','#22e3ff'); selLine.setAttribute('stroke-width','2.5');
                 selLine.setAttribute('stroke-linecap','round');
+                selLine.setAttribute('class','ctp-hand-selected');
                 svg.appendChild(selLine);
+                const selCirc = doc('circle');
+                selCirc.setAttribute('cx', x); selCirc.setAttribute('cy', y); selCirc.setAttribute('r', '16');
+                selCirc.setAttribute('fill', '#00d2ff');
+                selCirc.setAttribute('class','ctp-num-selected');
+                svg.appendChild(selCirc);
                 const centerDot = doc('circle');
                 centerDot.setAttribute('cx',0); centerDot.setAttribute('cy',0); centerDot.setAttribute('r','4');
-                centerDot.setAttribute('fill','#00a0c0');
+                centerDot.setAttribute('fill','#22e3ff');
+                centerDot.setAttribute('class','ctp-num-selected');
                 svg.appendChild(centerDot);
             }
 
             const t = doc('text');
             t.setAttribute('x', x); t.setAttribute('y', y);
             t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
-            t.setAttribute('fill', isSelected ? '#fff' : '#334155');
-            t.setAttribute('font-size', '13'); t.setAttribute('font-weight','700');
+            t.setAttribute('fill', isSelected ? '#031018' : 'rgba(255,255,255,0.6)');
+            t.setAttribute('font-size', '13'); t.setAttribute('font-weight','800');
             t.setAttribute('cursor','pointer');
             t.textContent = calTpPhase === 'hour' ? n : String(n).padStart(2,'0');
             t.addEventListener('click', () => {
@@ -15062,13 +15481,32 @@ window.hrpFilter        = _hrpApplyFilter;
 
     <!-- Modal selector de hora circular -->
     <div id="calTimePickerBackdrop" onclick="closeCalTimePicker()"></div>
-    <div id="calTimePickerModal">
+        <!-- ═══ CAL DATE PICKER premium (reemplaza el <input type="date">) ═══ -->
+    <div id="calDatePickerBackdrop" onclick="closeCalDatePicker()"></div>
+    <div id="calDatePickerPopup">
+        <div class="cdp-header">
+            <button class="cdp-nav-btn" onclick="cdpChangeMonth(-1)" aria-label="Mes anterior">‹</button>
+            <div class="cdp-month-label" id="cdpMonthLabel">Agosto 2026</div>
+            <button class="cdp-nav-btn" onclick="cdpChangeMonth(1)" aria-label="Mes siguiente">›</button>
+        </div>
+        <div class="cdp-weekdays">
+            <div>DO</div><div>LU</div><div>MA</div><div>MI</div><div>JU</div><div>VI</div><div>SA</div>
+        </div>
+        <div class="cdp-grid" id="cdpGrid"></div>
+        <div class="cdp-footer">
+            <button class="cdp-footer-btn cdp-footer-hoy" onclick="cdpSelectToday()">Hoy</button>
+            <button class="cdp-footer-btn cdp-footer-cerrar" onclick="closeCalDatePicker()">Cerrar</button>
+        </div>
+    </div>
+
+<div id="calTimePickerModal">
         <div class="cal-tp-header">
             <div>
-                <div style="font-size:0.7rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;" id="calTpLabel">HORA DE INICIO</div>
+                <div style="font-size:0.68rem;color:#8fb8ff;opacity:0.85;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;margin-bottom:4px;font-family:'Nunito',sans-serif;" id="calTpLabel">HORA DE INICIO</div>
                 <div class="cal-tp-time-display" id="calTpDisplay">10:00</div>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-                    <input type="date" id="calTpDate" style="background:rgba(0,210,255,0.08);border:1px solid rgba(0,210,255,0.25);color:#94a3b8;font-size:0.78rem;border-radius:8px;padding:4px 8px;font-family:inherit;outline:none;cursor:pointer;" onchange="updateCalTpDateLabel()">
+                    <input type="date" id="calTpDate" style="display:none" onchange="updateCalTpDateLabel();cdpSyncTrigger()">
+                    <button type="button" class="cal-tp-date-trigger" id="calTpDateTrigger" onclick="openCalDatePicker()">Elegir fecha</button>
                 </div>
             </div>
             <div class="cal-tp-ampm-col">
@@ -15081,13 +15519,54 @@ window.hrpFilter        = _hrpApplyFilter;
         </div>
         <div class="cal-tp-actions">
             <button class="cal-tp-action-btn" onclick="closeCalTimePicker()">Cancelar</button>
-            <button class="cal-tp-action-btn" style="color:#00a0c0;font-weight:900;" onclick="confirmCalTimePicker()">Aceptar</button>
+            <button class="cal-tp-action-btn ctp-confirm" onclick="confirmCalTimePicker()">Aceptar</button>
         </div>
     </div>
 
     <!-- Modal repetición -->
     <div id="calRepeatBackdrop" onclick="closeCalRepeat()"></div>
-    <div id="calRepeatModal">
+        <!-- ═══ HAB TIME PICKER — Anillo de Compromiso ═══ -->
+    <div id="habTimePickerBackdrop" onclick="closeHabTimePicker()"></div>
+    <div id="habTimePickerModal">
+        <div class="htp-eyebrow"><span class="htp-eyebrow-spark">✦</span> Elige el momento <span class="htp-eyebrow-spark">✦</span></div>
+        <div class="htp-display">
+            <span class="htp-display-seg active" id="htpSegHour" onclick="htpSetActiveSeg('hour')">00</span>
+            <span class="htp-display-colon">:</span>
+            <span class="htp-display-seg" id="htpSegMin" onclick="htpSetActiveSeg('min')">00</span>
+        </div>
+
+        <div class="htp-dial-wrap" id="htpDialWrap">
+            <div class="htp-dial-face" id="htpDialFace"></div>
+            <div class="htp-hand" id="htpHand"><div class="htp-hand-knob" id="htpHandKnob"></div></div>
+            <div class="htp-dial-center"></div>
+        </div>
+
+        <div class="htp-kbd-panel" id="htpKbdPanel">
+            <div class="htp-kbd-row">
+                <div class="htp-kbd-field">
+                    <input class="htp-kbd-input" id="htpKbdHour" type="number" min="0" max="23" maxlength="2" inputmode="numeric">
+                    <span class="htp-kbd-label">Hora</span>
+                </div>
+                <span class="htp-kbd-colon">:</span>
+                <div class="htp-kbd-field">
+                    <input class="htp-kbd-input" id="htpKbdMin" type="number" min="0" max="59" maxlength="2" inputmode="numeric">
+                    <span class="htp-kbd-label">Minuto</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="htp-toggle-row">
+            <button class="htp-kbd-btn" id="htpToggleBtn" onclick="htpToggleMode()" title="Cambiar a teclado" aria-label="Cambiar modo de entrada">⌨</button>
+        </div>
+
+        <div class="htp-actions">
+            <button class="htp-action htp-action-clear" onclick="htpClear()">Borrar</button>
+            <button class="htp-action htp-action-cancel" onclick="closeHabTimePicker()">Cancelar</button>
+            <button class="htp-action htp-action-confirm" onclick="confirmHabTimePicker()">Establecer</button>
+        </div>
+    </div>
+
+<div id="calRepeatModal">
         <div class="cal-repeat-handle"></div>
         <div class="cal-repeat-tabs">
             <button class="cal-repeat-tab" onclick="setCalRepeat('none',this)">✕ Sin repetir</button>
@@ -15323,6 +15802,7 @@ window.hrpFilter        = _hrpApplyFilter;
     document.addEventListener('DOMContentLoaded', function() {
         const _origRepeat = window.confirmCalRepeat;
         window.confirmCalRepeat = function() {
+            if (typeof window.calReadRepeatConfig === 'function') window.calReadRepeatConfig();
             const ctx = window.calActiveContext || 'cal';
             if (ctx === 'proj') {
                 projRepeatVal = window.calRepeatMode || 'none';
@@ -16325,6 +16805,49 @@ function registerFCMToken(){
   tryReg();
 }
 
+// Avanza `occ` (Date) periodo a periodo (respetando el intervalo `every`,
+// ej. "cada 2 semanas") según `repeat` hasta que sea >= refDate. Devuelve la
+// fecha de la próxima ocurrencia y cuántos periodos se avanzaron desde el
+// inicio (0 = la ocurrencia original, sin avanzar).
+// Mensual/anual preservan el día original y SALTAN los meses/años donde ese
+// día no existe (ej. 31 en febrero, 29 de feb en año no bisiesto) — mismo
+// criterio que ya usa getEventsForDate() para decidir si un evento ocurre
+// en una fecha dada, así ambos sistemas quedan de acuerdo.
+function nextOccurrenceOnOrAfter(startDate, repeat, refDate, every) {
+  every = every || 1;
+  var originalDay = startDate.getDate();
+  var occ = new Date(startDate.getTime());
+  var periods = 0;
+  while (occ < refDate) {
+    if (repeat === 'daily') {
+      occ.setDate(occ.getDate() + every);
+    } else if (repeat === 'weekly') {
+      occ.setDate(occ.getDate() + 7 * every);
+    } else if (repeat === 'monthly') {
+      var totalMonths = occ.getFullYear() * 12 + occ.getMonth() + every;
+      var mCand;
+      while (true) {
+        var my = Math.floor(totalMonths / 12), mm = totalMonths % 12;
+        mCand = new Date(my, mm, originalDay, startDate.getHours(), startDate.getMinutes(), 0);
+        if (mCand.getMonth() === mm) break;
+        totalMonths++; // ese mes no tiene ese día (ej. 31) -> probar el siguiente
+      }
+      occ = mCand;
+    } else if (repeat === 'yearly') {
+      var yy = occ.getFullYear(), yCand;
+      while (true) {
+        yy += every;
+        yCand = new Date(yy, startDate.getMonth(), originalDay, startDate.getHours(), startDate.getMinutes(), 0);
+        if (yCand.getDate() === originalDay) break;
+      }
+      occ = yCand;
+    } else break;
+    periods++;
+    if (periods > 3660) break; // salvaguarda ante bucles infinitos
+  }
+  return { date: occ, periods: periods };
+}
+
 function buildList(evs){
   var all=[],now=Date.now();
   evs.forEach(function(ev){
@@ -16333,8 +16856,32 @@ function buildList(evs){
     if(!base||isNaN(base)||base.getTime()<1000000000000) return;
     var title=ev.title||ev.name||'Evento';
     var icon=ev.type==='tarea'?'Tarea':ev.type==='proyecto'?'Proyecto':'Evento';
+    var isRepeating = ev.repeat && ev.repeat !== 'none';
     ev.reminders.forEach(function(val){
       var off=OFF[val]; if(off===undefined) return;
+
+      if (isRepeating) {
+        // Buscar la próxima ocurrencia (hoy o futura) cuyo recordatorio no haya pasado ya
+        var refDate = new Date(now + off);
+        var every = ev.repeatEvery || 1;
+        var res = nextOccurrenceOnOrAfter(base, ev.repeat, refDate, every);
+
+        // Respetar la condición de finalización (Nunca / hasta fecha / cantidad de veces)
+        if (ev.repeatEnd && ev.repeatEnd.until) {
+          var untilD = new Date(ev.repeatEnd.until + 'T23:59:59');
+          if (res.date > untilD) return; // la recurrencia ya terminó
+        }
+        if (ev.repeatEnd && ev.repeatEnd.count && res.periods >= ev.repeatEnd.count) return;
+
+        var fireAtRep = res.date.getTime() - off;
+        if (fireAtRep < now - 120000) return;
+        all.push({
+          evId: ev.id, fireAt: fireAtRep, title: icon+': '+title, body:(LBL[val]||val)+' - '+fmt(ev.startDate),
+          repeat: ev.repeat, repeatEvery: every, repeatEnd: ev.repeatEnd || null, offsetMs: off, occurrenceIndex: res.periods
+        });
+        return;
+      }
+
       var fireAt=base.getTime()-off;
       if(fireAt<now-120000) return;
       all.push({evId:ev.id,fireAt:fireAt,title:icon+': '+title,body:(LBL[val]||val)+' - '+fmt(ev.startDate)});
@@ -18666,16 +19213,14 @@ window.saveHabit = function() {
     if (_htBtn && _htBtn.dataset.ht) _htNow = _htBtn.dataset.ht;
     else if (window._selectedHType) _htNow = window._selectedHType;
 
-    // CRÍTICO: Sincronizar reminderTimes desde el DOM antes de capturar
-    // (en Android, onchange puede no haber disparado si el usuario no salió del input)
-    var _domInputs = document.querySelectorAll('#habRemindersList .hab-reminder-item-time');
-    if (_domInputs && _domInputs.length > 0) {
+    // El selector de hora premium escribe directamente en reminderTimes[] al
+    // confirmar (botón "Establecer", no depende de onchange de un input nativo),
+    // así que ya no hace falta releer valores del DOM. Solo recortamos el array
+    // por si sobran entradas respecto a las filas realmente renderizadas.
+    var _domReminderRows = document.querySelectorAll('#habRemindersList .hab-reminder-item');
+    if (_domReminderRows && _domReminderRows.length > 0) {
         if (typeof reminderTimes === 'undefined') window.reminderTimes = [];
-        _domInputs.forEach(function(inp, i) {
-            if (inp.value) reminderTimes[i] = inp.value;
-        });
-        // Truncar si hay más entradas en array que inputs en DOM
-        reminderTimes.length = _domInputs.length;
+        reminderTimes.length = _domReminderRows.length;
     }
 
     // Capturar reminderTimes y reminderOn ANTES del reset
@@ -19563,6 +20108,235 @@ window.toggleHabReminder = function() {
     renderHabRemindersList();
 };
 
+
+// ═══════════════════════════════════════════════════════════
+// HAB TIME PICKER — Anillo de Compromiso
+// Reemplazo premium del <input type="time"> nativo, mismo
+// contrato de datos: escribe en reminderTimes[idx] = "HH:MM"
+// ═══════════════════════════════════════════════════════════
+let htpActiveIdx = -1;
+let htpHour = 0, htpMin = 0;
+let htpActiveSeg = 'hour';   // 'hour' | 'min'
+let htpMode = 'dial';        // 'dial' | 'kbd'
+let htpDragging = false;
+
+window.openHabTimePicker = function(idx) {
+    htpActiveIdx = idx;
+    const cur = (reminderTimes[idx] || '07:00').split(':').map(Number);
+    htpHour = cur[0] || 0; htpMin = cur[1] || 0;
+    htpActiveSeg = 'hour'; htpMode = 'dial';
+    document.getElementById('htpKbdPanel').classList.remove('active');
+    document.getElementById('htpDialWrap').classList.remove('hidden');
+    document.getElementById('htpToggleBtn').textContent = '⌨';
+    htpSyncKbdInputs();
+    htpRenderSeg();
+    document.getElementById('habTimePickerBackdrop').classList.add('show-htp');
+    document.getElementById('habTimePickerModal').classList.add('show-htp');
+};
+
+window.closeHabTimePicker = function() {
+    document.getElementById('habTimePickerBackdrop').classList.remove('show-htp');
+    document.getElementById('habTimePickerModal').classList.remove('show-htp');
+    htpActiveIdx = -1;
+};
+
+window.confirmHabTimePicker = function() {
+    if (htpActiveIdx < 0) return;
+    if (htpMode === 'kbd') htpReadKbdInputs();
+    const val = String(htpHour).padStart(2,'0') + ':' + String(htpMin).padStart(2,'0');
+    reminderTimes[htpActiveIdx] = val;
+    if (typeof renderHabRemindersList === 'function') renderHabRemindersList();
+    if (typeof updateHabReminderCounter === 'function') updateHabReminderCounter();
+    closeHabTimePicker();
+};
+
+window.htpClear = function() {
+    htpHour = 0; htpMin = 0;
+    htpSyncKbdInputs();
+    htpRenderSeg();
+};
+
+window.htpSetActiveSeg = function(seg) {
+    htpActiveSeg = seg;
+    htpRenderSeg();
+};
+
+window.htpToggleMode = function() {
+    if (htpMode === 'dial') {
+        htpMode = 'kbd';
+        document.getElementById('htpDialWrap').classList.add('hidden');
+        document.getElementById('htpKbdPanel').classList.add('active');
+        document.getElementById('htpToggleBtn').textContent = '🕐';
+        htpSyncKbdInputs();
+    } else {
+        htpReadKbdInputs();
+        htpMode = 'dial';
+        document.getElementById('htpKbdPanel').classList.remove('active');
+        document.getElementById('htpDialWrap').classList.remove('hidden');
+        document.getElementById('htpToggleBtn').textContent = '⌨';
+        htpRenderSeg();
+    }
+};
+
+function htpSyncKbdInputs() {
+    const h = document.getElementById('htpKbdHour');
+    const m = document.getElementById('htpKbdMin');
+    if (h) h.value = String(htpHour).padStart(2,'0');
+    if (m) m.value = String(htpMin).padStart(2,'0');
+    htpUpdateDisplay();
+}
+function htpReadKbdInputs() {
+    const h = document.getElementById('htpKbdHour');
+    const m = document.getElementById('htpKbdMin');
+    let hv = parseInt(h && h.value); let mv = parseInt(m && m.value);
+    htpHour = isNaN(hv) ? 0 : Math.min(23, Math.max(0, hv));
+    htpMin  = isNaN(mv) ? 0 : Math.min(59, Math.max(0, mv));
+    htpUpdateDisplay();
+}
+
+function htpUpdateDisplay() {
+    document.getElementById('htpSegHour').textContent = String(htpHour).padStart(2,'0');
+    document.getElementById('htpSegMin').textContent   = String(htpMin).padStart(2,'0');
+    document.getElementById('htpSegHour').classList.toggle('active', htpActiveSeg==='hour');
+    document.getElementById('htpSegMin').classList.toggle('active', htpActiveSeg==='min');
+}
+
+// ── Construcción del cuadrante ──────────────────────────────
+function htpPolar(cx, cy, r, angleDeg) {
+    const rad = (angleDeg - 90) * Math.PI / 180; // -90 para que 0° sea arriba (12 en punto)
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function htpRenderSeg() {
+    const face = document.getElementById('htpDialFace');
+    if (!face) return;
+    face.querySelectorAll('.htp-num').forEach(n => n.remove());
+    const cx = 125, cy = 125;
+    const frag = document.createDocumentFragment();
+
+    if (htpActiveSeg === 'hour') {
+        const isCurrentOuter = htpHour >= 1 && htpHour <= 12;
+        for (let i = 0; i < 12; i++) {
+            const angle = i * 30;
+            const outerVal = i === 0 ? 12 : i;
+            const innerVal = i === 0 ? 0  : i + 12;
+            const po = htpPolar(cx, cy, 100, angle);
+            const pi = htpPolar(cx, cy, 62, angle);
+            const outerSelected = isCurrentOuter && (htpHour === outerVal);
+            const innerSelected = !isCurrentOuter && (htpHour === innerVal);
+            const dOuter = document.createElement('div');
+            dOuter.className = 'htp-num' + (outerSelected ? ' selected' : '');
+            dOuter.style.left = po.x + 'px'; dOuter.style.top = po.y + 'px';
+            dOuter.textContent = outerVal;
+            frag.appendChild(dOuter);
+            const dInner = document.createElement('div');
+            dInner.className = 'htp-num inner' + (innerSelected ? ' selected' : '');
+            dInner.style.left = pi.x + 'px'; dInner.style.top = pi.y + 'px';
+            dInner.textContent = String(innerVal).padStart(2,'0');
+            frag.appendChild(dInner);
+        }
+    } else {
+        for (let i = 0; i < 12; i++) {
+            const angle = i * 30;
+            const val = i * 5;
+            const p = htpPolar(cx, cy, 100, angle);
+            const d = document.createElement('div');
+            d.className = 'htp-num' + (htpMin === val ? ' selected' : '');
+            d.style.left = p.x + 'px'; d.style.top = p.y + 'px';
+            d.textContent = String(val).padStart(2,'0');
+            frag.appendChild(d);
+        }
+    }
+    face.appendChild(frag);
+    htpUpdateHand();
+    htpUpdateDisplay();
+}
+
+function htpUpdateHand() {
+    const hand = document.getElementById('htpHand');
+    if (!hand) return;
+    let angle, len;
+    if (htpActiveSeg === 'hour') {
+        const outer = htpHour >= 1 && htpHour <= 12;
+        const slot = outer ? (htpHour % 12) : (htpHour === 0 ? 0 : htpHour - 12);
+        angle = slot * 30;
+        len = outer ? 100 : 62;
+    } else {
+        angle = htpMin * 6; // 360deg / 60min
+        len = 100;
+    }
+    // La aguja crece hacia abajo desde el centro (ver CSS .htp-hand), así que
+    // rotate(0deg) apunta naturalmente a las 6 en punto, no a las 12. Sumamos
+    // 180° para que nuestro ángulo (0° = arriba) coincida con la dirección real.
+    hand.style.transform = 'translateX(-50%) rotate(' + (angle + 180) + 'deg)';
+    hand.style.height = len + 'px';
+}
+
+// ── Interacción táctil / arrastre sobre el cuadrante ────────
+function htpAngleFromEvent(evt) {
+    const wrap = document.getElementById('htpDialWrap');
+    const rect = wrap.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    const dx = clientX - (rect.left + rect.width/2);
+    const dy = clientY - (rect.top + rect.height/2);
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    let deg = Math.atan2(dx, -dy) * 180 / Math.PI;
+    if (deg < 0) deg += 360;
+    return { deg, dist, radius: rect.width/2 };
+}
+
+function htpHandlePointer(evt) {
+    const { deg, dist, radius } = htpAngleFromEvent(evt);
+    if (htpActiveSeg === 'hour') {
+        const slot = Math.round(deg / 30) % 12; // 0..11, 0 = arriba
+        const isOuter = dist > radius * 0.62;   // umbral entre anillo externo e interno
+        htpHour = isOuter ? (slot === 0 ? 12 : slot) : (slot === 0 ? 0 : slot + 12);
+    } else {
+        // Solo múltiplos de 5 — más natural al tacto que el minuto exacto
+        htpMin = (Math.round(deg / 30) % 12) * 5;
+    }
+    htpRenderSeg();
+}
+
+let htpHourAtGestureStart = 0;
+
+(function htpInitDialEvents() {
+    document.addEventListener('DOMContentLoaded', function() {
+        const wrap = document.getElementById('htpDialWrap');
+        if (!wrap) return;
+        const start = (e) => {
+            htpDragging = true;
+            htpHourAtGestureStart = htpHour;
+            htpHandlePointer(e);
+            e.preventDefault();
+        };
+        const move  = (e) => { if (htpDragging) { htpHandlePointer(e); e.preventDefault(); } };
+        const end   = () => {
+            // Avanzar a minutos solo si se vuelve a tocar la MISMA hora ya seleccionada.
+            // Si se eligió una hora distinta, se queda en modo hora — el usuario pasa
+            // a minutos tocando el dígito de minutos en la pantalla de arriba.
+            if (htpDragging && htpActiveSeg === 'hour' && htpHour === htpHourAtGestureStart) {
+                htpActiveSeg = 'min';
+                htpRenderSeg();
+            }
+            htpDragging = false;
+        };
+        wrap.addEventListener('mousedown', start);
+        wrap.addEventListener('touchstart', start, { passive:false });
+        document.addEventListener('mousemove', move);
+        document.addEventListener('touchmove', move, { passive:false });
+        document.addEventListener('mouseup', end);
+        document.addEventListener('touchend', end);
+    });
+})();
+
+
+function htpFormatTime(t) {
+    const p = String(t||'00:00').split(':');
+    return (p[0]||'00').padStart(2,'0') + ':' + (p[1]||'00').padStart(2,'0');
+}
+
 // Renderiza la lista de recordatorios según la cantidad del hábito
 function renderHabRemindersList() {
     const list    = document.getElementById('habRemindersList');
@@ -19581,10 +20355,7 @@ function renderHabRemindersList() {
     list.innerHTML = reminderTimes.map((t,i) =>
         `<div class="hab-reminder-item">
             <span class="hab-reminder-item-num">${i+1}</span>
-            <input type="time" class="hab-reminder-item-time" value="${t}"
-                oninput="reminderTimes[${i}]=this.value;updateHabReminderCounter()"
-                onchange="reminderTimes[${i}]=this.value;updateHabReminderCounter()"
-                onblur="reminderTimes[${i}]=this.value;updateHabReminderCounter()">
+            <button type="button" class="hab-reminder-item-trigger" onclick="openHabTimePicker(${i})">${htpFormatTime(t)}</button>
             <span class="hab-reminder-item-del" onclick="removeHabReminder(${i})">✕</span>
         </div>`
     ).join('');
@@ -19608,11 +20379,11 @@ window.addHabReminder = function() {
     const htNow  = (document.querySelector('.hab-htype-btn.selected[data-ht]')||{}).dataset.ht || 'check';
     const maxQty = htNow === 'quantity' ? (parseInt((document.getElementById('habQtyTarget')||{}).value)||1) : 1;
     if (reminderTimes.length >= maxQty) return;
-    // Proponer hora: 1h después del último o 08:00
-    const last = reminderTimes.length ? reminderTimes[reminderTimes.length-1] : '07:00';
-    const [hh,mm] = last.split(':').map(Number);
-    const next = String((hh+1)%24).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
-    reminderTimes.push(next);
+    // Proponer la hora actual del sistema
+    var _now = new Date();
+    var _h = String(_now.getHours()).padStart(2,'0');
+    var _m = String(_now.getMinutes()).padStart(2,'0');
+    reminderTimes.push(_h + ':' + _m);
     renderHabRemindersList();
 };
 
