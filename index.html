@@ -10283,8 +10283,6 @@ window.hrpFilter        = _hrpApplyFilter;
                     endTime:   etTime,
                     color:     projSelectedColor || '#10b981',
                     repeat:    projRepeatVal || 'none',
-                    repeatEvery: window.calRepeatEveryVal || 1,
-                    repeatEnd: (window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null),
                     reminders: reminders,
                     subtasks:  calSubtasks,
                     labels:    [...projCurrentLabels],
@@ -12017,8 +12015,6 @@ window.hrpFilter        = _hrpApplyFilter;
                     endTime:   etTime,
                     color:     taskSelectedColor || '#f97316',
                     repeat:    taskRepeatVal || 'none',
-                    repeatEvery: window.calRepeatEveryVal || 1,
-                    repeatEnd: (window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null),
                     reminders: reminders,
                     subtasks:  calSubtasks,
                     labels:    [...taskCurrentLabels],
@@ -13533,9 +13529,6 @@ window.hrpFilter        = _hrpApplyFilter;
     let calCurrentType   = 'evento';         // evento | proyecto | tarea
     let calRepeatMode    = 'none';
     window.calRepeatMode = calRepeatMode;
-    let calRepeatEveryVal = 1;        // "cada cuántos días/semanas/meses/años"
-    let calRepeatEndType  = 'always'; // 'always' | 'until' | 'count'
-    let calRepeatEndValue = null;     // fecha 'YYYY-MM-DD' o número de veces, según el tipo
     let calAllday        = false;
     let calTimePicking   = 'start';          // start | end
     let calStartH = 10, calStartM = 0, calStartAmPm = 'AM';
@@ -14162,19 +14155,10 @@ window.hrpFilter        = _hrpApplyFilter;
             const check = new Date(dateStr + 'T12:00:00');
             if (check < start) return false;
             const diffDays = Math.round((check - start) / 86400000);
-            const every = ev.repeatEvery || 1;
-            if (ev.repeat === 'daily') return diffDays % every === 0;
-            if (ev.repeat === 'weekly') return diffDays % (7 * every) === 0;
-            if (ev.repeat === 'monthly') {
-                if (check.getDate() !== start.getDate()) return false;
-                const monthDiff = (check.getFullYear() - start.getFullYear()) * 12 + (check.getMonth() - start.getMonth());
-                return monthDiff >= 0 && monthDiff % every === 0;
-            }
-            if (ev.repeat === 'yearly') {
-                if (!(check.getDate() === start.getDate() && check.getMonth() === start.getMonth())) return false;
-                const yearDiff = check.getFullYear() - start.getFullYear();
-                return yearDiff >= 0 && yearDiff % every === 0;
-            }
+            if (ev.repeat === 'daily') return true;
+            if (ev.repeat === 'weekly') return diffDays % 7 === 0;
+            if (ev.repeat === 'monthly') return check.getDate() === start.getDate();
+            if (ev.repeat === 'yearly') return check.getDate() === start.getDate() && check.getMonth() === start.getMonth();
             return false;
         });
     }
@@ -14368,8 +14352,6 @@ window.hrpFilter        = _hrpApplyFilter;
             endTime:   etTime,
             color:     calSelectedColor,
             repeat:    calRepeatMode,
-            repeatEvery: calRepeatEveryVal || 1,
-            repeatEnd: window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null,
             reminders,
             subtasks,
             labels,
@@ -14630,40 +14612,6 @@ window.hrpFilter        = _hrpApplyFilter;
             };
         }, 50);
     };
-    // Lee el estado actual del panel de configuración (intervalo + finalización)
-    // y lo guarda en las variables compartidas, para que el guardado del
-    // proyecto/tarea/evento pueda incluirlo. Se llama al confirmar (Listo).
-    window.calReadRepeatConfig = function() {
-        const nInput = document.getElementById('calRepeatN');
-        calRepeatEveryVal = nInput ? (parseInt(nInput.value) || 1) : 1;
-
-        const activeEndTab = document.querySelector('#calRepeatEndTabs .cal-repeat-tab.active');
-        calRepeatEndType = activeEndTab ? (activeEndTab.dataset.end || 'always') : 'always';
-
-        if (calRepeatEndType === 'until') {
-            const dateInput = document.querySelector('#calRepeatEndDetail input[type="date"]');
-            calRepeatEndValue = dateInput ? dateInput.value : null;
-            if (!calRepeatEndValue) calRepeatEndType = 'always';
-        } else if (calRepeatEndType === 'count') {
-            const numInput = document.querySelector('#calRepeatEndDetail input[type="number"]');
-            calRepeatEndValue = numInput ? (parseInt(numInput.value) || null) : null;
-            if (!calRepeatEndValue) calRepeatEndType = 'always';
-        } else {
-            calRepeatEndValue = null;
-        }
-        // Espejo a window.* — saveNewProject/saveNewTask viven en otro bloque
-        // <script> (el puente de contexto compartido) y no pueden leer estas
-        // variables `let` directamente, solo a través de window.
-        window.calRepeatEveryVal = calRepeatEveryVal;
-        window.calRepeatEndType  = calRepeatEndType;
-        window.calRepeatEndValue = calRepeatEndValue;
-    }
-    window.calGetRepeatEndObject = function() {
-        if (calRepeatEndType === 'until') return { until: calRepeatEndValue };
-        if (calRepeatEndType === 'count') return { count: calRepeatEndValue };
-        return null;
-    };
-
     window.confirmCalRepeat = function() {
         updateCalRepeatDisplay();
         closeCalRepeat();
@@ -15802,7 +15750,6 @@ function renderCalTimePicker() {
     document.addEventListener('DOMContentLoaded', function() {
         const _origRepeat = window.confirmCalRepeat;
         window.confirmCalRepeat = function() {
-            if (typeof window.calReadRepeatConfig === 'function') window.calReadRepeatConfig();
             const ctx = window.calActiveContext || 'cal';
             if (ctx === 'proj') {
                 projRepeatVal = window.calRepeatMode || 'none';
@@ -16805,41 +16752,35 @@ function registerFCMToken(){
   tryReg();
 }
 
-// Avanza `occ` (Date) periodo a periodo (respetando el intervalo `every`,
-// ej. "cada 2 semanas") según `repeat` hasta que sea >= refDate. Devuelve la
-// fecha de la próxima ocurrencia y cuántos periodos se avanzaron desde el
-// inicio (0 = la ocurrencia original, sin avanzar).
+// Avanza `occ` (Date) periodo a periodo según `repeat` hasta que sea >= refDate.
+// Devuelve la fecha de la próxima ocurrencia y cuántos periodos se avanzaron
+// desde el inicio (0 = la ocurrencia original, sin avanzar).
 // Mensual/anual preservan el día original y SALTAN los meses/años donde ese
 // día no existe (ej. 31 en febrero, 29 de feb en año no bisiesto) — mismo
 // criterio que ya usa getEventsForDate() para decidir si un evento ocurre
 // en una fecha dada, así ambos sistemas quedan de acuerdo.
-function nextOccurrenceOnOrAfter(startDate, repeat, refDate, every) {
-  every = every || 1;
+function nextOccurrenceOnOrAfter(startDate, repeat, refDate) {
   var originalDay = startDate.getDate();
   var occ = new Date(startDate.getTime());
   var periods = 0;
   while (occ < refDate) {
     if (repeat === 'daily') {
-      occ.setDate(occ.getDate() + every);
+      occ.setDate(occ.getDate() + 1);
     } else if (repeat === 'weekly') {
-      occ.setDate(occ.getDate() + 7 * every);
+      occ.setDate(occ.getDate() + 7);
     } else if (repeat === 'monthly') {
-      var totalMonths = occ.getFullYear() * 12 + occ.getMonth() + every;
-      var mCand;
-      while (true) {
-        var my = Math.floor(totalMonths / 12), mm = totalMonths % 12;
+      var my = occ.getFullYear(), mm = occ.getMonth(), mCand;
+      do {
+        mm++; if (mm > 11) { mm = 0; my++; }
         mCand = new Date(my, mm, originalDay, startDate.getHours(), startDate.getMinutes(), 0);
-        if (mCand.getMonth() === mm) break;
-        totalMonths++; // ese mes no tiene ese día (ej. 31) -> probar el siguiente
-      }
+      } while (mCand.getMonth() !== mm);
       occ = mCand;
     } else if (repeat === 'yearly') {
       var yy = occ.getFullYear(), yCand;
-      while (true) {
-        yy += every;
+      do {
+        yy++;
         yCand = new Date(yy, startDate.getMonth(), originalDay, startDate.getHours(), startDate.getMinutes(), 0);
-        if (yCand.getDate() === originalDay) break;
-      }
+      } while (yCand.getDate() !== originalDay);
       occ = yCand;
     } else break;
     periods++;
@@ -16863,8 +16804,7 @@ function buildList(evs){
       if (isRepeating) {
         // Buscar la próxima ocurrencia (hoy o futura) cuyo recordatorio no haya pasado ya
         var refDate = new Date(now + off);
-        var every = ev.repeatEvery || 1;
-        var res = nextOccurrenceOnOrAfter(base, ev.repeat, refDate, every);
+        var res = nextOccurrenceOnOrAfter(base, ev.repeat, refDate);
 
         // Respetar la condición de finalización (Nunca / hasta fecha / cantidad de veces)
         if (ev.repeatEnd && ev.repeatEnd.until) {
@@ -16877,7 +16817,7 @@ function buildList(evs){
         if (fireAtRep < now - 120000) return;
         all.push({
           evId: ev.id, fireAt: fireAtRep, title: icon+': '+title, body:(LBL[val]||val)+' - '+fmt(ev.startDate),
-          repeat: ev.repeat, repeatEvery: every, repeatEnd: ev.repeatEnd || null, offsetMs: off, occurrenceIndex: res.periods
+          repeat: ev.repeat, repeatEnd: ev.repeatEnd || null, offsetMs: off, occurrenceIndex: res.periods
         });
         return;
       }
