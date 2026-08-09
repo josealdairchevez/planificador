@@ -13297,13 +13297,22 @@ window.hrpFilter        = _hrpApplyFilter;
 
     function calGetAllKnownLabelsWithColors() {
         const db = getLabelColorDB ? getLabelColorDB() : {};
+        // Índice del DB de colores insensible a mayúsculas/minúsculas — así
+        // "Curso" y "curso" se reconocen como la misma etiqueta guardada,
+        // sin importar con qué mayúscula haya quedado grabada cada una.
+        const dbLower = {};
+        Object.keys(db).forEach(k => { dbLower[k.toLowerCase()] = db[k]; });
+
         const result = {};
         calEvents.forEach(ev => {
             (ev.labels||[]).forEach(l => {
-                if (!result[l]) result[l] = (ev.labelColors && ev.labelColors[l]) || db[l] || ev.color || '#10b981';
+                if (!result[l]) result[l] = (ev.labelColors && ev.labelColors[l]) || dbLower[l.toLowerCase()] || ev.color || '#10b981';
             });
         });
-        Object.entries(db).forEach(([l,c]) => { if(!result[l]) result[l]=c; });
+        Object.entries(db).forEach(([l,c]) => {
+            const yaExiste = Object.keys(result).some(k => k.toLowerCase() === l.toLowerCase());
+            if (!yaExiste) result[l] = c;
+        });
         return result;
     }
 
@@ -13324,8 +13333,9 @@ window.hrpFilter        = _hrpApplyFilter;
             ghost.textContent = match.slice(val.length);
             // Preview: suggest stored color for this match
             const labelsWithColors = calGetAllKnownLabelsWithColors();
-            if (labelsWithColors[match]) {
-                window._calCurrentLabelColor = labelsWithColors[match];
+            const _calColorKey = Object.keys(labelsWithColors).find(k => k.toLowerCase() === match.toLowerCase());
+            if (_calColorKey) {
+                window._calCurrentLabelColor = labelsWithColors[_calColorKey];
                 // Update label color dots to reflect this match color
                 document.querySelectorAll('.cal-label-color-dot').forEach(d => {
                     const isActive = d.dataset.color === window._calCurrentLabelColor;
@@ -15891,8 +15901,9 @@ function renderCalTimePicker() {
             ghost.textContent = match.slice(val.length);
             // Detectar y aplicar el color ya guardado para esta etiqueta
             const labelsWithColors = window.calGetAllKnownLabelsWithColors ? window.calGetAllKnownLabelsWithColors() : {};
-            if (labelsWithColors[match]) {
-                projCurrentLabelColor = labelsWithColors[match];
+            const _projColorKey = Object.keys(labelsWithColors).find(k => k.toLowerCase() === match.toLowerCase());
+            if (_projColorKey) {
+                projCurrentLabelColor = labelsWithColors[_projColorKey];
                 document.querySelectorAll('.proj-label-color-dot').forEach(d => {
                     const isActive = d.dataset.color === projCurrentLabelColor;
                     d.style.border = isActive ? '2px solid #fff' : '2px solid transparent';
@@ -15954,8 +15965,9 @@ function renderCalTimePicker() {
             ghost.textContent = match.slice(val.length);
             // Detectar y aplicar el color ya guardado para esta etiqueta
             const labelsWithColors = window.calGetAllKnownLabelsWithColors ? window.calGetAllKnownLabelsWithColors() : {};
-            if (labelsWithColors[match]) {
-                taskCurrentLabelColor = labelsWithColors[match];
+            const _taskColorKey = Object.keys(labelsWithColors).find(k => k.toLowerCase() === match.toLowerCase());
+            if (_taskColorKey) {
+                taskCurrentLabelColor = labelsWithColors[_taskColorKey];
                 document.querySelectorAll('.task-label-color-dot').forEach(d => {
                     const isActive = d.dataset.color === taskCurrentLabelColor;
                     d.style.border = isActive ? '2px solid #fff' : '2px solid transparent';
