@@ -15889,6 +15889,17 @@ function renderCalTimePicker() {
             ctx2.font = style.font || '700 0.88rem sans-serif';
             ghost.style.left = (14 + ctx2.measureText(val).width) + 'px';
             ghost.textContent = match.slice(val.length);
+            // Detectar y aplicar el color ya guardado para esta etiqueta
+            const labelsWithColors = window.calGetAllKnownLabelsWithColors ? window.calGetAllKnownLabelsWithColors() : {};
+            if (labelsWithColors[match]) {
+                projCurrentLabelColor = labelsWithColors[match];
+                document.querySelectorAll('.proj-label-color-dot').forEach(d => {
+                    const isActive = d.dataset.color === projCurrentLabelColor;
+                    d.style.border = isActive ? '2px solid #fff' : '2px solid transparent';
+                    d.style.boxShadow = isActive ? `0 0 8px ${projCurrentLabelColor}` : '';
+                    d.style.transform = isActive ? 'scale(1.3)' : '';
+                });
+            }
         } else { ghost.textContent = ''; }
     };
     window.projLabelKeydown = function(e) {
@@ -15941,6 +15952,17 @@ function renderCalTimePicker() {
             ctx2.font = style.font || '700 0.88rem sans-serif';
             ghost.style.left = (14 + ctx2.measureText(val).width) + 'px';
             ghost.textContent = match.slice(val.length);
+            // Detectar y aplicar el color ya guardado para esta etiqueta
+            const labelsWithColors = window.calGetAllKnownLabelsWithColors ? window.calGetAllKnownLabelsWithColors() : {};
+            if (labelsWithColors[match]) {
+                taskCurrentLabelColor = labelsWithColors[match];
+                document.querySelectorAll('.task-label-color-dot').forEach(d => {
+                    const isActive = d.dataset.color === taskCurrentLabelColor;
+                    d.style.border = isActive ? '2px solid #fff' : '2px solid transparent';
+                    d.style.boxShadow = isActive ? `0 0 8px ${taskCurrentLabelColor}` : '';
+                    d.style.transform = isActive ? 'scale(1.3)' : '';
+                });
+            }
         } else { ghost.textContent = ''; }
     };
     window.taskLabelKeydown = function(e) {
@@ -16261,11 +16283,23 @@ function renderCalTimePicker() {
                 const legacyData = data.localStorage; // datos viejos sin separación
 
                 if (deviceData && deviceData.localStorage) {
-                    // Este dispositivo ya tiene datos guardados — restaurar los suyos
-                    console.log('[JCH] loadFromCloud: restaurando datos de dispositivo:', deviceKey);
+                    // Este dispositivo ya tiene datos guardados — restaurar, fusionando
+                    // el historial de hábitos con lo que ya había localmente en vez de
+                    // sobrescribirlo de golpe (así no se pierde progreso marcado en
+                    // este mismo dispositivo antes de que terminara de sincronizar).
+                    console.log('[JCH] loadFromCloud: restaurando y fusionando datos de dispositivo:', deviceKey);
+                    const localHabitsBeforeMerge = localStorage.getItem('jch_habits_v1');
                     Object.entries(deviceData.localStorage).forEach(([k, v]) => {
                         try { localStorage.setItem(k, v); } catch(e) {}
                     });
+                    if (localHabitsBeforeMerge && deviceData.localStorage['jch_habits_v1']) {
+                        try {
+                            const merged = mergeHabitLogs(localHabitsBeforeMerge, deviceData.localStorage['jch_habits_v1']);
+                            localStorage.setItem('jch_habits_v1', JSON.stringify(merged));
+                        } catch (eMergeLoad) {
+                            console.warn('[JCH] loadFromCloud: no se pudo fusionar, se usa la versión de la nube', eMergeLoad);
+                        }
+                    }
                     localStorage.setItem('jch_last_sync', String(deviceData.lastSync || Date.now()));
                     localStorage.setItem('jch_cloud_loaded_uid', currentUser.uid);
                     localStorage.setItem('jch_cloud_loaded_ts', String(Date.now()));
@@ -16322,19 +16356,46 @@ function renderCalTimePicker() {
                 return;
             }
 
-            // Recopilar todas las claves jch_ del localStorage
+            const deviceKey = window._jchDeviceKey || getDeviceKey();
+
+            // ── Fusión con la nube (multi-dispositivo bajo la misma clave) ──
+            // Antes de subir, se trae lo que ya hay guardado y se fusiona el
+            // historial de cumplimiento (log) por unión de fechas, para que
+            // ningún dispositivo borre el progreso marcado en el otro.
+            let mergedHabitsJSON = JSON.stringify(localHabits);
+            try {
+                const existingDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (existingDoc.exists) {
+                    const existingData = existingDoc.data();
+                    const existingDeviceData = existingData.devices && existingData.devices[deviceKey];
+                    const cloudHabitsRaw = existingDeviceData && existingDeviceData.localStorage
+                        ? existingDeviceData.localStorage['jch_habits_v1']
+                        : null;
+                    if (cloudHabitsRaw) {
+                        const merged = mergeHabitLogs(JSON.stringify(localHabits), cloudHabitsRaw);
+                        mergedHabitsJSON = JSON.stringify(merged);
+                        // Aplicar la fusión también localmente, para que este mismo
+                        // dispositivo vea de inmediato lo marcado en el otro.
+                        localStorage.setItem('jch_habits_v1', mergedHabitsJSON);
+                    }
+                }
+            } catch (eMerge) {
+                console.warn('[JCH] syncToCloud: no se pudo fusionar con la nube, se sube solo lo local', eMerge);
+            }
+
+            // Recopilar todas las claves jch_ del localStorage (ya con el hábito fusionado)
             const jchData = {};
             Object.keys(localStorage).forEach(k => {
                 if (k.startsWith('jch_')) {
                     jchData[k] = localStorage.getItem(k);
                 }
             });
+            jchData['jch_habits_v1'] = mergedHabitsJSON;
 
             const now = Date.now();
             localStorage.setItem('jch_last_sync', String(now));
             jchData['jch_last_sync'] = String(now);
 
-            const deviceKey = window._jchDeviceKey || getDeviceKey();
             console.log('[JCH] syncToCloud: subiendo datos de dispositivo:', deviceKey, 'hábitos:', localHabits.length);
 
             // Guardar bajo devices[deviceKey] para separar móvil de web
@@ -16377,7 +16438,42 @@ function renderCalTimePicker() {
         }
     };
 
-    /* ── Cerrar sesión ─────────────────────────────────────── */
+    // Fusiona dos snapshots de jch_habits_v1 (JSON) por hábito:
+    // - log (fechas de cumplimiento): unión — si CUALQUIER dispositivo marcó
+    //   un día, ese día cuenta. Nunca se pierde una marca ya hecha.
+    // - bestStreak / totalDone: se conserva el mayor de los dos (son valores
+    //   que solo deberían crecer).
+    // - Hábitos que solo existen en uno de los dos lados se conservan tal cual.
+    function mergeHabitLogs(localHabitsJSON, cloudHabitsJSON) {
+        let local = [], cloud = [];
+        try { local = JSON.parse(localHabitsJSON || '[]'); } catch(e) {}
+        try { cloud = JSON.parse(cloudHabitsJSON || '[]'); } catch(e) {}
+
+        const cloudById = {};
+        cloud.forEach(h => { if (h && h.id) cloudById[h.id] = h; });
+
+        const merged = local.map(lh => {
+            const ch = lh && lh.id ? cloudById[lh.id] : null;
+            if (!ch) return lh;
+            const out = Object.assign({}, lh);
+            const logSet = new Set([].concat(lh.log || [], ch.log || []));
+            out.log = Array.from(logSet);
+            if (typeof ch.bestStreak === 'number' || typeof lh.bestStreak === 'number') {
+                out.bestStreak = Math.max(lh.bestStreak || 0, ch.bestStreak || 0);
+            }
+            if (typeof ch.totalDone === 'number' || typeof lh.totalDone === 'number') {
+                out.totalDone = Math.max(lh.totalDone || 0, ch.totalDone || 0, out.log.length);
+            }
+            delete cloudById[lh.id];
+            return out;
+        });
+        // Hábitos creados en el otro dispositivo que este todavía no tiene
+        Object.keys(cloudById).forEach(id => merged.push(cloudById[id]));
+        return merged;
+    }
+
+    
+/* ── Cerrar sesión ─────────────────────────────────────── */
     window.handleLogout = async function() {
         // Sync antes de salir
         await syncToCloud(false);
