@@ -302,6 +302,9 @@
         
         /* ESTILOS DE LISTAS DESPLEGABLES PREMIUM / OVALADAS */
         .custom-select-wrapper { position: relative; user-select: none; min-width: 160px; }
+        .custom-option-group-label { padding: 10px 20px 4px; font-size: 0.65rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--accent-cyan); opacity: 0.75; }
+        .custom-option-add { color: #10b981 !important; font-weight: 800; }
+        .custom-option-add:hover { background: linear-gradient(90deg, rgba(16,185,129,0.25) 0%, transparent 100%) !important; color: #10b981 !important; }
         .custom-select { position: relative; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 30px; padding: 0.6rem 1.5rem; font-weight: 800; color: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         .custom-select:hover, .custom-select-wrapper.open .custom-select { border-color: var(--accent-cyan); background: rgba(0, 20, 40, 0.8); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3), inset 0 2px 5px rgba(0,0,0,0.5); }
         
@@ -8927,6 +8930,37 @@ window.hrpFilter        = _hrpApplyFilter;
                     <span style="color:#475569;font-size:0.8rem;">›</span>
                 </div>
 
+                <!-- Prioridad -->
+                <div class="cal-form-row" style="flex-direction:column;align-items:flex-start;gap:8px;cursor:default;">
+                    <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;">🚩 Prioridad</div>
+                    <div class="custom-select-wrapper" id="projPriorityDropdown" style="width:100%;">
+                        <div class="custom-select" onclick="toggleDropdown('projPriorityDropdown')">
+                            <span id="projPrioritySelectedText">🔵 Normal</span><span>▼</span>
+                        </div>
+                        <div class="custom-options" id="projPriorityOptions">
+                            <div class="custom-option" data-val="urgente" onclick="selectTaskPriority('proj','urgente')"><span>🔴 Urgente</span></div>
+                            <div class="custom-option" data-val="alta" onclick="selectTaskPriority('proj','alta')"><span>🟠 Alta</span></div>
+                            <div class="custom-option selected" data-val="normal" onclick="selectTaskPriority('proj','normal')"><span>🔵 Normal</span></div>
+                            <div class="custom-option" data-val="baja" onclick="selectTaskPriority('proj','baja')"><span>⚪ Baja</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tipo -->
+                <div class="cal-form-row" style="flex-direction:column;align-items:flex-start;gap:8px;cursor:default;">
+                    <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;">🏷️ Tipo</div>
+                    <div class="custom-select-wrapper" id="projTypeDropdown" style="width:100%;">
+                        <div class="custom-select" onclick="toggleDropdown('projTypeDropdown'); document.getElementById('projTypeSearchInput').focus();">
+                            <input type="text" id="projTypeSearchInput" class="search-select-input" placeholder="Escribe o elige un tipo..." autocomplete="off"
+                                oninput="filterTaskType('proj', this.value)"
+                                onkeydown="handleTypeInputKeydown('proj', event)"
+                                onclick="if(!document.getElementById('projTypeDropdown').classList.contains('open')) toggleDropdown('projTypeDropdown'); event.stopPropagation();">
+                            <span>▼</span>
+                        </div>
+                        <div class="custom-options" id="projTypeOptions"></div>
+                    </div>
+                </div>
+
                 <!-- Color del Proyecto -->
                 <div class="cal-form-row" style="flex-direction:column;align-items:flex-start;cursor:default;">
                     <div style="display:flex;align-items:center;gap:12px;width:100%;">
@@ -9064,6 +9098,37 @@ window.hrpFilter        = _hrpApplyFilter;
                         <div class="cal-form-row-value" id="taskRepeatDisplay">No repetir</div>
                     </div>
                     <span style="color:#475569;font-size:0.8rem;">›</span>
+                </div>
+
+                <!-- Prioridad -->
+                <div class="cal-form-row" style="flex-direction:column;align-items:flex-start;gap:8px;cursor:default;">
+                    <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;">🚩 Prioridad</div>
+                    <div class="custom-select-wrapper" id="taskPriorityDropdown" style="width:100%;">
+                        <div class="custom-select" onclick="toggleDropdown('taskPriorityDropdown')">
+                            <span id="taskPrioritySelectedText">🔵 Normal</span><span>▼</span>
+                        </div>
+                        <div class="custom-options" id="taskPriorityOptions">
+                            <div class="custom-option" data-val="urgente" onclick="selectTaskPriority('task','urgente')"><span>🔴 Urgente</span></div>
+                            <div class="custom-option" data-val="alta" onclick="selectTaskPriority('task','alta')"><span>🟠 Alta</span></div>
+                            <div class="custom-option selected" data-val="normal" onclick="selectTaskPriority('task','normal')"><span>🔵 Normal</span></div>
+                            <div class="custom-option" data-val="baja" onclick="selectTaskPriority('task','baja')"><span>⚪ Baja</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tipo -->
+                <div class="cal-form-row" style="flex-direction:column;align-items:flex-start;gap:8px;cursor:default;">
+                    <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;">🏷️ Tipo</div>
+                    <div class="custom-select-wrapper" id="taskTypeDropdown" style="width:100%;">
+                        <div class="custom-select" onclick="toggleDropdown('taskTypeDropdown'); document.getElementById('taskTypeSearchInput').focus();">
+                            <input type="text" id="taskTypeSearchInput" class="search-select-input" placeholder="Escribe o elige un tipo..." autocomplete="off"
+                                oninput="filterTaskType('task', this.value)"
+                                onkeydown="handleTypeInputKeydown('task', event)"
+                                onclick="if(!document.getElementById('taskTypeDropdown').classList.contains('open')) toggleDropdown('taskTypeDropdown'); event.stopPropagation();">
+                            <span>▼</span>
+                        </div>
+                        <div class="custom-options" id="taskTypeOptions"></div>
+                    </div>
                 </div>
 
                 <!-- Color de la Tarea -->
@@ -10081,6 +10146,12 @@ window.hrpFilter        = _hrpApplyFilter;
         window.openNewProjectModal = function() {
             const nameInput = document.getElementById('projectNameInput');
             nameInput.value = '';
+            window.projPriorityVal = 'normal';
+            window.projTypeVal = '';
+            const projTypeInputEl = document.getElementById('projTypeSearchInput');
+            if (projTypeInputEl) projTypeInputEl.value = '';
+            if (typeof window.renderPriorityDisplay === 'function') window.renderPriorityDisplay('proj');
+            if (typeof window.renderTypeOptions === 'function') window.renderTypeOptions('proj', '');
             document.getElementById('newProjectStepsContainer').innerHTML = '';
             newProjectTaskCount = 0;
             addTaskToNewProject(); // Agrega la Tarea 1 por defecto automáticamente
@@ -10285,6 +10356,8 @@ window.hrpFilter        = _hrpApplyFilter;
                     repeat:    projRepeatVal || 'none',
                     repeatEvery: window.calRepeatEveryVal || 1,
                     repeatEnd: (window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null),
+                    priority:  window.projPriorityVal || 'normal',
+                    taskType:  window.projTypeVal || '',
                     reminders: reminders,
                     subtasks:  calSubtasks,
                     labels:    [...projCurrentLabels],
@@ -11871,6 +11944,12 @@ window.hrpFilter        = _hrpApplyFilter;
         window.openNewTaskModal = function() {
             const nameInput = document.getElementById('taskNameInput');
             nameInput.value = '';
+            window.taskPriorityVal = 'normal';
+            window.taskTypeVal = '';
+            const taskTypeInputEl = document.getElementById('taskTypeSearchInput');
+            if (taskTypeInputEl) taskTypeInputEl.value = '';
+            if (typeof window.renderPriorityDisplay === 'function') window.renderPriorityDisplay('task');
+            if (typeof window.renderTypeOptions === 'function') window.renderTypeOptions('task', '');
             document.getElementById('newTaskStepsContainer').innerHTML = '';
             newTaskSubtaskCount = 0;
             addSubtaskToNewTask();
@@ -12019,6 +12098,8 @@ window.hrpFilter        = _hrpApplyFilter;
                     repeat:    taskRepeatVal || 'none',
                     repeatEvery: window.calRepeatEveryVal || 1,
                     repeatEnd: (window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null),
+                    priority:  window.taskPriorityVal || 'normal',
+                    taskType:  window.taskTypeVal || '',
                     reminders: reminders,
                     subtasks:  calSubtasks,
                     labels:    [...taskCurrentLabels],
@@ -13295,6 +13376,151 @@ window.hrpFilter        = _hrpApplyFilter;
         return Array.from(labels);
     }
 
+        // ═══════════════════════════════════════════════════════════
+    // PRIORIDAD Y TIPO — compartido entre Nuevo Proyecto/Nueva
+    // Tarea/Editar. Un solo set de funciones parametrizadas por
+    // ctx ('proj'|'task'|'cal') en vez de triplicar la lógica.
+    // ═══════════════════════════════════════════════════════════
+    const TASK_TYPE_GROUPS = [
+        { group: 'Estudio',           types: ['Estudiar', 'Lectura', 'Diapositivas', 'Práctica'] },
+        { group: 'Trabajos escritos', types: ['Ensayo', 'Artículo', 'Informe'] },
+        { group: 'Evaluación',        types: ['Examen', 'Exposición'] },
+        { group: 'Entregas',          types: ['Tarea', 'Entrega'] },
+        { group: 'Colaborativo',      types: ['Reunión', 'Grupo'] },
+        { group: 'General',           types: ['Proyecto'] }
+    ];
+    const PRIORITY_INFO = {
+        urgente: { label: '🔴 Urgente', color: '#ef4444' },
+        alta:    { label: '🟠 Alta',    color: '#f97316' },
+        normal:  { label: '🔵 Normal',  color: '#00d2ff' },
+        baja:    { label: '⚪ Baja',    color: '#64748b' }
+    };
+    window.PRIORITY_INFO = PRIORITY_INFO;
+
+    window.getAllTaskTypeGroups = function() {
+        let custom = [];
+        try { custom = JSON.parse(localStorage.getItem('jch_task_types_custom_v1') || '[]'); } catch(e) {}
+        const groups = TASK_TYPE_GROUPS.map(g => ({ group: g.group, types: g.types.slice() }));
+        if (custom.length) groups.push({ group: 'Personalizado', types: custom });
+        return groups;
+    };
+
+    window.saveCustomTaskType = function(typeName) {
+        typeName = (typeName || '').trim();
+        if (!typeName) return;
+        const all = window.getAllTaskTypeGroups().flatMap(g => g.types);
+        if (all.some(t => t.toLowerCase() === typeName.toLowerCase())) return;
+        let custom = [];
+        try { custom = JSON.parse(localStorage.getItem('jch_task_types_custom_v1') || '[]'); } catch(e) {}
+        custom.push(typeName);
+        localStorage.setItem('jch_task_types_custom_v1', JSON.stringify(custom));
+    };
+
+    // Estado en window.* — así los tres contextos (proj/task/cal), que viven
+    // en bloques <script> distintos, pueden leer/escribir sin depender de
+    // en qué bloque se declaró la variable.
+    window.projPriorityVal = window.projPriorityVal || 'normal';
+    window.projTypeVal     = window.projTypeVal || '';
+    window.taskPriorityVal = window.taskPriorityVal || 'normal';
+    window.taskTypeVal     = window.taskTypeVal || '';
+    window.calPriorityVal  = window.calPriorityVal || 'normal';
+    window.calTypeVal      = window.calTypeVal || '';
+
+    function _ptState(ctx) {
+        const P = ctx + 'PriorityVal', T = ctx + 'TypeVal';
+        return { getP: () => window[P], setP: v => window[P] = v, getT: () => window[T], setT: v => window[T] = v };
+    }
+
+    window.selectTaskPriority = function(ctx, val) {
+        if (typeof playMenuSound === 'function') playMenuSound();
+        _ptState(ctx).setP(val);
+        window.renderPriorityDisplay(ctx);
+        const dd = document.getElementById(ctx + 'PriorityDropdown');
+        if (dd) dd.classList.remove('open');
+    };
+
+    window.renderPriorityDisplay = function(ctx) {
+        const val = _ptState(ctx).getP() || 'normal';
+        const info = PRIORITY_INFO[val] || PRIORITY_INFO.normal;
+        const el = document.getElementById(ctx + 'PrioritySelectedText');
+        if (el) { el.textContent = info.label; el.style.color = info.color; }
+        document.querySelectorAll('#' + ctx + 'PriorityOptions .custom-option').forEach(o => {
+            o.classList.toggle('selected', o.dataset.val === val);
+        });
+    };
+
+    window.renderTypeOptions = function(ctx, searchTerm) {
+        const container = document.getElementById(ctx + 'TypeOptions');
+        if (!container) return;
+        container.innerHTML = '';
+        const term = (searchTerm || '').trim().toLowerCase();
+        const currentVal = _ptState(ctx).getT();
+        let anyExactMatch = false;
+
+        window.getAllTaskTypeGroups().forEach(g => {
+            const filtered = term ? g.types.filter(t => t.toLowerCase().includes(term)) : g.types;
+            if (!filtered.length) return;
+            const header = document.createElement('div');
+            header.className = 'custom-option-group-label';
+            header.textContent = g.group;
+            container.appendChild(header);
+            filtered.forEach(t => {
+                if (t.toLowerCase() === term) anyExactMatch = true;
+                const isSel = t === currentVal;
+                const opt = document.createElement('div');
+                opt.className = 'custom-option' + (isSel ? ' selected' : '');
+                opt.innerHTML = `<span>${t}</span>` + (isSel ? '<i style="color:#10b981;text-shadow:0 0 8px #10b981;font-weight:900;font-style:normal;">✓</i>' : '');
+                opt.onclick = (e) => { e.stopPropagation(); window.selectTaskType(ctx, t); };
+                container.appendChild(opt);
+            });
+        });
+
+        if (term && !anyExactMatch) {
+            const addOpt = document.createElement('div');
+            addOpt.className = 'custom-option custom-option-add';
+            const capitalized = term.charAt(0).toUpperCase() + term.slice(1);
+            addOpt.innerHTML = `<span>➕ Crear "${capitalized}"</span>`;
+            addOpt.onclick = (e) => {
+                e.stopPropagation();
+                const input = document.getElementById(ctx + 'TypeSearchInput');
+                const newType = (input ? input.value : searchTerm).trim();
+                window.saveCustomTaskType(newType);
+                window.selectTaskType(ctx, newType);
+            };
+            container.appendChild(addOpt);
+        }
+    };
+
+    window.selectTaskType = function(ctx, val) {
+        if (typeof playMenuSound === 'function') playMenuSound();
+        _ptState(ctx).setT(val);
+        const input = document.getElementById(ctx + 'TypeSearchInput');
+        if (input) input.value = val;
+        const dd = document.getElementById(ctx + 'TypeDropdown');
+        if (dd) dd.classList.remove('open');
+        window.renderTypeOptions(ctx, '');
+    };
+
+    window.filterTaskType = function(ctx, term) {
+        window.renderTypeOptions(ctx, term);
+    };
+
+    window.handleTypeInputKeydown = function(ctx, e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const input = document.getElementById(ctx + 'TypeSearchInput');
+        const term = input ? input.value.trim() : '';
+        if (!term) return;
+        const all = window.getAllTaskTypeGroups().flatMap(g => g.types);
+        const exact = all.find(t => t.toLowerCase() === term.toLowerCase());
+        if (exact) {
+            window.selectTaskType(ctx, exact);
+        } else {
+            window.saveCustomTaskType(term);
+            window.selectTaskType(ctx, term);
+        }
+    };
+
     function calGetAllKnownLabelsWithColors() {
         const db = getLabelColorDB ? getLabelColorDB() : {};
         // Índice del DB de colores insensible a mayúsculas/minúsculas — así
@@ -14138,6 +14364,12 @@ window.hrpFilter        = _hrpApplyFilter;
                 </svg>${repeatCount}</span>` : '';
             // Labels HTML positioned next to title
             const labelsNextToTitle = (ev.labels||[]).map(l => { const lc = (ev.labelColors&&ev.labelColors[l]) || getLabelColor(l) || ev.color; return `<span style="background:${lc}20;border:1px solid ${lc}80;color:${lc};border-radius:20px;padding:1px 7px;font-size:0.62rem;font-weight:900;">#${l}</span>`; }).join('');
+            // Badge de prioridad (solo si no es "normal", para no saturar la vista con el caso por defecto)
+            const _prioBadgeMap = { urgente:{emoji:'🔴',label:'Urgente',color:'#ef4444'}, alta:{emoji:'🟠',label:'Alta',color:'#f97316'}, baja:{emoji:'⚪',label:'Baja',color:'#64748b'} };
+            const _prioInfo = _prioBadgeMap[ev.priority];
+            const priorityBadgeHtml = _prioInfo ? `<span style="background:${_prioInfo.color}20;border:1px solid ${_prioInfo.color}80;color:${_prioInfo.color};border-radius:20px;padding:1px 7px;font-size:0.62rem;font-weight:900;">${_prioInfo.emoji} ${_prioInfo.label}</span>` : '';
+            // Badge de tipo
+            const typeBadgeHtml = ev.taskType ? `<span style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;border-radius:20px;padding:1px 7px;font-size:0.62rem;font-weight:900;">${ev.taskType}</span>` : '';
             const iconsRowFull = [repeatIconFull,alarmIcon,subtaskIcon,editIconHtml].filter(Boolean).join('');
 
             return `
@@ -14145,7 +14377,7 @@ window.hrpFilter        = _hrpApplyFilter;
                 <div style="display:flex;align-items:center;gap:10px;width:100%;">
                     <div class="cal-event-dot" style="background:${ev.color};box-shadow:0 0 8px ${ev.color};flex-shrink:0;"></div>
                     <div class="cal-event-info" style="flex:1;min-width:0;">
-                        <div class="cal-event-title" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${typeIcon} ${cleanTitle}${labelsNextToTitle ? `<span style="display:inline-flex;gap:4px;flex-wrap:wrap;">${labelsNextToTitle}</span>` : ''}</div>
+                        <div class="cal-event-title" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${typeIcon} ${cleanTitle}${(labelsNextToTitle||priorityBadgeHtml||typeBadgeHtml) ? `<span style="display:inline-flex;gap:4px;flex-wrap:wrap;">${priorityBadgeHtml}${typeBadgeHtml}${labelsNextToTitle}</span>` : ''}</div>
                         <div class="cal-event-time">${timeStr}${dur}</div>
                         ${iconsRowFull ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;align-items:center;">${iconsRowFull}</div>` : ''}
                     </div>
@@ -14248,6 +14480,12 @@ window.hrpFilter        = _hrpApplyFilter;
             calSelectedColor = existingEvent.color  || colDefaults[type];
             calRepeatMode    = existingEvent.repeat || 'none';
             window.calRepeatMode = calRepeatMode;
+            window.calPriorityVal = existingEvent.priority || 'normal';
+            window.calTypeVal = existingEvent.taskType || '';
+            if (typeof window.renderPriorityDisplay === 'function') window.renderPriorityDisplay('cal');
+            if (typeof window.renderTypeOptions === 'function') window.renderTypeOptions('cal', '');
+            const calTypeInputEdit = document.getElementById('calTypeSearchInput');
+            if (calTypeInputEdit) calTypeInputEdit.value = window.calTypeVal;
             // Restore labels
             window._calCurrentLabels = [...(existingEvent.labels || [])];
             const lpEdit = document.getElementById('calLabelsContainer');
@@ -14297,6 +14535,12 @@ window.hrpFilter        = _hrpApplyFilter;
             calSelectedColor = colDefaults[type];
             calRepeatMode    = 'none';
             window.calRepeatMode = calRepeatMode;
+            window.calPriorityVal = 'normal';
+            window.calTypeVal = '';
+            if (typeof window.renderPriorityDisplay === 'function') window.renderPriorityDisplay('cal');
+            if (typeof window.renderTypeOptions === 'function') window.renderTypeOptions('cal', '');
+            const calTypeInputNew = document.getElementById('calTypeSearchInput');
+            if (calTypeInputNew) calTypeInputNew.value = '';
             // Auto-hora aproximada del sistema
             const nowD = new Date();
             let autoH = nowD.getHours(), autoM = nowD.getMinutes();
@@ -14380,6 +14624,8 @@ window.hrpFilter        = _hrpApplyFilter;
             repeat:    calRepeatMode,
             repeatEvery: calRepeatEveryVal || 1,
             repeatEnd: window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null,
+            priority:  window.calPriorityVal || 'normal',
+            taskType:  window.calTypeVal || '',
             reminders,
             subtasks,
             labels,
@@ -15411,6 +15657,37 @@ function renderCalTimePicker() {
                     <div class="cal-form-row-value" id="calRepeatDisplay">No repetir</div>
                 </div>
                 <span style="color:#475569;font-size:0.8rem;">›</span>
+            </div>
+
+            <!-- Prioridad -->
+            <div class="cal-form-row" style="flex-direction:column;align-items:flex-start;gap:8px;cursor:default;">
+                <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;">🚩 Prioridad</div>
+                <div class="custom-select-wrapper" id="calPriorityDropdown" style="width:100%;">
+                    <div class="custom-select" onclick="toggleDropdown('calPriorityDropdown')">
+                        <span id="calPrioritySelectedText">🔵 Normal</span><span>▼</span>
+                    </div>
+                    <div class="custom-options" id="calPriorityOptions">
+                        <div class="custom-option" data-val="urgente" onclick="selectTaskPriority('cal','urgente')"><span>🔴 Urgente</span></div>
+                        <div class="custom-option" data-val="alta" onclick="selectTaskPriority('cal','alta')"><span>🟠 Alta</span></div>
+                        <div class="custom-option selected" data-val="normal" onclick="selectTaskPriority('cal','normal')"><span>🔵 Normal</span></div>
+                        <div class="custom-option" data-val="baja" onclick="selectTaskPriority('cal','baja')"><span>⚪ Baja</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tipo -->
+            <div class="cal-form-row" style="flex-direction:column;align-items:flex-start;gap:8px;cursor:default;">
+                <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;">🏷️ Tipo</div>
+                <div class="custom-select-wrapper" id="calTypeDropdown" style="width:100%;">
+                    <div class="custom-select" onclick="toggleDropdown('calTypeDropdown'); document.getElementById('calTypeSearchInput').focus();">
+                        <input type="text" id="calTypeSearchInput" class="search-select-input" placeholder="Escribe o elige un tipo..." autocomplete="off"
+                            oninput="filterTaskType('cal', this.value)"
+                            onkeydown="handleTypeInputKeydown('cal', event)"
+                            onclick="if(!document.getElementById('calTypeDropdown').classList.contains('open')) toggleDropdown('calTypeDropdown'); event.stopPropagation();">
+                        <span>▼</span>
+                    </div>
+                    <div class="custom-options" id="calTypeOptions"></div>
+                </div>
             </div>
 
             <!-- Color -->
