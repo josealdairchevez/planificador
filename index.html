@@ -303,6 +303,81 @@
         /* ESTILOS DE LISTAS DESPLEGABLES PREMIUM / OVALADAS */
         .custom-select-wrapper { position: relative; user-select: none; min-width: 160px; }
         .custom-option-group-label { padding: 10px 20px 4px; font-size: 0.65rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--accent-cyan); opacity: 0.75; }
+        /* ═══════════════════════════════════════════════════════════
+           GESTIÓN DE TAREAS Y PROYECTOS — Tablero Kanban premium
+           ═══════════════════════════════════════════════════════════ */
+        #gestionCard {
+            background: linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
+            border: 1px solid rgba(0,210,255,0.18);
+            box-shadow: 0 0 0 1px rgba(177,0,255,0.08), 0 0 50px rgba(0,210,255,0.10);
+        }
+        .gestion-header-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom: 1rem; }
+        .gestion-tabs { display:flex; gap:8px; background:rgba(0,0,0,0.3); border-radius:14px; padding:4px; }
+        .gestion-tab-btn {
+            border:none; background:transparent; color:#94a3b8; font-weight:800; font-size:0.78rem;
+            padding:8px 18px; border-radius:10px; cursor:pointer; letter-spacing:0.3px;
+            transition: all 0.25s ease; font-family:'Nunito',sans-serif;
+        }
+        .gestion-tab-btn.active {
+            background: linear-gradient(120deg,#00d2ff,#7c3aed); color:#031018;
+            box-shadow: 0 4px 16px -4px rgba(0,210,255,0.6);
+        }
+        .gestion-tab-panel { display:none; }
+        .gestion-tab-panel.active { display:block; }
+
+        .kanban-board { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; -webkit-overflow-scrolling:touch; }
+        .kanban-col {
+            flex:0 0 270px; min-width:270px; border-radius:18px; padding:12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            display:flex; flex-direction:column; min-height:120px;
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .kanban-col.dragover {
+            background: rgba(0,210,255,0.06);
+            border-color: rgba(0,210,255,0.4);
+            box-shadow: 0 0 24px rgba(0,210,255,0.15) inset;
+        }
+        .kanban-col-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:0 4px; }
+        .kanban-col-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+        .kanban-col-title { font-family:'Nunito',sans-serif; font-weight:900; font-size:0.78rem; letter-spacing:0.6px; text-transform:uppercase; color:#e2e8f0; }
+        .kanban-col-count {
+            margin-left:auto; background:rgba(255,255,255,0.08); color:#94a3b8; font-size:0.68rem; font-weight:800;
+            border-radius:20px; padding:1px 9px;
+        }
+        .kanban-col-body { display:flex; flex-direction:column; gap:9px; min-height:60px; flex:1; }
+        .kanban-col-empty { text-align:center; color:#475569; font-size:0.72rem; font-style:italic; padding:18px 6px; }
+
+        .kanban-card {
+            border-radius:14px; padding:11px 12px 10px; cursor:grab; position:relative;
+            background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+            border-left: 4px solid var(--kc-color, #10b981);
+            border-top: 1px solid rgba(255,255,255,0.07);
+            border-right: 1px solid rgba(255,255,255,0.07);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            box-shadow: 0 4px 14px -6px rgba(0,0,0,0.5);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            touch-action: none;
+        }
+        .kanban-card:active { cursor:grabbing; }
+        .kanban-card.dragging {
+            opacity:0.92; transform: scale(1.04) rotate(-1deg);
+            box-shadow: 0 16px 34px -10px rgba(0,0,0,0.7), 0 0 0 1px var(--kc-color, #10b981), 0 0 22px -4px var(--kc-color, #10b981);
+            z-index: 500; position:fixed; pointer-events:none;
+        }
+        .kanban-card-type { font-size:0.6rem; font-weight:900; letter-spacing:0.5px; text-transform:uppercase; color:var(--kc-color,#10b981); opacity:0.9; margin-bottom:3px; }
+        .kanban-card-title { font-family:'Nunito',sans-serif; font-weight:800; font-size:0.85rem; color:#fff; line-height:1.25; margin-bottom:7px; word-break:break-word; }
+        .kanban-card-badges { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
+        .kanban-card-badge { font-size:0.6rem; font-weight:900; border-radius:20px; padding:1.5px 7px; white-space:nowrap; }
+        .kanban-card-footer { display:flex; align-items:center; justify-content:space-between; font-size:0.66rem; color:#94a3b8; font-weight:700; }
+        .kanban-card-date { display:flex; align-items:center; gap:3px; }
+        .kanban-card-date.overdue { color:#f87171; }
+
+        .kanban-empty-state {
+            text-align:center; padding: 2.4rem 1rem; color:#64748b;
+        }
+        .kanban-empty-state-icon { font-size:2.2rem; margin-bottom:8px; opacity:0.6; }
+
         .custom-option-add { color: #10b981 !important; font-weight: 800; }
         .custom-option-add:hover { background: linear-gradient(90deg, rgba(16,185,129,0.25) 0%, transparent 100%) !important; color: #10b981 !important; }
         .custom-select { position: relative; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 30px; padding: 0.6rem 1.5rem; font-weight: 800; color: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
@@ -8663,6 +8738,27 @@ window.hrpFilter        = _hrpApplyFilter;
                 </div>
             </div>
 
+            <div class="card" id="gestionCard">
+                <div class="gestion-header-row">
+                    <h2 style="margin:0;">📊 Gestión de Tareas y Proyectos</h2>
+                    <div class="gestion-tabs">
+                        <button class="gestion-tab-btn active" id="gestionTabBtnKanban" onclick="switchGestionTab('kanban')">📌 Kanban</button>
+                        <button class="gestion-tab-btn" id="gestionTabBtnLista" onclick="switchGestionTab('lista')">📋 Lista</button>
+                    </div>
+                </div>
+
+                <div class="gestion-tab-panel active" id="gestionPanelKanban">
+                    <div class="kanban-board" id="kanbanBoard"></div>
+                </div>
+
+                <div class="gestion-tab-panel" id="gestionPanelLista">
+                    <div class="kanban-empty-state">
+                        <div class="kanban-empty-state-icon">🚧</div>
+                        <div>La vista de Lista llega en la próxima fase.</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card table-section">
                 <h2>🧠 Matriz Analítica de Repasos</h2>
                 <!-- SELECTORES PREMIUM PARA MATRIZ -->
@@ -13521,6 +13617,211 @@ window.hrpFilter        = _hrpApplyFilter;
         }
     };
 
+        // ═══════════════════════════════════════════════════════════
+    // GESTIÓN DE TAREAS Y PROYECTOS — Tablero Kanban
+    // Lee de calEvents (proyectos y tareas), no crea almacenamiento
+    // nuevo. El estado de columna vive en ev.kanbanStatus, derivado
+    // de ev.completed si todavía no existe (compatibilidad con
+    // proyectos/tareas creados antes de esta función).
+    // ═══════════════════════════════════════════════════════════
+    const KANBAN_COLUMNS = [
+        { key: 'pendiente', label: 'Pendiente', dot: '#94a3b8' },
+        { key: 'en_curso',  label: 'En Curso',  dot: '#00d2ff' },
+        { key: 'completado',label: 'Completado',dot: '#10b981' }
+    ];
+
+    function kanbanGetStatus(ev) {
+        if (ev.kanbanStatus) return ev.kanbanStatus;
+        return ev.completed ? 'completado' : 'pendiente';
+    }
+
+    function kanbanGetItems() {
+        return (window.calEvents || calEvents || [])
+            .filter(ev => ev && (ev.type === 'proyecto' || ev.type === 'tarea'))
+            .filter(ev => !ev.archived);
+    }
+
+    function kanbanFmtDate(dateStr) {
+        if (!dateStr) return '';
+        const d = parseLocal ? parseLocal(dateStr) : new Date(dateStr);
+        if (!d || isNaN(d)) return '';
+        const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        return d.getDate() + ' ' + meses[d.getMonth()];
+    }
+
+    window.renderKanbanBoard = function() {
+        const board = document.getElementById('kanbanBoard');
+        if (!board) return;
+        try {
+            const items = kanbanGetItems();
+            const now = new Date();
+
+            board.innerHTML = KANBAN_COLUMNS.map(col => {
+                const colItems = items.filter(ev => kanbanGetStatus(ev) === col.key);
+                const cardsHtml = colItems.length
+                    ? colItems.map(ev => kanbanCardHtml(ev, now)).join('')
+                    : `<div class="kanban-col-empty">Sin ${col.label.toLowerCase()}</div>`;
+                return `
+                <div class="kanban-col" data-col="${col.key}">
+                    <div class="kanban-col-header">
+                        <span class="kanban-col-dot" style="background:${col.dot};box-shadow:0 0 6px ${col.dot};"></span>
+                        <span class="kanban-col-title">${col.label}</span>
+                        <span class="kanban-col-count">${colItems.length}</span>
+                    </div>
+                    <div class="kanban-col-body" id="kanbanBody_${col.key}">${cardsHtml}</div>
+                </div>`;
+            }).join('');
+
+            _kanbanBindDrag();
+        } catch (kanbanErr) {
+            console.error('[Kanban] Error al renderizar:', kanbanErr);
+            board.innerHTML = '<div class="kanban-col-empty" style="width:100%;padding:2rem;">⚠️ No se pudo cargar el tablero. Revisa la consola.</div>';
+        }
+    };
+
+    function kanbanCardHtml(ev, now) {
+        const color = ev.color || '#10b981';
+        const title = ev.title || ev.name || 'Sin nombre';
+        const typeLabel = ev.type === 'proyecto' ? 'Proyecto' : 'Tarea';
+
+        const prioMap = { urgente:{e:'🔴',l:'Urgente',c:'#ef4444'}, alta:{e:'🟠',l:'Alta',c:'#f97316'}, baja:{e:'⚪',l:'Baja',c:'#64748b'} };
+        const prio = prioMap[ev.priority];
+        const prioBadge = prio ? `<span class="kanban-card-badge" style="background:${prio.c}20;border:1px solid ${prio.c}80;color:${prio.c};">${prio.e} ${prio.l}</span>` : '';
+        const typeBadge = ev.taskType ? `<span class="kanban-card-badge" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;">${ev.taskType}</span>` : '';
+        const labelBadges = (ev.labels || []).map(l => {
+            const lc = (ev.labelColors && ev.labelColors[l]) || (typeof getLabelColor === 'function' ? getLabelColor(l) : null) || color;
+            return `<span class="kanban-card-badge" style="background:${lc}20;border:1px solid ${lc}80;color:${lc};">#${l}</span>`;
+        }).join('');
+
+        let dateHtml = '';
+        if (ev.endDate) {
+            const d = parseLocal ? parseLocal(ev.endDate) : new Date(ev.endDate);
+            const overdue = d && !isNaN(d) && d < now && kanbanGetStatus(ev) !== 'completado';
+            dateHtml = `<span class="kanban-card-date${overdue ? ' overdue' : ''}">📅 ${kanbanFmtDate(ev.endDate)}</span>`;
+        }
+
+        return `
+            <div class="kanban-card" style="--kc-color:${color};" data-id="${ev.id}" data-status="${kanbanGetStatus(ev)}">
+                <div class="kanban-card-type">${typeLabel}</div>
+                <div class="kanban-card-title">${title}</div>
+                <div class="kanban-card-badges">${prioBadge}${typeBadge}${labelBadges}</div>
+                <div class="kanban-card-footer">${dateHtml}<span></span></div>
+            </div>`;
+    }
+
+    window.switchGestionTab = function(tab) {
+        document.getElementById('gestionTabBtnKanban').classList.toggle('active', tab === 'kanban');
+        document.getElementById('gestionTabBtnLista').classList.toggle('active', tab === 'lista');
+        document.getElementById('gestionPanelKanban').classList.toggle('active', tab === 'kanban');
+        document.getElementById('gestionPanelLista').classList.toggle('active', tab === 'lista');
+        if (tab === 'kanban' && typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+        if (typeof playMenuSound === 'function') playMenuSound();nd();
+    };
+
+    // ── Arrastrar y soltar por eventos de puntero (funciona en táctil) ──
+    let _kanbanDrag = null;
+
+    function _kanbanBindDrag() {
+        document.querySelectorAll('.kanban-card').forEach(card => {
+            card.onpointerdown = (e) => _kanbanDragStart(e, card);
+        });
+    }
+
+    function _kanbanDragStart(e, card) {
+        const rect = card.getBoundingClientRect();
+        _kanbanDrag = {
+            card, id: card.dataset.id, startStatus: card.dataset.status,
+            offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+            width: rect.width, placeholder: null
+        };
+        const placeholder = document.createElement('div');
+        placeholder.className = 'kanban-card';
+        placeholder.style.opacity = '0.25';
+        placeholder.style.border = '2px dashed rgba(255,255,255,0.25)';
+        placeholder.style.background = 'transparent';
+        placeholder.style.height = rect.height + 'px';
+        card.parentNode.insertBefore(placeholder, card);
+        _kanbanDrag.placeholder = placeholder;
+
+        card.classList.add('dragging');
+        card.style.width = rect.width + 'px';
+        card.style.left = rect.left + 'px';
+        card.style.top = rect.top + 'px';
+        document.body.appendChild(card);
+
+        document.onpointermove = _kanbanDragMove;
+        document.onpointerup = _kanbanDragEnd;
+        card.setPointerCapture && card.setPointerCapture(e.pointerId);
+    }
+
+    function _kanbanDragMove(e) {
+        if (!_kanbanDrag) return;
+        const { card, offsetX, offsetY } = _kanbanDrag;
+        card.style.left = (e.clientX - offsetX) + 'px';
+        card.style.top = (e.clientY - offsetY) + 'px';
+
+        document.querySelectorAll('.kanban-col').forEach(col => col.classList.remove('dragover'));
+        card.style.pointerEvents = 'none';
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        card.style.pointerEvents = '';
+        const col = under && under.closest ? under.closest('.kanban-col') : null;
+        if (col) {
+            col.classList.add('dragover');
+            const body = col.querySelector('.kanban-col-body');
+            const afterEl = _kanbanCardAfterPoint(body, e.clientY);
+            if (afterEl) body.insertBefore(_kanbanDrag.placeholder, afterEl);
+            else body.appendChild(_kanbanDrag.placeholder);
+        }
+    }
+
+    function _kanbanCardAfterPoint(container, y) {
+        const cards = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
+        return cards.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) return { offset, element: child };
+            return closest;
+        }, { offset: -Infinity, element: null }).element;
+    }
+
+    function _kanbanDragEnd(e) {
+        if (!_kanbanDrag) return;
+        const { card, id, startStatus, placeholder } = _kanbanDrag;
+        document.onpointermove = null;
+        document.onpointerup = null;
+
+        const targetCol = placeholder.closest ? placeholder.closest('.kanban-col') : null;
+        const newStatus = targetCol ? targetCol.dataset.col : startStatus;
+
+        card.classList.remove('dragging');
+        card.style.position = ''; card.style.left = ''; card.style.top = ''; card.style.width = '';
+        placeholder.replaceWith(card);
+
+        if (newStatus !== startStatus) {
+            const list = kanbanGetItems();
+            const ev = list.find(x => String(x.id) === String(id));
+            if (ev) {
+                ev.kanbanStatus = newStatus;
+                ev.completed = (newStatus === 'completado');
+                if (typeof saveCalEvents === 'function') saveCalEvents();
+                if (typeof playSparkleSound === 'function') playSparkleSound();
+            }
+        }
+        _kanbanDrag = null;
+        window.renderKanbanBoard();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+    });
+    if (document.readyState !== 'loading') {
+        // El DOM ya estaba listo cuando este bloque de script se ejecutó
+        // (puede pasar según en qué punto del documento cae este script) —
+        // en ese caso el evento DOMContentLoaded ya ocurrió y nunca
+        // dispararía el listener de arriba, así que renderizamos ya mismo.
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+    }
+
     function calGetAllKnownLabelsWithColors() {
         const db = getLabelColorDB ? getLabelColorDB() : {};
         // Índice del DB de colores insensible a mayúsculas/minúsculas — así
@@ -13811,6 +14112,7 @@ window.hrpFilter        = _hrpApplyFilter;
     function saveCalEvents() {
         const data = JSON.stringify(calEvents);
         localStorage.setItem('jch_calendar_v1', data);
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
         try { sessionStorage.setItem('jch_calendar_backup', data); } catch(e) {}
         try {
             var req = indexedDB.open('jch_db', 1);
