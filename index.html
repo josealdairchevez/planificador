@@ -13636,14 +13636,29 @@ window.hrpFilter        = _hrpApplyFilter;
     }
 
     function kanbanGetItems() {
-        return (window.calEvents || calEvents || [])
+        const evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
+        return (evs || [])
             .filter(ev => ev && (ev.type === 'proyecto' || ev.type === 'tarea'))
             .filter(ev => !ev.archived);
     }
 
+    // Parser de fecha propio y defensivo — evita depender de parseLocal(),
+    // que vive en otro bloque <script> y no es alcanzable desde aquí.
+    function kanbanParseDate(s) {
+        if (!s) return null;
+        try {
+            if (s.endsWith('Z') || /[+-]\d\d:\d\d$/.test(s)) return new Date(s);
+            const p = s.split('T');
+            const d = p[0].split('-').map(Number);
+            const t = p[1] ? p[1].split(':').map(Number) : [0, 0];
+            if (isNaN(d[0])) return null;
+            return new Date(d[0], d[1] - 1, d[2], t[0] || 0, t[1] || 0, 0);
+        } catch (e) { return null; }
+    }
+
     function kanbanFmtDate(dateStr) {
         if (!dateStr) return '';
-        const d = parseLocal ? parseLocal(dateStr) : new Date(dateStr);
+        const d = kanbanParseDate(dateStr);
         if (!d || isNaN(d)) return '';
         const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
         return d.getDate() + ' ' + meses[d.getMonth()];
@@ -13695,7 +13710,7 @@ window.hrpFilter        = _hrpApplyFilter;
 
         let dateHtml = '';
         if (ev.endDate) {
-            const d = parseLocal ? parseLocal(ev.endDate) : new Date(ev.endDate);
+            const d = kanbanParseDate(ev.endDate);
             const overdue = d && !isNaN(d) && d < now && kanbanGetStatus(ev) !== 'completado';
             dateHtml = `<span class="kanban-card-date${overdue ? ' overdue' : ''}">📅 ${kanbanFmtDate(ev.endDate)}</span>`;
         }
@@ -14066,6 +14081,10 @@ window.hrpFilter        = _hrpApplyFilter;
     let calMonthViewDate = new Date();       // mes en vista mensual
     let calDayViewDate   = new Date();
     let calEvents        = [];               // todos los eventos
+    // Getter seguro para exponer calEvents a otros bloques <script> — 'let'
+    // no cruza bloques, así que esta función (sí cruza) siempre devuelve el
+    // valor ACTUAL del closure, sin quedar desactualizada si calEvents se reasigna.
+    window.calGetEventsArray = function() { return calEvents; };
     let calSelectedColor = '#10b981';
     let calCurrentType   = 'evento';         // evento | proyecto | tarea
     let calRepeatMode    = 'none';
