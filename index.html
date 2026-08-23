@@ -351,11 +351,11 @@
         .kanban-card {
             border-radius:14px; padding:11px 12px 10px; cursor:grab; position:relative;
             background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
-            border-left: 4px solid var(--kc-color, #10b981);
+            border-left: 6px solid var(--kc-color, #10b981) !important;
             border-top: 1px solid rgba(255,255,255,0.07);
             border-right: 1px solid rgba(255,255,255,0.07);
             border-bottom: 1px solid rgba(255,255,255,0.07);
-            box-shadow: 0 4px 14px -6px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 14px -6px rgba(0,0,0,0.5), -2px 0 10px -4px var(--kc-color, #10b981);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
             touch-action: none;
         }
@@ -377,6 +377,149 @@
             text-align:center; padding: 2.4rem 1rem; color:#64748b;
         }
         .kanban-empty-state-icon { font-size:2.2rem; margin-bottom:8px; opacity:0.6; }
+
+        /* Móvil: las 3 columnas caben lado a lado, a la misma altura,
+           en vez de una sola columna ancha que obliga a desplazar */
+        @media (max-width: 768px) {
+            .kanban-board {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                overflow-x: visible !important;
+                align-items: stretch !important;
+                gap: 6px !important;
+            }
+            .kanban-col {
+                flex: 1 1 0 !important;
+                min-width: 0 !important;
+                width: auto !important;
+                padding: 8px 5px !important;
+            }
+            .kanban-col-header { gap: 4px; margin-bottom: 8px; padding: 0 2px; flex-wrap: wrap; }
+            .kanban-col-title { font-size: 0.6rem; letter-spacing: 0.2px; }
+            .kanban-col-count { font-size: 0.56rem; padding: 1px 6px; margin-left: 4px; }
+            .kanban-col-dot { width: 7px; height: 7px; }
+            .kanban-card { padding: 8px 7px 7px; border-left-width: 4px !important; }
+            .kanban-card-type { font-size: 0.55rem; }
+            .kanban-card-title { font-size: 0.72rem; margin-bottom: 5px; }
+            .kanban-card-badges { gap: 3px; margin-bottom: 5px; }
+            .kanban-card-badge { font-size: 0.5rem; padding: 1px 5px; }
+            .kanban-card-footer { font-size: 0.55rem; }
+            .kanban-col-empty { font-size: 0.6rem; padding: 10px 3px; }
+        }
+        /* ═══ Vista Lista (Fase 3) ═══ */
+        .list-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+        .list-toolbar .custom-select-wrapper { min-width:190px; }
+        .list-sort-btn {
+            background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.25); color:#7ee8ff;
+            border-radius:12px; padding:8px 14px; font-size:0.75rem; font-weight:800; cursor:pointer;
+            transition:background 0.2s;
+        }
+        .list-sort-btn:hover { background:rgba(0,210,255,0.16); }
+
+        .list-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:14px; border:1px solid rgba(255,255,255,0.06); }
+        .list-header-row, .list-row {
+            display:grid;
+            grid-template-columns: 190px repeat(8, minmax(60px, 1fr));
+            gap:0; align-items:center; min-width:940px;
+        }
+        .list-header-row {
+            background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.08);
+            font-size:0.62rem; font-weight:900; letter-spacing:0.5px; text-transform:uppercase; color:#8fb8ff;
+        }
+        .list-row { border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s; border-left:3px solid var(--kc-color, transparent); }
+        .list-row:hover { background:rgba(0,210,255,0.04); }
+        .list-cell { padding:10px 8px; font-size:0.74rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .list-cell-name { display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:800; color:#fff; white-space:normal; }
+        .list-cell-name:hover { color:#7ee8ff; }
+        .list-name-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .list-cell-icon { text-align:center; opacity:0.55; cursor:pointer; }
+        .list-cell-icon:hover { opacity:1; }
+
+        .list-chip { font-size:0.62rem; font-weight:900; border-radius:20px; padding:2px 8px; white-space:nowrap; }
+        .list-chip-more { font-size:0.6rem; font-weight:800; color:#94a3b8; margin-left:2px; }
+
+        .list-group-header {
+            display:flex; align-items:center; gap:8px; padding:9px 10px; cursor:pointer;
+            background:rgba(0,210,255,0.04); border-bottom:1px solid rgba(255,255,255,0.06);
+            min-width:940px;
+        }
+        .list-group-arrow { display:inline-block; transition:transform 0.2s ease; color:#7ee8ff; font-size:0.7rem; transform:rotate(90deg); }
+        .list-group-arrow.collapsed { transform:rotate(0deg); }
+        .list-group-label { font-weight:900; font-size:0.78rem; color:#fff; }
+        .list-group-count { background:rgba(255,255,255,0.08); color:#94a3b8; font-size:0.64rem; font-weight:800; border-radius:20px; padding:1px 9px; }
+
+        /* Fase 4: expandir subtareas */
+        .list-expand-arrow {
+            display:inline-block; width:16px; text-align:center; cursor:pointer; color:#7ee8ff;
+            font-size:0.6rem; transition:transform 0.2s ease; flex-shrink:0;
+        }
+        .list-expand-arrow.expanded { transform:rotate(90deg); }
+        .list-subtask-row { background:rgba(0,0,0,0.15); }
+        .list-subtask-row .list-cell-name { padding-left:34px; gap:8px; }
+        .list-subtask-row input[type="checkbox"] { width:14px; height:14px; accent-color:#10b981; cursor:pointer; }
+        .list-add-subtask-row { cursor:pointer; }
+        .list-add-subtask-placeholder { color:#475569; font-style:italic; font-weight:600; font-size:0.72rem; transition:color 0.15s; }
+        .list-add-subtask-placeholder:hover { color:#7ee8ff; }
+        .list-subtask-input {
+            background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.35); border-radius:8px;
+            color:#fff; font-size:0.72rem; font-weight:700; padding:5px 9px; outline:none; width:90%;
+        }
+
+        /* Fase 4: columnas reordenables por arrastre */
+        .list-th-drag { cursor:grab; user-select:none; touch-action:none; transition:background 0.15s; position:relative; }
+        .list-th-drag:active { cursor:grabbing; }
+        .list-th-drag.th-dragover { background:rgba(0,210,255,0.15) !important; box-shadow:inset 0 0 0 1px rgba(0,210,255,0.5); }
+        .list-th-drag.th-dragging { opacity:0.4; }
+
+        @media (max-width: 768px) {
+            .list-toolbar { gap:6px; }
+            .list-toolbar .custom-select-wrapper { min-width:150px; }
+        }
+        /* ═══ Fase 5: Filtros anidados Y/O + Ordenar ═══ */
+        .list-filter-btn {
+            background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.25); color:#7ee8ff;
+            border-radius:12px; padding:8px 14px; font-size:0.75rem; font-weight:800; cursor:pointer;
+            position:relative;
+        }
+        .list-filter-btn.has-filters { background:linear-gradient(120deg,#00d2ff,#7c3aed); color:#031018; border-color:transparent; }
+        .list-filter-badge {
+            position:absolute; top:-6px; right:-6px; background:#ef4444; color:#fff; font-size:0.6rem;
+            font-weight:900; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center;
+        }
+        #listFilterPanel {
+            display:none; background:rgba(0,0,0,0.25); border:1px solid rgba(0,210,255,0.15); border-radius:16px;
+            padding:14px; margin-bottom:12px;
+        }
+        #listFilterPanel.open { display:block; }
+        .filter-where-label { font-size:0.65rem; font-weight:900; color:#7ee8ff; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+        .filter-group-box {
+            border:1px solid rgba(0,210,255,0.18); border-radius:12px; padding:10px; margin-bottom:8px;
+            background:rgba(0,210,255,0.02);
+        }
+        .filter-between-select { margin-bottom:8px; }
+        .filter-cond-row { display:flex; align-items:center; gap:6px; margin-bottom:7px; flex-wrap:wrap; }
+        .filter-cond-row:last-child { margin-bottom:0; }
+        .filter-input, .filter-logic-select, .filter-between-select select {
+            background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); color:#fff;
+            border-radius:8px; padding:6px 8px; font-size:0.72rem; font-weight:700; outline:none;
+        }
+        .filter-input:focus, .filter-logic-select:focus { border-color:#00d2ff; }
+        .filter-logic-select { color:#7ee8ff; font-weight:900; min-width:50px; }
+        .filter-del-btn {
+            background:none; border:none; color:#f87171; cursor:pointer; font-size:0.85rem; padding:4px 6px;
+        }
+        .filter-add-nested-btn, .filter-add-group-btn {
+            background:none; border:1px dashed rgba(0,210,255,0.35); color:#7ee8ff; cursor:pointer;
+            border-radius:8px; padding:5px 10px; font-size:0.68rem; font-weight:800; margin-top:2px;
+        }
+        .filter-toolbar-bottom { display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+        .filter-clear-btn { background:none; border:none; color:#f87171; font-size:0.72rem; font-weight:800; cursor:pointer; }
+        .filter-empty-hint { color:#64748b; font-size:0.72rem; font-style:italic; }
+
+        .list-sort-wrapper { min-width:170px; }
+
+
 
         .custom-option-add { color: #10b981 !important; font-weight: 800; }
         .custom-option-add:hover { background: linear-gradient(90deg, rgba(16,185,129,0.25) 0%, transparent 100%) !important; color: #10b981 !important; }
@@ -8751,10 +8894,44 @@ window.hrpFilter        = _hrpApplyFilter;
                     <div class="kanban-board" id="kanbanBoard"></div>
                 </div>
 
-                <div class="gestion-tab-panel" id="gestionPanelLista">
-                    <div class="kanban-empty-state">
-                        <div class="kanban-empty-state-icon">🚧</div>
-                        <div>La vista de Lista llega en la próxima fase.</div>
+                                <div class="gestion-tab-panel" id="gestionPanelLista">
+                    <div class="list-toolbar">
+                        <div class="custom-select-wrapper" id="listGroupByDropdown">
+                            <div class="custom-select" onclick="toggleDropdown('listGroupByDropdown')">
+                                <span id="listGroupBySelectedText">Agrupar por: Estado</span><span>▼</span>
+                            </div>
+                            <div class="custom-options">
+                                <div class="custom-option selected" data-val="estado" onclick="setListGroupBy('estado')"><span>Estado</span></div>
+                                <div class="custom-option" data-val="startDate" onclick="setListGroupBy('startDate')"><span>Fecha inicio</span></div>
+                                <div class="custom-option" data-val="endDate" onclick="setListGroupBy('endDate')"><span>Fecha límite</span></div>
+                                <div class="custom-option" data-val="priority" onclick="setListGroupBy('priority')"><span>Prioridad</span></div>
+                                <div class="custom-option" data-val="taskType" onclick="setListGroupBy('taskType')"><span>Tipo</span></div>
+                                <div class="custom-option" data-val="labels" onclick="setListGroupBy('labels')"><span>Etiqueta</span></div>
+                            </div>
+                        </div>
+                        <button class="list-sort-btn" onclick="toggleListSortDir()" id="listSortBtn">↑ Ascendente</button>
+                        <div class="custom-select-wrapper list-sort-wrapper" id="listSortByDropdown">
+                            <div class="custom-select" onclick="toggleDropdown('listSortByDropdown')">
+                                <span id="listSortBySelectedText">Ordenar: Ninguno</span><span>▼</span>
+                            </div>
+                            <div class="custom-options" id="listSortByOptions"></div>
+                        </div>
+                        <button class="list-filter-btn" id="listFilterBtn" onclick="toggleListFilterPanel()">🔍 Filtros</button>
+                    </div>
+                    <div id="listFilterPanel"></div>
+                    <div class="list-scroll">
+                        <div class="list-header-row" id="listHeaderRow">
+                            <div class="list-cell list-cell-name">Nombre</div>
+                            <div class="list-cell">Inicio</div>
+                            <div class="list-cell">Fin</div>
+                            <div class="list-cell">Prioridad</div>
+                            <div class="list-cell">Tipo</div>
+                            <div class="list-cell">Etiqueta</div>
+                            <div class="list-cell">Estado</div>
+                            <div class="list-cell list-cell-icon">💬</div>
+                            <div class="list-cell list-cell-icon">📎</div>
+                        </div>
+                        <div id="listViewBody"></div>
                     </div>
                 </div>
             </div>
@@ -13724,12 +13901,596 @@ window.hrpFilter        = _hrpApplyFilter;
             </div>`;
     }
 
+        // ═══ Vista Lista (Fase 3) — agrupar, ordenar, filas de solo lectura ═══
+    // La reordenación de columnas y la edición en línea llegan en la Fase 4.
+    const GROUP_FIELD_LABELS = {
+        estado: 'Estado', startDate: 'Fecha inicio', endDate: 'Fecha límite',
+        priority: 'Prioridad', taskType: 'Tipo', labels: 'Etiqueta'
+    };
+    const PRIORITY_RANK = { urgente:0, alta:1, normal:2, baja:3 };
+    const STATUS_RANK = { pendiente:0, en_curso:1, completado:2 };
+    const STATUS_INFO = { pendiente:{l:'Pendiente',c:'#94a3b8'}, en_curso:{l:'En Curso',c:'#00d2ff'}, completado:{l:'Completado',c:'#10b981'} };
+
+    let listGroupBy = 'estado';
+    let listSortDir = 'asc';
+    let listCollapsedGroups = new Set();
+
+    function listGetGroupsForItem(ev) {
+        if (listGroupBy === 'estado') {
+            const st = kanbanGetStatus(ev);
+            return [{ key: st, label: STATUS_INFO[st].l }];
+        }
+        if (listGroupBy === 'startDate' || listGroupBy === 'endDate') {
+            const raw = ev[listGroupBy];
+            if (!raw) return [{ key: '__none__', label: 'Sin fecha' }];
+            return [{ key: raw.slice(0, 10), label: kanbanFmtDate(raw) || raw.slice(0, 10) }];
+        }
+        if (listGroupBy === 'priority') {
+            const p = ev.priority || 'normal';
+            const info = PRIORITY_INFO[p] || PRIORITY_INFO.normal;
+            return [{ key: p, label: info.label }];
+        }
+        if (listGroupBy === 'taskType') {
+            return [{ key: ev.taskType || '__none__', label: ev.taskType || 'Sin tipo' }];
+        }
+        if (listGroupBy === 'labels') {
+            if (!ev.labels || !ev.labels.length) return [{ key: '__none__', label: 'Sin etiqueta' }];
+            return ev.labels.map(l => ({ key: l, label: '#' + l }));
+        }
+        return [{ key: '__all__', label: 'Todos' }];
+    }
+
+    function listSortGroupKeys(keys) {
+        let sorted = keys.slice();
+        if (listGroupBy === 'priority') {
+            sorted.sort((a, b) => (PRIORITY_RANK[a] ?? 9) - (PRIORITY_RANK[b] ?? 9));
+        } else if (listGroupBy === 'estado') {
+            sorted.sort((a, b) => (STATUS_RANK[a] ?? 9) - (STATUS_RANK[b] ?? 9));
+        } else {
+            sorted.sort((a, b) => a.localeCompare(b, 'es'));
+        }
+        sorted = sorted.filter(k => k !== '__none__').concat(sorted.filter(k => k === '__none__'));
+        if (listSortDir === 'desc') sorted.reverse();
+        return sorted;
+    }
+
+    window.setListGroupBy = function(field) {
+        listGroupBy = field;
+        listCollapsedGroups.clear();
+        const sel = document.getElementById('listGroupBySelectedText');
+        if (sel) sel.textContent = 'Agrupar por: ' + GROUP_FIELD_LABELS[field];
+        document.querySelectorAll('#listGroupByDropdown .custom-option').forEach(o => o.classList.toggle('selected', o.dataset.val === field));
+        const dd = document.getElementById('listGroupByDropdown');
+        if (dd) dd.classList.remove('open');
+        if (typeof playMenuSound === 'function') playMenuSound();
+        window.renderListView();
+    };
+
+    window.toggleListSortDir = function() {
+        listSortDir = listSortDir === 'asc' ? 'desc' : 'asc';
+        const btn = document.getElementById('listSortBtn');
+        if (btn) btn.textContent = (listSortDir === 'asc' ? '↑ Ascendente' : '↓ Descendente');
+        if (typeof playMenuSound === 'function') playMenuSound();
+        window.renderListView();
+    };
+
+    window.listToggleGroup = function(key) {
+        if (listCollapsedGroups.has(key)) listCollapsedGroups.delete(key);
+        else listCollapsedGroups.add(key);
+        window.renderListView();
+    };
+
+        // ═══ Fase 4: columnas reordenables + subtareas expandibles ═══
+    const LIST_COLUMNS = {
+        startDate:   { label: 'Inicio' },
+        endDate:     { label: 'Fin' },
+        priority:    { label: 'Prioridad' },
+        taskType:    { label: 'Tipo' },
+        labels:      { label: 'Etiqueta' },
+        estado:      { label: 'Estado' },
+        comentarios: { label: '💬' },
+        adjuntar:    { label: '📎' }
+    };
+    const LIST_COL_DEFAULT_ORDER = ['startDate','endDate','priority','taskType','labels','estado','comentarios','adjuntar'];
+
+    function listLoadColumnOrder() {
+        try {
+            const saved = JSON.parse(localStorage.getItem('jch_list_col_order_v1') || 'null');
+            if (Array.isArray(saved) && saved.length === LIST_COL_DEFAULT_ORDER.length &&
+                LIST_COL_DEFAULT_ORDER.every(k => saved.includes(k))) {
+                return saved;
+            }
+        } catch (e) {}
+        return LIST_COL_DEFAULT_ORDER.slice();
+    }
+    let listColumnOrder = listLoadColumnOrder();
+    let listExpandedItems = new Set();
+
+    function listSaveColumnOrder() {
+        localStorage.setItem('jch_list_col_order_v1', JSON.stringify(listColumnOrder));
+    }
+
+    function listCellContent(ev, key) {
+        if (key === 'startDate') return kanbanFmtDate(ev.startDate) || '—';
+        if (key === 'endDate') return kanbanFmtDate(ev.endDate) || '—';
+        if (key === 'priority') {
+            const p = PRIORITY_INFO[ev.priority] || PRIORITY_INFO.normal;
+            return `<span class="list-chip" style="background:${p.color}20;border:1px solid ${p.color}80;color:${p.color};">${p.label}</span>`;
+        }
+        if (key === 'taskType') {
+            return ev.taskType ? `<span class="list-chip" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;">${ev.taskType}</span>` : '—';
+        }
+        if (key === 'labels') {
+            const arr = ev.labels || [];
+            const color = ev.color || '#10b981';
+            let html = arr.slice(0, 2).map(l => {
+                const lc = (ev.labelColors && ev.labelColors[l]) || (typeof getLabelColor === 'function' ? getLabelColor(l) : null) || color;
+                return `<span class="list-chip" style="background:${lc}20;border:1px solid ${lc}80;color:${lc};">#${l}</span>`;
+            }).join(' ');
+            if (arr.length > 2) html += `<span class="list-chip-more">+${arr.length - 2}</span>`;
+            return html || '—';
+        }
+        if (key === 'estado') {
+            const st = kanbanGetStatus(ev); const info = STATUS_INFO[st];
+            return `<span class="list-chip" style="background:${info.c}20;border:1px solid ${info.c}80;color:${info.c};">${info.l}</span>`;
+        }
+        if (key === 'comentarios') return `<span class="list-cell-icon" title="Comentarios (próxima fase)">💬</span>`;
+        if (key === 'adjuntar') return `<span class="list-cell-icon" title="Adjuntar (próxima fase)">📎</span>`;
+        return '';
+    }
+
+    function listSubtaskRowHtml(ev, st, idx) {
+        const done = !!(st && st.done);
+        return `
+            <div class="list-row list-subtask-row">
+                <div class="list-cell list-cell-name list-subtask-name">
+                    <input type="checkbox" ${done ? 'checked' : ''} onclick="event.stopPropagation(); toggleCalSubtaskDone && toggleCalSubtaskDone('${ev.id}', ${idx}, this.checked)">
+                    <span style="${done ? 'text-decoration:line-through;opacity:0.5;' : ''}">${(st && (st.title || st.name)) || 'Subtarea'}</span>
+                </div>
+                <div class="list-cell" style="grid-column: span ${listColumnOrder.length};"></div>
+            </div>`;
+    }
+
+    function listAddSubtaskRowHtml(evId) {
+        return `
+            <div class="list-row list-subtask-row list-add-subtask-row" id="listAddSub_${evId}">
+                <div class="list-cell list-cell-name">
+                    <span class="list-add-subtask-placeholder" onclick="event.stopPropagation(); listStartAddSubtask('${evId}')">+ Añadir subtarea</span>
+                </div>
+                <div class="list-cell" style="grid-column: span ${listColumnOrder.length};"></div>
+            </div>`;
+    }
+
+    window.listToggleExpand = function(evId) {
+        if (listExpandedItems.has(evId)) listExpandedItems.delete(evId);
+        else listExpandedItems.add(evId);
+        window.renderListView();
+    };
+
+    window.listStartAddSubtask = function(evId) {
+        const row = document.getElementById('listAddSub_' + evId);
+        if (!row) return;
+        const cell = row.querySelector('.list-cell-name');
+        if (!cell) return;
+        cell.innerHTML = `<input type="text" class="list-subtask-input" id="listNewSubInput_${evId}" placeholder="Nombre de la subtarea" autocomplete="off"
+            onkeydown="if(event.key==='Enter'){listConfirmAddSubtask('${evId}');} if(event.key==='Escape'){window.renderListView();}"
+            onclick="event.stopPropagation();">`;
+        const inp = document.getElementById('listNewSubInput_' + evId);
+        if (inp) inp.focus();
+    };
+
+    window.listConfirmAddSubtask = function(evId) {
+        const inp = document.getElementById('listNewSubInput_' + evId);
+        const name = inp ? inp.value.trim() : '';
+        if (!name) { window.renderListView(); return; }
+        const evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
+        const ev = evs.find(e => String(e.id) === String(evId));
+        if (ev) {
+            if (!ev.subtasks) ev.subtasks = [];
+            ev.subtasks.push({ title: name, done: false });
+            if (typeof saveCalEvents === 'function') saveCalEvents();
+            if (typeof playSparkleSound === 'function') playSparkleSound();
+        } else {
+            window.renderListView();
+        }
+    };
+
+    function listRowHtml(ev) {
+        const color = ev.color || '#10b981';
+        const title = ev.title || ev.name || 'Sin nombre';
+        const expanded = listExpandedItems.has(ev.id);
+        const arrowHtml = `<span class="list-expand-arrow${expanded ? ' expanded' : ''}" onclick="event.stopPropagation(); listToggleExpand('${ev.id}')">▶</span>`;
+
+        const mainRow = `
+            <div class="list-row" style="--kc-color:${color};" data-id="${ev.id}">
+                <div class="list-cell list-cell-name">
+                    ${arrowHtml}
+                    <span class="list-name-dot" style="background:${color};"></span>
+                    <span onclick="calEventDetail('${ev.id}')" style="cursor:pointer;">${title}</span>
+                </div>
+                ${listColumnOrder.map(k => `<div class="list-cell">${listCellContent(ev, k)}</div>`).join('')}
+            </div>`;
+
+        let subRows = '';
+        if (expanded) {
+            subRows += (ev.subtasks || []).map((st, i) => listSubtaskRowHtml(ev, st, i)).join('');
+            subRows += listAddSubtaskRowHtml(ev.id);
+        }
+        return mainRow + subRows;
+    }
+
+    function listGroupHtml(key, group) {
+        const collapsed = listCollapsedGroups.has(key);
+        const rowsHtml = collapsed ? '' : group.items.map(ev => listRowHtml(ev)).join('');
+        return `
+            <div class="list-group-header" onclick="listToggleGroup('${key}')">
+                <span class="list-group-arrow${collapsed ? ' collapsed' : ''}">▶</span>
+                <span class="list-group-label">${group.label}</span>
+                <span class="list-group-count">${group.items.length}</span>
+            </div>
+            <div class="list-group-body">${rowsHtml}</div>`;
+    }
+
+    function listApplyGridTemplate() {
+        const template = '190px ' + listColumnOrder.map(() => 'minmax(60px, 1fr)').join(' ');
+        document.querySelectorAll('#gestionPanelLista .list-header-row, #gestionPanelLista .list-row').forEach(el => {
+            el.style.gridTemplateColumns = template;
+        });
+    }
+
+    function listRenderHeader() {
+        const header = document.getElementById('listHeaderRow');
+        if (!header) return;
+        header.innerHTML = '<div class="list-cell list-cell-name">Nombre</div>' +
+            listColumnOrder.map(key => `<div class="list-cell list-th-drag" data-colkey="${key}">${LIST_COLUMNS[key].label}</div>`).join('');
+        _listBindHeaderDrag();
+    }
+
+    // ── Reordenar columnas por arrastre (eventos de puntero, táctil) ──
+    let _listColDrag = null;
+
+    function _listBindHeaderDrag() {
+        document.querySelectorAll('#listHeaderRow .list-th-drag').forEach(th => {
+            th.onpointerdown = (e) => _listColDragStart(e, th);
+        });
+    }
+
+    function _listColDragStart(e, th) {
+        _listColDrag = { th, key: th.dataset.colkey };
+        th.classList.add('th-dragging');
+        document.onpointermove = _listColDragMove;
+        document.onpointerup = _listColDragEnd;
+        th.setPointerCapture && th.setPointerCapture(e.pointerId);
+    }
+
+    function _listColDragMove(e) {
+        if (!_listColDrag) return;
+        document.querySelectorAll('.list-th-drag').forEach(el => el.classList.remove('th-dragover'));
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const target = under && under.closest ? under.closest('.list-th-drag') : null;
+        if (target && target.dataset.colkey !== _listColDrag.key) target.classList.add('th-dragover');
+    }
+
+    function _listColDragEnd(e) {
+        if (!_listColDrag) return;
+        document.onpointermove = null;
+        document.onpointerup = null;
+        _listColDrag.th.classList.remove('th-dragging');
+
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const target = under && under.closest ? under.closest('.list-th-drag') : null;
+        document.querySelectorAll('.list-th-drag').forEach(el => el.classList.remove('th-dragover'));
+
+        if (target && target.dataset.colkey !== _listColDrag.key) {
+            const fromKey = _listColDrag.key, toKey = target.dataset.colkey;
+            const arr = listColumnOrder.slice();
+            const fromIdx = arr.indexOf(fromKey), toIdx = arr.indexOf(toKey);
+            if (fromIdx !== -1 && toIdx !== -1) {
+                arr.splice(fromIdx, 1);
+                arr.splice(toIdx, 0, fromKey);
+                listColumnOrder = arr;
+                listSaveColumnOrder();
+                if (typeof playMenuSound === 'function') playMenuSound();
+            }
+        }
+        _listColDrag = null;
+        window.renderListView();
+    }
+
+        // ═══ Fase 5: Filtros anidados Y/O + Ordenar ═══
+    // Motor de filtros verificado con 8 casos antes de integrarse (AND/OR
+    // dentro de un grupo, AND/OR entre grupos, "está establecido", vacío).
+    const FILTER_FIELDS = [
+        { key:'nombre', label:'Nombre' }, { key:'estado', label:'Estado' },
+        { key:'etiqueta', label:'Etiqueta' }, { key:'prioridad', label:'Prioridad' },
+        { key:'tipo', label:'Tipo' }, { key:'comentario', label:'Comentario' },
+        { key:'fechaInicio', label:'Fecha inicio' }, { key:'fechaFin', label:'Fecha fin' }
+    ];
+    const FILTER_OPS = [
+        { key:'es', label:'Es' }, { key:'no_es', label:'No es' },
+        { key:'esta_establecido', label:'Está establecido' }, { key:'no_establecido', label:'No está establecido' }
+    ];
+    const SORT_FIELDS = [
+        { key:'', label:'Ninguno' }, { key:'nombre', label:'Nombre' },
+        { key:'fechaInicio', label:'Fecha inicio' }, { key:'fechaFin', label:'Fecha fin' },
+        { key:'prioridad', label:'Prioridad' }, { key:'estado', label:'Estado' }
+    ];
+
+    function listNewCondition() { return { field:'estado', op:'es', value:'pendiente' }; }
+    function listNewGroup() { return { groupLogic:'AND', betweenLogic:'AND', conditions:[listNewCondition()] }; }
+
+    let listFilterGroups = [];
+    let listFilterPanelOpen = false;
+    let listSortBy = '';
+
+    function listGetValueOptionsForField(field) {
+        if (field === 'estado') return [{key:'pendiente',label:'Pendiente'},{key:'en_curso',label:'En Curso'},{key:'completado',label:'Completado'}];
+        if (field === 'prioridad') return [{key:'urgente',label:'Urgente'},{key:'alta',label:'Alta'},{key:'normal',label:'Normal'},{key:'baja',label:'Baja'}];
+        if (field === 'etiqueta') {
+            const set = new Set();
+            kanbanGetItems().forEach(ev => (ev.labels||[]).forEach(l => set.add(l)));
+            return Array.from(set).map(l => ({key:l, label:'#'+l}));
+        }
+        if (field === 'tipo') {
+            const set = new Set();
+            kanbanGetItems().forEach(ev => { if (ev.taskType) set.add(ev.taskType); });
+            return Array.from(set).map(t => ({key:t, label:t}));
+        }
+        return [];
+    }
+
+    function listConditionMatches(ev, cond) {
+        const { field, op, value } = cond;
+        const getFieldValue = () => {
+            if (field === 'nombre') return (ev.title || ev.name || '');
+            if (field === 'estado') return kanbanGetStatus(ev);
+            if (field === 'etiqueta') return ev.labels || [];
+            if (field === 'prioridad') return ev.priority || 'normal';
+            if (field === 'tipo') return ev.taskType || '';
+            if (field === 'comentario') return (ev.comments || []); // Comentarios aún no implementados (Fase 6)
+            if (field === 'fechaInicio') return ev.startDate || null;
+            if (field === 'fechaFin') return ev.endDate || null;
+            return null;
+        };
+        const fv = getFieldValue();
+
+        if (op === 'esta_establecido') {
+            if (Array.isArray(fv)) return fv.length > 0;
+            return fv !== null && fv !== undefined && fv !== '';
+        }
+        if (op === 'no_establecido') {
+            if (Array.isArray(fv)) return fv.length === 0;
+            return fv === null || fv === undefined || fv === '';
+        }
+        let matches;
+        if (field === 'nombre' || field === 'comentario') {
+            const hay = Array.isArray(fv) ? fv.join(' ') : String(fv || '');
+            matches = hay.toLowerCase().includes(String(value || '').toLowerCase());
+        } else if (field === 'etiqueta') {
+            matches = (fv || []).some(l => l.toLowerCase() === String(value || '').toLowerCase());
+        } else if (field === 'fechaInicio' || field === 'fechaFin') {
+            matches = fv ? (String(fv).slice(0, 10) === value) : false;
+        } else {
+            matches = String(fv || '').toLowerCase() === String(value || '').toLowerCase();
+        }
+        return op === 'es' ? matches : !matches;
+    }
+
+    function listGroupMatches(ev, group) {
+        if (!group.conditions.length) return true;
+        const results = group.conditions.map(c => listConditionMatches(ev, c));
+        return group.groupLogic === 'OR' ? results.some(Boolean) : results.every(Boolean);
+    }
+
+    function listAllFiltersMatch(ev) {
+        if (!listFilterGroups.length) return true;
+        let acc = listGroupMatches(ev, listFilterGroups[0]);
+        for (let i = 1; i < listFilterGroups.length; i++) {
+            const g = listFilterGroups[i];
+            const gMatch = listGroupMatches(ev, g);
+            acc = (g.betweenLogic === 'OR') ? (acc || gMatch) : (acc && gMatch);
+        }
+        return acc;
+    }
+
+    function listCountActiveFilters() {
+        return listFilterGroups.reduce((n, g) => n + g.conditions.length, 0);
+    }
+
+    // ── Construcción de datos de una tarea a la nube para ordenar ──
+    function listSortValue(ev, field) {
+        if (field === 'nombre') return (ev.title || ev.name || '').toLowerCase();
+        if (field === 'fechaInicio') return ev.startDate || '';
+        if (field === 'fechaFin') return ev.endDate || '';
+        if (field === 'prioridad') return PRIORITY_RANK[ev.priority] ?? 9;
+        if (field === 'estado') return STATUS_RANK[kanbanGetStatus(ev)] ?? 9;
+        return 0;
+    }
+    function listSortItems(items) {
+        if (!listSortBy) return items;
+        const sorted = items.slice().sort((a, b) => {
+            const va = listSortValue(a, listSortBy), vb = listSortValue(b, listSortBy);
+            if (va < vb) return -1; if (va > vb) return 1; return 0;
+        });
+        return listSortDir === 'desc' ? sorted.reverse() : sorted;
+    }
+
+    // ── UI: panel de filtros ──
+    window.toggleListFilterPanel = function() {
+        listFilterPanelOpen = !listFilterPanelOpen;
+        if (listFilterPanelOpen && !listFilterGroups.length) listFilterGroups.push(listNewGroup());
+        listRenderFilterPanel();
+        if (typeof playMenuSound === 'function') playMenuSound();
+    };
+
+    window.listAddFilterGroup = function() {
+        listFilterGroups.push(listNewGroup());
+        listRenderFilterPanel();
+    };
+    window.listAddNestedCondition = function(groupIdx) {
+        listFilterGroups[groupIdx].conditions.push(listNewCondition());
+        listRenderFilterPanel();
+    };
+    window.listRemoveCondition = function(groupIdx, condIdx) {
+        const g = listFilterGroups[groupIdx];
+        g.conditions.splice(condIdx, 1);
+        if (!g.conditions.length) listFilterGroups.splice(groupIdx, 1);
+        listRenderFilterPanel();
+        window.renderListView();
+    };
+    window.listSetGroupLogic = function(groupIdx, val) { listFilterGroups[groupIdx].groupLogic = val; window.renderListView(); };
+    window.listSetBetweenLogic = function(groupIdx, val) { listFilterGroups[groupIdx].betweenLogic = val; window.renderListView(); };
+    window.listSetConditionField = function(groupIdx, condIdx, val) {
+        const c = listFilterGroups[groupIdx].conditions[condIdx];
+        c.field = val; c.value = '';
+        listRenderFilterPanel();
+    };
+    window.listSetConditionOp = function(groupIdx, condIdx, val) {
+        listFilterGroups[groupIdx].conditions[condIdx].op = val;
+        listRenderFilterPanel();
+        window.renderListView();
+    };
+    window.listSetConditionValue = function(groupIdx, condIdx, val) {
+        listFilterGroups[groupIdx].conditions[condIdx].value = val;
+        window.renderListView();
+    };
+    window.listClearAllFilters = function() {
+        listFilterGroups = [];
+        listRenderFilterPanel();
+        window.renderListView();
+        if (typeof playMenuSound === 'function') playMenuSound();
+    };
+
+    function listRenderConditionRow(groupIdx, condIdx) {
+        const group = listFilterGroups[groupIdx];
+        const cond = group.conditions[condIdx];
+        const needsValue = cond.op === 'es' || cond.op === 'no_es';
+        let valueHtml = '';
+        if (needsValue) {
+            if (['estado', 'prioridad', 'etiqueta', 'tipo'].includes(cond.field)) {
+                const opts = listGetValueOptionsForField(cond.field);
+                valueHtml = `<select class="filter-input" onchange="listSetConditionValue(${groupIdx},${condIdx},this.value)">
+                    ${opts.map(o => `<option value="${o.key}" ${cond.value === o.key ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>`;
+            } else if (cond.field === 'fechaInicio' || cond.field === 'fechaFin') {
+                valueHtml = `<input type="date" class="filter-input" value="${cond.value || ''}" onchange="listSetConditionValue(${groupIdx},${condIdx},this.value)">`;
+            } else {
+                valueHtml = `<input type="text" class="filter-input" placeholder="Escribe..." value="${cond.value || ''}" oninput="listSetConditionValue(${groupIdx},${condIdx},this.value)">`;
+            }
+        }
+        const logicPrefix = condIdx === 0 ? '' : `
+            <select class="filter-logic-select" onchange="listSetGroupLogic(${groupIdx}, this.value)">
+                <option value="AND" ${group.groupLogic === 'AND' ? 'selected' : ''}>Y</option>
+                <option value="OR" ${group.groupLogic === 'OR' ? 'selected' : ''}>O</option>
+            </select>`;
+        return `
+            <div class="filter-cond-row">
+                ${logicPrefix}
+                <select class="filter-input" onchange="listSetConditionField(${groupIdx},${condIdx},this.value)">
+                    ${FILTER_FIELDS.map(f => `<option value="${f.key}" ${cond.field === f.key ? 'selected' : ''}>${f.label}</option>`).join('')}
+                </select>
+                <select class="filter-input" onchange="listSetConditionOp(${groupIdx},${condIdx},this.value)">
+                    ${FILTER_OPS.map(o => `<option value="${o.key}" ${cond.op === o.key ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+                ${valueHtml}
+                <button class="filter-del-btn" onclick="listRemoveCondition(${groupIdx},${condIdx})">🗑</button>
+            </div>`;
+    }
+
+    function listRenderFilterPanel() {
+        const panel = document.getElementById('listFilterPanel');
+        const btn = document.getElementById('listFilterBtn');
+        if (!panel) return;
+        panel.classList.toggle('open', listFilterPanelOpen);
+        const count = listCountActiveFilters();
+        if (btn) {
+            btn.classList.toggle('has-filters', count > 0);
+            btn.innerHTML = '🔍 Filtros' + (count > 0 ? `<span class="list-filter-badge">${count}</span>` : '');
+        }
+        if (!listFilterPanelOpen) return;
+
+        let html = '';
+        listFilterGroups.forEach((group, gi) => {
+            if (gi === 0) {
+                html += `<div class="filter-where-label">Donde</div>`;
+            } else {
+                html += `<div class="filter-between-select">
+                    <select onchange="listSetBetweenLogic(${gi}, this.value)">
+                        <option value="AND" ${group.betweenLogic === 'AND' ? 'selected' : ''}>Y</option>
+                        <option value="OR" ${group.betweenLogic === 'OR' ? 'selected' : ''}>O</option>
+                    </select>
+                </div>`;
+            }
+            html += `<div class="filter-group-box">`;
+            group.conditions.forEach((c, ci) => { html += listRenderConditionRow(gi, ci); });
+            html += `<button class="filter-add-nested-btn" onclick="listAddNestedCondition(${gi})">+ Añadir filtro anidado</button>`;
+            html += `</div>`;
+        });
+
+        if (!listFilterGroups.length) {
+            html += `<div class="filter-empty-hint">Sin filtros activos.</div>`;
+        }
+
+        html += `<div class="filter-toolbar-bottom">
+            <button class="filter-add-group-btn" onclick="listAddFilterGroup()">+ Añadir filtro</button>
+            <button class="filter-clear-btn" onclick="listClearAllFilters()">Borrar todo</button>
+        </div>`;
+        panel.innerHTML = html;
+    }
+
+    window.setListSortBy = function(field) {
+        listSortBy = field;
+        const sel = document.getElementById('listSortBySelectedText');
+        if (sel) sel.textContent = 'Ordenar: ' + (SORT_FIELDS.find(f => f.key === field) || SORT_FIELDS[0]).label;
+        document.querySelectorAll('#listSortByOptions .custom-option').forEach(o => o.classList.toggle('selected', o.dataset.val === field));
+        const dd = document.getElementById('listSortByDropdown');
+        if (dd) dd.classList.remove('open');
+        if (typeof playMenuSound === 'function') playMenuSound();
+        window.renderListView();
+    };
+
+    function listRenderSortOptions() {
+        const container = document.getElementById('listSortByOptions');
+        if (!container || container.dataset.built) return;
+        container.dataset.built = '1';
+        container.innerHTML = SORT_FIELDS.map(f =>
+            `<div class="custom-option${f.key === '' ? ' selected' : ''}" data-val="${f.key}" onclick="setListSortBy('${f.key}')"><span>${f.label}</span></div>`
+        ).join('');
+    }
+
+    window.renderListView = function() {
+        const container = document.getElementById('listViewBody');
+        if (!container) return;
+        try {
+            listRenderHeader();
+            listRenderSortOptions();
+            listRenderFilterPanel();
+            const items = listSortItems(kanbanGetItems().filter(ev => listAllFiltersMatch(ev)));
+            const groupsMap = {};
+            items.forEach(ev => {
+                listGetGroupsForItem(ev).forEach(g => {
+                    if (!groupsMap[g.key]) groupsMap[g.key] = { label: g.label, items: [] };
+                    groupsMap[g.key].items.push(ev);
+                });
+            });
+            const orderedKeys = listSortGroupKeys(Object.keys(groupsMap));
+            container.innerHTML = orderedKeys.length
+                ? orderedKeys.map(key => listGroupHtml(key, groupsMap[key])).join('')
+                : '<div class="kanban-empty-state"><div class="kanban-empty-state-icon">📭</div>No hay tareas o proyectos que coincidan.</div>';
+            listApplyGridTemplate();
+        } catch (listErr) {
+            console.error('[Lista] Error al renderizar:', listErr);
+            container.innerHTML = '<div class="kanban-col-empty" style="padding:2rem;">⚠️ No se pudo cargar la lista. Revisa la consola.</div>';
+        }
+    };
+
     window.switchGestionTab = function(tab) {
         document.getElementById('gestionTabBtnKanban').classList.toggle('active', tab === 'kanban');
         document.getElementById('gestionTabBtnLista').classList.toggle('active', tab === 'lista');
         document.getElementById('gestionPanelKanban').classList.toggle('active', tab === 'kanban');
         document.getElementById('gestionPanelLista').classList.toggle('active', tab === 'lista');
         if (tab === 'kanban' && typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+        if (tab === 'lista' && typeof window.renderListView === 'function') window.renderListView();
         if (typeof playMenuSound === 'function') playMenuSound();nd();
     };
 
@@ -14132,6 +14893,7 @@ window.hrpFilter        = _hrpApplyFilter;
         const data = JSON.stringify(calEvents);
         localStorage.setItem('jch_calendar_v1', data);
         if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+        if (typeof window.renderListView === 'function') window.renderListView();
         try { sessionStorage.setItem('jch_calendar_backup', data); } catch(e) {}
         try {
             var req = indexedDB.open('jch_db', 1);
