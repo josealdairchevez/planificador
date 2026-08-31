@@ -18,6 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js" onerror="console.warn('[Storage] firebase-storage no pudo cargarse (entorno sin red o iframe).')"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js" onerror="console.warn('[FCM] firebase-messaging no pudo cargarse (entorno sin red o iframe).')"></script>
     <script>
         /* FIX: Desactivar Web Workers de canvas-confetti (bloqueados en iframe por política CORS de blob:) */
@@ -518,6 +519,58 @@
         .filter-empty-hint { color:#64748b; font-size:0.72rem; font-style:italic; }
 
         .list-sort-wrapper { min-width:170px; }
+        /* ═══ Fase 6: Adjuntar archivos y enlaces ═══ */
+        #attachModalBackdrop {
+            position:fixed; inset:0; z-index:8700;
+            background:radial-gradient(circle at 50% 30%, rgba(30,10,50,0.55), rgba(0,2,10,0.92));
+            backdrop-filter:blur(14px); opacity:0; visibility:hidden;
+            transition:opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #attachModalBackdrop.show-attach { opacity:1; visibility:visible; }
+        #attachModal {
+            position:fixed; left:50%; top:50%; z-index:8701;
+            transform:translate(-50%,-50%) scale(0.92); width:min(92vw,380px);
+            border-radius:22px; padding:1.3rem;
+            background:linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
+            border:1px solid rgba(0,210,255,0.2);
+            box-shadow:0 0 0 1px rgba(177,0,255,0.10), 0 0 50px rgba(0,210,255,0.15), 0 30px 70px -20px rgba(0,0,0,0.85);
+            opacity:0; visibility:hidden;
+            transition:opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(.2,.9,.25,1.1);
+            max-height:80vh; overflow-y:auto;
+        }
+        #attachModal.show-attach { opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
+        .attach-modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+        .attach-modal-title { font-family:'Fredoka One',cursive; font-size:1.05rem; color:#fff; text-shadow:0 0 12px rgba(0,210,255,0.5); }
+        .attach-close-btn { background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; }
+
+        .attach-item {
+            display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:10px;
+            background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); margin-bottom:6px;
+        }
+        .attach-item-icon { font-size:1rem; flex-shrink:0; }
+        .attach-item-name { flex:1; color:#7ee8ff; font-size:0.75rem; font-weight:700; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .attach-item-name:hover { text-decoration:underline; }
+        .attach-item-size { color:#64748b; font-size:0.65rem; flex-shrink:0; }
+        .attach-item-remove { background:none; border:none; color:#f87171; cursor:pointer; font-size:0.8rem; flex-shrink:0; }
+        .attach-empty { color:#64748b; font-size:0.75rem; font-style:italic; text-align:center; padding:14px; }
+
+        .attach-actions-row { display:flex; gap:8px; margin-top:12px; }
+        .attach-action-btn {
+            flex:1; background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.28); color:#7ee8ff;
+            border-radius:10px; padding:9px; font-size:0.72rem; font-weight:800; cursor:pointer; text-align:center;
+        }
+        .attach-action-btn:hover { background:rgba(0,210,255,0.16); }
+        .attach-action-btn.link-btn { border-color:rgba(16,185,129,0.4); color:#10b981; background:rgba(16,185,129,0.08); }
+        .attach-action-btn.link-btn:hover { background:rgba(16,185,129,0.16); }
+
+        #attachProgressWrap { display:none; margin-top:10px; }
+        #attachProgressLabel { font-size:0.68rem; color:#94a3b8; margin-bottom:5px; }
+        .attach-progress-track { background:rgba(0,0,0,0.4); border-radius:20px; height:8px; overflow:hidden; }
+        #attachProgressBar { height:100%; width:0%; background:linear-gradient(90deg,#00d2ff,#7c3aed); transition:width 0.2s; }
+        .attach-cancel-btn { background:none; border:none; color:#f87171; font-size:0.65rem; font-weight:800; cursor:pointer; margin-top:4px; }
+
+        .attach-video-hint { color:#64748b; font-size:0.62rem; margin-top:8px; text-align:center; }
+
 
 
 
@@ -14035,7 +14088,10 @@ window.hrpFilter        = _hrpApplyFilter;
             return `<span class="list-chip" style="background:${info.c}20;border:1px solid ${info.c}80;color:${info.c};">${info.l}</span>`;
         }
         if (key === 'comentarios') return `<span class="list-cell-icon" title="Comentarios (próxima fase)">💬</span>`;
-        if (key === 'adjuntar') return `<span class="list-cell-icon" title="Adjuntar (próxima fase)">📎</span>`;
+        if (key === 'adjuntar') {
+            const count = (ev.attachments || []).length;
+            return `<span class="list-cell-icon" onclick="event.stopPropagation(); openAttachModal('${ev.id}')" title="Adjuntar">📎${count ? ' ' + count : ''}</span>`;
+        }
         return '';
     }
 
@@ -14482,6 +14538,152 @@ window.hrpFilter        = _hrpApplyFilter;
             console.error('[Lista] Error al renderizar:', listErr);
             container.innerHTML = '<div class="kanban-col-empty" style="padding:2rem;">⚠️ No se pudo cargar la lista. Revisa la consola.</div>';
         }
+    };
+
+        // ═══ Fase 6: Adjuntar archivos y enlaces ═══
+    // Documentos van a Firebase Storage; videos largos se guardan como
+    // enlace (YouTube/Drive/etc.), sin subir el archivo, por costo y tamaño.
+    function attachGetCurrentUid() {
+        try { return (firebase.auth().currentUser || {}).uid || null; } catch (e) { return null; }
+    }
+
+    function attachFormatSize(bytes) {
+        if (!bytes) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function attachIconForType(ct) {
+        if (!ct) return '📄';
+        if (ct.includes('pdf')) return '📕';
+        if (ct.includes('presentation') || ct.includes('powerpoint')) return '📊';
+        if (ct.includes('word') || ct.includes('document')) return '📝';
+        if (ct.includes('sheet') || ct.includes('excel')) return '📈';
+        if (ct.includes('image')) return '🖼️';
+        if (ct.includes('audio')) return '🎵';
+        if (ct.includes('video')) return '🎬';
+        return '📄';
+    }
+
+    let attachActiveEvId = null;
+    let attachUploadTask = null;
+
+    function attachGetEv() {
+        const evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
+        return evs.find(e => String(e.id) === String(attachActiveEvId));
+    }
+
+    window.openAttachModal = function(evId) {
+        attachActiveEvId = evId;
+        const bd = document.getElementById('attachModalBackdrop'), md = document.getElementById('attachModal');
+        if (bd) bd.classList.add('show-attach');
+        if (md) md.classList.add('show-attach');
+        attachRenderList();
+    };
+
+    window.closeAttachModal = function() {
+        const bd = document.getElementById('attachModalBackdrop'), md = document.getElementById('attachModal');
+        if (bd) bd.classList.remove('show-attach');
+        if (md) md.classList.remove('show-attach');
+        attachActiveEvId = null;
+    };
+
+    function attachRenderList() {
+        const ev = attachGetEv();
+        const container = document.getElementById('attachList');
+        if (!container) return;
+        const list = (ev && ev.attachments) || [];
+        container.innerHTML = list.length ? list.map((a, i) => `
+            <div class="attach-item">
+                <span class="attach-item-icon">${a.type === 'link' ? '🔗' : attachIconForType(a.contentType)}</span>
+                <a class="attach-item-name" href="${a.url}" target="_blank" rel="noopener">${a.name}</a>
+                ${a.size ? `<span class="attach-item-size">${attachFormatSize(a.size)}</span>` : ''}
+                <button class="attach-item-remove" onclick="attachRemove(${i})">✕</button>
+            </div>`).join('') : '<div class="attach-empty">Sin archivos ni enlaces todavía.</div>';
+        if (typeof window.renderListView === 'function') window.renderListView();
+    }
+
+    window.attachTriggerFileInput = function() {
+        const inp = document.getElementById('attachFileInput');
+        if (inp) inp.click();
+    };
+
+    window.attachHandleFileSelected = function(input) {
+        const file = input.files[0];
+        input.value = '';
+        if (!file) return;
+        const uid = attachGetCurrentUid();
+        if (!uid) { alert('Debes iniciar sesión para subir archivos.'); return; }
+        const ev = attachGetEv();
+        if (!ev) return;
+
+        const path = `attachments/${uid}/${ev.id}/${Date.now()}_${file.name}`;
+        const ref = firebase.storage().ref().child(path);
+        const task = ref.put(file);
+        attachUploadTask = task;
+
+        const wrap = document.getElementById('attachProgressWrap');
+        const bar = document.getElementById('attachProgressBar');
+        const label = document.getElementById('attachProgressLabel');
+        if (wrap) wrap.style.display = 'block';
+        if (bar) bar.style.width = '0%';
+        if (label) label.textContent = 'Subiendo ' + file.name + '...';
+
+        task.on('state_changed', (snap) => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            if (bar) bar.style.width = pct + '%';
+            if (label) label.textContent = `Subiendo ${file.name}... ${pct}%`;
+        }, (err) => {
+            console.error('[Adjuntar] Error al subir:', err);
+            if (label) label.textContent = '⚠️ Error al subir: ' + err.message;
+            attachUploadTask = null;
+        }, () => {
+            task.snapshot.ref.getDownloadURL().then((url) => {
+                if (!ev.attachments) ev.attachments = [];
+                ev.attachments.push({
+                    type: 'file', name: file.name, url, storagePath: path,
+                    size: file.size, contentType: file.type, uploadedAt: Date.now()
+                });
+                if (typeof saveCalEvents === 'function') saveCalEvents();
+                if (wrap) wrap.style.display = 'none';
+                attachUploadTask = null;
+                attachRenderList();
+                if (typeof playSparkleSound === 'function') playSparkleSound();
+            });
+        });
+    };
+
+    window.attachCancelUpload = function() {
+        if (attachUploadTask) { attachUploadTask.cancel(); attachUploadTask = null; }
+        const wrap = document.getElementById('attachProgressWrap');
+        if (wrap) wrap.style.display = 'none';
+    };
+
+    window.attachStartAddLink = function() {
+        const name = prompt('Nombre del enlace (ej. "Video clase 3"):');
+        if (!name) return;
+        const url = prompt('Pega la URL (YouTube, Drive, etc.):');
+        if (!url) return;
+        const ev = attachGetEv();
+        if (!ev) return;
+        if (!ev.attachments) ev.attachments = [];
+        ev.attachments.push({ type: 'link', name, url, uploadedAt: Date.now() });
+        if (typeof saveCalEvents === 'function') saveCalEvents();
+        attachRenderList();
+        if (typeof playSparkleSound === 'function') playSparkleSound();
+    };
+
+    window.attachRemove = function(idx) {
+        const ev = attachGetEv();
+        if (!ev || !ev.attachments) return;
+        const item = ev.attachments[idx];
+        if (item && item.type === 'file' && item.storagePath) {
+            firebase.storage().ref().child(item.storagePath).delete().catch(e => console.warn('[Adjuntar] No se pudo borrar del Storage:', e));
+        }
+        ev.attachments.splice(idx, 1);
+        if (typeof saveCalEvents === 'function') saveCalEvents();
+        attachRenderList();
     };
 
     window.switchGestionTab = function(tab) {
@@ -16936,6 +17138,27 @@ function renderCalTimePicker() {
         </div>
     </div>
 
+    <!-- ═══ Fase 6: Adjuntar archivos/enlaces ═══ -->
+    <div id="attachModalBackdrop" onclick="closeAttachModal()"></div>
+    <div id="attachModal">
+        <div class="attach-modal-header">
+            <span class="attach-modal-title">📎 Adjuntos</span>
+            <button class="attach-close-btn" onclick="closeAttachModal()">✕</button>
+        </div>
+        <div id="attachList"></div>
+        <div class="attach-actions-row">
+            <button class="attach-action-btn" onclick="attachTriggerFileInput()">📤 Subir archivo</button>
+            <button class="attach-action-btn link-btn" onclick="attachStartAddLink()">🔗 Agregar enlace</button>
+        </div>
+        <div class="attach-video-hint">Para videos largos, usa "Agregar enlace" (YouTube, Drive, etc.) en vez de subirlos.</div>
+        <div id="attachProgressWrap">
+            <div id="attachProgressLabel">Subiendo...</div>
+            <div class="attach-progress-track"><div id="attachProgressBar"></div></div>
+            <button class="attach-cancel-btn" onclick="attachCancelUpload()">Cancelar subida</button>
+        </div>
+        <input type="file" id="attachFileInput" style="display:none;" onchange="attachHandleFileSelected(this)">
+    </div>
+
 <div id="calRepeatModal">
         <div class="cal-repeat-handle"></div>
         <div class="cal-repeat-tabs">
@@ -17497,6 +17720,8 @@ function renderCalTimePicker() {
         }
         const auth = firebase.auth();
         const db   = firebase.firestore();
+        const storage = firebase.storage();
+        window._jchStorage = storage;
 
     let currentUser = null;
     window._jchCurrentUser = null; // expuesto globalmente para acceso desde otros módulos
