@@ -434,7 +434,8 @@
         .list-cell-name { display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:800; color:#fff; white-space:normal; }
         .list-cell-name:hover { color:#7ee8ff; }
         .list-name-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-        .list-cell-icon { text-align:center; opacity:0.55; cursor:pointer; }
+        .list-cell-icon { text-align:center; opacity:0.55; cursor:pointer; transition:opacity 0.15s, text-shadow 0.15s; }
+        .list-cell-icon.has-content { opacity:1; color:#22e3ff; font-weight:900; text-shadow:0 0 8px rgba(0,210,255,0.6); }
         .list-cell-icon:hover { opacity:1; }
 
         .list-chip { font-size:0.62rem; font-weight:900; border-radius:20px; padding:2px 8px; white-space:nowrap; }
@@ -488,11 +489,11 @@
             position:absolute; top:-6px; right:-6px; background:#ef4444; color:#fff; font-size:0.6rem;
             font-weight:900; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center;
         }
-        #listFilterPanel {
+        #listFilterPanel, #kanbanFilterPanel {
             display:none; background:rgba(0,0,0,0.25); border:1px solid rgba(0,210,255,0.15); border-radius:16px;
             padding:14px; margin-bottom:12px;
         }
-        #listFilterPanel.open { display:block; }
+        #listFilterPanel.open, #kanbanFilterPanel.open { display:block; }
         .filter-where-label { font-size:0.65rem; font-weight:900; color:#7ee8ff; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
         .filter-group-box {
             border:1px solid rgba(0,210,255,0.18); border-radius:12px; padding:10px; margin-bottom:8px;
@@ -570,6 +571,49 @@
         .attach-cancel-btn { background:none; border:none; color:#f87171; font-size:0.65rem; font-weight:800; cursor:pointer; margin-top:4px; }
 
         .attach-video-hint { color:#64748b; font-size:0.62rem; margin-top:8px; text-align:center; }
+        /* ═══ Sistema de comentarios real ═══ */
+        #commentModalBackdrop {
+            position:fixed; inset:0; z-index:8700;
+            background:radial-gradient(circle at 50% 30%, rgba(30,10,50,0.55), rgba(0,2,10,0.92));
+            backdrop-filter:blur(14px); opacity:0; visibility:hidden;
+            transition:opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #commentModalBackdrop.show-comment { opacity:1; visibility:visible; }
+        #commentModal {
+            position:fixed; left:50%; top:50%; z-index:8701;
+            transform:translate(-50%,-50%) scale(0.92); width:min(92vw,380px);
+            border-radius:22px; padding:1.3rem;
+            background:linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
+            border:1px solid rgba(0,210,255,0.2);
+            box-shadow:0 0 0 1px rgba(177,0,255,0.10), 0 0 50px rgba(0,210,255,0.15), 0 30px 70px -20px rgba(0,0,0,0.85);
+            opacity:0; visibility:hidden;
+            transition:opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(.2,.9,.25,1.1);
+            max-height:80vh; display:flex; flex-direction:column;
+        }
+        #commentModal.show-comment { opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
+        .comment-list { overflow-y:auto; flex:1; margin:6px 0 10px; max-height:45vh; }
+        .comment-item {
+            background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px;
+            padding:9px 10px; margin-bottom:7px;
+        }
+        .comment-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+        .comment-item-author { font-size:0.68rem; font-weight:900; color:#7ee8ff; }
+        .comment-item-time { font-size:0.6rem; color:#64748b; }
+        .comment-item-text { font-size:0.76rem; color:#e2e8f0; line-height:1.4; word-break:break-word; white-space:pre-wrap; }
+        .comment-item-remove { background:none; border:none; color:#f87171; cursor:pointer; font-size:0.7rem; margin-top:4px; }
+        .comment-empty { color:#64748b; font-size:0.75rem; font-style:italic; text-align:center; padding:16px; }
+        .comment-input-row { display:flex; gap:6px; align-items:flex-end; }
+        .comment-textarea {
+            flex:1; background:rgba(0,210,255,0.06); border:1px solid rgba(0,210,255,0.25); border-radius:10px;
+            color:#fff; font-size:0.76rem; padding:8px 10px; outline:none; resize:none; font-family:'Nunito',sans-serif;
+            min-height:38px; max-height:90px;
+        }
+        .comment-textarea:focus { border-color:#00d2ff; }
+        .comment-send-btn {
+            background:linear-gradient(120deg,#00d2ff,#7c3aed); border:none; color:#031018; font-weight:900;
+            border-radius:10px; padding:9px 14px; cursor:pointer; font-size:0.8rem;
+        }
+
 
 
 
@@ -8944,6 +8988,30 @@ window.hrpFilter        = _hrpApplyFilter;
                 </div>
 
                 <div class="gestion-tab-panel active" id="gestionPanelKanban">
+                    <div class="list-toolbar">
+                        <div class="custom-select-wrapper" id="kanbanGroupByDropdown">
+                            <div class="custom-select" onclick="toggleDropdown('kanbanGroupByDropdown')">
+                                <span id="kanbanGroupBySelectedText">Agrupar por: Estado</span><span>▼</span>
+                            </div>
+                            <div class="custom-options">
+                                <div class="custom-option selected" data-val="estado" onclick="setListGroupBy('estado')"><span>Estado</span></div>
+                                <div class="custom-option" data-val="startDate" onclick="setListGroupBy('startDate')"><span>Fecha inicio</span></div>
+                                <div class="custom-option" data-val="endDate" onclick="setListGroupBy('endDate')"><span>Fecha límite</span></div>
+                                <div class="custom-option" data-val="priority" onclick="setListGroupBy('priority')"><span>Prioridad</span></div>
+                                <div class="custom-option" data-val="taskType" onclick="setListGroupBy('taskType')"><span>Tipo</span></div>
+                                <div class="custom-option" data-val="labels" onclick="setListGroupBy('labels')"><span>Etiqueta</span></div>
+                            </div>
+                        </div>
+                        <button class="list-sort-btn" onclick="toggleListSortDir()" id="kanbanSortBtn">↑ Ascendente</button>
+                        <div class="custom-select-wrapper list-sort-wrapper" id="kanbanSortByDropdown">
+                            <div class="custom-select" onclick="toggleDropdown('kanbanSortByDropdown')">
+                                <span id="kanbanSortBySelectedText">Ordenar: Ninguno</span><span>▼</span>
+                            </div>
+                            <div class="custom-options" id="kanbanSortByOptions"></div>
+                        </div>
+                        <button class="list-filter-btn" id="kanbanFilterBtn" onclick="toggleListFilterPanel()">🔍 Filtros</button>
+                    </div>
+                    <div id="kanbanFilterPanel"></div>
                     <div class="kanban-board" id="kanbanBoard"></div>
                 </div>
 
@@ -13894,18 +13962,56 @@ window.hrpFilter        = _hrpApplyFilter;
         return d.getDate() + ' ' + meses[d.getMonth()];
     }
 
+    function kanbanGetGroupsConfig() {
+        if (listGroupBy === 'estado') return KANBAN_COLUMNS.map(c => Object.assign({}, c));
+        if (listGroupBy === 'priority') {
+            return [
+                { key: 'urgente', label: 'Urgente', dot: '#ef4444' },
+                { key: 'alta', label: 'Alta', dot: '#f97316' },
+                { key: 'normal', label: 'Normal', dot: '#00d2ff' },
+                { key: 'baja', label: 'Baja', dot: '#64748b' }
+            ];
+        }
+        const items = listSortItems(kanbanGetItems().filter(ev => listAllFiltersMatch(ev)));
+        const seen = {};
+        items.forEach(ev => { listGetGroupsForItem(ev).forEach(g => { if (!seen[g.key]) seen[g.key] = g.label; }); });
+        const keys = listSortGroupKeys(Object.keys(seen));
+        return keys.map(k => ({ key: k, label: seen[k], dot: '#00d2ff' }));
+    }
+
+    function kanbanSetItemGroupValue(ev, groupKey) {
+        if (listGroupBy === 'estado') {
+            ev.kanbanStatus = groupKey;
+            ev.completed = (groupKey === 'completado');
+            return true;
+        }
+        if (listGroupBy === 'priority') { ev.priority = groupKey; return true; }
+        if (listGroupBy === 'taskType') { ev.taskType = (groupKey === '__none__') ? '' : groupKey; return true; }
+        if (listGroupBy === 'labels') {
+            if (groupKey !== '__none__') {
+                if (!ev.labels) ev.labels = [];
+                if (!ev.labels.includes(groupKey)) ev.labels.push(groupKey);
+            }
+            return true;
+        }
+        return false;
+    }
+
     window.renderKanbanBoard = function() {
         const board = document.getElementById('kanbanBoard');
         if (!board) return;
         try {
-            const items = kanbanGetItems();
+            listRenderSortOptions();
+            listRenderFilterPanel();
+            const items = listSortItems(kanbanGetItems().filter(ev => listAllFiltersMatch(ev)));
             const now = new Date();
+            const columns = kanbanGetGroupsConfig();
 
-            board.innerHTML = KANBAN_COLUMNS.map(col => {
-                const colItems = items.filter(ev => kanbanGetStatus(ev) === col.key);
+            board.innerHTML = columns.map(col => {
+                const colItems = items.filter(ev => listGetGroupsForItem(ev).some(g => g.key === col.key));
                 const cardsHtml = colItems.length
                     ? colItems.map(ev => kanbanCardHtml(ev, now)).join('')
-                    : `<div class="kanban-col-empty">Sin ${col.label.toLowerCase()}</div>`;
+                    : `<div class="kanban-col-empty">Sin ${(col.label || '').toLowerCase()}</div>`;
                 return `
                 <div class="kanban-col" data-col="${col.key}">
                     <div class="kanban-col-header">
@@ -14010,21 +14116,32 @@ window.hrpFilter        = _hrpApplyFilter;
     window.setListGroupBy = function(field) {
         listGroupBy = field;
         listCollapsedGroups.clear();
-        const sel = document.getElementById('listGroupBySelectedText');
-        if (sel) sel.textContent = 'Agrupar por: ' + GROUP_FIELD_LABELS[field];
-        document.querySelectorAll('#listGroupByDropdown .custom-option').forEach(o => o.classList.toggle('selected', o.dataset.val === field));
-        const dd = document.getElementById('listGroupByDropdown');
-        if (dd) dd.classList.remove('open');
+        const label = 'Agrupar por: ' + GROUP_FIELD_LABELS[field];
+        ['listGroupBySelectedText', 'kanbanGroupBySelectedText'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (sel) sel.textContent = label;
+        });
+        document.querySelectorAll('#listGroupByDropdown .custom-option, #kanbanGroupByDropdown .custom-option')
+            .forEach(o => o.classList.toggle('selected', o.dataset.val === field));
+        ['listGroupByDropdown', 'kanbanGroupByDropdown'].forEach(id => {
+            const dd = document.getElementById(id);
+            if (dd) dd.classList.remove('open');
+        });
         if (typeof playMenuSound === 'function') playMenuSound();
         window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
 
     window.toggleListSortDir = function() {
         listSortDir = listSortDir === 'asc' ? 'desc' : 'asc';
-        const btn = document.getElementById('listSortBtn');
-        if (btn) btn.textContent = (listSortDir === 'asc' ? '↑ Ascendente' : '↓ Descendente');
+        const label = (listSortDir === 'asc' ? '↑ Ascendente' : '↓ Descendente');
+        ['listSortBtn', 'kanbanSortBtn'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.textContent = label;
+        });
         if (typeof playMenuSound === 'function') playMenuSound();
         window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
 
     window.listToggleGroup = function(key) {
@@ -14087,20 +14204,59 @@ window.hrpFilter        = _hrpApplyFilter;
             const st = kanbanGetStatus(ev); const info = STATUS_INFO[st];
             return `<span class="list-chip" style="background:${info.c}20;border:1px solid ${info.c}80;color:${info.c};">${info.l}</span>`;
         }
-        if (key === 'comentarios') return `<span class="list-cell-icon" title="Comentarios (próxima fase)">💬</span>`;
+        if (key === 'comentarios') {
+            const count = (ev.comments || []).length;
+            return `<span class="list-cell-icon${count ? ' has-content' : ''}" onclick="event.stopPropagation(); openCommentModal('${ev.id}')" title="Comentarios">💬${count ? ' ' + count : ''}</span>`;
+        }
         if (key === 'adjuntar') {
             const count = (ev.attachments || []).length;
-            return `<span class="list-cell-icon" onclick="event.stopPropagation(); openAttachModal('${ev.id}')" title="Adjuntar">📎${count ? ' ' + count : ''}</span>`;
+            return `<span class="list-cell-icon${count ? ' has-content' : ''}" onclick="event.stopPropagation(); openAttachModal('${ev.id}')" title="Adjuntar">📎${count ? ' ' + count : ''}</span>`;
         }
         return '';
     }
 
+    // Tareas/proyectos repetitivos guardan el estado de cada subtarea POR DÍA
+    // (mismo formato de clave que ya usa toggleCalSubtaskDone en el calendario:
+    // 'jch_subdone_' + tipo + '_cal_' + id + '_' + fecha), para que marcar una
+    // subtarea hoy no la deje marcada para siempre en todas las repeticiones.
+    // La Vista Lista, al no estar anclada a una fecha, siempre usa HOY.
+    function listSubtaskDoneKey(ev) {
+        const today = new Date().toLocaleDateString('en-CA');
+        const prefix = (ev.type === 'tarea') ? 'task_' : 'project_';
+        return 'jch_subdone_' + prefix + 'cal_' + ev.id + '_' + today;
+    }
+    function listGetSubtaskDoneArray(ev) {
+        try { return JSON.parse(localStorage.getItem(listSubtaskDoneKey(ev))) || []; } catch (e) { return []; }
+    }
+    function listIsSubtaskDone(ev, idx, st) {
+        const isRepeat = ev.repeat && ev.repeat !== 'none';
+        if (!isRepeat) return !!(st && st.done);
+        return !!listGetSubtaskDoneArray(ev)[idx];
+    }
+    window.listToggleSubtaskDone = function(evId, idx, done) {
+        const evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
+        const ev = evs.find(e => String(e.id) === String(evId));
+        if (!ev || !ev.subtasks || !ev.subtasks[idx]) return;
+        const isRepeat = ev.repeat && ev.repeat !== 'none';
+        if (isRepeat) {
+            const key = listSubtaskDoneKey(ev);
+            const arr = listGetSubtaskDoneArray(ev);
+            while (arr.length <= idx) arr.push(false);
+            arr[idx] = done;
+            localStorage.setItem(key, JSON.stringify(arr));
+            window.renderListView();
+        } else {
+            ev.subtasks[idx].done = done;
+            if (typeof saveCalEvents === 'function') saveCalEvents();
+        }
+    };
+
     function listSubtaskRowHtml(ev, st, idx) {
-        const done = !!(st && st.done);
+        const done = listIsSubtaskDone(ev, idx, st);
         return `
             <div class="list-row list-subtask-row">
                 <div class="list-cell list-cell-name list-subtask-name">
-                    <input type="checkbox" ${done ? 'checked' : ''} onclick="event.stopPropagation(); toggleCalSubtaskDone && toggleCalSubtaskDone('${ev.id}', ${idx}, this.checked)">
+                    <input type="checkbox" ${done ? 'checked' : ''} onclick="event.stopPropagation(); listToggleSubtaskDone('${ev.id}', ${idx}, this.checked)">
                     <span style="${done ? 'text-decoration:line-through;opacity:0.5;' : ''}">${(st && (st.title || st.name)) || 'Subtarea'}</span>
                 </div>
                 <div class="list-cell" style="grid-column: span ${listColumnOrder.length};"></div>
@@ -14374,7 +14530,11 @@ window.hrpFilter        = _hrpApplyFilter;
     // ── UI: panel de filtros ──
     window.toggleListFilterPanel = function() {
         listFilterPanelOpen = !listFilterPanelOpen;
-        if (listFilterPanelOpen && !listFilterGroups.length) listFilterGroups.push(listNewGroup());
+        if (listFilterPanelOpen && !listFilterGroups.length) {
+            listFilterGroups.push(listNewGroup());
+            window.renderListView();
+            if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+        }
         listRenderFilterPanel();
         if (typeof playMenuSound === 'function') playMenuSound();
     };
@@ -14382,10 +14542,14 @@ window.hrpFilter        = _hrpApplyFilter;
     window.listAddFilterGroup = function() {
         listFilterGroups.push(listNewGroup());
         listRenderFilterPanel();
+        window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
     window.listAddNestedCondition = function(groupIdx) {
         listFilterGroups[groupIdx].conditions.push(listNewCondition());
         listRenderFilterPanel();
+        window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
     window.listRemoveCondition = function(groupIdx, condIdx) {
         const g = listFilterGroups[groupIdx];
@@ -14393,27 +14557,41 @@ window.hrpFilter        = _hrpApplyFilter;
         if (!g.conditions.length) listFilterGroups.splice(groupIdx, 1);
         listRenderFilterPanel();
         window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
-    window.listSetGroupLogic = function(groupIdx, val) { listFilterGroups[groupIdx].groupLogic = val; window.renderListView(); };
-    window.listSetBetweenLogic = function(groupIdx, val) { listFilterGroups[groupIdx].betweenLogic = val; window.renderListView(); };
+    window.listSetGroupLogic = function(groupIdx, val) {
+        listFilterGroups[groupIdx].groupLogic = val;
+        window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+    };
+    window.listSetBetweenLogic = function(groupIdx, val) {
+        listFilterGroups[groupIdx].betweenLogic = val;
+        window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+    };
     window.listSetConditionField = function(groupIdx, condIdx, val) {
         const c = listFilterGroups[groupIdx].conditions[condIdx];
         c.field = val; c.value = '';
         listRenderFilterPanel();
+        window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
     window.listSetConditionOp = function(groupIdx, condIdx, val) {
         listFilterGroups[groupIdx].conditions[condIdx].op = val;
         listRenderFilterPanel();
         window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
     window.listSetConditionValue = function(groupIdx, condIdx, val) {
         listFilterGroups[groupIdx].conditions[condIdx].value = val;
         window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
     window.listClearAllFilters = function() {
         listFilterGroups = [];
         listRenderFilterPanel();
         window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
         if (typeof playMenuSound === 'function') playMenuSound();
     };
 
@@ -14455,14 +14633,17 @@ window.hrpFilter        = _hrpApplyFilter;
 
     function listRenderFilterPanel() {
         const panel = document.getElementById('listFilterPanel');
+        const panelK = document.getElementById('kanbanFilterPanel');
         const btn = document.getElementById('listFilterBtn');
-        if (!panel) return;
-        panel.classList.toggle('open', listFilterPanelOpen);
+        const btnK = document.getElementById('kanbanFilterBtn');
+        if (!panel && !panelK) return;
+        [panel, panelK].forEach(p => { if (p) p.classList.toggle('open', listFilterPanelOpen); });
         const count = listCountActiveFilters();
-        if (btn) {
-            btn.classList.toggle('has-filters', count > 0);
-            btn.innerHTML = '🔍 Filtros' + (count > 0 ? `<span class="list-filter-badge">${count}</span>` : '');
-        }
+        [btn, btnK].forEach(b => {
+            if (!b) return;
+            b.classList.toggle('has-filters', count > 0);
+            b.innerHTML = '🔍 Filtros' + (count > 0 ? `<span class="list-filter-badge">${count}</span>` : '');
+        });
         if (!listFilterPanelOpen) return;
 
         let html = '';
@@ -14491,27 +14672,39 @@ window.hrpFilter        = _hrpApplyFilter;
             <button class="filter-add-group-btn" onclick="listAddFilterGroup()">+ Añadir filtro</button>
             <button class="filter-clear-btn" onclick="listClearAllFilters()">Borrar todo</button>
         </div>`;
-        panel.innerHTML = html;
+        if (panel) panel.innerHTML = html;
+        if (panelK) panelK.innerHTML = html;
     }
 
     window.setListSortBy = function(field) {
         listSortBy = field;
-        const sel = document.getElementById('listSortBySelectedText');
-        if (sel) sel.textContent = 'Ordenar: ' + (SORT_FIELDS.find(f => f.key === field) || SORT_FIELDS[0]).label;
-        document.querySelectorAll('#listSortByOptions .custom-option').forEach(o => o.classList.toggle('selected', o.dataset.val === field));
-        const dd = document.getElementById('listSortByDropdown');
-        if (dd) dd.classList.remove('open');
+        const label = 'Ordenar: ' + (SORT_FIELDS.find(f => f.key === field) || SORT_FIELDS[0]).label;
+        ['listSortBySelectedText', 'kanbanSortBySelectedText'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (sel) sel.textContent = label;
+        });
+        document.querySelectorAll('#listSortByOptions .custom-option, #kanbanSortByOptions .custom-option')
+            .forEach(o => o.classList.toggle('selected', o.dataset.val === field));
+        ['listSortByDropdown', 'kanbanSortByDropdown'].forEach(id => {
+            const dd = document.getElementById(id);
+            if (dd) dd.classList.remove('open');
+        });
         if (typeof playMenuSound === 'function') playMenuSound();
         window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
     };
 
     function listRenderSortOptions() {
-        const container = document.getElementById('listSortByOptions');
-        if (!container || container.dataset.built) return;
-        container.dataset.built = '1';
-        container.innerHTML = SORT_FIELDS.map(f =>
+        const optsHtml = SORT_FIELDS.map(f =>
             `<div class="custom-option${f.key === '' ? ' selected' : ''}" data-val="${f.key}" onclick="setListSortBy('${f.key}')"><span>${f.label}</span></div>`
         ).join('');
+        ['listSortByOptions', 'kanbanSortByOptions'].forEach(id => {
+            const container = document.getElementById(id);
+            if (container && !container.dataset.built) {
+                container.dataset.built = '1';
+                container.innerHTML = optsHtml;
+            }
+        });
     }
 
     window.renderListView = function() {
@@ -14686,6 +14879,84 @@ window.hrpFilter        = _hrpApplyFilter;
         attachRenderList();
     };
 
+        // ═══ Sistema de comentarios real ═══
+    let commentActiveEvId = null;
+
+    function commentGetEv() {
+        const evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
+        return evs.find(e => String(e.id) === String(commentActiveEvId));
+    }
+
+    function commentFmtTime(ts) {
+        const d = new Date(ts);
+        const now = new Date();
+        const sameDay = d.toDateString() === now.toDateString();
+        const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+        if (sameDay) return `Hoy ${hh}:${mm}`;
+        const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        return `${d.getDate()} ${meses[d.getMonth()]} ${hh}:${mm}`;
+    }
+
+    window.openCommentModal = function(evId) {
+        commentActiveEvId = evId;
+        const bd = document.getElementById('commentModalBackdrop'), md = document.getElementById('commentModal');
+        if (bd) bd.classList.add('show-comment');
+        if (md) md.classList.add('show-comment');
+        commentRenderList();
+        const inp = document.getElementById('commentInput');
+        if (inp) { inp.value = ''; inp.focus(); }
+    };
+
+    window.closeCommentModal = function() {
+        const bd = document.getElementById('commentModalBackdrop'), md = document.getElementById('commentModal');
+        if (bd) bd.classList.remove('show-comment');
+        if (md) md.classList.remove('show-comment');
+        commentActiveEvId = null;
+    };
+
+    function commentRenderList() {
+        const ev = commentGetEv();
+        const container = document.getElementById('commentList');
+        if (!container) return;
+        const list = (ev && ev.comments) || [];
+        container.innerHTML = list.length ? list.map((c, i) => `
+            <div class="comment-item">
+                <div class="comment-item-header">
+                    <span class="comment-item-author">${c.author || 'Yo'}</span>
+                    <span class="comment-item-time">${commentFmtTime(c.timestamp)}</span>
+                </div>
+                <div class="comment-item-text">${c.text}</div>
+                <button class="comment-item-remove" onclick="commentRemove(${i})">Eliminar</button>
+            </div>`).join('') : '<div class="comment-empty">Sin comentarios todavía.</div>';
+        container.scrollTop = container.scrollHeight;
+        if (typeof window.renderListView === 'function') window.renderListView();
+        if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+    }
+
+    window.commentSend = function() {
+        const inp = document.getElementById('commentInput');
+        const text = inp ? inp.value.trim() : '';
+        if (!text) return;
+        const ev = commentGetEv();
+        if (!ev) return;
+        let author = 'Yo';
+        try { author = (firebase.auth().currentUser && firebase.auth().currentUser.displayName) || 'Yo'; } catch (e) {}
+        if (!ev.comments) ev.comments = [];
+        ev.comments.push({ text, author, timestamp: Date.now() });
+        if (typeof saveCalEvents === 'function') saveCalEvents();
+        inp.value = '';
+        commentRenderList();
+        if (typeof playSparkleSound === 'function') playSparkleSound();
+    };
+
+    window.commentRemove = function(idx) {
+        const ev = commentGetEv();
+        if (!ev || !ev.comments) return;
+        ev.comments.splice(idx, 1);
+        if (typeof saveCalEvents === 'function') saveCalEvents();
+        commentRenderList();
+    };
+
     window.switchGestionTab = function(tab) {
         document.getElementById('gestionTabBtnKanban').classList.toggle('active', tab === 'kanban');
         document.getElementById('gestionTabBtnLista').classList.toggle('active', tab === 'lista');
@@ -14707,8 +14978,9 @@ window.hrpFilter        = _hrpApplyFilter;
 
     function _kanbanDragStart(e, card) {
         const rect = card.getBoundingClientRect();
+        const startCol = card.closest('.kanban-col');
         _kanbanDrag = {
-            card, id: card.dataset.id, startStatus: card.dataset.status,
+            card, id: card.dataset.id, startStatus: startCol ? startCol.dataset.col : card.dataset.status,
             offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
             width: rect.width, placeholder: null
         };
@@ -14779,10 +15051,13 @@ window.hrpFilter        = _hrpApplyFilter;
             const list = kanbanGetItems();
             const ev = list.find(x => String(x.id) === String(id));
             if (ev) {
-                ev.kanbanStatus = newStatus;
-                ev.completed = (newStatus === 'completado');
-                if (typeof saveCalEvents === 'function') saveCalEvents();
-                if (typeof playSparkleSound === 'function') playSparkleSound();
+                const applied = kanbanSetItemGroupValue(ev, newStatus);
+                if (applied) {
+                    if (typeof saveCalEvents === 'function') saveCalEvents();
+                    if (typeof playSparkleSound === 'function') playSparkleSound();
+                } else {
+                    console.log('[Kanban] Este criterio de agrupación (' + listGroupBy + ') no admite mover tarjetas por arrastre.');
+                }
             }
         }
         _kanbanDrag = null;
@@ -17157,6 +17432,21 @@ function renderCalTimePicker() {
             <button class="attach-cancel-btn" onclick="attachCancelUpload()">Cancelar subida</button>
         </div>
         <input type="file" id="attachFileInput" style="display:none;" onchange="attachHandleFileSelected(this)">
+    </div>
+
+    <!-- ═══ Sistema de comentarios real ═══ -->
+    <div id="commentModalBackdrop" onclick="closeCommentModal()"></div>
+    <div id="commentModal">
+        <div class="attach-modal-header">
+            <span class="attach-modal-title">💬 Comentarios</span>
+            <button class="attach-close-btn" onclick="closeCommentModal()">✕</button>
+        </div>
+        <div class="comment-list" id="commentList"></div>
+        <div class="comment-input-row">
+            <textarea class="comment-textarea" id="commentInput" placeholder="Escribe un comentario..." rows="1"
+                onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); commentSend();}"></textarea>
+            <button class="comment-send-btn" onclick="commentSend()">➤</button>
+        </div>
     </div>
 
 <div id="calRepeatModal">
