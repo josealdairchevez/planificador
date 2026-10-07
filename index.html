@@ -459,7 +459,25 @@
         .list-expand-arrow.expanded { transform:rotate(90deg); }
         .list-subtask-row { background:rgba(0,0,0,0.15); }
         .list-subtask-row .list-cell-name { padding-left:34px; gap:8px; }
-        .list-subtask-row input[type="checkbox"] { width:14px; height:14px; accent-color:#10b981; cursor:pointer; }
+        .list-subtask-row input[type="checkbox"] {
+            appearance: none; width: 20px; height: 20px; min-width: 20px;
+            background: rgba(0,0,0,0.6); border: 2px solid rgba(0, 210, 255, 0.4); border-radius: 6px;
+            cursor: pointer; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0; box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
+        }
+        .list-subtask-row input[type="checkbox"]:hover {
+            border-color: #00d2ff; box-shadow: 0 0 8px rgba(0, 210, 255, 0.4), inset 0 0 6px rgba(0,0,0,0.8);
+            transform: scale(1.08);
+        }
+        .list-subtask-row input[type="checkbox"]:checked {
+            background: #00d2ff; border-color: #ffffff;
+            box-shadow: 0 0 10px #00d2ff, 0 0 20px rgba(0,210,255,0.6), inset 0 0 8px rgba(255,255,255,0.8);
+            transform: scale(1.1);
+        }
+        .list-subtask-row input[type="checkbox"]:checked::after {
+            content: "✓"; position: absolute; color: #001224; font-weight: 900;
+            top: 50%; left: 50%; transform: translate(-50%, -58%); font-size: 0.85rem; text-shadow: 0 0 2px #fff;
+        }
         .list-add-subtask-row { cursor:pointer; }
         .list-add-subtask-placeholder { color:#475569; font-style:italic; font-weight:600; font-size:0.72rem; transition:color 0.15s; }
         .list-add-subtask-placeholder:hover { color:#7ee8ff; }
@@ -502,12 +520,28 @@
         .filter-between-select { margin-bottom:8px; }
         .filter-cond-row { display:flex; align-items:center; gap:6px; margin-bottom:7px; flex-wrap:wrap; }
         .filter-cond-row:last-child { margin-bottom:0; }
-        .filter-input, .filter-logic-select, .filter-between-select select {
+        .filter-input {
             background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); color:#fff;
             border-radius:8px; padding:6px 8px; font-size:0.72rem; font-weight:700; outline:none;
         }
-        .filter-input:focus, .filter-logic-select:focus { border-color:#00d2ff; }
-        .filter-logic-select { color:#7ee8ff; font-weight:900; min-width:50px; }
+        .filter-input:focus { border-color:#00d2ff; }
+        /* Dropdowns premium del panel de FILTROS (campo/operador/valor/lógica)
+           — mismo estilo oscuro/cyan que Prioridad/Estado, pero compactos para
+           caber en la fila junto a los demás controles. */
+        .filter-custom-select { min-width:112px; }
+        .filter-custom-select .custom-select {
+            padding:6px 10px; font-size:0.72rem; font-weight:700; border-radius:9px;
+            background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); box-shadow:none;
+        }
+        .filter-custom-select .custom-select:hover,
+        .filter-custom-select.open .custom-select { border-color:#00d2ff; background:rgba(0,20,40,0.8); box-shadow:0 0 10px rgba(0,210,255,0.25); }
+        .filter-custom-select .custom-options { min-width:150px; font-size:0.72rem; max-height:220px; }
+        .filter-custom-select .custom-option { padding:9px 14px; font-weight:600; }
+        .filter-custom-select .custom-option:hover, .filter-custom-select .custom-option.selected { padding-left:20px; }
+        /* Selectores Y/O (lógica de grupo / entre grupos) — bien angostos */
+        #filterGroupLogicDD_0, [id^="filterGroupLogicDD_"], [id^="filterBetweenLogicDD_"] { min-width:54px; }
+        [id^="filterGroupLogicDD_"] .custom-select, [id^="filterBetweenLogicDD_"] .custom-select { color:#7ee8ff; font-weight:900; padding:6px 10px; justify-content:center; gap:4px; }
+        [id^="filterGroupLogicDD_"] .custom-options, [id^="filterBetweenLogicDD_"] .custom-options { min-width:70px; }
         .filter-del-btn {
             background:none; border:none; color:#f87171; cursor:pointer; font-size:0.85rem; padding:4px 6px;
         }
@@ -613,6 +647,44 @@
             background:linear-gradient(120deg,#00d2ff,#7c3aed); border:none; color:#031018; font-weight:900;
             border-radius:10px; padding:9px 14px; cursor:pointer; font-size:0.8rem;
         }
+        /* ═══ Detalle extendido de subtarea (Fase 1) ═══ */
+        #subtaskDetailBackdrop {
+            position:fixed; inset:0; z-index:8750;
+            background:radial-gradient(circle at 50% 30%, rgba(30,10,50,0.55), rgba(0,2,10,0.92));
+            backdrop-filter:blur(14px); opacity:0; visibility:hidden;
+            transition:opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #subtaskDetailBackdrop.show-comment { opacity:1; visibility:visible; }
+        #subtaskDetailModal {
+            position:fixed; left:50%; top:50%; z-index:8751;
+            transform:translate(-50%,-50%) scale(0.92); width:min(92vw,380px);
+            border-radius:22px; padding:1.3rem;
+            background:linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
+            border:1px solid rgba(0,210,255,0.2);
+            box-shadow:0 0 0 1px rgba(177,0,255,0.10), 0 0 50px rgba(0,210,255,0.15), 0 30px 70px -20px rgba(0,0,0,0.85);
+            opacity:0; visibility:hidden;
+            transition:opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(.2,.9,.25,1.1);
+            max-height:85vh; overflow-y:auto;
+        }
+        #subtaskDetailModal.show-comment { opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
+        #subtaskDetailModal::-webkit-scrollbar { width:7px; }
+        #subtaskDetailModal::-webkit-scrollbar-track { background:rgba(0,0,0,0.3); border-radius:4px; }
+        #subtaskDetailModal::-webkit-scrollbar-thumb { background:linear-gradient(180deg,#22e3ff,#00d2ff); border-radius:4px; box-shadow:0 0 8px rgba(0,210,255,0.8); }
+        .subtask-detail-label { display:block; font-size:0.65rem; font-weight:900; letter-spacing:0.6px; text-transform:uppercase; color:#8fb8ff; opacity:0.85; margin:10px 0 5px; }
+        .subtask-detail-input, .subtask-detail-textarea {
+            width:100%; background:rgba(0,210,255,0.06); border:1px solid rgba(0,210,255,0.25); border-radius:10px;
+            color:#fff; font-size:0.8rem; padding:8px 10px; outline:none; font-family:'Nunito',sans-serif; box-sizing:border-box;
+        }
+        .subtask-detail-input:focus, .subtask-detail-textarea:focus { border-color:#00d2ff; }
+        .subtask-detail-textarea { resize:vertical; min-height:50px; margin-top:6px; }
+        .subtask-detail-row-2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .subtask-name-link { cursor:pointer; }
+        .subtask-name-link:hover { color:#7ee8ff; text-decoration:underline; }
+        .subtask-detail-save-btn {
+            width:100%; margin-top:16px; background:linear-gradient(120deg,#00d2ff,#7c3aed); border:none;
+            color:#031018; font-weight:900; border-radius:12px; padding:11px; cursor:pointer; font-size:0.85rem;
+        }
+
 
 
 
@@ -3915,9 +3987,11 @@
             backdrop-filter:blur(16px);opacity:0;visibility:hidden;
             transition:opacity 0.3s ease,visibility 0.3s ease;
         }
-        /* Time picker backdrop por encima del calEventModal */
+        /* Time picker backdrop por encima del calEventModal (y de
+           subtaskDetailModal 8750/8751, ya que la sub-tarea también
+           abre este mismo selector de hora) */
         #calTimePickerBackdrop {
-            position:fixed;inset:0;z-index:8500;background:rgba(0,2,10,0.88);
+            position:fixed;inset:0;z-index:8800;background:rgba(0,2,10,0.88);
             backdrop-filter:blur(16px);opacity:0;visibility:hidden;
             transition:opacity 0.3s ease,visibility 0.3s ease;
         }
@@ -4271,7 +4345,7 @@
         /* ═══ CALENDAR_P4: Time Picker Circular ═══ */
         #calTimePickerModal {
             position:fixed;top:50%;left:50%;transform:translate(-50%,-60%) scale(0.92);
-            z-index:8501;width:min(94vw,400px);border-radius:24px;padding:0;overflow:hidden;
+            z-index:8801;width:min(94vw,400px);border-radius:24px;padding:0;overflow:hidden;
             display:flex;flex-direction:column;
             background:linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
             border:1px solid rgba(0,210,255,0.22);
@@ -4341,7 +4415,7 @@
         }
 
         #calDatePickerBackdrop {
-            position:fixed; inset:0; z-index:8600;
+            position:fixed; inset:0; z-index:8810;
             background:radial-gradient(circle at 50% 30%, rgba(30,10,50,0.55), rgba(0,2,10,0.92));
             backdrop-filter:blur(14px);
             opacity:0; visibility:hidden; transition:opacity 0.3s ease, visibility 0.3s ease;
@@ -4349,7 +4423,7 @@
         #calDatePickerBackdrop.show-cdp { opacity:1; visibility:visible; }
 
         #calDatePickerPopup {
-            position:fixed; left:50%; top:50%; z-index:8601;
+            position:fixed; left:50%; top:50%; z-index:8811;
             transform:translate(-50%,-50%) scale(0.9); width:min(92vw,320px);
             border-radius:22px; padding:1.1rem 1rem 1.2rem;
             background:linear-gradient(160deg, rgba(10,14,34,0.99), rgba(3,6,20,0.99));
@@ -8996,7 +9070,7 @@ window.hrpFilter        = _hrpApplyFilter;
                             <div class="custom-options">
                                 <div class="custom-option selected" data-val="estado" onclick="setListGroupBy('estado')"><span>Estado</span></div>
                                 <div class="custom-option" data-val="startDate" onclick="setListGroupBy('startDate')"><span>Fecha inicio</span></div>
-                                <div class="custom-option" data-val="endDate" onclick="setListGroupBy('endDate')"><span>Fecha límite</span></div>
+                                <div class="custom-option" data-val="endDate" onclick="setListGroupBy('endDate')"><span>Fecha fin</span></div>
                                 <div class="custom-option" data-val="priority" onclick="setListGroupBy('priority')"><span>Prioridad</span></div>
                                 <div class="custom-option" data-val="taskType" onclick="setListGroupBy('taskType')"><span>Tipo</span></div>
                                 <div class="custom-option" data-val="labels" onclick="setListGroupBy('labels')"><span>Etiqueta</span></div>
@@ -9024,7 +9098,7 @@ window.hrpFilter        = _hrpApplyFilter;
                             <div class="custom-options">
                                 <div class="custom-option selected" data-val="estado" onclick="setListGroupBy('estado')"><span>Estado</span></div>
                                 <div class="custom-option" data-val="startDate" onclick="setListGroupBy('startDate')"><span>Fecha inicio</span></div>
-                                <div class="custom-option" data-val="endDate" onclick="setListGroupBy('endDate')"><span>Fecha límite</span></div>
+                                <div class="custom-option" data-val="endDate" onclick="setListGroupBy('endDate')"><span>Fecha fin</span></div>
                                 <div class="custom-option" data-val="priority" onclick="setListGroupBy('priority')"><span>Prioridad</span></div>
                                 <div class="custom-option" data-val="taskType" onclick="setListGroupBy('taskType')"><span>Tipo</span></div>
                                 <div class="custom-option" data-val="labels" onclick="setListGroupBy('labels')"><span>Etiqueta</span></div>
@@ -9849,6 +9923,10 @@ window.hrpFilter        = _hrpApplyFilter;
         if (dailyStats.date !== todayStr) { dailyStats = { date: todayStr, totalTasks: 0, completedTasks: 0, xp: 0 }; localStorage.setItem('jch_daily_stats_v1', JSON.stringify(dailyStats)); }
         let studyHistory = JSON.parse(localStorage.getItem('jch_study_history_v1')) || {};
         let customCourses = JSON.parse(localStorage.getItem('studyCustomCoursesV18')) || ["Excel con Macros", "Fundamentos de Minitab", "Machine Learning Python", "Programación R", "Primavera P6"];
+        // Getter para que el apartado "CURSO" de EDITAR TAREA (otro bloque <script>)
+        // pueda leer la MISMA lista de cursos de Gestor de Tiempos Analítico —
+        // 'let' no cruza bloques, solo una función exportada a window sí.
+        window.getCustomCourses = function() { return customCourses; };
         let customSessions = JSON.parse(localStorage.getItem('studyCustomSessionsV18')) || ["Sesión 1", "Sesión 2", "Sesión 3"];
         let courseStats = JSON.parse(localStorage.getItem('studyStats_v18')) || {};
         let tableData = JSON.parse(localStorage.getItem('studyPlannerData_v18')) || [];
@@ -10343,8 +10421,10 @@ window.hrpFilter        = _hrpApplyFilter;
 
         window.openInputModal = function(type) {
             pendingAddType = type;
-            const title = type === 'course' || type === 'tableCourse' ? 'Nuevo Curso' : 'Nueva Sesión';
-            const placeholder = type === 'course' || type === 'tableCourse' ? 'Ej: Matemáticas Avanzadas...' : 'Ej: Semana 1...';
+            const title = (type === 'course' || type === 'tableCourse' || type === 'calCourse') ? 'Nuevo Curso'
+                : type === 'calProject' ? 'Nuevo Proyecto' : 'Nueva Sesión';
+            const placeholder = (type === 'course' || type === 'tableCourse' || type === 'calCourse') ? 'Ej: Matemáticas Avanzadas...'
+                : type === 'calProject' ? 'Ej: Rediseño Web 2026...' : 'Ej: Semana 1...';
             document.getElementById('inputModalTitle').textContent = title;
             document.getElementById('txtInputModal').placeholder = placeholder;
             document.getElementById('txtInputModal').value = '';
@@ -10375,6 +10455,22 @@ window.hrpFilter        = _hrpApplyFilter;
                     if(!customCourses.includes(nw)) { customCourses.unshift(nw); localStorage.setItem('studyCustomCoursesV18', JSON.stringify(customCourses)); }
                     document.getElementById('courseSelectTable').value = nw; document.getElementById('courseSelectTableSelectedText').textContent = nw;
                     renderSelectOptions();
+                } else if (pendingAddType === 'calCourse') {
+                    // Nuevo curso desde el apartado "Curso" de EDITAR TAREA — se
+                    // agrega a la MISMA lista compartida de Gestor de Tiempos
+                    // Analítico, así aparece también allí.
+                    if(!customCourses.includes(nw)) { customCourses.unshift(nw); localStorage.setItem('studyCustomCoursesV18', JSON.stringify(customCourses)); }
+                    window.calCourseVal = nw;
+                    const cHid = document.getElementById('calCourseSelectHidden');
+                    const cTxt = document.getElementById('calCourseSelectedText');
+                    if (cHid) cHid.value = nw;
+                    if (cTxt) cTxt.textContent = nw;
+                    if (typeof window.renderCalCourseOptions === 'function') window.renderCalCourseOptions();
+                    renderSelectOptions();
+                } else if (pendingAddType === 'calProject') {
+                    // Nuevo "proyecto padre" desde el apartado "Proyecto" de
+                    // EDITAR PROYECTO — lista propia, independiente de cursos.
+                    if (typeof window.addCalParentProject === 'function') window.addCalParentProject(nw);
                 }
             }
             closeInputModal();
@@ -12560,7 +12656,9 @@ window.hrpFilter        = _hrpApplyFilter;
             const itemsMap = {
                 'ddActiveCourseSelect':  'optionsCourseItems',
                 'ddActiveSessionSelect': 'optionsSessionItems',
-                'ddCourseSelectTable':   'optionsTableItems'
+                'ddCourseSelectTable':   'optionsTableItems',
+                'calCourseDropdown':        'calCourseOptionsItems',
+                'calProjectParentDropdown': 'calProjectParentOptionsItems'
             };
             const container = document.getElementById(itemsMap[ddId]);
             if (!container) return;
@@ -12613,7 +12711,9 @@ window.hrpFilter        = _hrpApplyFilter;
             const itemsMap = {
                 'ddActiveCourseSelect':  'optionsCourseItems',
                 'ddActiveSessionSelect': 'optionsSessionItems',
-                'ddCourseSelectTable':   'optionsTableItems'
+                'ddCourseSelectTable':   'optionsTableItems',
+                'calCourseDropdown':        'calCourseOptionsItems',
+                'calProjectParentDropdown': 'calProjectParentOptionsItems'
             };
             const container = document.getElementById(itemsMap[ddId]);
             if (!container) return;
@@ -12640,6 +12740,75 @@ window.hrpFilter        = _hrpApplyFilter;
                 const dd = document.getElementById(ddId);
                 if (dd) dd.classList.remove('open');
             }
+        };
+
+        /* === CURSO (EDITAR TAREA) — reutiliza la MISMA lista de cursos de
+           Gestor de Tiempos Analítico (customCourses) + "+ AGREGAR NUEVO" === */
+        window.calCourseVal = window.calCourseVal || '';
+        window.renderCalCourseOptions = function() {
+            const container = document.getElementById('calCourseOptionsItems');
+            if (!container) return;
+            const courses = (typeof window.getCustomCourses === 'function') ? window.getCustomCourses() : [];
+            const currentVal = window.calCourseVal || '';
+            let html = '';
+            courses.forEach(c => {
+                const sel = currentVal === c ? 'selected' : '';
+                html += `<div class="custom-option ${sel}" onclick="selectCalCourse('${c.replace(/'/g,"\\'")}')"><span>${c}</span></div>`;
+            });
+            html += `<div class="custom-option" style="color:var(--accent-cyan); font-weight:bold; border-top: 1px dashed rgba(0, 210, 255, 0.3);" onclick="openInputModal('calCourse')"><span>+ AGREGAR NUEVO</span></div>`;
+            container.innerHTML = html;
+        };
+        window.selectCalCourse = function(val) {
+            if (typeof playMenuSound === 'function') playMenuSound();
+            window.calCourseVal = val;
+            const hid = document.getElementById('calCourseSelectHidden');
+            const txt = document.getElementById('calCourseSelectedText');
+            if (hid) hid.value = val;
+            if (txt) txt.textContent = val;
+            const dd = document.getElementById('calCourseDropdown');
+            if (dd) dd.classList.remove('open');
+            window.renderCalCourseOptions();
+        };
+
+        /* === PROYECTO PADRE (EDITAR PROYECTO) — lista propia e independiente
+           de cursos, empieza vacía, se guarda en su propia localStorage === */
+        let customParentProjects = JSON.parse(localStorage.getItem('calCustomParentProjectsV1')) || [];
+        window.getCustomParentProjects = function() { return customParentProjects; };
+        window.calProjectParentVal = window.calProjectParentVal || '';
+        window.renderCalProjectParentOptions = function() {
+            const container = document.getElementById('calProjectParentOptionsItems');
+            if (!container) return;
+            const currentVal = window.calProjectParentVal || '';
+            let html = '';
+            customParentProjects.forEach(p => {
+                const sel = currentVal === p ? 'selected' : '';
+                html += `<div class="custom-option ${sel}" onclick="selectCalProjectParent('${p.replace(/'/g,"\\'")}')"><span>${p}</span></div>`;
+            });
+            html += `<div class="custom-option" style="color:var(--accent-cyan); font-weight:bold; border-top: 1px dashed rgba(0, 210, 255, 0.3);" onclick="openInputModal('calProject')"><span>+ AGREGAR NUEVO PROYECTO</span></div>`;
+            container.innerHTML = html;
+        };
+        window.selectCalProjectParent = function(val) {
+            if (typeof playMenuSound === 'function') playMenuSound();
+            window.calProjectParentVal = val;
+            const hid = document.getElementById('calProjectParentSelectHidden');
+            const txt = document.getElementById('calProjectParentSelectedText');
+            if (hid) hid.value = val;
+            if (txt) txt.textContent = val;
+            const dd = document.getElementById('calProjectParentDropdown');
+            if (dd) dd.classList.remove('open');
+            window.renderCalProjectParentOptions();
+        };
+        window.addCalParentProject = function(nw) {
+            if (!customParentProjects.includes(nw)) {
+                customParentProjects.unshift(nw);
+                localStorage.setItem('calCustomParentProjectsV1', JSON.stringify(customParentProjects));
+            }
+            window.calProjectParentVal = nw;
+            const hid = document.getElementById('calProjectParentSelectHidden');
+            const txt = document.getElementById('calProjectParentSelectedText');
+            if (hid) hid.value = nw;
+            if (txt) txt.textContent = nw;
+            window.renderCalProjectParentOptions();
         };
 
         /* === P9: DETECTOR DE MEDIANOCHE — Reset automático al nuevo día === */
@@ -13843,6 +14012,30 @@ window.hrpFilter        = _hrpApplyFilter;
         });
     };
 
+    /* ── Estado (subtarea) — mismo patrón premium que Prioridad ──── */
+    const ESTADO_DISPLAY_INFO = {
+        pendiente: { label: '⬜ Pendiente', color: '#94a3b8' },
+        en_curso:  { label: '🔵 En Curso',  color: '#00d2ff' },
+        completado:{ label: '✅ Completado',color: '#10b981' }
+    };
+    window.subtaskEstadoVal = window.subtaskEstadoVal || 'pendiente';
+    window.selectSubtaskEstado = function(val) {
+        if (typeof playMenuSound === 'function') playMenuSound();
+        window.subtaskEstadoVal = val;
+        window.renderSubtaskEstadoDisplay();
+        const dd = document.getElementById('subtaskEstadoDropdown');
+        if (dd) dd.classList.remove('open');
+    };
+    window.renderSubtaskEstadoDisplay = function() {
+        const val = window.subtaskEstadoVal || 'pendiente';
+        const info = ESTADO_DISPLAY_INFO[val] || ESTADO_DISPLAY_INFO.pendiente;
+        const el = document.getElementById('subtaskEstadoSelectedText');
+        if (el) { el.textContent = info.label; el.style.color = info.color; }
+        document.querySelectorAll('#subtaskEstadoOptions .custom-option').forEach(o => {
+            o.classList.toggle('selected', o.dataset.val === val);
+        });
+    };
+
     window.renderTypeOptions = function(ctx, searchTerm) {
         const container = document.getElementById(ctx + 'TypeOptions');
         if (!container) return;
@@ -13928,7 +14121,18 @@ window.hrpFilter        = _hrpApplyFilter;
         { key: 'completado',label: 'Completado',dot: '#10b981' }
     ];
 
+    function kanbanDeriveStatusFromSubtasks(ev) {
+        if (!ev.subtasks || !ev.subtasks.length) return null; // sin subtareas: se usa el estado manual
+        let doneCount = 0;
+        ev.subtasks.forEach((st, i) => { if (listIsSubtaskDone(ev, i, st)) doneCount++; });
+        if (doneCount === 0) return 'pendiente';
+        if (doneCount === ev.subtasks.length) return 'completado';
+        return 'en_curso';
+    }
+
     function kanbanGetStatus(ev) {
+        const derived = kanbanDeriveStatusFromSubtasks(ev);
+        if (derived) return derived;
         if (ev.kanbanStatus) return ev.kanbanStatus;
         return ev.completed ? 'completado' : 'pendiente';
     }
@@ -13981,6 +14185,9 @@ window.hrpFilter        = _hrpApplyFilter;
 
     function kanbanSetItemGroupValue(ev, groupKey) {
         if (listGroupBy === 'estado') {
+            // Si tiene subtareas, el estado se deriva automáticamente de ellas
+            // (ver kanbanDeriveStatusFromSubtasks) — no se puede sobrescribir arrastrando.
+            if (ev.subtasks && ev.subtasks.length) return false;
             ev.kanbanStatus = groupKey;
             ev.completed = (groupKey === 'completado');
             return true;
@@ -14063,7 +14270,7 @@ window.hrpFilter        = _hrpApplyFilter;
         // ═══ Vista Lista (Fase 3) — agrupar, ordenar, filas de solo lectura ═══
     // La reordenación de columnas y la edición en línea llegan en la Fase 4.
     const GROUP_FIELD_LABELS = {
-        estado: 'Estado', startDate: 'Fecha inicio', endDate: 'Fecha límite',
+        estado: 'Estado', startDate: 'Fecha inicio', endDate: 'Fecha fin',
         priority: 'Prioridad', taskType: 'Tipo', labels: 'Etiqueta'
     };
     const PRIORITY_RANK = { urgente:0, alta:1, normal:2, baja:3 };
@@ -14245,6 +14452,7 @@ window.hrpFilter        = _hrpApplyFilter;
             arr[idx] = done;
             localStorage.setItem(key, JSON.stringify(arr));
             window.renderListView();
+            if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
         } else {
             ev.subtasks[idx].done = done;
             if (typeof saveCalEvents === 'function') saveCalEvents();
@@ -14253,13 +14461,29 @@ window.hrpFilter        = _hrpApplyFilter;
 
     function listSubtaskRowHtml(ev, st, idx) {
         const done = listIsSubtaskDone(ev, idx, st);
+        const prio = PRIORITY_INFO[st.priority] || null;
+        const stStatus = st.kanbanStatus || (done ? 'completado' : 'pendiente');
+        const stInfo = STATUS_INFO[stStatus];
+        // Color de la etiqueta de la SUB-tarea: igual que en tareas/proyectos,
+        // usa el color propio de esa etiqueta (st.labelColors / DB de colores
+        // por etiqueta), no el color del padre — antes usaba siempre ev.color,
+        // por eso todas las etiquetas de subtarea salían del mismo color.
+        const stLabel = st.labels && st.labels[0];
+        const stLabelColor = stLabel ? ((st.labelColors && st.labelColors[stLabel]) || (typeof getLabelColor === 'function' ? getLabelColor(stLabel) : null) || ev.color || '#10b981') : null;
+        const badges = `
+            ${st.startDate ? `<span class="list-chip" style="background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.4);color:#94a3b8;">📅 ${kanbanFmtDate(st.startDate)}</span>` : ''}
+            ${st.endDate ? `<span class="list-chip" style="background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.4);color:#94a3b8;">🏁 ${kanbanFmtDate(st.endDate)}</span>` : ''}
+            ${prio ? `<span class="list-chip" style="background:${prio.color}20;border:1px solid ${prio.color}80;color:${prio.color};">${prio.label}</span>` : ''}
+            ${st.taskType ? `<span class="list-chip" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;">${st.taskType}</span>` : ''}
+            ${stLabel ? `<span class="list-chip" style="background:${stLabelColor}20;border:1px solid ${stLabelColor}80;color:${stLabelColor};">#${stLabel}</span>` : ''}
+            <span class="list-chip" style="background:${stInfo.c}20;border:1px solid ${stInfo.c}80;color:${stInfo.c};">${stInfo.l}</span>`;
         return `
             <div class="list-row list-subtask-row">
                 <div class="list-cell list-cell-name list-subtask-name">
                     <input type="checkbox" ${done ? 'checked' : ''} onclick="event.stopPropagation(); listToggleSubtaskDone('${ev.id}', ${idx}, this.checked)">
-                    <span style="${done ? 'text-decoration:line-through;opacity:0.5;' : ''}">${(st && (st.title || st.name)) || 'Subtarea'}</span>
+                    <span class="subtask-name-link" style="${done ? 'text-decoration:line-through;opacity:0.5;' : ''}" onclick="event.stopPropagation(); openSubtaskDetail('${ev.id}', ${idx})">${(st && (st.title || st.name)) || 'Subtarea'}</span>
                 </div>
-                <div class="list-cell" style="grid-column: span ${listColumnOrder.length};"></div>
+                <div class="list-cell" style="grid-column: span ${listColumnOrder.length}; display:flex; gap:4px; flex-wrap:wrap; padding:6px 8px;">${badges}</div>
             </div>`;
     }
 
@@ -14595,6 +14819,45 @@ window.hrpFilter        = _hrpApplyFilter;
         if (typeof playMenuSound === 'function') playMenuSound();
     };
 
+    // ── Dropdown premium genérico para el panel de FILTROS ──
+    // Reemplaza los <select> nativos (opacos) de campo/operador/valor/lógica
+    // por el mismo estilo oscuro/cyan que ya usan Prioridad, Estado, etc.
+    // Las filas de filtro son dinámicas (grupo/condición), así que cada
+    // dropdown recibe un id único; el valor elegido se lee de data-val en
+    // vez de incrustarlo en el onclick, para que etiquetas/tipos con texto
+    // libre del usuario no rompan el HTML.
+    function _filterEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function filterCustomSelectHtml(id, options, currentKey, kind, gi, ci) {
+        const current = options.find(o => o.key === currentKey) || options[0] || { key:'', label:'' };
+        const ciArg = (ci === null || ci === undefined) ? 'null' : ci;
+        const optsHtml = options.map(o => `<div class="custom-option${o.key === currentKey ? ' selected' : ''}" data-val="${_filterEsc(o.key)}" onclick="window._filterOptPick(this,'${kind}',${gi},${ciArg})"><span>${_filterEsc(o.label)}</span></div>`).join('');
+        return `<div class="custom-select-wrapper filter-custom-select" id="${id}">
+            <div class="custom-select" onclick="toggleDropdown('${id}')">
+                <span>${_filterEsc(current.label)}</span><span>▼</span>
+            </div>
+            <div class="custom-options">${optsHtml}</div>
+        </div>`;
+    }
+    window._filterOptPick = function(el, kind, gi, ci) {
+        const val = el.getAttribute('data-val');
+        const label = el.textContent.trim();
+        const wrapper = el.closest('.custom-select-wrapper');
+        if (wrapper) {
+            const span = wrapper.querySelector('.custom-select > span:first-child');
+            if (span) span.textContent = label;
+            wrapper.querySelectorAll('.custom-option').forEach(o => o.classList.toggle('selected', o === el));
+            wrapper.classList.remove('open');
+        }
+        if (kind === 'field') window.listSetConditionField(gi, ci, val);
+        else if (kind === 'op') window.listSetConditionOp(gi, ci, val);
+        else if (kind === 'value') window.listSetConditionValue(gi, ci, val);
+        else if (kind === 'groupLogic') window.listSetGroupLogic(gi, val);
+        else if (kind === 'betweenLogic') window.listSetBetweenLogic(gi, val);
+        if (typeof playMenuSound === 'function') playMenuSound();
+    };
+
+    const FILTER_LOGIC_OPTS = [{ key:'AND', label:'Y' }, { key:'OR', label:'O' }];
+
     function listRenderConditionRow(groupIdx, condIdx) {
         const group = listFilterGroups[groupIdx];
         const cond = group.conditions[condIdx];
@@ -14603,29 +14866,19 @@ window.hrpFilter        = _hrpApplyFilter;
         if (needsValue) {
             if (['estado', 'prioridad', 'etiqueta', 'tipo'].includes(cond.field)) {
                 const opts = listGetValueOptionsForField(cond.field);
-                valueHtml = `<select class="filter-input" onchange="listSetConditionValue(${groupIdx},${condIdx},this.value)">
-                    ${opts.map(o => `<option value="${o.key}" ${cond.value === o.key ? 'selected' : ''}>${o.label}</option>`).join('')}
-                </select>`;
+                valueHtml = filterCustomSelectHtml(`filterValueDD_${groupIdx}_${condIdx}`, opts, cond.value, 'value', groupIdx, condIdx);
             } else if (cond.field === 'fechaInicio' || cond.field === 'fechaFin') {
                 valueHtml = `<input type="date" class="filter-input" value="${cond.value || ''}" onchange="listSetConditionValue(${groupIdx},${condIdx},this.value)">`;
             } else {
                 valueHtml = `<input type="text" class="filter-input" placeholder="Escribe..." value="${cond.value || ''}" oninput="listSetConditionValue(${groupIdx},${condIdx},this.value)">`;
             }
         }
-        const logicPrefix = condIdx === 0 ? '' : `
-            <select class="filter-logic-select" onchange="listSetGroupLogic(${groupIdx}, this.value)">
-                <option value="AND" ${group.groupLogic === 'AND' ? 'selected' : ''}>Y</option>
-                <option value="OR" ${group.groupLogic === 'OR' ? 'selected' : ''}>O</option>
-            </select>`;
+        const logicPrefix = condIdx === 0 ? '' : filterCustomSelectHtml(`filterGroupLogicDD_${groupIdx}`, FILTER_LOGIC_OPTS, group.groupLogic, 'groupLogic', groupIdx, null);
         return `
             <div class="filter-cond-row">
                 ${logicPrefix}
-                <select class="filter-input" onchange="listSetConditionField(${groupIdx},${condIdx},this.value)">
-                    ${FILTER_FIELDS.map(f => `<option value="${f.key}" ${cond.field === f.key ? 'selected' : ''}>${f.label}</option>`).join('')}
-                </select>
-                <select class="filter-input" onchange="listSetConditionOp(${groupIdx},${condIdx},this.value)">
-                    ${FILTER_OPS.map(o => `<option value="${o.key}" ${cond.op === o.key ? 'selected' : ''}>${o.label}</option>`).join('')}
-                </select>
+                ${filterCustomSelectHtml(`filterFieldDD_${groupIdx}_${condIdx}`, FILTER_FIELDS, cond.field, 'field', groupIdx, condIdx)}
+                ${filterCustomSelectHtml(`filterOpDD_${groupIdx}_${condIdx}`, FILTER_OPS, cond.op, 'op', groupIdx, condIdx)}
                 ${valueHtml}
                 <button class="filter-del-btn" onclick="listRemoveCondition(${groupIdx},${condIdx})">🗑</button>
             </div>`;
@@ -14652,10 +14905,7 @@ window.hrpFilter        = _hrpApplyFilter;
                 html += `<div class="filter-where-label">Donde</div>`;
             } else {
                 html += `<div class="filter-between-select">
-                    <select onchange="listSetBetweenLogic(${gi}, this.value)">
-                        <option value="AND" ${group.betweenLogic === 'AND' ? 'selected' : ''}>Y</option>
-                        <option value="OR" ${group.betweenLogic === 'OR' ? 'selected' : ''}>O</option>
-                    </select>
+                    ${filterCustomSelectHtml(`filterBetweenLogicDD_${gi}`, FILTER_LOGIC_OPTS, group.betweenLogic, 'betweenLogic', gi, null)}
                 </div>`;
             }
             html += `<div class="filter-group-box">`;
@@ -14957,6 +15207,222 @@ window.hrpFilter        = _hrpApplyFilter;
         commentRenderList();
     };
 
+        // ═══ Detalle extendido de subtarea (Fase 1) ═══
+    // Reutiliza el módulo de Prioridad/Tipo ya existente con ctx='subtask'
+    // (esas funciones son genéricas por diseño, no necesitan cambios).
+    let subtaskDetailEvId = null, subtaskDetailIdx = null;
+
+    function subtaskDetailGetEv() {
+        const evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
+        return evs.find(e => String(e.id) === String(subtaskDetailEvId));
+    }
+
+    window.openSubtaskDetail = function(evId, idx) {
+        subtaskDetailEvId = evId;
+        subtaskDetailIdx = idx;
+        const ev = subtaskDetailGetEv();
+        const st = ev && ev.subtasks && ev.subtasks[idx];
+        if (!ev || !st) return;
+
+        document.getElementById('subtaskDetailTitle').value = st.title || st.name || '';
+        document.getElementById('subtaskDetailDesc').value = st.description || '';
+
+        // Fechas por defecto en cascada (solo si la subtarea aún no tiene
+        // fecha guardada — nunca se sobrescribe lo que el usuario ya puso):
+        // - 1ª subtarea: inicio = inicio de la tarea/proyecto
+        // - subtareas siguientes: inicio = fin de la subtarea anterior
+        // - última subtarea: fin = fin de la tarea/proyecto
+        // (con 1 sola subtarea, "primera" y "última" son la misma, así que
+        // hereda inicio Y fin del padre, tal como se pidió)
+        const isFirst = (idx === 0);
+        const isLast = (idx === (ev.subtasks.length - 1));
+        let defaultStart = '';
+        if (isFirst) {
+            defaultStart = (ev.startDate || '').slice(0, 10);
+        } else {
+            const prev = ev.subtasks[idx - 1];
+            // Si la subtarea anterior NO tiene FIN definido, esta tampoco debe
+            // tener un INICIO por defecto — se queda "Sin definir" hasta que
+            // se defina el FIN de la anterior (ver propagación hacia adelante
+            // en saveSubtaskDetail, más abajo).
+            defaultStart = (prev && prev.endDate) ? prev.endDate.slice(0, 10) : '';
+        }
+        const defaultEnd = isLast ? (ev.endDate || '').slice(0, 10) : '';
+
+        // INICIO/FIN ahora usan el mismo selector premium (reloj + calendario)
+        // que la ventana de EDITAR tarea/proyecto, vía openSubtaskTimePicker.
+        window.subtaskStartDateStr = (st.startDate || '').slice(0, 10) || defaultStart;
+        window.subtaskEndDateStr   = (st.endDate   || '').slice(0, 10) || defaultEnd;
+        // Hora: si la subtarea ya tenía fecha+hora guardada se podría parsear,
+        // pero por ahora las subtareas solo guardaban fecha (slice 0,10), así
+        // que se usa una hora por defecto estable al abrir.
+        if (typeof window.updateSubtaskTimeDisplay === 'function') window.updateSubtaskTimeDisplay();
+        else {
+            const sEl = document.getElementById('subtaskStartDisplay');
+            const eEl = document.getElementById('subtaskEndDisplay');
+            if (sEl) sEl.textContent = window.subtaskStartDateStr || 'Sin definir';
+            if (eEl) eEl.textContent = window.subtaskEndDateStr || 'Sin definir';
+        }
+
+        window.subtaskEstadoVal = st.kanbanStatus || (st.done ? 'completado' : 'pendiente');
+        if (typeof window.renderSubtaskEstadoDisplay === 'function') window.renderSubtaskEstadoDisplay();
+
+        window.subtaskPriorityVal = st.priority || 'normal';
+        window.subtaskTypeVal = st.taskType || '';
+        if (typeof window.renderPriorityDisplay === 'function') window.renderPriorityDisplay('subtask');
+        if (typeof window.renderTypeOptions === 'function') window.renderTypeOptions('subtask', '');
+        const typeInput = document.getElementById('subtaskTypeSearchInput');
+        if (typeInput) typeInput.value = st.taskType || '';
+
+        // Etiquetas — mismo sistema de chips + color que la ventana EDITAR
+        window._subtaskCurrentLabels = [...(st.labels || [])];
+        window._subtaskCurrentLabelColor = '#10b981';
+        const subtaskLabelInput = document.getElementById('subtaskEventLabel');
+        if (subtaskLabelInput) subtaskLabelInput.value = '';
+        const subtaskLabelGhostEl = document.getElementById('subtaskLabelGhost');
+        if (subtaskLabelGhostEl) subtaskLabelGhostEl.textContent = '';
+        const subtaskLabelsContainer = document.getElementById('subtaskLabelsContainer');
+        if (subtaskLabelsContainer) {
+            subtaskLabelsContainer.innerHTML = '';
+            (st.labels || []).forEach(lbl => {
+                const lc = (st.labelColors && st.labelColors[lbl]) || (typeof getLabelColor === 'function' ? getLabelColor(lbl) : null) || '#10b981';
+                const chip = document.createElement('div');
+                chip.style.cssText = `background:${lc}25;border:1.5px solid ${lc};color:#fff;border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:900;display:inline-flex;align-items:center;gap:5px;box-shadow:0 0 8px ${lc}50;`;
+                chip.dataset.label = lbl; chip.dataset.color = lc;
+                chip.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${lc};box-shadow:0 0 4px ${lc};"></span>#${lbl} <span onclick="this.closest('div').remove();window._subtaskCurrentLabels=window._subtaskCurrentLabels.filter(l=>l!=='${lbl}');" style="font-size:0.7rem;opacity:0.6;cursor:pointer;">✕</span>`;
+                subtaskLabelsContainer.appendChild(chip);
+            });
+        }
+
+        document.getElementById('subtaskDetailBackdrop').classList.add('show-comment');
+        document.getElementById('subtaskDetailModal').classList.add('show-comment');
+    };
+
+    window.closeSubtaskDetail = function() {
+        document.getElementById('subtaskDetailBackdrop').classList.remove('show-comment');
+        document.getElementById('subtaskDetailModal').classList.remove('show-comment');
+        subtaskDetailEvId = null; subtaskDetailIdx = null;
+    };
+
+    /* ── Etiqueta de subtarea — mismo sistema de autocompletado + color
+       que la ventana EDITAR (calLabelAutocomplete/addCalLabel), adaptado
+       con sus propios ids para no interferir con los otros contextos. ── */
+    window.subtaskLabelAutocomplete = function(inp) {
+        const val = inp.value.trim().replace(/^#/, '');
+        const ghost = document.getElementById('subtaskLabelGhost');
+        if (!ghost) return;
+        if (!val) { ghost.textContent = ''; return; }
+        const known = (typeof calGetAllKnownLabels === 'function') ? calGetAllKnownLabels() : [];
+        const match = known.find(l => l.toLowerCase().startsWith(val.toLowerCase()) && l.toLowerCase() !== val.toLowerCase());
+        if (match) {
+            const canvas = document.createElement('canvas');
+            const ctx2 = canvas.getContext('2d');
+            const style = window.getComputedStyle(inp);
+            ctx2.font = style.font || '700 0.88rem sans-serif';
+            ghost.style.left = (14 + ctx2.measureText(val).width) + 'px';
+            ghost.textContent = match.slice(val.length);
+            const labelsWithColors = (typeof calGetAllKnownLabelsWithColors === 'function') ? calGetAllKnownLabelsWithColors() : {};
+            const key = Object.keys(labelsWithColors).find(k => k.toLowerCase() === match.toLowerCase());
+            if (key) {
+                window._subtaskCurrentLabelColor = labelsWithColors[key];
+                document.querySelectorAll('.subtask-label-color-dot').forEach(d => {
+                    const isActive = d.dataset.color === window._subtaskCurrentLabelColor;
+                    d.style.border = isActive ? '2px solid #fff' : '2px solid transparent';
+                    d.style.boxShadow = isActive ? `0 0 8px ${window._subtaskCurrentLabelColor}` : '';
+                    d.style.transform = isActive ? 'scale(1.3)' : '';
+                });
+            }
+        } else {
+            ghost.textContent = '';
+        }
+    };
+    window.subtaskLabelKeydown = function(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const ghost = document.getElementById('subtaskLabelGhost');
+            const inp = document.getElementById('subtaskEventLabel');
+            if (!ghost || !inp || !ghost.textContent) return;
+            inp.value = inp.value.trim().replace(/^#/, '') + ghost.textContent;
+            ghost.textContent = '';
+            const fullLabel = inp.value.replace(/^#/, '');
+            const storedColor = (typeof getLabelColor === 'function') ? getLabelColor(fullLabel) : null;
+            if (storedColor) {
+                window._subtaskCurrentLabelColor = storedColor;
+                document.querySelectorAll('.subtask-label-color-dot').forEach(d => d.classList.toggle('active', d.dataset.color === storedColor));
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            addSubtaskLabel();
+        }
+    };
+    window.addSubtaskLabel = function() {
+        const inp = document.getElementById('subtaskEventLabel');
+        const container = document.getElementById('subtaskLabelsContainer');
+        if (!inp || !container) return;
+        const val = inp.value.trim().replace(/^#/, '');
+        if (!val) return;
+        if (!window._subtaskCurrentLabels) window._subtaskCurrentLabels = [];
+        if (window._subtaskCurrentLabels.includes(val)) { inp.value = ''; return; }
+        window._subtaskCurrentLabels.push(val);
+        const storedColor = (typeof getLabelColor === 'function') ? getLabelColor(val) : null;
+        const labelColor = storedColor || window._subtaskCurrentLabelColor || '#10b981';
+        if (typeof saveLabelColor === 'function') saveLabelColor(val, labelColor);
+        const chip = document.createElement('div');
+        chip.style.cssText = `background:${labelColor}25;border:1.5px solid ${labelColor};color:#fff;border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:900;display:inline-flex;align-items:center;gap:5px;cursor:pointer;box-shadow:0 0 8px ${labelColor}50;`;
+        chip.dataset.label = val;
+        chip.dataset.color = labelColor;
+        chip.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${labelColor};box-shadow:0 0 4px ${labelColor};"></span>#${val} <span onclick="this.closest('div').remove();window._subtaskCurrentLabels=window._subtaskCurrentLabels.filter(l=>l!=='${val}');" style="font-size:0.7rem;opacity:0.6;cursor:pointer;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</span>`;
+        container.appendChild(chip);
+        inp.value = '';
+        const ghost = document.getElementById('subtaskLabelGhost');
+        if (ghost) ghost.textContent = '';
+        if (typeof playPopSound === 'function') playPopSound();
+    };
+    window.selectSubtaskLabelColor = function(el) {
+        window._subtaskCurrentLabelColor = el.dataset.color;
+        document.querySelectorAll('.subtask-label-color-dot').forEach(d => {
+            const isActive = d.dataset.color === window._subtaskCurrentLabelColor;
+            d.style.border = isActive ? '2px solid #fff' : '2px solid transparent';
+            d.style.boxShadow = isActive ? `0 0 8px ${window._subtaskCurrentLabelColor}, 0 0 14px ${window._subtaskCurrentLabelColor}60` : '';
+            d.style.transform = isActive ? 'scale(1.3)' : '';
+        });
+        if (typeof playPopSound === 'function') playPopSound();
+    };
+
+    window.saveSubtaskDetail = function() {
+        const ev = subtaskDetailGetEv();
+        const st = ev && ev.subtasks && ev.subtasks[subtaskDetailIdx];
+        if (!ev || !st) return;
+
+        const newTitle = document.getElementById('subtaskDetailTitle').value.trim();
+        if (newTitle) st.title = newTitle;
+        st.description = document.getElementById('subtaskDetailDesc').value.trim();
+        st.startDate = window.subtaskStartDateStr || '';
+        st.endDate = window.subtaskEndDateStr || '';
+        st.priority = window.subtaskPriorityVal || 'normal';
+        st.taskType = window.subtaskTypeVal || '';
+        st.labels = window._subtaskCurrentLabels ? [...window._subtaskCurrentLabels] : [];
+        const subtaskLabelColors = {};
+        document.querySelectorAll('#subtaskLabelsContainer > div[data-label]').forEach(chip => {
+            if (chip.dataset.label && chip.dataset.color) subtaskLabelColors[chip.dataset.label] = chip.dataset.color;
+        });
+        st.labelColors = subtaskLabelColors;
+        Object.entries(subtaskLabelColors).forEach(([l, c]) => { if (typeof saveLabelColor === 'function') saveLabelColor(l, c); });
+        st.kanbanStatus = window.subtaskEstadoVal || 'pendiente';
+        st.done = (st.kanbanStatus === 'completado');
+
+        // Propagación en cascada hacia adelante: el INICIO de la siguiente
+        // subtarea siempre es el FIN de esta (incluso si quedó "Sin definir"
+        // — en ese caso la siguiente también vuelve a quedar "Sin definir").
+        // Así se mantiene la cadena inicio→fin→inicio→fin… tal como se pidió.
+        const nextSt = ev.subtasks[subtaskDetailIdx + 1];
+        if (nextSt) nextSt.startDate = st.endDate;
+
+        if (typeof saveCalEvents === 'function') saveCalEvents();
+        window.closeSubtaskDetail();
+        if (typeof playSparkleSound === 'function') playSparkleSound();
+    };
+
     window.switchGestionTab = function(tab) {
         document.getElementById('gestionTabBtnKanban').classList.toggle('active', tab === 'kanban');
         document.getElementById('gestionTabBtnLista').classList.toggle('active', tab === 'lista');
@@ -14964,7 +15430,7 @@ window.hrpFilter        = _hrpApplyFilter;
         document.getElementById('gestionPanelLista').classList.toggle('active', tab === 'lista');
         if (tab === 'kanban' && typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
         if (tab === 'lista' && typeof window.renderListView === 'function') window.renderListView();
-        if (typeof playMenuSound === 'function') playMenuSound();nd();
+        if (typeof playMenuSound === 'function') playMenuSound();
     };
 
     // ── Arrastrar y soltar por eventos de puntero (funciona en táctil) ──
@@ -15316,6 +15782,13 @@ window.hrpFilter        = _hrpApplyFilter;
     /* ─── ESTADO GLOBAL ─────────────────────────────────────────── */
     let calCurrentDate   = new Date();
     let calViewDate      = new Date();       // día mostrado en el reloj
+    // FIX fecha INICIO/FIN desacopladas: antes INICIO y FIN de un evento/tarea/
+    // proyecto compartían UNA sola fecha (calViewDate), así que editar la fecha
+    // de uno sobreescribía la del otro. Ahora cada uno tiene su propio string
+    // 'YYYY-MM-DD'. Al editar INICIO, FIN se mantiene igual a INICIO (comportamiento
+    // que el usuario confirmó como correcto). Al editar FIN, INICIO NO cambia.
+    let calStartDateStr  = localDateStr(new Date());
+    let calEndDateStr    = localDateStr(new Date());
     let calMonthViewDate = new Date();       // mes en vista mensual
     let calDayViewDate   = new Date();
     let calEvents        = [];               // todos los eventos
@@ -16022,14 +16495,21 @@ window.hrpFilter        = _hrpApplyFilter;
         // Configurar el modal según el tipo
         const icons  = {evento:'📅', proyecto:'📁', tarea:'🔥'};
         const titles = {evento:'NUEVO EVENTO', proyecto:'NUEVO PROYECTO', tarea:'NUEVA TAREA'};
+        const editTitles = {evento:'EDITAR EVENTO', proyecto:'EDITAR PROYECTO', tarea:'EDITAR TAREA'};
         const colDefaults = {evento:'#00d2ff', proyecto:'#10b981', tarea:'#f97316'};
 
         document.getElementById('calEventModalIcon').textContent  = icons[type];
-        document.getElementById('calEventModalTitle').textContent = existingEvent ? 'EDITAR' : titles[type];
+        document.getElementById('calEventModalTitle').textContent = existingEvent ? (editTitles[type] || 'EDITAR') : titles[type];
 
         // Sub-tareas solo para proyecto/tarea
         const stSection = document.getElementById('calSubtasksSection');
         if (stSection) stSection.style.display = (type !== 'evento') ? '' : 'none';
+
+        // Curso (solo TAREA) / Proyecto padre (solo PROYECTO) — mostrar/ocultar
+        const courseRow = document.getElementById('calCourseFieldRow');
+        if (courseRow) courseRow.style.display = (type === 'tarea') ? '' : 'none';
+        const projParentRow = document.getElementById('calProjectParentFieldRow');
+        if (projParentRow) projParentRow.style.display = (type === 'proyecto') ? '' : 'none';
 
         // Cargar valores existentes o defaults
         const now = new Date();
@@ -16046,6 +16526,19 @@ window.hrpFilter        = _hrpApplyFilter;
             if (typeof window.renderTypeOptions === 'function') window.renderTypeOptions('cal', '');
             const calTypeInputEdit = document.getElementById('calTypeSearchInput');
             if (calTypeInputEdit) calTypeInputEdit.value = window.calTypeVal;
+            // Restaurar Curso (tarea) / Proyecto padre (proyecto)
+            window.calCourseVal = existingEvent.curso || '';
+            const cHidEdit = document.getElementById('calCourseSelectHidden');
+            const cTxtEdit = document.getElementById('calCourseSelectedText');
+            if (cHidEdit) cHidEdit.value = window.calCourseVal;
+            if (cTxtEdit) cTxtEdit.textContent = window.calCourseVal || 'Seleccionar curso...';
+            if (typeof window.renderCalCourseOptions === 'function') window.renderCalCourseOptions();
+            window.calProjectParentVal = existingEvent.projectParent || '';
+            const pHidEdit = document.getElementById('calProjectParentSelectHidden');
+            const pTxtEdit = document.getElementById('calProjectParentSelectedText');
+            if (pHidEdit) pHidEdit.value = window.calProjectParentVal;
+            if (pTxtEdit) pTxtEdit.textContent = window.calProjectParentVal || 'Seleccionar proyecto...';
+            if (typeof window.renderCalProjectParentOptions === 'function') window.renderCalProjectParentOptions();
             // Restore labels
             window._calCurrentLabels = [...(existingEvent.labels || [])];
             const lpEdit = document.getElementById('calLabelsContainer');
@@ -16065,6 +16558,11 @@ window.hrpFilter        = _hrpApplyFilter;
             const et = existingEvent.endTime   || '11:00';
             const sP = parseTime12(st); calStartH = sP.h; calStartM = sP.m; calStartAmPm = sP.ampm;
             const eP = parseTime12(et); calEndH   = eP.h; calEndM   = eP.m; calEndAmPm   = eP.ampm;
+            // Parsear fechas (INICIO y FIN independientes — ver nota junto a
+            // la declaración de calStartDateStr/calEndDateStr más arriba)
+            calStartDateStr = (existingEvent.startDate || '').slice(0, 10) || localDateStr(calViewDate);
+            calEndDateStr   = (existingEvent.endDate   || '').slice(0, 10) || calStartDateStr;
+            calViewDate = new Date(calStartDateStr + 'T12:00:00');
             // Cargar sub-tareas
             calSubtaskCount = 0;
             const stContainer = document.getElementById('calSubtasksContainer');
@@ -16101,6 +16599,19 @@ window.hrpFilter        = _hrpApplyFilter;
             if (typeof window.renderTypeOptions === 'function') window.renderTypeOptions('cal', '');
             const calTypeInputNew = document.getElementById('calTypeSearchInput');
             if (calTypeInputNew) calTypeInputNew.value = '';
+            // Limpiar Curso (tarea) / Proyecto padre (proyecto)
+            window.calCourseVal = '';
+            const cHidNew = document.getElementById('calCourseSelectHidden');
+            const cTxtNew = document.getElementById('calCourseSelectedText');
+            if (cHidNew) cHidNew.value = '';
+            if (cTxtNew) cTxtNew.textContent = 'Seleccionar curso...';
+            if (typeof window.renderCalCourseOptions === 'function') window.renderCalCourseOptions();
+            window.calProjectParentVal = '';
+            const pHidNew = document.getElementById('calProjectParentSelectHidden');
+            const pTxtNew = document.getElementById('calProjectParentSelectedText');
+            if (pHidNew) pHidNew.value = '';
+            if (pTxtNew) pTxtNew.textContent = 'Seleccionar proyecto...';
+            if (typeof window.renderCalProjectParentOptions === 'function') window.renderCalProjectParentOptions();
             // Auto-hora aproximada del sistema
             const nowD = new Date();
             let autoH = nowD.getHours(), autoM = nowD.getMinutes();
@@ -16113,6 +16624,10 @@ window.hrpFilter        = _hrpApplyFilter;
             const endTotalH = (autoH + 1) % 24;
             const endAmPm   = endTotalH >= 12 ? 'PM' : 'AM';
             calEndH = endTotalH % 12 || 12; calEndM = autoM; calEndAmPm = endAmPm;
+            // Evento nuevo: INICIO y FIN empiezan en el mismo día (el día que se
+            // está viendo en el reloj/calendario)
+            calStartDateStr = localDateStr(calViewDate);
+            calEndDateStr   = calStartDateStr;
             calSubtaskCount = 0;
             const stContainer = document.getElementById('calSubtasksContainer');
             if (stContainer) stContainer.innerHTML = '';
@@ -16143,12 +16658,16 @@ window.hrpFilter        = _hrpApplyFilter;
         // Guardar etiquetas actuales
         const labels = window._calCurrentLabels ? [...window._calCurrentLabels] : [];
 
-        // Construir objeto
-        const dateStr = localDateStr(calViewDate);
+        // Construir objeto — INICIO y FIN usan cada uno su propia fecha
+        // (calStartDateStr / calEndDateStr), ya NO comparten una sola fecha.
+        const startDateStr = calStartDateStr || localDateStr(calViewDate);
+        const endDateStr   = calEndDateStr   || startDateStr;
         const stMins  = to24(calStartH, calStartM, calStartAmPm);
         const etMins  = to24(calEndH,   calEndM,   calEndAmPm);
         const stTime  = minsToTime(stMins);
-        const etTime  = minsToTime(Math.max(etMins, stMins + 30));
+        // El mínimo de 30 min de diferencia solo aplica si INICIO y FIN son
+        // el mismo día — si FIN es un día posterior, su hora no debe forzarse.
+        const etTime  = (endDateStr === startDateStr) ? minsToTime(Math.max(etMins, stMins + 30)) : minsToTime(etMins);
 
         // Subtareas
         const subtasks = [];
@@ -16176,8 +16695,8 @@ window.hrpFilter        = _hrpApplyFilter;
             title,
             details:   document.getElementById('calEventDetails').value.trim(),
             allDay:    calAllday,
-            startDate: dateStr + 'T' + stTime,
-            endDate:   dateStr + 'T' + etTime,
+            startDate: startDateStr + 'T' + stTime,
+            endDate:   endDateStr + 'T' + etTime,
             startTime: stTime,
             endTime:   etTime,
             color:     calSelectedColor,
@@ -16186,6 +16705,8 @@ window.hrpFilter        = _hrpApplyFilter;
             repeatEnd: window.calGetRepeatEndObject ? window.calGetRepeatEndObject() : null,
             priority:  window.calPriorityVal || 'normal',
             taskType:  window.calTypeVal || '',
+            curso:         calCurrentType === 'tarea'    ? (window.calCourseVal || '') : '',
+            projectParent: calCurrentType === 'proyecto' ? (window.calProjectParentVal || '') : '',
             reminders,
             subtasks,
             labels,
@@ -16503,11 +17024,12 @@ window.hrpFilter        = _hrpApplyFilter;
             calTpHour = calEndH; calTpMinute = calEndM;
             setCalTpAmPm(calEndAmPm, false);
         }
-        // Set date field to current view date
+        // Set date field to this specific picker's own date (INICIO y FIN
+        // son independientes — ver calStartDateStr/calEndDateStr)
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        if (dateInput) dateInput.value = localDateStr(calViewDate);
+        if (dateInput) dateInput.value = which === 'start' ? calStartDateStr : calEndDateStr;
         renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -16529,6 +17051,20 @@ window.hrpFilter        = _hrpApplyFilter;
             calStartH = calTpHour; calStartM = calTpMinute; calStartAmPm = document.getElementById('calTpAM').classList.contains('active') ? 'AM' : 'PM';
         } else {
             calEndH = calTpHour; calEndM = calTpMinute; calEndAmPm = document.getElementById('calTpAM').classList.contains('active') ? 'AM' : 'PM';
+        }
+        // FIX fecha INICIO/FIN: cada picker aplica la fecha elegida SOLO a su
+        // propia fecha (calStartDateStr o calEndDateStr) — ya no comparten
+        // calViewDate. Al editar INICIO, FIN se mantiene igual a INICIO (así
+        // lo confirmó el usuario como correcto). Al editar FIN, INICIO no cambia.
+        if (window._calTpSelectedDate) {
+            if (calTimePicking === 'start') {
+                calStartDateStr = window._calTpSelectedDate;
+                calEndDateStr   = window._calTpSelectedDate;
+                calViewDate = new Date(calStartDateStr + 'T12:00:00');
+            } else {
+                calEndDateStr = window._calTpSelectedDate;
+            }
+            window._calTpSelectedDate = null;
         }
         updateCalTimeDisplay();
         closeCalTimePicker();
@@ -16717,9 +17253,11 @@ function renderCalTimePicker() {
     function updateCalTimeDisplay() {
         const sEl = document.getElementById('calStartDisplay');
         const eEl = document.getElementById('calEndDisplay');
-        const dateStr = calViewDate.toLocaleDateString('es-PE', {weekday:'short', month:'short', day:'numeric'});
-        if (sEl) sEl.textContent = `${dateStr}, ${formatH(calStartH, calStartM, calStartAmPm)}`;
-        if (eEl) eEl.textContent = `${dateStr}, ${formatH(calEndH,   calEndM,   calEndAmPm)}`;
+        const fmtOpts = {weekday:'short', month:'short', day:'numeric'};
+        const startDateStr = (calStartDateStr ? new Date(calStartDateStr + 'T12:00:00') : calViewDate).toLocaleDateString('es-PE', fmtOpts);
+        const endDateStr    = (calEndDateStr   ? new Date(calEndDateStr   + 'T12:00:00') : calViewDate).toLocaleDateString('es-PE', fmtOpts);
+        if (sEl) sEl.textContent = `${startDateStr}, ${formatH(calStartH, calStartM, calStartAmPm)}`;
+        if (eEl) eEl.textContent = `${endDateStr}, ${formatH(calEndH,   calEndM,   calEndAmPm)}`;
     }
     function formatH(h, m, ampm) { return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`; }
 
@@ -17250,6 +17788,46 @@ function renderCalTimePicker() {
                 </div>
             </div>
 
+            <!-- Curso (solo visible para TAREA) -->
+            <div class="cal-form-row" id="calCourseFieldRow" style="display:none;flex-direction:column;align-items:flex-start;gap:8px;cursor:default;">
+                <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;">📚 Curso</div>
+                <div class="custom-select-wrapper" id="calCourseDropdown" style="width:100%;">
+                    <div class="custom-select" onclick="openSearchableDropdown('calCourseDropdown','calCourseSearchInput')" style="white-space:nowrap; overflow:hidden; cursor:pointer;">
+                        <span class="selected-text" id="calCourseSelectedText" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; flex:1; min-width:0;">Seleccionar curso...</span> <span style="flex-shrink:0;">▼</span>
+                    </div>
+                    <div class="custom-options" id="calCourseOptionsContainer" style="padding-top:0;">
+                        <div style="padding:6px 8px;position:sticky;top:0;background:rgba(15,23,42,0.98);z-index:10;">
+                            <input type="text" id="calCourseSearchInput" class="search-select-input" placeholder="Buscar curso..." autocomplete="off"
+                                oninput="filterDropdownOptions('calCourseDropdown','calCourseSearchInput')"
+                                onkeydown="navigateDropdown(event,'calCourseDropdown')"
+                                onclick="event.stopPropagation()" style="width:100%;margin:0;padding:6px 12px;font-size:0.85rem;">
+                        </div>
+                        <div id="calCourseOptionsItems"></div>
+                    </div>
+                </div>
+                <input type="hidden" id="calCourseSelectHidden" value="">
+            </div>
+
+            <!-- Proyecto padre (solo visible para PROYECTO) -->
+            <div class="cal-form-row" id="calProjectParentFieldRow" style="display:none;flex-direction:column;align-items:flex-start;gap:8px;cursor:default;">
+                <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;">📁 Proyecto</div>
+                <div class="custom-select-wrapper" id="calProjectParentDropdown" style="width:100%;">
+                    <div class="custom-select" onclick="openSearchableDropdown('calProjectParentDropdown','calProjectParentSearchInput')" style="white-space:nowrap; overflow:hidden; cursor:pointer;">
+                        <span class="selected-text" id="calProjectParentSelectedText" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; flex:1; min-width:0;">Seleccionar proyecto...</span> <span style="flex-shrink:0;">▼</span>
+                    </div>
+                    <div class="custom-options" id="calProjectParentOptionsContainer" style="padding-top:0;">
+                        <div style="padding:6px 8px;position:sticky;top:0;background:rgba(15,23,42,0.98);z-index:10;">
+                            <input type="text" id="calProjectParentSearchInput" class="search-select-input" placeholder="Buscar proyecto..." autocomplete="off"
+                                oninput="filterDropdownOptions('calProjectParentDropdown','calProjectParentSearchInput')"
+                                onkeydown="navigateDropdown(event,'calProjectParentDropdown')"
+                                onclick="event.stopPropagation()" style="width:100%;margin:0;padding:6px 12px;font-size:0.85rem;">
+                        </div>
+                        <div id="calProjectParentOptionsItems"></div>
+                    </div>
+                </div>
+                <input type="hidden" id="calProjectParentSelectHidden" value="">
+            </div>
+
             <!-- Color -->
             <div class="cal-form-row" style="flex-direction:column;align-items:flex-start;cursor:default;">
                 <div style="display:flex;align-items:center;gap:12px;width:100%;">
@@ -17449,6 +18027,99 @@ function renderCalTimePicker() {
         </div>
     </div>
 
+    <!-- ═══ Detalle extendido de subtarea (Fase 1) ═══ -->
+    <div id="subtaskDetailBackdrop" onclick="closeSubtaskDetail()"></div>
+    <div id="subtaskDetailModal">
+        <div class="attach-modal-header">
+            <span class="attach-modal-title">📌 Detalle de subtarea</span>
+            <button class="attach-close-btn" onclick="closeSubtaskDetail()">✕</button>
+        </div>
+        <input type="text" id="subtaskDetailTitle" class="subtask-detail-input" placeholder="Nombre de la subtarea">
+        <textarea id="subtaskDetailDesc" class="subtask-detail-textarea" placeholder="Descripción (opcional)"></textarea>
+
+        <!-- Inicio -->
+        <div class="cal-form-row" id="subtaskStartRow" onclick="openSubtaskTimePicker('start')" style="margin-bottom:10px;">
+            <span class="cal-form-row-icon">→</span>
+            <div class="cal-form-row-content">
+                <div class="cal-form-row-label">Inicio</div>
+                <div class="cal-form-row-value" id="subtaskStartDisplay">Sin definir</div>
+            </div>
+        </div>
+
+        <!-- Fin -->
+        <div class="cal-form-row" id="subtaskEndRow" onclick="openSubtaskTimePicker('end')" style="margin-bottom:14px;">
+            <span class="cal-form-row-icon">←</span>
+            <div class="cal-form-row-content">
+                <div class="cal-form-row-label">Fin</div>
+                <div class="cal-form-row-value" id="subtaskEndDisplay">Sin definir</div>
+            </div>
+        </div>
+
+        <label class="subtask-detail-label">🚩 Prioridad</label>
+        <div class="custom-select-wrapper" id="subtaskPriorityDropdown" style="width:100%;">
+            <div class="custom-select" onclick="toggleDropdown('subtaskPriorityDropdown')">
+                <span id="subtaskPrioritySelectedText">🔵 Normal</span><span>▼</span>
+            </div>
+            <div class="custom-options" id="subtaskPriorityOptions">
+                <div class="custom-option" data-val="urgente" onclick="selectTaskPriority('subtask','urgente')"><span>🔴 Urgente</span></div>
+                <div class="custom-option" data-val="alta" onclick="selectTaskPriority('subtask','alta')"><span>🟠 Alta</span></div>
+                <div class="custom-option selected" data-val="normal" onclick="selectTaskPriority('subtask','normal')"><span>🔵 Normal</span></div>
+                <div class="custom-option" data-val="baja" onclick="selectTaskPriority('subtask','baja')"><span>⚪ Baja</span></div>
+            </div>
+        </div>
+
+        <label class="subtask-detail-label">🏷️ Tipo</label>
+        <div class="custom-select-wrapper" id="subtaskTypeDropdown" style="width:100%;">
+            <div class="custom-select" onclick="toggleDropdown('subtaskTypeDropdown'); document.getElementById('subtaskTypeSearchInput').focus();">
+                <input type="text" id="subtaskTypeSearchInput" class="search-select-input" placeholder="Escribe o elige un tipo..." autocomplete="off"
+                    oninput="filterTaskType('subtask', this.value)"
+                    onkeydown="handleTypeInputKeydown('subtask', event)"
+                    onclick="if(!document.getElementById('subtaskTypeDropdown').classList.contains('open')) toggleDropdown('subtaskTypeDropdown'); event.stopPropagation();">
+                <span>▼</span>
+            </div>
+            <div class="custom-options" id="subtaskTypeOptions"></div>
+        </div>
+
+        <label class="subtask-detail-label">🔖 Etiqueta</label>
+        <div style="position:relative;width:100%;margin-bottom:8px;">
+            <input type="text" id="subtaskEventLabel" class="subtask-detail-input" placeholder="Escribe... (Tab para autocompletar, Enter para añadir)" autocomplete="off"
+                oninput="subtaskLabelAutocomplete(this)" onkeydown="subtaskLabelKeydown(event)">
+            <span id="subtaskLabelGhost" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.28);font-size:0.88rem;font-weight:700;pointer-events:none;white-space:nowrap;font-family:inherit;overflow:hidden;max-width:90%;"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0;">
+            <span style="font-size:0.68rem;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:1px;">Color etiqueta:</span>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                <div class="subtask-label-color-dot active" data-color="#10b981" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#10b981;cursor:pointer;border:2px solid transparent;transition:all 0.25s;box-shadow:0 0 5px #10b981;"></div>
+                <div class="subtask-label-color-dot" data-color="#00d2ff" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#00d2ff;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#f59e0b" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#f59e0b;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#ef4444" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#ef4444;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#8b5cf6" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#8b5cf6;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#f97316" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#f97316;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#ec4899" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#ec4899;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#a78bfa" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#a78bfa;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#fbbf24" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#fbbf24;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#6ee7b7" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#6ee7b7;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#ff007a" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#ff007a;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+                <div class="subtask-label-color-dot" data-color="#b100ff" onclick="selectSubtaskLabelColor(this)" style="width:18px;height:18px;border-radius:50%;background:#b100ff;cursor:pointer;border:2px solid transparent;transition:all 0.25s;"></div>
+            </div>
+        </div>
+        <div id="subtaskLabelsContainer" style="display:flex;flex-wrap:wrap;gap:5px;min-height:0;margin-bottom:12px;"></div>
+
+        <label class="subtask-detail-label">📍 Estado</label>
+        <div class="custom-select-wrapper" id="subtaskEstadoDropdown" style="width:100%;">
+            <div class="custom-select" onclick="toggleDropdown('subtaskEstadoDropdown')">
+                <span id="subtaskEstadoSelectedText" style="color:#94a3b8;">Pendiente</span><span>▼</span>
+            </div>
+            <div class="custom-options" id="subtaskEstadoOptions">
+                <div class="custom-option selected" data-val="pendiente" onclick="selectSubtaskEstado('pendiente')"><span style="color:#94a3b8;">⬜ Pendiente</span></div>
+                <div class="custom-option" data-val="en_curso" onclick="selectSubtaskEstado('en_curso')"><span style="color:#00d2ff;">🔵 En Curso</span></div>
+                <div class="custom-option" data-val="completado" onclick="selectSubtaskEstado('completado')"><span style="color:#10b981;">✅ Completado</span></div>
+            </div>
+        </div>
+
+        <button class="subtask-detail-save-btn" onclick="saveSubtaskDetail()">💾 Guardar subtarea</button>
+    </div>
+
 <div id="calRepeatModal">
         <div class="cal-repeat-handle"></div>
         <div class="cal-repeat-tabs">
@@ -17530,7 +18201,27 @@ function renderCalTimePicker() {
     let taskCurrentLabelColor = '#f97316';
     let taskCurrentLabels = [];
 
-    /* Contexto activo: 'cal' | 'proj' | 'task' */
+    /* Ventana de detalle de SUBTAREA — reutiliza el mismo reloj/calendario
+       premium que proyecto/tarea/evento. INICIO y FIN tienen su propia
+       fecha independiente (mismo esquema aplicado al fix de INICIO/FIN
+       del calendario nativo): editar INICIO también actualiza FIN para
+       que coincidan (comportamiento ya validado como correcto), editar
+       FIN no toca INICIO. */
+    // NOTA: el estado de hora/fecha de subtarea se guarda en window.subtask*
+    // (no en 'let' locales de este bloque) porque openSubtaskDetail() /
+    // saveSubtaskDetail() viven en OTRO bloque <script> (el de arriba, junto
+    // al resto de funciones de subtarea) y 'let' no cruza bloques — solo
+    // window.* es visible desde ambos lados.
+    window.subtaskStartH = window.subtaskStartH || 10;
+    window.subtaskStartM = window.subtaskStartM || 0;
+    window.subtaskStartAmPm = window.subtaskStartAmPm || 'AM';
+    window.subtaskEndH = window.subtaskEndH || 11;
+    window.subtaskEndM = window.subtaskEndM || 0;
+    window.subtaskEndAmPm = window.subtaskEndAmPm || 'AM';
+    window.subtaskStartDateStr = window.subtaskStartDateStr || '';
+    window.subtaskEndDateStr   = window.subtaskEndDateStr   || '';
+
+    /* Contexto activo: 'cal' | 'proj' | 'task' | 'subtask' */
     window.calActiveContext = 'cal';
 
     /* ── Helpers de formato ──────────────────────────────────────── */
@@ -17610,6 +18301,26 @@ function renderCalTimePicker() {
         document.getElementById('calTimePickerModal').classList.add('show-cal');
     };
 
+    /* ── Time Picker — abrir desde SUB TAREA ────────────────────── */
+    window.openSubtaskTimePicker = function(which) {
+        window.calActiveContext = 'subtask';
+        window.calTimePicking = which;
+        if (which === 'start') {
+            window._jchTpSet(window.subtaskStartH, window.subtaskStartM, 'hour');
+            window.setCalTpAmPm(window.subtaskStartAmPm, false);
+        } else {
+            window._jchTpSet(window.subtaskEndH, window.subtaskEndM, 'hour');
+            window.setCalTpAmPm(window.subtaskEndAmPm, false);
+        }
+        const lbl = document.getElementById('calTpLabel');
+        if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
+        const dateInput = document.getElementById('calTpDate');
+        if (dateInput) dateInput.value = which === 'start' ? window.subtaskStartDateStr : window.subtaskEndDateStr;
+        if (window.renderCalTimePicker) window.renderCalTimePicker();
+        document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
+        document.getElementById('calTimePickerModal').classList.add('show-cal');
+    };
+
     /* ── Patch confirmCalTimePicker para ser consciente del contexto */
     document.addEventListener('DOMContentLoaded', function() {
         const _origConfirm = window.confirmCalTimePicker;
@@ -17640,6 +18351,23 @@ function renderCalTimePicker() {
                 playMenuSound();
                 window.calActiveContext = 'cal';
 
+            } else if (ctx === 'subtask') {
+                const tp = window._jchTpGet();
+                if (which === 'start') { window.subtaskStartH = tp.h; window.subtaskStartM = tp.m; window.subtaskStartAmPm = ampm; }
+                else                   { window.subtaskEndH   = tp.h; window.subtaskEndM   = tp.m; window.subtaskEndAmPm   = ampm; }
+                const dp = document.getElementById('calTpDate');
+                // INICIO/FIN independientes: cambiar INICIO también actualiza FIN
+                // (igual al comportamiento ya validado en EDITAR tarea/proyecto);
+                // cambiar FIN no toca INICIO.
+                if (dp && dp.value) {
+                    if (which === 'start') { window.subtaskStartDateStr = dp.value; window.subtaskEndDateStr = dp.value; }
+                    else                    { window.subtaskEndDateStr = dp.value; }
+                }
+                updateSubtaskTimeDisplay();
+                window.closeCalTimePicker();
+                playMenuSound();
+                window.calActiveContext = 'cal';
+
             } else {
                 // Contexto calendario: comportamiento original
                 _origConfirm && _origConfirm();
@@ -17662,6 +18390,15 @@ function renderCalTimePicker() {
         if (s) s.textContent = `${ds}, ${fmtH(taskStartH, taskStartM, taskStartAmPm)}`;
         if (e) e.textContent = `${ds}, ${fmtH(taskEndH,   taskEndM,   taskEndAmPm)}`;
     }
+    function updateSubtaskTimeDisplay() {
+        const s  = document.getElementById('subtaskStartDisplay');
+        const e  = document.getElementById('subtaskEndDisplay');
+        const sd = window.subtaskStartDateStr ? fmtDate(new Date(window.subtaskStartDateStr + 'T12:00:00')) : '';
+        const ed = window.subtaskEndDateStr   ? fmtDate(new Date(window.subtaskEndDateStr   + 'T12:00:00')) : '';
+        if (s) s.textContent = sd ? `${sd}, ${fmtH(window.subtaskStartH, window.subtaskStartM, window.subtaskStartAmPm)}` : 'Sin definir';
+        if (e) e.textContent = ed ? `${ed}, ${fmtH(window.subtaskEndH,   window.subtaskEndM,   window.subtaskEndAmPm)}` : 'Sin definir';
+    }
+    window.updateSubtaskTimeDisplay = updateSubtaskTimeDisplay;
 
     /* ── Repeat Modal — abrir desde PROYECTO ────────────────────── */
     window.openProjRepeat = function() {
