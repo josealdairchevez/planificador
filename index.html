@@ -326,30 +326,30 @@
         .gestion-tab-panel { display:none; }
         .gestion-tab-panel.active { display:block; }
 
-        .kanban-board { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; -webkit-overflow-scrolling:touch; }
-        .kanban-col {
+        #kanbanBoard.kanban-board { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; -webkit-overflow-scrolling:touch; }
+        #kanbanBoard .kanban-col {
             flex:0 0 270px; min-width:270px; border-radius:18px; padding:12px;
             background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,255,0.06);
             display:flex; flex-direction:column; min-height:120px;
             transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
         }
-        .kanban-col.dragover {
+        #kanbanBoard .kanban-col.dragover {
             background: rgba(0,210,255,0.06);
             border-color: rgba(0,210,255,0.4);
             box-shadow: 0 0 24px rgba(0,210,255,0.15) inset;
         }
-        .kanban-col-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:0 4px; }
-        .kanban-col-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
-        .kanban-col-title { font-family:'Nunito',sans-serif; font-weight:900; font-size:0.78rem; letter-spacing:0.6px; text-transform:uppercase; color:#e2e8f0; }
-        .kanban-col-count {
+        #kanbanBoard .kanban-col-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:0 4px; }
+        #kanbanBoard .kanban-col-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+        #kanbanBoard .kanban-col-title { font-family:'Nunito',sans-serif; font-weight:900; font-size:0.78rem; letter-spacing:0.6px; text-transform:uppercase; color:#e2e8f0; }
+        #kanbanBoard .kanban-col-count {
             margin-left:auto; background:rgba(255,255,255,0.08); color:#94a3b8; font-size:0.68rem; font-weight:800;
             border-radius:20px; padding:1px 9px;
         }
-        .kanban-col-body { display:flex; flex-direction:column; gap:9px; min-height:60px; flex:1; }
-        .kanban-col-empty { text-align:center; color:#475569; font-size:0.72rem; font-style:italic; padding:18px 6px; }
+        #kanbanBoard .kanban-col-body { display:flex; flex-direction:column; gap:9px; min-height:60px; flex:1; }
+        #kanbanBoard .kanban-col-empty { text-align:center; color:#475569; font-size:0.72rem; font-style:italic; padding:18px 6px; }
 
-        .kanban-card {
+        #kanbanBoard .kanban-card {
             border-radius:14px; padding:11px 12px 10px; cursor:grab; position:relative;
             background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
             border-left: 6px solid var(--kc-color, #10b981) !important;
@@ -360,29 +360,69 @@
             transition: transform 0.15s ease, box-shadow 0.15s ease;
             touch-action: none;
         }
-        .kanban-card:active { cursor:grabbing; }
-        .kanban-card.dragging {
+        #kanbanBoard .kanban-card:active { cursor:grabbing; }
+        #kanbanBoard .kanban-card.dragging {
             opacity:0.92; transform: scale(1.04) rotate(-1deg);
             box-shadow: 0 16px 34px -10px rgba(0,0,0,0.7), 0 0 0 1px var(--kc-color, #10b981), 0 0 22px -4px var(--kc-color, #10b981);
             z-index: 500; position:fixed; pointer-events:none;
         }
-        .kanban-card-type { font-size:0.6rem; font-weight:900; letter-spacing:0.5px; text-transform:uppercase; color:var(--kc-color,#10b981); opacity:0.9; margin-bottom:3px; }
-        .kanban-card-title { font-family:'Nunito',sans-serif; font-weight:800; font-size:0.85rem; color:#fff; line-height:1.25; margin-bottom:7px; word-break:break-word; }
-        .kanban-card-badges { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
-        .kanban-card-badge { font-size:0.6rem; font-weight:900; border-radius:20px; padding:1.5px 7px; white-space:nowrap; }
-        .kanban-card-footer { display:flex; align-items:center; justify-content:space-between; font-size:0.66rem; color:#94a3b8; font-weight:700; }
-        .kanban-card-date { display:flex; align-items:center; gap:3px; }
-        .kanban-card-date.overdue { color:#f87171; }
+        /* ═══ Fila superior: tipo + prioridad en la misma línea, ahorra una fila ═══ */
+        #kanbanBoard .kanban-card-top { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:4px; }
+        #kanbanBoard .kanban-card-type { font-size:0.6rem; font-weight:900; letter-spacing:0.5px; text-transform:uppercase; color:var(--kc-color,#10b981); opacity:0.9; }
+        #kanbanBoard .kanban-card-prio { font-size:0.56rem; font-weight:900; border-radius:20px; padding:1.5px 7px; white-space:nowrap; flex-shrink:0; }
+        #kanbanBoard .kanban-card-title { font-family:'Nunito',sans-serif; font-weight:800; font-size:0.85rem; color:#fff; line-height:1.25; margin-bottom:5px; word-break:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        #kanbanBoard .kanban-card-badges { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px; }
+        #kanbanBoard .kanban-card-badge { font-size:0.6rem; font-weight:900; border-radius:20px; padding:1.5px 7px; white-space:nowrap; }
+        #kanbanBoard .kanban-card-footer { display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.64rem; color:#94a3b8; font-weight:700; flex-wrap:wrap; row-gap:4px; }
+        #kanbanBoard .kanban-card-dates { display:flex; align-items:center; gap:4px; min-width:0; flex-wrap:wrap; }
+        #kanbanBoard .kanban-card-date { display:inline-flex; align-items:center; gap:3px; white-space:nowrap; font-weight:800; }
+        #kanbanBoard .kanban-card-date-arrow { color:#475569; font-weight:700; flex-shrink:0; }
+        #kanbanBoard .kanban-card-date.overdue { color:#f87171; }
 
-        .kanban-empty-state {
+        /* ═══ Fase 4: indicador + acordeón de sub-tareas en el Kanban ═══
+           Fase 5: anillo dinámico/animado — mismo lenguaje visual que el
+           anillo circular de RUTINAS ADAPTATIVAS (glow + arco de "energía"
+           girando sin parar dentro de la porción ya completada), a escala
+           mini para que quepa en la tarjeta. ═══ */
+        #kanbanBoard .kanban-sub-progress {
+            display:flex; align-items:center; gap:4px; cursor:pointer; padding:2px 6px 2px 2px;
+            border-radius:20px; transition:background 0.2s; touch-action:manipulation; flex-shrink:0;
+        }
+        #kanbanBoard .kanban-sub-progress:hover { background:rgba(0,210,255,0.1); }
+        #kanbanBoard .kanban-sub-ringwrap { position:relative; width:16px; height:16px; flex-shrink:0; }
+        #kanbanBoard .kanban-sub-ring-svg { width:100%; height:100%; transform:rotate(-90deg); overflow:visible; }
+        #kanbanBoard .kanban-sub-ring-glow { filter: drop-shadow(0 0 2px var(--ring-color)) drop-shadow(0 0 3px var(--ring-color)); transition: stroke-dasharray 0.4s ease, stroke 0.3s; }
+        #kanbanBoard .kanban-sub-count { font-size:0.64rem; font-weight:900; color:#cbd5e1; }
+        #kanbanBoard .kanban-sub-chevron {
+            font-size:0.7rem; color:#64748b; display:inline-block; transition:transform 0.25s ease; line-height:1;
+        }
+        #kanbanBoard .kanban-sub-progress.open .kanban-sub-chevron { transform: rotate(180deg); color:#00d2ff; }
+        #kanbanBoard .kanban-card-subtasks {
+            max-height:0; overflow:hidden; opacity:0;
+            transition: max-height 0.3s cubic-bezier(.4,0,.2,1), opacity 0.25s ease, margin-top 0.3s ease;
+            margin-top:0;
+        }
+        #kanbanBoard .kanban-card-subtasks.open { max-height:400px; opacity:1; margin-top:9px; }
+        #kanbanBoard .kanban-sub-item {
+            display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px;
+            background:rgba(0,10,25,0.5); margin-bottom:4px; cursor:pointer; transition:background 0.2s;
+        }
+        #kanbanBoard .kanban-sub-item:hover { background:rgba(0,210,255,0.08); }
+        #kanbanBoard .kanban-sub-item:last-child { margin-bottom:0; }
+        #kanbanBoard .kanban-sub-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+        #kanbanBoard .kanban-sub-name { font-size:0.72rem; color:#e2e8f0; font-weight:700; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        #kanbanBoard .kanban-sub-name.done { text-decoration:line-through; opacity:0.5; }
+        #kanbanBoard .kanban-sub-prio { font-size:0.68rem; flex-shrink:0; }
+
+        #kanbanBoard .kanban-empty-state {
             text-align:center; padding: 2.4rem 1rem; color:#64748b;
         }
-        .kanban-empty-state-icon { font-size:2.2rem; margin-bottom:8px; opacity:0.6; }
+        #kanbanBoard .kanban-empty-state-icon { font-size:2.2rem; margin-bottom:8px; opacity:0.6; }
 
         /* Móvil: las 3 columnas caben lado a lado, a la misma altura,
            en vez de una sola columna ancha que obliga a desplazar */
         @media (max-width: 768px) {
-            .kanban-board {
+            #kanbanBoard.kanban-board {
                 display: flex !important;
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
@@ -390,23 +430,26 @@
                 align-items: stretch !important;
                 gap: 6px !important;
             }
-            .kanban-col {
+            #kanbanBoard .kanban-col {
                 flex: 1 1 0 !important;
                 min-width: 0 !important;
                 width: auto !important;
                 padding: 8px 5px !important;
             }
-            .kanban-col-header { gap: 4px; margin-bottom: 8px; padding: 0 2px; flex-wrap: wrap; }
-            .kanban-col-title { font-size: 0.6rem; letter-spacing: 0.2px; }
-            .kanban-col-count { font-size: 0.56rem; padding: 1px 6px; margin-left: 4px; }
-            .kanban-col-dot { width: 7px; height: 7px; }
-            .kanban-card { padding: 8px 7px 7px; border-left-width: 4px !important; }
-            .kanban-card-type { font-size: 0.55rem; }
-            .kanban-card-title { font-size: 0.72rem; margin-bottom: 5px; }
-            .kanban-card-badges { gap: 3px; margin-bottom: 5px; }
-            .kanban-card-badge { font-size: 0.5rem; padding: 1px 5px; }
-            .kanban-card-footer { font-size: 0.55rem; }
-            .kanban-col-empty { font-size: 0.6rem; padding: 10px 3px; }
+            #kanbanBoard .kanban-col-header { gap: 4px; margin-bottom: 8px; padding: 0 2px; flex-wrap: wrap; }
+            #kanbanBoard .kanban-col-title { font-size: 0.6rem; letter-spacing: 0.2px; }
+            #kanbanBoard .kanban-col-count { font-size: 0.56rem; padding: 1px 6px; margin-left: 4px; }
+            #kanbanBoard .kanban-col-dot { width: 7px; height: 7px; }
+            #kanbanBoard .kanban-card { padding: 8px 7px 7px; border-left-width: 4px !important; }
+            #kanbanBoard .kanban-card-top { margin-bottom: 3px; }
+            #kanbanBoard .kanban-card-type { font-size: 0.55rem; }
+            #kanbanBoard .kanban-card-prio { font-size: 0.5rem; padding: 1px 5px; }
+            #kanbanBoard .kanban-card-title { font-size: 0.72rem; margin-bottom: 4px; }
+            #kanbanBoard .kanban-card-badges { gap: 3px; margin-bottom: 4px; }
+            #kanbanBoard .kanban-card-badge { font-size: 0.5rem; padding: 1px 5px; }
+            #kanbanBoard .kanban-card-footer { font-size: 0.55rem; }
+            #kanbanBoard .kanban-sub-ringwrap { width: 14px; height: 14px; }
+            #kanbanBoard .kanban-col-empty { font-size: 0.6rem; padding: 10px 3px; }
         }
         /* ═══ Vista Lista (Fase 3) ═══ */
         .list-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
@@ -418,33 +461,80 @@
         }
         .list-sort-btn:hover { background:rgba(0,210,255,0.16); }
 
+        /* Compactado: cada columna tiene su propio ancho mínimo según lo que
+           realmente necesita su contenido (antes todas medían lo mismo y la
+           fila entera se forzaba a 940px mínimo, obligando a desplazar a la
+           derecha incluso en pantallas donde ya hubiera cabido todo).
+           grid-template-columns real lo pone listApplyGridTemplate() en JS
+           con este mismo criterio por columna — esto es solo el valor inicial
+           antes de que corra el JS. min-width:0 en .list-cell es necesario
+           para que el texto se trunque DENTRO de su columna en vez de
+           empujarla/desalinearla (bug clásico de CSS grid). */
         .list-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:14px; border:1px solid rgba(255,255,255,0.06); }
         .list-header-row, .list-row {
             display:grid;
-            grid-template-columns: 190px repeat(8, minmax(60px, 1fr));
-            gap:0; align-items:center; min-width:940px;
+            grid-template-columns: 136px repeat(8, minmax(50px, 1fr));
+            gap:0; align-items:center;
         }
         .list-header-row {
             background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.08);
-            font-size:0.62rem; font-weight:900; letter-spacing:0.5px; text-transform:uppercase; color:#8fb8ff;
+            font-size:0.6rem; font-weight:900; letter-spacing:0.3px; text-transform:uppercase; color:#8fb8ff;
         }
         .list-row { border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s; border-left:3px solid var(--kc-color, transparent); }
         .list-row:hover { background:rgba(0,210,255,0.04); }
-        .list-cell { padding:10px 8px; font-size:0.74rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .list-cell-name { display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:800; color:#fff; white-space:normal; }
+        .list-cell { padding:8px 5px; font-size:0.7rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+        .list-header-row .list-cell { white-space:normal; line-height:1.15; }
+        .list-cell-name { display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:800; color:#fff; white-space:normal; min-width:0; }
         .list-cell-name:hover { color:#7ee8ff; }
         .list-name-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
         .list-cell-icon { text-align:center; opacity:0.55; cursor:pointer; transition:opacity 0.15s, text-shadow 0.15s; }
         .list-cell-icon.has-content { opacity:1; color:#22e3ff; font-weight:900; text-shadow:0 0 8px rgba(0,210,255,0.6); }
         .list-cell-icon:hover { opacity:1; }
 
-        .list-chip { font-size:0.62rem; font-weight:900; border-radius:20px; padding:2px 8px; white-space:nowrap; }
+        .list-chip { display:inline-flex; align-items:center; max-width:100%; min-width:0; font-size:0.6rem; font-weight:900; border-radius:20px; padding:2px 7px; white-space:nowrap; }
         .list-chip-more { font-size:0.6rem; font-weight:800; color:#94a3b8; margin-left:2px; }
+        /* Todo texto dentro de un .list-chip va envuelto en este span, nunca
+           suelto como hijo directo del chip: un nodo de texto suelto dentro de
+           un contenedor flex se vuelve un "anonymous flex item" al que no se le
+           puede aplicar min-width:0, así que NUNCA se encoge ni recorta con
+           elipsis — solo se corta feo a la mitad quedando fuera del recuadro
+           (el bug que se veía con "Diapositivas"). Con este span sí se le
+           puede fijar min-width:0 y el texto se recorta DENTRO del chip con
+           "…" en vez de desbordarse.
+           Además, más de una etiqueta: el "+" se agrega AL FINAL del mismo
+           chip (nunca se corta con la elipsis) en vez de un chip "+N" aparte
+           — ahorra espacio horizontal. "Diapositivas"+ más → "Diaposit…+";
+           una etiqueta corta que ya cabe entera → "Entrega+" sin elipsis. */
+        .list-chip-label-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+        .list-chip-label-plus { flex-shrink:0; margin-left:1px; }
+
+        /* ═══ Tooltip premium para las etiquetas (reemplaza el title nativo
+           gris del navegador) ═══ Se posiciona con JS en position:fixed
+           (ver initJchPremiumTooltip) en vez de depender de ::after sobre el
+           propio chip, porque el chip vive dentro de .list-cell / .list-scroll
+           que tienen overflow:hidden/auto y recortarían un tooltip CSS puro. */
+        .jch-premium-tooltip {
+            position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+            background:linear-gradient(155deg, rgba(16,30,48,0.98), rgba(6,13,22,0.98));
+            color:#e8fbff; font-size:0.72rem; font-weight:700; letter-spacing:0.2px; line-height:1.45;
+            padding:8px 13px; border-radius:11px; max-width:240px; text-align:center;
+            border:1px solid rgba(0,210,255,0.4);
+            box-shadow:0 10px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,210,255,0.08), 0 0 22px rgba(0,210,255,0.28);
+            backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+            opacity:0; visibility:hidden; transform:translateY(6px) scale(0.94);
+            transition:opacity 0.18s ease, transform 0.22s cubic-bezier(.34,1.56,.64,1), visibility 0.18s;
+        }
+        .jch-premium-tooltip::after {
+            content:''; position:absolute; left:var(--arrow-x, 50%); top:100%; transform:translateX(-50%);
+            border:6px solid transparent; border-top-color:rgba(10,20,34,0.98);
+            filter:drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+        }
+        .jch-premium-tooltip.arrow-below::after { top:auto; bottom:100%; transform:translateX(-50%) rotate(180deg); }
+        .jch-premium-tooltip.visible { opacity:1; visibility:visible; transform:translateY(0) scale(1); }
 
         .list-group-header {
             display:flex; align-items:center; gap:8px; padding:9px 10px; cursor:pointer;
             background:rgba(0,210,255,0.04); border-bottom:1px solid rgba(255,255,255,0.06);
-            min-width:940px;
         }
         .list-group-arrow { display:inline-block; transition:transform 0.2s ease; color:#7ee8ff; font-size:0.7rem; transform:rotate(90deg); }
         .list-group-arrow.collapsed { transform:rotate(0deg); }
@@ -495,6 +585,9 @@
         @media (max-width: 768px) {
             .list-toolbar { gap:6px; }
             .list-toolbar .custom-select-wrapper { min-width:150px; }
+            .list-cell { padding:7px 4px; font-size:0.66rem; }
+            .list-header-row { font-size:0.56rem; }
+            .list-chip { font-size:0.56rem; padding:2px 5px; }
         }
         /* ═══ Fase 5: Filtros anidados Y/O + Ordenar ═══ */
         .list-filter-btn {
@@ -683,6 +776,17 @@
         .subtask-detail-save-btn {
             width:100%; margin-top:16px; background:linear-gradient(120deg,#00d2ff,#7c3aed); border:none;
             color:#031018; font-weight:900; border-radius:12px; padding:11px; cursor:pointer; font-size:0.85rem;
+        }
+        .subtask-detail-icon-btn {
+            flex:1; background:rgba(0,15,35,0.7); border:1.5px solid rgba(0,210,255,0.3); color:#94a3b8;
+            font-weight:800; font-size:0.78rem; border-radius:10px; padding:9px 8px; cursor:pointer;
+            font-family:'Nunito',sans-serif; transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:5px;
+        }
+        .subtask-detail-icon-btn:hover { border-color:rgba(0,210,255,0.7); color:#fff; background:rgba(0,210,255,0.08); }
+        .subtask-detail-icon-btn.has-content { border-color:#00d2ff; color:#22e3ff; box-shadow:0 0 10px rgba(0,210,255,0.2); }
+        .subtask-detail-icon-count {
+            background:#00d2ff; color:#031018; border-radius:10px; font-size:0.68rem; font-weight:900;
+            padding:1px 6px; min-width:16px; display:inline-block; text-align:center;
         }
 
 
@@ -9084,6 +9188,7 @@ window.hrpFilter        = _hrpApplyFilter;
                             <div class="custom-options" id="kanbanSortByOptions"></div>
                         </div>
                         <button class="list-filter-btn" id="kanbanFilterBtn" onclick="toggleListFilterPanel()">🔍 Filtros</button>
+                        <button class="list-filter-btn" onclick="toggleAllKanbanSubtasks()" title="Expandir o contraer las sub-tareas de todas las tarjetas">📂 Sub-tareas</button>
                     </div>
                     <div id="kanbanFilterPanel"></div>
                     <div class="kanban-board" id="kanbanBoard"></div>
@@ -10414,7 +10519,6 @@ window.hrpFilter        = _hrpApplyFilter;
             document.getElementById('purchaseModalBackdrop').classList.remove('show-modal');
             document.getElementById('purchaseCelebrationModal').classList.remove('show-modal');
         }
-        window.closePurchaseCelebration = function() { playSparkleSound(); document.getElementById('purchaseModalBackdrop').classList.remove('show-modal'); document.getElementById('purchaseCelebrationModal').classList.remove('show-modal'); }
 
         /* === NUEVA LÓGICA DE VENTANA PARA AGREGAR CURSOS/SESIONES === */
         let pendingAddType = '';
@@ -12412,21 +12516,6 @@ window.hrpFilter        = _hrpApplyFilter;
         };
         /* === FIN LÓGICA DE EDICIÓN DE TAREAS === */
 
-        /* --- INICIO FASE 3: LÓGICA DEL PORTAL DE LA BÓVEDA --- */
-        window.openMethodVault = function() {
-            playStoreOpenSound(); // Sonido épico y de misterio
-            document.getElementById('methodVaultModalBackdrop').classList.add('show-modal');
-            document.getElementById('methodVaultModal').classList.add('show-modal');
-            // La magia de recolectar y dibujar las tarjetas ocurrirá en la Fase 4
-        };
-        
-        window.closeMethodVault = function() {
-            playSparkleSound();
-            document.getElementById('methodVaultModalBackdrop').classList.remove('show-modal');
-            document.getElementById('methodVaultModal').classList.remove('show-modal');
-        };
-        /* --- FIN FASE 3 --- */
-
 
         // === MOTOR TAREA COTIDIANA (NARANJA) ===
         let newTaskSubtaskCount = 0;
@@ -12985,7 +13074,9 @@ window.hrpFilter        = _hrpApplyFilter;
             <button class="vault-modal-close-btn" onclick="closeArchiveVault()">✕</button>
         </div>
         <div class="vault-search-wrapper">
-            <input type="text" class="vault-search-input" id="vaultSearchInput" placeholder="Buscar por nombre de método o proyecto..." oninput="filterVaultCards(this.value)" autocomplete="off" style="padding-left:1.2rem;padding-right:1.2rem;">
+            <svg class="vault-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="vault-search-input" id="vaultSearchInput" placeholder="Buscar por nombre de método o proyecto..." oninput="filterVaultCards(this.value)" autocomplete="off">
+            <button type="button" class="vault-search-clear" id="vaultSearchClear" onclick="clearVaultSearch()" title="Limpiar búsqueda">✕</button>
         </div>
         <div class="vault-scroll-area" id="archiveVaultScrollArea"></div>
     </div>
@@ -13565,6 +13656,17 @@ window.hrpFilter        = _hrpApplyFilter;
     };
 
     function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // Limpia el buscador de la Bóveda de un toque — toda la lógica de
+    // mostrar/ocultar el botón "✕" y filtrar ya vivía en filterVaultCards(),
+    // solo faltaba este atajo para el botón.
+    window.clearVaultSearch = function() {
+        const input = document.getElementById('vaultSearchInput');
+        if (!input) return;
+        input.value = '';
+        filterVaultCards('');
+        input.focus();
+    };
 
     window.filterVaultCards = function(term) {
         const clearBtn = document.getElementById('vaultSearchClear');
@@ -14166,6 +14268,35 @@ window.hrpFilter        = _hrpApplyFilter;
         return d.getDate() + ' ' + meses[d.getMonth()];
     }
 
+    // Diferencia en DÍAS de calendario (ignora la hora) entre una fecha y "now".
+    // Negativo = ya pasó, 0 = hoy, positivo = faltan N días.
+    function kanbanDaysUntil(d, now) {
+        if (!d || isNaN(d)) return null;
+        const a = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const b = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return Math.round((a - b) / 86400000);
+    }
+
+    // Color dinámico por fecha — misma paleta semántica que ya usa el resto
+    // de la app (rojo=urgente/vencido, naranja=hoy, ámbar=pronto, verde=listo,
+    // gris=sin apuro) para que se entienda de un vistazo sin leer el número.
+    function kanbanStartDateColor(daysUntil) {
+        if (daysUntil === null) return '#94a3b8';
+        if (daysUntil <= 0) return '#00d2ff';   // ya empezó (o empieza hoy) — "en marcha"
+        if (daysUntil <= 3) return '#fbbf24';   // empieza pronto (1-3 días)
+        if (daysUntil <= 7) return '#a78bfa';   // dentro de la semana
+        return '#94a3b8';                       // falta bastante — sin apuro
+    }
+    function kanbanEndDateColor(daysUntil, isDone) {
+        if (isDone) return '#10b981';           // completado — ya no importa la fecha
+        if (daysUntil === null) return '#94a3b8';
+        if (daysUntil < 0) return '#ef4444';    // vencido
+        if (daysUntil === 0) return '#f97316';  // vence hoy
+        if (daysUntil <= 2) return '#fbbf24';   // vence en 1-2 días
+        if (daysUntil <= 7) return '#60a5fa';   // dentro de la semana
+        return '#94a3b8';                       // falta bastante — sin apuro
+    }
+
     function kanbanGetGroupsConfig() {
         if (listGroupBy === 'estado') return KANBAN_COLUMNS.map(c => Object.assign({}, c));
         if (listGroupBy === 'priority') {
@@ -14242,30 +14373,147 @@ window.hrpFilter        = _hrpApplyFilter;
         const title = ev.title || ev.name || 'Sin nombre';
         const typeLabel = ev.type === 'proyecto' ? 'Proyecto' : 'Tarea';
 
-        const prioMap = { urgente:{e:'🔴',l:'Urgente',c:'#ef4444'}, alta:{e:'🟠',l:'Alta',c:'#f97316'}, baja:{e:'⚪',l:'Baja',c:'#64748b'} };
-        const prio = prioMap[ev.priority];
-        const prioBadge = prio ? `<span class="kanban-card-badge" style="background:${prio.c}20;border:1px solid ${prio.c}80;color:${prio.c};">${prio.e} ${prio.l}</span>` : '';
+        // Prioridad: SIEMPRE visible (incluida "Normal"/sin establecer) y en su
+        // propia fila junto al tipo, para que quede de fácil acceso de un
+        // vistazo — antes se escondía dentro de las demás etiquetas y
+        // "Normal" no se mostraba en absoluto.
+        const prioMap = {
+            urgente:{e:'🔴',l:'Urgente',c:'#ef4444'}, alta:{e:'🟠',l:'Alta',c:'#f97316'},
+            normal:{e:'🔵',l:'Normal',c:'#00d2ff'}, baja:{e:'⚪',l:'Baja',c:'#64748b'}
+        };
+        const prio = prioMap[ev.priority] || prioMap.normal;
+        const prioBadge = `<span class="kanban-card-prio" style="background:${prio.c}20;border:1px solid ${prio.c}80;color:${prio.c};">${prio.e} ${prio.l}</span>`;
         const typeBadge = ev.taskType ? `<span class="kanban-card-badge" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;">${ev.taskType}</span>` : '';
-        const labelBadges = (ev.labels || []).map(l => {
+        // Máximo 2 etiquetas visibles + "+N" — evita que la tarjeta crezca a lo
+        // vertical cuando una tarea tiene muchas etiquetas.
+        const labelsArr = ev.labels || [];
+        const labelBadges = labelsArr.slice(0, 2).map(l => {
             const lc = (ev.labelColors && ev.labelColors[l]) || (typeof getLabelColor === 'function' ? getLabelColor(l) : null) || color;
             return `<span class="kanban-card-badge" style="background:${lc}20;border:1px solid ${lc}80;color:${lc};">#${l}</span>`;
-        }).join('');
+        }).join('') + (labelsArr.length > 2 ? `<span class="kanban-card-badge" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#94a3b8;">+${labelsArr.length - 2}</span>` : '');
 
-        let dateHtml = '';
+        // Fecha inicio Y fecha fin, cada una con su propio color dinámico
+        // según qué tan cerca está (ya empezó / empieza pronto / vence hoy /
+        // vencido / etc.) — mismo código de colores que el resto de la app,
+        // para que se entiendan de un vistazo sin tener que leer la fecha.
+        // Ambas van en UNA sola línea (inicio → fin) para no alargar la
+        // tarjeta verticalmente.
+        const isDone = kanbanGetStatus(ev) === 'completado';
+        let startPart = '', endPart = '';
+        if (ev.startDate) {
+            const ds = kanbanParseDate(ev.startDate);
+            const daysS = (ds && !isNaN(ds)) ? kanbanDaysUntil(ds, now) : null;
+            const colorS = kanbanStartDateColor(daysS);
+            startPart = `<span class="kanban-card-date" style="color:${colorS};" title="Fecha inicio">▶ ${kanbanFmtDate(ev.startDate)}</span>`;
+        }
         if (ev.endDate) {
-            const d = kanbanParseDate(ev.endDate);
-            const overdue = d && !isNaN(d) && d < now && kanbanGetStatus(ev) !== 'completado';
-            dateHtml = `<span class="kanban-card-date${overdue ? ' overdue' : ''}">📅 ${kanbanFmtDate(ev.endDate)}</span>`;
+            const de = kanbanParseDate(ev.endDate);
+            const daysE = (de && !isNaN(de)) ? kanbanDaysUntil(de, now) : null;
+            const colorE = kanbanEndDateColor(daysE, isDone);
+            endPart = `<span class="kanban-card-date" style="color:${colorE};" title="Fecha fin">🏁 ${kanbanFmtDate(ev.endDate)}</span>`;
+        }
+        const dateArrow = (startPart && endPart) ? '<span class="kanban-card-date-arrow">→</span>' : '';
+        const dateHtml = (startPart || endPart) ? `<span class="kanban-card-dates">${startPart}${dateArrow}${endPart}</span>` : '';
+
+        // ═══ Fase 4: indicador de progreso + acordeón de sub-tareas ═══
+        // Sin checkboxes aquí (se pidió que los checkboxes vivan solo en
+        // Vista Lista) — en Kanban es de solo lectura: clic en una sub-tarea
+        // abre su mini-ventana de detalle para editarla/marcarla ahí.
+        //
+        // Fase 5: anillo dinámico — mismo lenguaje visual del anillo circular
+        // de RUTINAS ADAPTATIVAS (mask + arco de "energía" en rotación
+        // infinita dentro de la porción ya llenada), a escala mini.
+        const subtasks = ev.subtasks || [];
+        const subTotal = subtasks.length;
+        let subProgressHtml = '', subListHtml = '';
+        if (subTotal > 0) {
+            let subDone = 0;
+            subtasks.forEach((st, i) => { if (listIsSubtaskDone(ev, i, st)) subDone++; });
+            const isExpanded = kanbanGetExpandedSet().has(ev.id);
+            const pct = Math.round((subDone / subTotal) * 100);
+            const ringColor = pct === 100 ? '#10b981' : (pct > 0 ? '#00d2ff' : '#475569');
+            const circumference = 2 * Math.PI * 7;
+            const offset = circumference - (circumference * (pct / 100));
+            const maskId = 'kanbanSubMask_' + ev.id;
+
+            subProgressHtml = `
+                <span class="kanban-sub-progress${isExpanded ? ' open' : ''}" id="kanbanSubToggle_${ev.id}" onclick="event.stopPropagation(); toggleKanbanCardSubtasks('${ev.id}')" title="Ver sub-tareas">
+                    <span class="kanban-sub-ringwrap" style="--ring-color:${ringColor};">
+                        <svg viewBox="0 0 18 18" class="kanban-sub-ring-svg">
+                            <defs><mask id="${maskId}">
+                                <circle cx="9" cy="9" r="7" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round"></circle>
+                            </mask></defs>
+                            <circle cx="9" cy="9" r="7" fill="none" stroke="rgba(148,163,184,0.25)" stroke-width="2.5"></circle>
+                            <circle cx="9" cy="9" r="7" fill="none" stroke="${ringColor}" stroke-width="2.5" stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round" class="kanban-sub-ring-glow"></circle>
+                            ${pct > 0 ? `<g mask="url(#${maskId})"><circle cx="9" cy="9" r="7" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="2 ${circumference.toFixed(1)}" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 9 9" to="360 9 9" dur="${pct === 100 ? '1s' : '1.5s'}" repeatCount="indefinite"></animateTransform></circle></g>` : ''}
+                        </svg>
+                    </span>
+                    <span class="kanban-sub-count">${subDone}/${subTotal}</span>
+                    <span class="kanban-sub-chevron">⌄</span>
+                </span>`;
+
+            const prioDotMap = { urgente:'🔴', alta:'🟠', baja:'⚪' };
+            const stColorMap = { pendiente:'#94a3b8', en_curso:'#00d2ff', completado:'#10b981' };
+            const rows = subtasks.map((st, i) => {
+                const done = listIsSubtaskDone(ev, i, st);
+                const stStatus = st.kanbanStatus || (done ? 'completado' : 'pendiente');
+                const stColor = stColorMap[stStatus] || '#94a3b8';
+                const name = st.title || st.name || 'Sub-tarea';
+                const prioIcon = prioDotMap[st.priority] || '';
+                return `<div class="kanban-sub-item" onclick="event.stopPropagation(); openSubtaskDetail('${ev.id}', ${i})">
+                    <span class="kanban-sub-dot" style="background:${stColor};box-shadow:0 0 5px ${stColor};"></span>
+                    <span class="kanban-sub-name${done ? ' done' : ''}">${name}</span>
+                    ${prioIcon ? `<span class="kanban-sub-prio">${prioIcon}</span>` : ''}
+                </div>`;
+            }).join('');
+            subListHtml = `<div class="kanban-card-subtasks${isExpanded ? ' open' : ''}" id="kanbanSub_${ev.id}">${rows}</div>`;
         }
 
         return `
-            <div class="kanban-card" style="--kc-color:${color};" data-id="${ev.id}" data-status="${kanbanGetStatus(ev)}">
-                <div class="kanban-card-type">${typeLabel}</div>
-                <div class="kanban-card-title">${title}</div>
-                <div class="kanban-card-badges">${prioBadge}${typeBadge}${labelBadges}</div>
-                <div class="kanban-card-footer">${dateHtml}<span></span></div>
+            <div class="kanban-card" style="--kc-color:${color};" data-id="${ev.id}" data-status="${kanbanGetStatus(ev)}" data-has-sub="${subTotal > 0 ? '1' : '0'}">
+                <div class="kanban-card-top">
+                    <span class="kanban-card-type">${typeLabel}</span>
+                    ${prioBadge}
+                </div>
+                <div class="kanban-card-title" title="${title.replace(/"/g,'&quot;')}">${title}</div>
+                ${(typeBadge || labelBadges) ? `<div class="kanban-card-badges">${typeBadge}${labelBadges}</div>` : ''}
+                <div class="kanban-card-footer">${dateHtml || '<span></span>'}${subProgressHtml}</div>
+                ${subListHtml}
             </div>`;
     }
+
+    // ═══ Fase 4: estado de qué tarjetas tienen su acordeón de sub-tareas
+    // abierto — se recuerda por ev.id en localStorage, no se resetea al
+    // recargar la página ni al volver a renderizar el tablero. ═══
+    function kanbanGetExpandedSet() {
+        try { return new Set(JSON.parse(localStorage.getItem('jch_kanban_expanded_v1')) || []); } catch (e) { return new Set(); }
+    }
+    function kanbanSaveExpandedSet(set) {
+        try { localStorage.setItem('jch_kanban_expanded_v1', JSON.stringify([...set])); } catch (e) {}
+    }
+    window.toggleKanbanCardSubtasks = function(evId) {
+        const set = kanbanGetExpandedSet();
+        if (set.has(evId)) set.delete(evId); else set.add(evId);
+        kanbanSaveExpandedSet(set);
+        const body = document.getElementById('kanbanSub_' + evId);
+        const toggle = document.getElementById('kanbanSubToggle_' + evId);
+        if (body) body.classList.toggle('open', set.has(evId));
+        if (toggle) toggle.classList.toggle('open', set.has(evId));
+        if (typeof playPopSound === 'function') playPopSound();
+    };
+    // Botón de la barra de herramientas: si hay alguna tarjeta con
+    // sub-tareas todavía colapsada, expande todas; si ya estaban todas
+    // abiertas, las contrae todas.
+    window.toggleAllKanbanSubtasks = function() {
+        const cards = document.querySelectorAll('.kanban-card[data-has-sub="1"]');
+        if (!cards.length) return;
+        const set = kanbanGetExpandedSet();
+        const anyCollapsed = Array.from(cards).some(c => !set.has(c.dataset.id));
+        cards.forEach(c => { if (anyCollapsed) set.add(c.dataset.id); else set.delete(c.dataset.id); });
+        kanbanSaveExpandedSet(set);
+        if (typeof playMenuSound === 'function') playMenuSound();
+        window.renderKanbanBoard();
+    };
 
         // ═══ Vista Lista (Fase 3) — agrupar, ordenar, filas de solo lectura ═══
     // La reordenación de columnas y la edición en línea llegan en la Fase 4.
@@ -14358,15 +14606,19 @@ window.hrpFilter        = _hrpApplyFilter;
     };
 
         // ═══ Fase 4: columnas reordenables + subtareas expandibles ═══
+    // minW: ancho mínimo real de esa columna (px) — ya no todas miden lo
+    // mismo, cada una mide lo que su contenido típico necesita, para que la
+    // fila completa sea lo más angosta posible y quepa en pantalla sin
+    // obligar a desplazar hacia la derecha.
     const LIST_COLUMNS = {
-        startDate:   { label: 'Inicio' },
-        endDate:     { label: 'Fin' },
-        priority:    { label: 'Prioridad' },
-        taskType:    { label: 'Tipo' },
-        labels:      { label: 'Etiqueta' },
-        estado:      { label: 'Estado' },
-        comentarios: { label: '💬' },
-        adjuntar:    { label: '📎' }
+        startDate:   { label: 'Inicio',    minW: 52 },
+        endDate:     { label: 'Fin',       minW: 52 },
+        priority:    { label: 'Prioridad', minW: 66 },
+        taskType:    { label: 'Tipo',      minW: 60 },
+        labels:      { label: 'Etiqueta',  minW: 60 },
+        estado:      { label: 'Estado',    minW: 72 },
+        comentarios: { label: '💬',        minW: 32 },
+        adjuntar:    { label: '📎',        minW: 32 }
     };
     const LIST_COL_DEFAULT_ORDER = ['startDate','endDate','priority','taskType','labels','estado','comentarios','adjuntar'];
 
@@ -14387,29 +14639,88 @@ window.hrpFilter        = _hrpApplyFilter;
         localStorage.setItem('jch_list_col_order_v1', JSON.stringify(listColumnOrder));
     }
 
+    // ═══ Tooltip premium para los chips de etiqueta (data-tooltip) ═══
+    // Reemplaza el title nativo del navegador (fondo plomo, letra blanca,
+    // sin animación) por un tooltip propio con diseño glass/glow, flecha y
+    // animación de entrada. Se usa position:fixed y se posiciona con JS
+    // (getBoundingClientRect) en vez de un ::after con position:relative en
+    // el propio chip, porque el chip vive dentro de .list-cell/.list-scroll
+    // que tienen overflow:hidden o auto y recortarían un tooltip puramente
+    // CSS. Delegado en document así funciona también para chips que se
+    // vuelven a pintar en cada renderListView() sin tener que reengancharlo.
+    (function initJchPremiumTooltip() {
+        if (window._jchTooltipInit) return;
+        window._jchTooltipInit = true;
+        let tipEl = null, showTimer = null;
+        function ensureTip() {
+            if (!tipEl) {
+                tipEl = document.createElement('div');
+                tipEl.className = 'jch-premium-tooltip';
+                document.body.appendChild(tipEl);
+            }
+            return tipEl;
+        }
+        function showTip(target) {
+            const text = target.getAttribute('data-tooltip');
+            if (!text) return;
+            const tip = ensureTip();
+            tip.textContent = text;
+            tip.classList.remove('arrow-below');
+            tip.classList.add('visible');
+            const r = target.getBoundingClientRect();
+            const tr = tip.getBoundingClientRect();
+            let left = r.left + r.width / 2 - tr.width / 2;
+            left = Math.max(8, Math.min(left, window.innerWidth - tr.width - 8));
+            let top = r.top - tr.height - 10;
+            if (top < 8) { top = r.bottom + 10; tip.classList.add('arrow-below'); }
+            tip.style.left = left + 'px';
+            tip.style.top = top + 'px';
+            tip.style.setProperty('--arrow-x', (r.left + r.width / 2 - left) + 'px');
+        }
+        function hideTip() { if (tipEl) tipEl.classList.remove('visible'); }
+        document.addEventListener('mouseover', e => {
+            const t = e.target.closest && e.target.closest('[data-tooltip]');
+            if (!t) return;
+            clearTimeout(showTimer);
+            showTimer = setTimeout(() => showTip(t), 120);
+        });
+        document.addEventListener('mouseout', e => {
+            const t = e.target.closest && e.target.closest('[data-tooltip]');
+            if (!t) return;
+            clearTimeout(showTimer);
+            hideTip();
+        });
+        window.addEventListener('scroll', hideTip, true);
+    })();
+
     function listCellContent(ev, key) {
         if (key === 'startDate') return kanbanFmtDate(ev.startDate) || '—';
         if (key === 'endDate') return kanbanFmtDate(ev.endDate) || '—';
         if (key === 'priority') {
             const p = PRIORITY_INFO[ev.priority] || PRIORITY_INFO.normal;
-            return `<span class="list-chip" style="background:${p.color}20;border:1px solid ${p.color}80;color:${p.color};">${p.label}</span>`;
+            return `<span class="list-chip" style="background:${p.color}20;border:1px solid ${p.color}80;color:${p.color};"><span class="list-chip-label-text">${p.label}</span></span>`;
         }
         if (key === 'taskType') {
-            return ev.taskType ? `<span class="list-chip" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;">${ev.taskType}</span>` : '—';
+            return ev.taskType ? `<span class="list-chip" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;"><span class="list-chip-label-text">${ev.taskType}</span></span>` : '—';
         }
         if (key === 'labels') {
             const arr = ev.labels || [];
             const color = ev.color || '#10b981';
-            let html = arr.slice(0, 2).map(l => {
-                const lc = (ev.labelColors && ev.labelColors[l]) || (typeof getLabelColor === 'function' ? getLabelColor(l) : null) || color;
-                return `<span class="list-chip" style="background:${lc}20;border:1px solid ${lc}80;color:${lc};">#${l}</span>`;
-            }).join(' ');
-            if (arr.length > 2) html += `<span class="list-chip-more">+${arr.length - 2}</span>`;
-            return html || '—';
+            if (!arr.length) return '—';
+            // Columna angosta: solo la PRIMERA etiqueta, con un "+" pegado al
+            // final del mismo chip si hay más (en vez de un chip "+N" aparte)
+            // — así se ahorra el espacio de un segundo chip. El "+" nunca se
+            // recorta: si el nombre es largo se trunca con elipsis y el "+"
+            // queda visible después ("Diaposit…+"); si es corto, va pegado
+            // sin elipsis ("Entrega+").
+            const l = arr[0];
+            const lc = (ev.labelColors && ev.labelColors[l]) || (typeof getLabelColor === 'function' ? getLabelColor(l) : null) || color;
+            const plus = arr.length > 1 ? `<span class="list-chip-label-plus">+</span>` : '';
+            return `<span class="list-chip" style="background:${lc}20;border:1px solid ${lc}80;color:${lc};" data-tooltip="${arr.map(x => '#' + x).join(', ')}"><span class="list-chip-label-text">#${l}</span>${plus}</span>`;
         }
         if (key === 'estado') {
             const st = kanbanGetStatus(ev); const info = STATUS_INFO[st];
-            return `<span class="list-chip" style="background:${info.c}20;border:1px solid ${info.c}80;color:${info.c};">${info.l}</span>`;
+            return `<span class="list-chip" style="background:${info.c}20;border:1px solid ${info.c}80;color:${info.c};"><span class="list-chip-label-text">${info.l}</span></span>`;
         }
         if (key === 'comentarios') {
             const count = (ev.comments || []).length;
@@ -14459,31 +14770,63 @@ window.hrpFilter        = _hrpApplyFilter;
         }
     };
 
+    // Contenido de cada columna para una fila de SUB-tarea — misma idea que
+    // listCellContent() pero leyendo los campos de la subtarea (st) en vez
+    // de los del evento padre. Antes todos los "badges" de la subtarea se
+    // amontonaban en UNA sola celda con flex-wrap que abarcaba todas las
+    // columnas, por eso quedaban pegados a la izquierda y nunca alineados
+    // con las columnas INICIO/FIN/PRIORIDAD/TIPO/ETIQUETA/ESTADO de la fila
+    // padre. Ahora cada dato va en su propia celda de grid, en el mismo
+    // orden (listColumnOrder) que usa la fila principal, así quedan
+    // perfectamente alineados columna por columna.
+    function listSubtaskCellContent(ev, st, idx, key) {
+        if (key === 'startDate') return st.startDate ? kanbanFmtDate(st.startDate) : '—';
+        if (key === 'endDate') return st.endDate ? kanbanFmtDate(st.endDate) : '—';
+        if (key === 'priority') {
+            const p = PRIORITY_INFO[st.priority] || PRIORITY_INFO.normal;
+            return `<span class="list-chip" style="background:${p.color}20;border:1px solid ${p.color}80;color:${p.color};"><span class="list-chip-label-text">${p.label}</span></span>`;
+        }
+        if (key === 'taskType') {
+            return st.taskType ? `<span class="list-chip" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;"><span class="list-chip-label-text">${st.taskType}</span></span>` : '—';
+        }
+        if (key === 'labels') {
+            // Color de la etiqueta de la SUB-tarea: usa el color propio de esa
+            // etiqueta (st.labelColors / DB de colores por etiqueta), no el
+            // color del padre — antes usaba siempre ev.color, por eso todas
+            // las etiquetas de subtarea salían del mismo color.
+            const arr = st.labels || [];
+            if (!arr.length) return '—';
+            const l = arr[0];
+            const lc = (st.labelColors && st.labelColors[l]) || (typeof getLabelColor === 'function' ? getLabelColor(l) : null) || ev.color || '#10b981';
+            const plus = arr.length > 1 ? `<span class="list-chip-label-plus">+</span>` : '';
+            return `<span class="list-chip" style="background:${lc}20;border:1px solid ${lc}80;color:${lc};" data-tooltip="${arr.map(x => '#' + x).join(', ')}"><span class="list-chip-label-text">#${l}</span>${plus}</span>`;
+        }
+        if (key === 'estado') {
+            const done = listIsSubtaskDone(ev, idx, st);
+            const stStatus = st.kanbanStatus || (done ? 'completado' : 'pendiente');
+            const info = STATUS_INFO[stStatus];
+            return `<span class="list-chip" style="background:${info.c}20;border:1px solid ${info.c}80;color:${info.c};"><span class="list-chip-label-text">${info.l}</span></span>`;
+        }
+        if (key === 'comentarios') {
+            const count = (st.comments || []).length;
+            return `<span class="list-cell-icon${count ? ' has-content' : ''}" onclick="event.stopPropagation(); openCommentModal('${ev.id}', ${idx})" title="Comentarios">💬${count ? ' ' + count : ''}</span>`;
+        }
+        if (key === 'adjuntar') {
+            const count = (st.attachments || []).length;
+            return `<span class="list-cell-icon${count ? ' has-content' : ''}" onclick="event.stopPropagation(); openAttachModal('${ev.id}', ${idx})" title="Adjuntar">📎${count ? ' ' + count : ''}</span>`;
+        }
+        return '';
+    }
+
     function listSubtaskRowHtml(ev, st, idx) {
         const done = listIsSubtaskDone(ev, idx, st);
-        const prio = PRIORITY_INFO[st.priority] || null;
-        const stStatus = st.kanbanStatus || (done ? 'completado' : 'pendiente');
-        const stInfo = STATUS_INFO[stStatus];
-        // Color de la etiqueta de la SUB-tarea: igual que en tareas/proyectos,
-        // usa el color propio de esa etiqueta (st.labelColors / DB de colores
-        // por etiqueta), no el color del padre — antes usaba siempre ev.color,
-        // por eso todas las etiquetas de subtarea salían del mismo color.
-        const stLabel = st.labels && st.labels[0];
-        const stLabelColor = stLabel ? ((st.labelColors && st.labelColors[stLabel]) || (typeof getLabelColor === 'function' ? getLabelColor(stLabel) : null) || ev.color || '#10b981') : null;
-        const badges = `
-            ${st.startDate ? `<span class="list-chip" style="background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.4);color:#94a3b8;">📅 ${kanbanFmtDate(st.startDate)}</span>` : ''}
-            ${st.endDate ? `<span class="list-chip" style="background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.4);color:#94a3b8;">🏁 ${kanbanFmtDate(st.endDate)}</span>` : ''}
-            ${prio ? `<span class="list-chip" style="background:${prio.color}20;border:1px solid ${prio.color}80;color:${prio.color};">${prio.label}</span>` : ''}
-            ${st.taskType ? `<span class="list-chip" style="background:rgba(0,210,255,0.12);border:1px solid rgba(0,210,255,0.5);color:#00d2ff;">${st.taskType}</span>` : ''}
-            ${stLabel ? `<span class="list-chip" style="background:${stLabelColor}20;border:1px solid ${stLabelColor}80;color:${stLabelColor};">#${stLabel}</span>` : ''}
-            <span class="list-chip" style="background:${stInfo.c}20;border:1px solid ${stInfo.c}80;color:${stInfo.c};">${stInfo.l}</span>`;
         return `
             <div class="list-row list-subtask-row">
                 <div class="list-cell list-cell-name list-subtask-name">
                     <input type="checkbox" ${done ? 'checked' : ''} onclick="event.stopPropagation(); listToggleSubtaskDone('${ev.id}', ${idx}, this.checked)">
                     <span class="subtask-name-link" style="${done ? 'text-decoration:line-through;opacity:0.5;' : ''}" onclick="event.stopPropagation(); openSubtaskDetail('${ev.id}', ${idx})">${(st && (st.title || st.name)) || 'Subtarea'}</span>
                 </div>
-                <div class="list-cell" style="grid-column: span ${listColumnOrder.length}; display:flex; gap:4px; flex-wrap:wrap; padding:6px 8px;">${badges}</div>
+                ${listColumnOrder.map(k => `<div class="list-cell">${listSubtaskCellContent(ev, st, idx, k)}</div>`).join('')}
             </div>`;
     }
 
@@ -14568,7 +14911,15 @@ window.hrpFilter        = _hrpApplyFilter;
     }
 
     function listApplyGridTemplate() {
-        const template = '190px ' + listColumnOrder.map(() => 'minmax(60px, 1fr)').join(' ');
+        // Columna "Nombre" un poco más angosta (antes 190px fijos) + cada
+        // columna de datos con su propio mínimo real (LIST_COLUMNS[k].minW)
+        // en vez de 60px parejo para todas — esto es lo que de verdad permite
+        // que la fila entera sea más compacta y quepan más columnas sin
+        // desplazar hacia la derecha.
+        const template = '136px ' + listColumnOrder.map(k => {
+            const minW = (LIST_COLUMNS[k] && LIST_COLUMNS[k].minW) || 50;
+            return `minmax(${minW}px, 1fr)`;
+        }).join(' ');
         document.querySelectorAll('#gestionPanelLista .list-header-row, #gestionPanelLista .list-row').forEach(el => {
             el.style.gridTemplateColumns = template;
         });
@@ -15010,18 +15361,35 @@ window.hrpFilter        = _hrpApplyFilter;
     }
 
     let attachActiveEvId = null;
+    let attachActiveSubIdx = null;   // null = adjuntos de la tarea/proyecto; número = adjuntos de esa sub-tarea
     let attachUploadTask = null;
 
     function attachGetEv() {
         const evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
         return evs.find(e => String(e.id) === String(attachActiveEvId));
     }
+    // Devuelve el objeto real donde viven los adjuntos: la sub-tarea (si hay
+    // una activa) o el evento completo — mismo patrón que attachGetEv().
+    function attachGetTarget() {
+        const ev = attachGetEv();
+        if (!ev) return null;
+        if (attachActiveSubIdx !== null && attachActiveSubIdx !== undefined && ev.subtasks && ev.subtasks[attachActiveSubIdx]) {
+            return ev.subtasks[attachActiveSubIdx];
+        }
+        return ev;
+    }
 
-    window.openAttachModal = function(evId) {
+    window.openAttachModal = function(evId, subIdx) {
         attachActiveEvId = evId;
+        attachActiveSubIdx = (subIdx === undefined) ? null : subIdx;
         const bd = document.getElementById('attachModalBackdrop'), md = document.getElementById('attachModal');
         if (bd) bd.classList.add('show-attach');
         if (md) md.classList.add('show-attach');
+        const titleEl = document.getElementById('attachModalTitle');
+        if (titleEl) {
+            const target = attachGetTarget();
+            titleEl.textContent = (attachActiveSubIdx !== null && target) ? ('📎 ' + (target.title || target.name || 'Subtarea')) : '📎 Adjuntos';
+        }
         attachRenderList();
     };
 
@@ -15030,13 +15398,15 @@ window.hrpFilter        = _hrpApplyFilter;
         if (bd) bd.classList.remove('show-attach');
         if (md) md.classList.remove('show-attach');
         attachActiveEvId = null;
+        attachActiveSubIdx = null;
+        if (typeof window.updateSubtaskDetailIconCounts === 'function') window.updateSubtaskDetailIconCounts();
     };
 
     function attachRenderList() {
-        const ev = attachGetEv();
+        const target = attachGetTarget();
         const container = document.getElementById('attachList');
         if (!container) return;
-        const list = (ev && ev.attachments) || [];
+        const list = (target && target.attachments) || [];
         container.innerHTML = list.length ? list.map((a, i) => `
             <div class="attach-item">
                 <span class="attach-item-icon">${a.type === 'link' ? '🔗' : attachIconForType(a.contentType)}</span>
@@ -15059,9 +15429,11 @@ window.hrpFilter        = _hrpApplyFilter;
         const uid = attachGetCurrentUid();
         if (!uid) { alert('Debes iniciar sesión para subir archivos.'); return; }
         const ev = attachGetEv();
-        if (!ev) return;
+        const target = attachGetTarget();
+        if (!ev || !target) return;
 
-        const path = `attachments/${uid}/${ev.id}/${Date.now()}_${file.name}`;
+        const subPrefix = (attachActiveSubIdx !== null && attachActiveSubIdx !== undefined) ? ('sub' + attachActiveSubIdx + '_') : '';
+        const path = `attachments/${uid}/${ev.id}/${subPrefix}${Date.now()}_${file.name}`;
         const ref = firebase.storage().ref().child(path);
         const task = ref.put(file);
         attachUploadTask = task;
@@ -15083,8 +15455,8 @@ window.hrpFilter        = _hrpApplyFilter;
             attachUploadTask = null;
         }, () => {
             task.snapshot.ref.getDownloadURL().then((url) => {
-                if (!ev.attachments) ev.attachments = [];
-                ev.attachments.push({
+                if (!target.attachments) target.attachments = [];
+                target.attachments.push({
                     type: 'file', name: file.name, url, storagePath: path,
                     size: file.size, contentType: file.type, uploadedAt: Date.now()
                 });
@@ -15108,33 +15480,43 @@ window.hrpFilter        = _hrpApplyFilter;
         if (!name) return;
         const url = prompt('Pega la URL (YouTube, Drive, etc.):');
         if (!url) return;
-        const ev = attachGetEv();
-        if (!ev) return;
-        if (!ev.attachments) ev.attachments = [];
-        ev.attachments.push({ type: 'link', name, url, uploadedAt: Date.now() });
+        const target = attachGetTarget();
+        if (!target) return;
+        if (!target.attachments) target.attachments = [];
+        target.attachments.push({ type: 'link', name, url, uploadedAt: Date.now() });
         if (typeof saveCalEvents === 'function') saveCalEvents();
         attachRenderList();
         if (typeof playSparkleSound === 'function') playSparkleSound();
     };
 
     window.attachRemove = function(idx) {
-        const ev = attachGetEv();
-        if (!ev || !ev.attachments) return;
-        const item = ev.attachments[idx];
+        const target = attachGetTarget();
+        if (!target || !target.attachments) return;
+        const item = target.attachments[idx];
         if (item && item.type === 'file' && item.storagePath) {
             firebase.storage().ref().child(item.storagePath).delete().catch(e => console.warn('[Adjuntar] No se pudo borrar del Storage:', e));
         }
-        ev.attachments.splice(idx, 1);
+        target.attachments.splice(idx, 1);
         if (typeof saveCalEvents === 'function') saveCalEvents();
         attachRenderList();
     };
 
         // ═══ Sistema de comentarios real ═══
     let commentActiveEvId = null;
+    let commentActiveSubIdx = null;   // null = comentarios de la tarea/proyecto; número = de esa sub-tarea
 
     function commentGetEv() {
         const evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
         return evs.find(e => String(e.id) === String(commentActiveEvId));
+    }
+    // Mismo patrón que attachGetTarget(): sub-tarea si hay una activa, si no el evento completo.
+    function commentGetTarget() {
+        const ev = commentGetEv();
+        if (!ev) return null;
+        if (commentActiveSubIdx !== null && commentActiveSubIdx !== undefined && ev.subtasks && ev.subtasks[commentActiveSubIdx]) {
+            return ev.subtasks[commentActiveSubIdx];
+        }
+        return ev;
     }
 
     function commentFmtTime(ts) {
@@ -15147,11 +15529,17 @@ window.hrpFilter        = _hrpApplyFilter;
         return `${d.getDate()} ${meses[d.getMonth()]} ${hh}:${mm}`;
     }
 
-    window.openCommentModal = function(evId) {
+    window.openCommentModal = function(evId, subIdx) {
         commentActiveEvId = evId;
+        commentActiveSubIdx = (subIdx === undefined) ? null : subIdx;
         const bd = document.getElementById('commentModalBackdrop'), md = document.getElementById('commentModal');
         if (bd) bd.classList.add('show-comment');
         if (md) md.classList.add('show-comment');
+        const titleEl = document.getElementById('commentModalTitle');
+        if (titleEl) {
+            const target = commentGetTarget();
+            titleEl.textContent = (commentActiveSubIdx !== null && target) ? ('💬 ' + (target.title || target.name || 'Subtarea')) : '💬 Comentarios';
+        }
         commentRenderList();
         const inp = document.getElementById('commentInput');
         if (inp) { inp.value = ''; inp.focus(); }
@@ -15162,13 +15550,15 @@ window.hrpFilter        = _hrpApplyFilter;
         if (bd) bd.classList.remove('show-comment');
         if (md) md.classList.remove('show-comment');
         commentActiveEvId = null;
+        commentActiveSubIdx = null;
+        if (typeof window.updateSubtaskDetailIconCounts === 'function') window.updateSubtaskDetailIconCounts();
     };
 
     function commentRenderList() {
-        const ev = commentGetEv();
+        const target = commentGetTarget();
         const container = document.getElementById('commentList');
         if (!container) return;
-        const list = (ev && ev.comments) || [];
+        const list = (target && target.comments) || [];
         container.innerHTML = list.length ? list.map((c, i) => `
             <div class="comment-item">
                 <div class="comment-item-header">
@@ -15187,12 +15577,12 @@ window.hrpFilter        = _hrpApplyFilter;
         const inp = document.getElementById('commentInput');
         const text = inp ? inp.value.trim() : '';
         if (!text) return;
-        const ev = commentGetEv();
-        if (!ev) return;
+        const target = commentGetTarget();
+        if (!target) return;
         let author = 'Yo';
         try { author = (firebase.auth().currentUser && firebase.auth().currentUser.displayName) || 'Yo'; } catch (e) {}
-        if (!ev.comments) ev.comments = [];
-        ev.comments.push({ text, author, timestamp: Date.now() });
+        if (!target.comments) target.comments = [];
+        target.comments.push({ text, author, timestamp: Date.now() });
         if (typeof saveCalEvents === 'function') saveCalEvents();
         inp.value = '';
         commentRenderList();
@@ -15200,9 +15590,9 @@ window.hrpFilter        = _hrpApplyFilter;
     };
 
     window.commentRemove = function(idx) {
-        const ev = commentGetEv();
-        if (!ev || !ev.comments) return;
-        ev.comments.splice(idx, 1);
+        const target = commentGetTarget();
+        if (!target || !target.comments) return;
+        target.comments.splice(idx, 1);
         if (typeof saveCalEvents === 'function') saveCalEvents();
         commentRenderList();
     };
@@ -15264,6 +15654,13 @@ window.hrpFilter        = _hrpApplyFilter;
             if (eEl) eEl.textContent = window.subtaskEndDateStr || 'Sin definir';
         }
 
+        // Restaurar recordatorios propios de la sub-tarea
+        document.querySelectorAll('#subtaskReminderChips .cal-reminder-chip').forEach(c => c.classList.remove('active'));
+        (st.reminders || []).forEach(val => {
+            const chip = document.querySelector('#subtaskReminderChips .cal-reminder-chip[data-val="' + val + '"]');
+            if (chip) chip.classList.add('active');
+        });
+
         window.subtaskEstadoVal = st.kanbanStatus || (st.done ? 'completado' : 'pendiente');
         if (typeof window.renderSubtaskEstadoDisplay === 'function') window.renderSubtaskEstadoDisplay();
 
@@ -15296,12 +15693,39 @@ window.hrpFilter        = _hrpApplyFilter;
 
         document.getElementById('subtaskDetailBackdrop').classList.add('show-comment');
         document.getElementById('subtaskDetailModal').classList.add('show-comment');
+        window.updateSubtaskDetailIconCounts();
     };
 
     window.closeSubtaskDetail = function() {
         document.getElementById('subtaskDetailBackdrop').classList.remove('show-comment');
         document.getElementById('subtaskDetailModal').classList.remove('show-comment');
         subtaskDetailEvId = null; subtaskDetailIdx = null;
+    };
+
+    /* === Comentarios / Adjuntos de una sub-tarea (Fase 2) ===
+       Reutilizan EXACTAMENTE los mismos modales 💬 y 📎 que ya existían para
+       tareas/proyectos completos — solo les pasamos el índice de la sub-tarea
+       para que guarden/lean de st.comments y st.attachments en vez de los del
+       padre. Ver commentGetTarget()/attachGetTarget() más arriba. */
+    window.openSubtaskDetailComments = function() {
+        if (subtaskDetailEvId == null || subtaskDetailIdx == null) return;
+        openCommentModal(subtaskDetailEvId, subtaskDetailIdx);
+    };
+    window.openSubtaskDetailAttachments = function() {
+        if (subtaskDetailEvId == null || subtaskDetailIdx == null) return;
+        openAttachModal(subtaskDetailEvId, subtaskDetailIdx);
+    };
+    window.updateSubtaskDetailIconCounts = function() {
+        if (subtaskDetailEvId == null || subtaskDetailIdx == null) return;
+        const ev = subtaskDetailGetEv();
+        const st = ev && ev.subtasks && ev.subtasks[subtaskDetailIdx];
+        if (!st) return;
+        const cIcon = document.getElementById('subtaskDetailCommentIcon');
+        const aIcon = document.getElementById('subtaskDetailAttachIcon');
+        const cCount = (st.comments || []).length;
+        const aCount = (st.attachments || []).length;
+        if (cIcon) { cIcon.innerHTML = '💬 Comentarios' + (cCount ? ` <span class="subtask-detail-icon-count">${cCount}</span>` : ''); cIcon.classList.toggle('has-content', !!cCount); }
+        if (aIcon) { aIcon.innerHTML = '📎 Adjuntar' + (aCount ? ` <span class="subtask-detail-icon-count">${aCount}</span>` : ''); aIcon.classList.toggle('has-content', !!aCount); }
     };
 
     /* ── Etiqueta de subtarea — mismo sistema de autocompletado + color
@@ -15411,6 +15835,11 @@ window.hrpFilter        = _hrpApplyFilter;
         st.kanbanStatus = window.subtaskEstadoVal || 'pendiente';
         st.done = (st.kanbanStatus === 'completado');
 
+        // Recordatorios propios de la sub-tarea (Fase 3)
+        const subReminders = [];
+        document.querySelectorAll('#subtaskReminderChips .cal-reminder-chip.active').forEach(c => subReminders.push(c.dataset.val || c.textContent));
+        st.reminders = subReminders;
+
         // Propagación en cascada hacia adelante: el INICIO de la siguiente
         // subtarea siempre es el FIN de esta (incluso si quedó "Sin definir"
         // — en ese caso la siguiente también vuelve a quedar "Sin definir").
@@ -15419,6 +15848,10 @@ window.hrpFilter        = _hrpApplyFilter;
         if (nextSt) nextSt.startDate = st.endDate;
 
         if (typeof saveCalEvents === 'function') saveCalEvents();
+        // Sincronizar YA con Firestore el recordatorio de esta sub-tarea
+        // (y de paso el de sus hermanas y el de la tarea/proyecto padre,
+        // ya que scheduleEventReminders reconstruye todo el evento completo).
+        if (typeof window.scheduleEventReminders === 'function') window.scheduleEventReminders(ev);
         window.closeSubtaskDetail();
         if (typeof playSparkleSound === 'function') playSparkleSound();
     };
@@ -15438,7 +15871,13 @@ window.hrpFilter        = _hrpApplyFilter;
 
     function _kanbanBindDrag() {
         document.querySelectorAll('.kanban-card').forEach(card => {
-            card.onpointerdown = (e) => _kanbanDragStart(e, card);
+            card.onpointerdown = (e) => {
+                // No iniciar arrastre si el toque/clic fue sobre el indicador
+                // de sub-tareas o su lista desplegada (Fase 4) — si no, cada
+                // clic ahí "saltaría" la tarjeta por el sistema de drag.
+                if (e.target.closest('.kanban-sub-progress, .kanban-card-subtasks')) return;
+                _kanbanDragStart(e, card);
+            };
         });
     }
 
@@ -15626,7 +16065,7 @@ window.hrpFilter        = _hrpApplyFilter;
         const val = inp.value.trim().replace(/^#/,'');
         if (!val) return;
         if (!window._calCurrentLabels) window._calCurrentLabels = [];
-        if (window._calCurrentLabels.includes(val)) { inp.value = ''; return; }
+        if (window._calCurrentLabels.includes(val)) { inp.value = ''; if (typeof window.updateCalLabelPreview === 'function') window.updateCalLabelPreview(); return; }
         window._calCurrentLabels.push(val);
         // Use label-specific color if exists, else label color picker, else calSelectedColor
         const storedColor = getLabelColor(val);
@@ -15641,6 +16080,7 @@ window.hrpFilter        = _hrpApplyFilter;
         inp.value = '';
         const ghost = document.getElementById('calLabelGhost');
         if (ghost) ghost.textContent = '';
+        if (typeof window.updateCalLabelPreview === 'function') window.updateCalLabelPreview();
         playPopSound();
     };
 
@@ -16587,6 +17027,7 @@ window.hrpFilter        = _hrpApplyFilter;
             const lg = document.getElementById('calLabelGhost');
             if (lg) lg.textContent = '';
             window._calCurrentLabelColor = '#10b981';
+            if (typeof window.updateCalLabelPreview === 'function') window.updateCalLabelPreview();
             // Limpiar recordatorios seleccionados
             document.querySelectorAll('#calReminderChips .cal-reminder-chip.active').forEach(c => c.classList.remove('active'));
             calAllday = false;
@@ -16721,6 +17162,10 @@ window.hrpFilter        = _hrpApplyFilter;
         }
 
         saveCalEvents();
+        // Sincronizar YA el/los recordatorio(s) de este evento con Firestore
+        // (tarea/proyecto/evento + todas sus sub-tareas vigentes), sin
+        // esperar a que se reabra la app — repetitivo o no.
+        if (typeof window.scheduleEventReminders === 'function') window.scheduleEventReminders(ev);
         playSparkleSound();
 
         // Agregar a Rutinas Adaptativas si es proyecto o tarea y toggle está on
@@ -16883,6 +17328,8 @@ window.hrpFilter        = _hrpApplyFilter;
             d.style.boxShadow = isActive ? `0 0 8px ${window._calCurrentLabelColor}, 0 0 14px ${window._calCurrentLabelColor}60` : '';
             d.style.transform = isActive ? 'scale(1.3)' : '';
         });
+        // Refrescar la vista previa del chip de etiqueta con el nuevo color
+        if (typeof window.updateCalLabelPreview === 'function') window.updateCalLabelPreview();
         playPopSound();
     };
     // Initialize label color picker
@@ -16955,17 +17402,6 @@ window.hrpFilter        = _hrpApplyFilter;
             </div>`;
         }
         cfg.innerHTML = html;
-        // Handler para el selector de fin
-        setTimeout(() => {
-            const sel = document.getElementById('calRepeatEnd');
-            if (sel) sel.onchange = function() {
-                const det = document.getElementById('calRepeatEndDetail');
-                if (!det) return;
-                if (this.value === 'until') det.innerHTML = `<input type="date" value="${endDate}" style="background:rgba(0,210,255,0.08);border:1px solid rgba(0,210,255,0.25);color:#94a3b8;border-radius:8px;padding:5px 10px;font-family:inherit;outline:none;">`;
-                else if (this.value === 'count') det.innerHTML = `<div class="cal-repeat-cfg-row"><input class="cal-repeat-num-input" type="number" min="1" value="10" style="width:52px;"> eventos</div>`;
-                else det.innerHTML = '';
-            };
-        }, 50);
     };
     // Lee el estado actual del panel de configuración (intervalo + finalización)
     // y lo guarda en las variables compartidas, para que el guardado del
@@ -17291,9 +17727,15 @@ function renderCalTimePicker() {
         if (!inp || !prev) return;
         const val = inp.value.trim();
         if (val) {
-            prev.textContent = val;
-            prev.style.background = calSelectedColor + '30';
-            prev.style.borderColor = calSelectedColor;
+            // Usa el color de ETIQUETA (selector "Color etiqueta", su propia
+            // variable window._calCurrentLabelColor) y no calSelectedColor,
+            // que es el color del EVENTO — son dos selectores distintos en
+            // este mismo formulario; antes de este fix la vista previa
+            // habría mostrado el color equivocado.
+            const labelColor = window._calCurrentLabelColor || '#10b981';
+            prev.textContent = '#' + val;
+            prev.style.background = labelColor + '30';
+            prev.style.borderColor = labelColor;
             prev.style.color = '#fff';
             prev.style.display = '';
         } else { prev.style.display = 'none'; }
@@ -17861,9 +18303,12 @@ function renderCalTimePicker() {
                 <div style="position:relative;width:100%;">
                     <input type="text" id="calEventLabel" placeholder="Escribe... (Tab para autocompletar, Enter para añadir)" autocomplete="off"
                         style="width:100%;background:rgba(0,15,35,0.7);border:1.5px solid rgba(0,210,255,0.45);color:#fff;font-size:0.88rem;font-weight:700;outline:none;font-family:inherit;border-radius:10px;padding:8px 14px;box-sizing:border-box;transition:none;box-shadow:0 0 10px rgba(0,210,255,0.15);"
-                        oninput="calLabelAutocomplete(this)" onkeydown="calLabelKeydown(event)">
+                        oninput="calLabelAutocomplete(this);updateCalLabelPreview()" onkeydown="calLabelKeydown(event)">
                     <span id="calLabelGhost" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.28);font-size:0.88rem;font-weight:700;pointer-events:none;white-space:nowrap;font-family:inherit;overflow:hidden;max-width:90%;"></span>
                 </div>
+                <!-- Vista previa en vivo del chip de etiqueta — updateCalLabelPreview()
+                     ya calculaba todo esto, solo faltaba este span en el HTML -->
+                <span id="calLabelPreview" style="display:none;font-size:0.72rem;font-weight:900;padding:3px 11px;border-radius:20px;border:1.5px solid transparent;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"></span>
                 <!-- Selector de color de ETIQUETA (separado del color del evento) -->
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0;">
                     <span style="font-size:0.68rem;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:1px;">Color etiqueta:</span>
@@ -17995,7 +18440,7 @@ function renderCalTimePicker() {
     <div id="attachModalBackdrop" onclick="closeAttachModal()"></div>
     <div id="attachModal">
         <div class="attach-modal-header">
-            <span class="attach-modal-title">📎 Adjuntos</span>
+            <span class="attach-modal-title" id="attachModalTitle">📎 Adjuntos</span>
             <button class="attach-close-btn" onclick="closeAttachModal()">✕</button>
         </div>
         <div id="attachList"></div>
@@ -18016,7 +18461,7 @@ function renderCalTimePicker() {
     <div id="commentModalBackdrop" onclick="closeCommentModal()"></div>
     <div id="commentModal">
         <div class="attach-modal-header">
-            <span class="attach-modal-title">💬 Comentarios</span>
+            <span class="attach-modal-title" id="commentModalTitle">💬 Comentarios</span>
             <button class="attach-close-btn" onclick="closeCommentModal()">✕</button>
         </div>
         <div class="comment-list" id="commentList"></div>
@@ -18053,6 +18498,28 @@ function renderCalTimePicker() {
                 <div class="cal-form-row-label">Fin</div>
                 <div class="cal-form-row-value" id="subtaskEndDisplay">Sin definir</div>
             </div>
+        </div>
+
+        <!-- Recordatorio propio de la sub-tarea (Fase 3) -->
+        <div class="cal-form-row" style="cursor:default;flex-direction:column;align-items:flex-start;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:12px;width:100%;">
+                <span class="cal-form-row-icon">🔔</span>
+                <div class="cal-form-row-content">
+                    <div class="cal-form-row-label">Recordatorio</div>
+                </div>
+            </div>
+            <div class="cal-reminder-chips" id="subtaskReminderChips">
+                <div class="cal-reminder-chip" data-val="exact" onclick="toggleReminder(this,'exact')">Hora exacta</div>
+                <div class="cal-reminder-chip" data-val="5m" onclick="toggleReminder(this,'5m')">5 min</div>
+                <div class="cal-reminder-chip" data-val="10m" onclick="toggleReminder(this,'10m')">10 min</div>
+                <div class="cal-reminder-chip" data-val="30m" onclick="toggleReminder(this,'30m')">30 min</div>
+                <div class="cal-reminder-chip" data-val="1h" onclick="toggleReminder(this,'1h')">1 hora</div>
+                <div class="cal-reminder-chip" data-val="2h" onclick="toggleReminder(this,'2h')">2 horas</div>
+                <div class="cal-reminder-chip" data-val="1d" onclick="toggleReminder(this,'1d')">1 día</div>
+                <div class="cal-reminder-chip" data-val="2d" onclick="toggleReminder(this,'2d')">2 días</div>
+                <div class="cal-reminder-chip" data-val="1w" onclick="toggleReminder(this,'1w')">1 semana</div>
+            </div>
+            <div style="font-size:0.68rem;color:#64748b;margin-top:4px;">* Se calcula sobre la fecha de <b>Inicio</b> de la sub-tarea.</div>
         </div>
 
         <label class="subtask-detail-label">🚩 Prioridad</label>
@@ -18115,6 +18582,12 @@ function renderCalTimePicker() {
                 <div class="custom-option" data-val="en_curso" onclick="selectSubtaskEstado('en_curso')"><span style="color:#00d2ff;">🔵 En Curso</span></div>
                 <div class="custom-option" data-val="completado" onclick="selectSubtaskEstado('completado')"><span style="color:#10b981;">✅ Completado</span></div>
             </div>
+        </div>
+
+        <label class="subtask-detail-label">📎 Comentarios y archivos</label>
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+            <button type="button" class="subtask-detail-icon-btn" id="subtaskDetailCommentIcon" onclick="openSubtaskDetailComments()">💬 Comentarios</button>
+            <button type="button" class="subtask-detail-icon-btn" id="subtaskDetailAttachIcon" onclick="openSubtaskDetailAttachments()">📎 Adjuntar</button>
         </div>
 
         <button class="subtask-detail-save-btn" onclick="saveSubtaskDetail()">💾 Guardar subtarea</button>
@@ -19568,58 +20041,123 @@ function nextOccurrenceOnOrAfter(startDate, repeat, refDate, every) {
   return { date: occ, periods: periods };
 }
 
+// Resuelve CUÁNDO debe sonar un recordatorio para una fecha base dada,
+// respetando la recurrencia del evento padre (ev.repeat/repeatEvery/repeatEnd)
+// cuando aplica. Es el mismo cálculo que antes vivía inline dentro de
+// buildList() — se extrajo a función aparte para poder reutilizarlo tanto
+// para el recordatorio de la tarea/proyecto/evento como para el de cada
+// sub-tarea (Fase 3), sin duplicar la lógica de fechas/recurrencia.
+// Devuelve null si este recordatorio no debe programarse (ya pasó, la
+// recurrencia ya terminó, etc.), o { fireAt, repeat?, repeatEvery?, repeatEnd?, offsetMs?, occurrenceIndex? }.
+function resolveReminderFire(base, val, ev, now) {
+  var off = OFF[val]; if (off === undefined) return null;
+  var isRepeating = ev.repeat && ev.repeat !== 'none';
+
+  if (isRepeating) {
+    // Buscar la próxima ocurrencia (hoy o futura) cuyo recordatorio no haya pasado ya
+    var refDate = new Date(now + off);
+    var every = ev.repeatEvery || 1;
+    var res = nextOccurrenceOnOrAfter(base, ev.repeat, refDate, every);
+
+    // Respetar la condición de finalización (Nunca / hasta fecha / cantidad de veces)
+    if (ev.repeatEnd && ev.repeatEnd.until) {
+      var untilD = new Date(ev.repeatEnd.until + 'T23:59:59');
+      if (res.date > untilD) return null; // la recurrencia ya terminó
+    }
+    if (ev.repeatEnd && ev.repeatEnd.count && res.periods >= ev.repeatEnd.count) return null;
+
+    var fireAtRep = res.date.getTime() - off;
+    if (fireAtRep < now - 120000) return null;
+    return { fireAt: fireAtRep, repeat: ev.repeat, repeatEvery: every, repeatEnd: ev.repeatEnd || null, offsetMs: off, occurrenceIndex: res.periods };
+  }
+
+  var fireAt = base.getTime() - off;
+  if (fireAt < now - 120000) return null;
+  return { fireAt: fireAt };
+}
+
 function buildList(evs){
   var all=[],now=Date.now();
   evs.forEach(function(ev){
-    if(!ev.reminders||!ev.reminders.length||!ev.startDate) return;
-    var base=parseLocal(ev.startDate);
-    if(!base||isNaN(base)||base.getTime()<1000000000000) return;
     var title=ev.title||ev.name||'Evento';
     var icon=ev.type==='tarea'?'Tarea':ev.type==='proyecto'?'Proyecto':'Evento';
-    var isRepeating = ev.repeat && ev.repeat !== 'none';
-    ev.reminders.forEach(function(val){
-      var off=OFF[val]; if(off===undefined) return;
 
-      if (isRepeating) {
-        // Buscar la próxima ocurrencia (hoy o futura) cuyo recordatorio no haya pasado ya
-        var refDate = new Date(now + off);
-        var every = ev.repeatEvery || 1;
-        var res = nextOccurrenceOnOrAfter(base, ev.repeat, refDate, every);
-
-        // Respetar la condición de finalización (Nunca / hasta fecha / cantidad de veces)
-        if (ev.repeatEnd && ev.repeatEnd.until) {
-          var untilD = new Date(ev.repeatEnd.until + 'T23:59:59');
-          if (res.date > untilD) return; // la recurrencia ya terminó
-        }
-        if (ev.repeatEnd && ev.repeatEnd.count && res.periods >= ev.repeatEnd.count) return;
-
-        var fireAtRep = res.date.getTime() - off;
-        if (fireAtRep < now - 120000) return;
-        all.push({
-          evId: ev.id, fireAt: fireAtRep, title: icon+': '+title, body:(LBL[val]||val)+' - '+fmt(ev.startDate),
-          repeat: ev.repeat, repeatEvery: every, repeatEnd: ev.repeatEnd || null, offsetMs: off, occurrenceIndex: res.periods
+    // ── Recordatorio de la tarea/proyecto/evento completo (como siempre) ──
+    if(ev.reminders && ev.reminders.length && ev.startDate){
+      var base=parseLocal(ev.startDate);
+      if(base && !isNaN(base) && base.getTime()>=1000000000000){
+        ev.reminders.forEach(function(val){
+          var r = resolveReminderFire(base, val, ev, now);
+          if (!r) return;
+          all.push(Object.assign({ evId: ev.id, title: icon+': '+title, body:(LBL[val]||val)+' - '+fmt(ev.startDate) }, r));
         });
-        return;
       }
+    }
 
-      var fireAt=base.getTime()-off;
-      if(fireAt<now-120000) return;
-      all.push({evId:ev.id,fireAt:fireAt,title:icon+': '+title,body:(LBL[val]||val)+' - '+fmt(ev.startDate)});
-    });
+    // ── Recordatorio propio de cada sub-tarea (Fase 3) ──
+    // Mismo mecanismo de arriba, pero con la fecha de INICIO de la sub-tarea
+    // como base, y un evId compuesto ('<idTarea>_sub<índice>') para no
+    // chocar con el recordatorio del padre ni con el de otras sub-tareas.
+    // La Cloud Function (index.js) no necesita saber nada de esto: solo lee
+    // lo que haya en la lista, igual que con cualquier otro recordatorio.
+    if (ev.subtasks && ev.subtasks.length) {
+      ev.subtasks.forEach(function(st, si){
+        if (!st.reminders || !st.reminders.length || !st.startDate) return;
+        var subBase = parseLocal(st.startDate);
+        if (!subBase || isNaN(subBase) || subBase.getTime() < 1000000000000) return;
+        var subTitle = title + ' › ' + (st.title || st.name || 'Sub-tarea');
+        st.reminders.forEach(function(val){
+          var r = resolveReminderFire(subBase, val, ev, now);
+          if (!r) return;
+          all.push(Object.assign({ evId: ev.id + '_sub' + si, title: subTitle, body:(LBL[val]||val)+' - '+fmt(st.startDate) }, r));
+        });
+      });
+    }
   });
   return all;
 }
 
+// Un evento puede aportar varias entradas a la lista de recordatorios: la
+// suya propia (evId = ev.id) y una por cada sub-tarea con recordatorio
+// propio (evId = 'ev.id_subN', ver buildList). Para no dejar basura al
+// reprogramar o cancelar, hay que quitar TODAS las que empiecen con su id,
+// no solo la que coincide exacto.
+function _remBelongsToEvent(evId, id) {
+  var s = String(evId);
+  return s === id || s.indexOf(id + '_sub') === 0;
+}
+
+// Sincroniza YA (sin esperar a reabrir la app) los recordatorios de un solo
+// evento — tarea, proyecto o evento — incluidas todas sus sub-tareas
+// vigentes. Se llama justo después de guardar, desde saveCalEvent() y
+// saveSubtaskDetail(), para que cada recordatorio quede armado en Firestore
+// en el instante en que se crea o edita, sea repetitivo o no.
 window.scheduleEventReminders=function(ev){
   if(!ev||!ev.id) return;
-  var sched=load().filter(function(r){return r.evId!==ev.id;});
+  var sched=load().filter(function(r){ return !_remBelongsToEvent(r.evId, ev.id); });
   sched=sched.concat(buildList([ev]));
   save(sched); saveToFirestore(sched);
 };
+// Cancela el recordatorio de un evento Y los de todas sus sub-tareas —
+// se llama al borrar una tarea/proyecto/evento, para que no quede un
+// recordatorio "fantasma" sonando después de eliminado.
 window.cancelEventReminders=function(id){
-  var s=load().filter(function(r){return r.evId!==id;});
+  var s=load().filter(function(r){ return !_remBelongsToEvent(r.evId, id); });
   save(s); saveToFirestore(s);
 };
+// Enlazar la cancelación a deleteCalEvent (definida en un <script> anterior,
+// pero accesible vía window porque se declaró como window.deleteCalEvent).
+// Mismo patrón que ya usa este archivo para enlazar la sincronización con
+// Google Calendar un poco más arriba.
+(function(){
+  var _origDeleteForReminders = window.deleteCalEvent;
+  if (typeof _origDeleteForReminders === 'function') {
+    window.deleteCalEvent = function(id){
+      cancelEventReminders(id);
+      return _origDeleteForReminders.apply(this, arguments);
+    };
+  }
+})();
 
 function reschedAll(){
   try{
@@ -19663,7 +20201,7 @@ function reschedAll(){
           evId:'hab_'+baseName+(idx>0?'_'+idx:''),
           fireAt:fireAt,
           title:(h.emoji||'🌿')+' '+(h.name||'Hábito'),
-          body:'⏰ '+new Date(fa).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}) + ' · ¡Es hora de tu hábito diario!'
+          body:'⏰ '+new Date(fireAt).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}) + ' · ¡Es hora de tu hábito diario!'
         });
         console.log('[JCH] reschedAll hab: '+(h.name||'?')+' idx='+idx+' -> '+new Date(fireAt).toLocaleString());
       });
@@ -19675,7 +20213,7 @@ function reschedAll(){
         navigator.serviceWorker.ready.then(function(reg) {
             var sw = reg.active || (navigator.serviceWorker.controller);
             if (sw) {
-                sw.postMessage({ type: 'SCHEDULE_REMINDERS', reminders: list });
+                sw.postMessage({ type: 'SET_REMINDERS', reminders: list });
                 console.log('[JCH] reschedAll → SW: '+list.length+' recordatorios programados');
             }
         });
@@ -19761,7 +20299,7 @@ function check(){
         if (navigator.serviceWorker) {
             navigator.serviceWorker.ready.then(function(reg) {
                 var sw = reg.active || navigator.serviceWorker.controller;
-                if (sw) sw.postMessage({ type: 'SCHEDULE_REMINDERS', reminders: list });
+                if (sw) sw.postMessage({ type: 'SET_REMINDERS', reminders: list });
             });
         }
       }catch(e){}
@@ -21947,19 +22485,21 @@ window.saveHabit = function() {
     var _savedReminderTimes = (typeof reminderTimes !== 'undefined') ? [...reminderTimes] : [];
     var _savedReminderOn    = (typeof reminderOn    !== 'undefined') ? reminderOn : false;
 
-    // Leer reminderTime de forma segura
-    const _rtEl = document.getElementById('habReminderTime');
+    // Leer reminderTime de forma segura — habReminderTime ya no existe en el
+    // HTML (reemplazado por la lista de múltiples recordatorios), así que el
+    // valor de respaldo es siempre '08:00' cuando no hay recordatorios guardados.
     const reminderTime = _savedReminderTimes.length
         ? _savedReminderTimes[0]
-        : (_rtEl ? _rtEl.value : '08:00');
+        : '08:00';
 
     var _qtyNow = parseInt((document.getElementById('habQtyTarget')||{}).value||'1');
     var _unitNow = ((document.getElementById('habQtyUnit')||{}).value||'').trim() || (_htNow==='timer'?'min':'');
     var _rtNow = window._selectedRoutine || 'morning';
 
+    var _oldHabitName; // nombre ANTES de renombrar (si se está editando), para limpiar su recordatorio viejo
     if(editId){
         const h=habits.find(x=>x.id===editId);
-        if(h){ Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn:_savedReminderOn,reminderTime:reminderTime,reminderTimes:_htNow==='quantity'&&_savedReminderTimes.length?_savedReminderTimes:undefined,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
+        if(h){ _oldHabitName=h.name; Object.assign(h,{name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn:_savedReminderOn,reminderTime:reminderTime,reminderTimes:_htNow==='quantity'&&_savedReminderTimes.length?_savedReminderTimes:undefined,habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined}); }
     } else {
         habits.push({id:'hab_'+Date.now(),name,emoji:selectedEmoji,color:selectedColor,freq:selectedFreq,xp:selectedXP,diff:selectedDiff,days:[...selectedDays],type:selectedType,reminderOn:_savedReminderOn,reminderTime:reminderTime,reminderTimes:_htNow==='quantity'&&_savedReminderTimes.length?_savedReminderTimes:undefined,log:[],createdAt:new Date().toISOString(),habitType:_htNow,routine:_rtNow,qtyTarget:_htNow!=='check'?_qtyNow:undefined,qtyUnit:_htNow!=='check'?_unitNow:undefined,pillar:selectedPillar!=='none'?selectedPillar:undefined});
     }
@@ -21998,8 +22538,17 @@ window.saveHabit = function() {
             var _body  = '⏰ '+new Date(_fireAt).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+' · ¡Es hora de tu hábito diario!';
             var _rem   = [];
             try { _rem = JSON.parse(localStorage.getItem('jch_rem_v4')||'[]'); } catch(e){}
-            // Eliminar todos los recordatorios anteriores de este hábito
-            _rem = _rem.filter(function(r){ return !r.evId.startsWith('hab_'+name.replace(/\W+/g,'_')); });
+            // Eliminar todos los recordatorios anteriores de este hábito — por su
+            // nombre actual Y, si se acaba de renombrar, también por su nombre
+            // anterior (si no se limpia el viejo, queda un recordatorio "fantasma"
+            // con el nombre antiguo flotando hasta el siguiente rescheduleAllReminders).
+            var _newPrefix = 'hab_'+name.replace(/\W+/g,'_');
+            var _oldPrefix = (_oldHabitName && _oldHabitName!==name) ? ('hab_'+_oldHabitName.replace(/\W+/g,'_')) : null;
+            _rem = _rem.filter(function(r){
+                if (r.evId.startsWith(_newPrefix)) return false;
+                if (_oldPrefix && r.evId.startsWith(_oldPrefix)) return false;
+                return true;
+            });
 
             // Construir lista de horas a programar
             var _timesToSchedule = [];
@@ -22027,7 +22576,7 @@ window.saveHabit = function() {
             // El SW usa setTimeout internamente para disparar en el momento exacto
             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.controller.postMessage({
-                    type: 'SCHEDULE_REMINDERS',
+                    type: 'SET_REMINDERS',
                     reminders: _rem
                 });
                 console.log('[JCH] Recordatorios enviados al SW:', _rem.length);
@@ -22036,7 +22585,7 @@ window.saveHabit = function() {
                 navigator.serviceWorker.ready.then(function(reg) {
                     if (reg.active) {
                         reg.active.postMessage({
-                            type: 'SCHEDULE_REMINDERS',
+                            type: 'SET_REMINDERS',
                             reminders: _rem
                         });
                         console.log('[JCH] Recordatorios enviados al SW (ready):', _rem.length);
@@ -22326,6 +22875,13 @@ window.deleteHabit = function(id) {
     habits=habits.filter(x=>x.id!==id);
     saveHabits(); updateHabitBadge();
     (window.renderHabToday||renderHabToday)(); renderHabStats(); renderHabHero();
+    // Cancelar YA el recordatorio del hábito eliminado en Firestore — no depender
+    // solo del parche reactivo de localStorage.setItem (mismo patrón explícito
+    // que ya se usa para tareas/proyectos/eventos al borrarlos).
+    if (typeof rescheduleAllReminders === 'function') {
+        window._lastHabReschedule = 0;
+        rescheduleAllReminders(true);
+    }
 };
 
 
@@ -23163,8 +23719,6 @@ function resetHabForm() {
     selectedDays=[0,1,2,3,4]; selectedType='positive'; reminderOn=false;
     const tog=document.getElementById('habReminderToggle');
     if(tog) tog.classList.remove('on');
-    const rt=document.getElementById('habReminderTime');
-    if(rt) rt.value='08:00';
     updateEmojiGrid(); updateColorGrid();
     document.querySelectorAll('.hab-freq-btn[data-freq]').forEach(b=>b.classList.toggle('selected',b.dataset.freq==='daily'));
     document.querySelectorAll('.hab-freq-btn[data-xp]').forEach(b=>b.classList.toggle('selected',b.dataset.xp==='10'));
@@ -23950,74 +24504,6 @@ window.renderHabHeroFull = function() {
 
 // Parchar renderHabHero global
 // renderHabHero se define en el módulo 3D v2 (más abajo)
-
-// ── TIENDA ────────────────────────────────────────────────────
-window.renderHabShop = function() {
-    const el = document.getElementById('habShopList');
-    const goldEl = document.getElementById('habShopGold');
-    if (!el) return;
-    const hero = loadHero();
-    if (goldEl) goldEl.textContent = '\uD83E\uDE99 ' + (hero.coins||0);
-
-    const equip = hero.equipment || {};
-    const rows = [];
-    for (let i = 0; i < SHOP_ITEMS.length; i++) {
-        const item = SHOP_ITEMS[i];
-        const owned       = (hero.inventory||[]).includes(item.name) || equip[item.slot] === item.id;
-        const isConsumable= item.slot === 'consumable';
-        const affordable  = (hero.coins||0) >= item.cost;
-        const disabledAttr= (!isConsumable && owned) ? 'disabled' : (!affordable ? 'disabled' : '');
-        const btnLabel    = (!isConsumable && owned) ? '\u2713 Equipado' : ('\uD83E\uDE99 ' + item.cost);
-        const ownedBadge  = (owned && !isConsumable) ? '<span style="font-size:0.6rem;color:#22c55e;">\u2713 Equipado</span>' : '';
-        rows.push(
-            '<div class="hab-shop-item">' +
-            '<div class="hab-shop-icon">' + item.icon + '</div>' +
-            '<div class="hab-shop-info">' +
-              '<div class="hab-shop-name">' + item.name + ' ' + ownedBadge + '</div>' +
-              '<div class="hab-shop-desc">' + item.desc + '</div>' +
-              '<div class="hab-shop-stat">' + item.stat + '</div>' +
-            '</div>' +
-            '<button class="hab-buy-btn" onclick="buyShopItem(\'' + item.id + '\')" ' + disabledAttr + '>' + btnLabel + '</button>' +
-            '</div>'
-        );
-    }
-    el.innerHTML = rows.join('');
-};
-
-window.buyShopItem = function(itemId) {
-    const hero = loadHero();
-    const item = SHOP_ITEMS.find(i => i.id === itemId);
-    if (!item || (hero.coins||0) < item.cost) return;
-
-    hero.coins -= item.cost;
-    hero.inventory = hero.inventory || [];
-    hero.equipment = hero.equipment || {};
-    hero.stats     = hero.stats     || {};
-
-    // Consumibles
-    if (item.slot === 'consumable') {
-        if (item.statKey === 'pot') { hero.hp = Math.min(hero.maxHp, hero.hp + item.statVal); }
-        if (item.statKey === 'xps') { hero.xp += item.statVal; while(hero.xp >= hero.xpNext){ hero.xp -= hero.xpNext; hero.level++; hero.xpNext=Math.round(hero.xpNext*1.5); hero.maxHp+=20; hero.hp=hero.maxHp; } }
-    } else {
-        // Desquipar el slot anterior
-        const prevId = hero.equipment[item.slot];
-        if (prevId) {
-            const prev = SHOP_ITEMS.find(i => i.id === prevId);
-            if (prev) hero.stats[prev.statKey] = Math.max(0, (hero.stats[prev.statKey]||0) - prev.statVal);
-            hero.inventory = hero.inventory.filter(n => n !== prev?.name);
-        }
-        hero.equipment[item.slot] = item.id;
-        hero.stats[item.statKey]  = (hero.stats[item.statKey]||0) + item.statVal;
-        if (item.statKey === 'hp') { hero.maxHp += item.statVal; hero.hp = Math.min(hero.maxHp, hero.hp + item.statVal); }
-        hero.inventory.push(item.name);
-    }
-
-    saveHero(hero);
-    renderHabShop();
-    renderHabHero();
-    updateGoldDisplays(hero);
-    if (typeof playSparkleSound === 'function') playSparkleSound();
-};
 
 // ── RECOMPENSAS ───────────────────────────────────────────────
 window.DEFAULT_REWARDS = [
@@ -32043,9 +32529,18 @@ window.renderHabHero = function() {
         </div>`;}).join('')}
     </div>
     <div id="habTrophyBtnWrap"></div>
-    <div id="habPotionShopWrap"></div>`;
+    <div id="habPotionShopWrap"></div>
+    <div style="font-size:0.62rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.8rem 0 0.4rem;">⚡ Atributos</div>
+    <div id="habAttrPanel"></div>`;
     if (typeof window.renderTrophyButton === 'function') window.renderTrophyButton();
     if (typeof window.renderHpPotionShop === 'function') window.renderHpPotionShop();
+    // FIX quirúrgico: #habAttrPanel nunca se montaba en el HTML, así que
+    // renderHabAttributes() (que ya existía y calcula todo bien) siempre
+    // encontraba el contenedor como null y no hacía nada — el panel de
+    // Fuerza/Inteligencia/Constitución/Percepción era invisible aunque el
+    // sistema de puntos ya funcionaba en segundo plano. Ahora el contenedor
+    // existe arriba y se renderiza aquí, igual que el resto de sub-paneles.
+    if (typeof window.renderHabAttributes === 'function') window.renderHabAttributes();
 
     // Panel mascota equipada
     if (typeof window.renderPetPanel === 'function') window.renderPetPanel();
@@ -32544,10 +33039,14 @@ window._habInstantUIUpdate = function(h) {
             el.style.width = pct + '%';
         });
         // Actualizar HP % en panel HÉROE si está visible
-        var heroHpPct = document.querySelector('#habHeroBossSVG + div [data-boss-pct]');
-        // Redibujar SVG boss en panel HÉROE si es visible
-        if (document.getElementById('habHeroBossSVG') && typeof window.drawBoss3D === 'function') {
-            window.drawBoss3D('habHeroBossSVG', Math.min(heroRaw.bossIndex||0, 19));
+        var heroHpPct = document.querySelector('#habHeroBossSVG2 + div [data-boss-pct]');
+        // Redibujar SVG boss en panel HÉROE si es visible — el contenedor
+        // real que crea el HTML es '#habHeroBossSVG2' (con el "2"), no
+        // '#habHeroBossSVG'; por el desajuste de id esta condición nunca era
+        // verdadera y el muñeco 3D del boss se quedaba congelado tras cada
+        // golpe, aunque la barra/texto de HP sí se actualizaban (usan clase).
+        if (document.getElementById('habHeroBossSVG2') && typeof window.drawBoss3D === 'function') {
+            window.drawBoss3D('habHeroBossSVG2', Math.min(heroRaw.bossIndex||0, 19));
         }
     } catch(e) {}
 };
