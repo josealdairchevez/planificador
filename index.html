@@ -7343,96 +7343,6 @@
         .hab-ind-lbl { font-size:0.48rem;color:#555;text-transform:uppercase;letter-spacing:0.6px;margin-top:2px; }
         .hab-ind-minibar { height:3px;border-radius:2px;background:rgba(255,255,255,0.06);margin-top:10px;overflow:hidden; }
         .hab-ind-minibar-fill { height:100%;border-radius:2px;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1); }
-        /* ── MODAL DETALLE DÍA ──────────────────────────────── */
-        .hab-day-detail-backdrop {
-            position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,0.75);
-            backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-            opacity:0;visibility:hidden;transition:all 0.25s;
-        }
-        .hab-day-detail-backdrop.show { opacity:1;visibility:visible; }
-        .hab-day-detail-modal {
-            position:fixed;bottom:0;left:0;right:0;z-index:8501;
-            background:linear-gradient(180deg,#0d0025,#080018);
-            border-radius:24px 24px 0 0;border-top:1.5px solid rgba(99,102,241,0.4);
-            padding:0 0 20px;transform:translateY(100%);
-            transition:transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
-            max-height:75vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
-        }
-        .hab-day-detail-modal.show { transform:translateY(0); }
-        .hab-day-detail-drag { width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);margin:12px auto 16px; }
-        .hab-day-detail-date { font-size:0.92rem;font-weight:900;color:#fff;padding:0 20px;margin-bottom:14px; }
-        .hab-day-detail-date span { color:#a78bfa; }
-        .hab-day-habit-row {
-            display:flex;align-items:center;gap:12px;
-            background:rgba(255,255,255,0.04);border-radius:12px;
-            padding:12px 16px;margin:0 16px 8px;cursor:pointer;
-            transition:all 0.2s;border:1px solid transparent;
-        }
-        .hab-day-habit-row.done { background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25); }
-        .hab-day-habit-row:hover { background:rgba(255,255,255,0.08); }
-        .hab-day-check {
-            width:28px;height:28px;border-radius:50%;flex-shrink:0;
-            border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;
-            justify-content:center;font-size:0.85rem;transition:all 0.2s;
-        }
-        .hab-day-check.done { background:#10b981;border-color:#10b981; }
-        .hab-note-input {
-            width:100%;padding:10px 14px;border-radius:12px;margin-top:14px;
-            background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.08);
-            color:#fff;font-size:0.8rem;resize:none;outline:none;
-            transition:border-color 0.2s;box-sizing:border-box;
-        }
-        .hab-note-input:focus { border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.05); }
-        .hab-note-save-btn {
-            margin-top:8px;padding:10px 24px;border-radius:12px;
-            background:linear-gradient(135deg,#6366f1,#a78bfa);border:none;
-            color:#fff;font-size:0.75rem;font-weight:900;cursor:pointer;
-            box-shadow:0 4px 15px rgba(99,102,241,0.35);transition:all 0.2s;
-        }
-        .hab-note-save-btn:hover { transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,0.5); }
-
-        /* ── CALENDARIO INTERACTIVO ─────────────────────────── */
-        .hab-calendar-header {
-            display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;
-        }
-        .hab-cal-nav {
-            width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);
-            background:rgba(255,255,255,0.04);color:#aaa;font-size:0.9rem;
-            cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;
-        }
-        .hab-cal-nav:hover { background:rgba(255,255,255,0.1);color:#fff; }
-        .hab-cal-month { font-size:0.82rem;font-weight:900;color:#fff; }
-        .hab-cal-grid {
-            display:grid;grid-template-columns:repeat(7,1fr);gap:3px;
-        }
-        .hab-cal-dow {
-            text-align:center;font-size:0.52rem;font-weight:900;
-            color:#555;text-transform:uppercase;padding:3px 0;
-        }
-        .hab-cal-day {
-            aspect-ratio:1;border-radius:6px;display:flex;align-items:center;
-            justify-content:center;font-size:0.65rem;font-weight:700;
-            cursor:pointer;transition:all 0.15s;position:relative;
-            background:rgba(255,255,255,0.03);color:#666;
-        }
-        .hab-cal-day.has-data { color:#fff; }
-        .hab-cal-day.today {
-            border:1.5px solid rgba(99,102,241,0.6);color:#a78bfa;font-weight:900;
-        }
-        .hab-cal-day.future { opacity:0.3;cursor:default;pointer-events:none; }
-        .hab-cal-day.empty { background:transparent;cursor:default;pointer-events:none; }
-        .hab-cal-day:not(.empty):not(.future):hover { background:rgba(99,102,241,0.2);color:#fff;transform:scale(1.1); }
-        .hab-cal-dot {
-            position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
-            width:4px;height:4px;border-radius:50%;
-        }
-        /* Nivel de completitud del día */
-        .hab-cal-day.lv0 { background:rgba(255,255,255,0.03); }
-        .hab-cal-day.lv1 { background:rgba(16,185,129,0.12); }
-        .hab-cal-day.lv2 { background:rgba(16,185,129,0.28); }
-        .hab-cal-day.lv3 { background:rgba(16,185,129,0.50); }
-        .hab-cal-day.lv4 { background:rgba(16,185,129,0.80);color:#000 !important; }
-
         /* ── GRÁFICO RADAR (SPIDER WEB) ─────────────────────── */
         .hab-radar-container {
             display:flex;flex-direction:column;align-items:center;margin-bottom:12px;
@@ -20918,15 +20828,6 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ini
             </div>
 
         </div>
-    </div>
-
-    <!-- Modal detalle día (Habit Radar retroactive logging) -->
-    <div class="hab-day-detail-backdrop" id="habDayBackdrop" onclick="closeDayDetail()"></div>
-    <div class="hab-day-detail-modal" id="habDayModal">
-        <div class="hab-day-detail-date" id="habDayModalDate"></div>
-        <div id="habDayHabitList"></div>
-        <textarea class="hab-note-input" id="habDayNote" rows="2" placeholder="✍️ Nota del día (reflexión, cómo te sentiste...)"></textarea>
-        <button class="hab-note-save-btn" onclick="saveDayNote()">💾 Guardar nota</button>
     </div>
 
     <!-- Toast de compra (Mercado) -->
@@ -35438,7 +35339,8 @@ window._g1CloseModal = function(overlay, onClose) {
 //  MODAL 1 — LOGIN DIARIO (primera apertura del día)
 // ══════════════════════════════════════════════════════════════
 window.showDailyLoginModal = function() {
-  var hero   = JSON.parse(localStorage.getItem('jch_hero_v1') || '{}');
+  var hero   = JSON.parse(localStorage.getItem('jch_hero_v1') || 'null') ||
+    {coins:0,gems:0,level:1,hp:100,maxHp:100,xp:0,xpNext:100,class:'warrior',equipment:{},bossIndex:0,bossesDefeated:0,bossHp:100,inventory:[]};
   var habits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]');
   var today  = (function() {
     var d = new Date();
