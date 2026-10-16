@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#001224">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <title>Planificador de Alto Rendimiento JCH</title>
+    <title>Planificador JCH</title>
     <!-- NUEVO: Fuente premium ovalada, gordita y muy amigable -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@900&display=swap" rel="stylesheet">
     <!-- Librería externa para Confeti Premium -->
@@ -5704,6 +5704,7 @@
             background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
             border-radius:50%;width:28px;height:28px;font-size:0.7rem;color:#888;
             cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;
+            z-index:6; /* por encima del contenido: antes ~47% del botón quedaba tapado por el título */
         }
         .tm-step-num {
             font-size:0.48rem;font-weight:900;color:var(--tm-col,#00d2ff);
@@ -5797,6 +5798,17 @@
             text-shadow:0 0 20px rgba(251,191,36,0.6);
         }
         .tm-win-sub { font-size:0.65rem;color:#94a3b8;margin-bottom:16px;line-height:1.5; }
+        /* Aviso premium: el temporizador terminó mientras la app estaba cerrada / en segundo plano */
+        .tm-win-late {
+            display:inline-flex;align-items:center;gap:6px;margin:-6px auto 14px;padding:6px 12px;
+            border-radius:999px;font-size:0.58rem;font-weight:800;letter-spacing:0.4px;color:#fde68a;
+            background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(245,158,11,0.08));
+            border:1px solid rgba(251,191,36,0.45);
+            box-shadow:0 0 18px rgba(251,191,36,0.28), inset 0 0 12px rgba(251,191,36,0.08);
+            animation:tmLateIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both, tmLateGlow 2.2s ease-in-out 0.5s infinite alternate;
+        }
+        @keyframes tmLateIn { from { opacity:0; transform:translateY(8px) scale(0.92); } to { opacity:1; transform:none; } }
+        @keyframes tmLateGlow { from { box-shadow:0 0 12px rgba(251,191,36,0.18), inset 0 0 10px rgba(251,191,36,0.05); } to { box-shadow:0 0 26px rgba(251,191,36,0.45), inset 0 0 14px rgba(251,191,36,0.12); } }
         .tm-win-rewards {
             display:flex;gap:10px;justify-content:center;margin-bottom:18px;
         }
@@ -26035,12 +26047,15 @@ window.recalcHeroStats = recalcHeroStats;
     var _tmCoins = 0;
     var _tmXp = 0;
     var TM_DELTA_KEY = 'jch_steptimer_delta_v1';
+    var _tmOrphan = null;       // recompensa pendiente cuando el temporizador se restauró tras cerrar la app (el paso ya no existe en pantalla)
+    var _tmWinReplay = false;   // terminó con la app en segundo plano: repetir el festejo al volver
 
     window.openStepTimer = function(title, desc, minutes, coins, xp, stepId) {
         var old = document.getElementById('_stepTimerOverlay');
         if (old) old.remove();
         clearInterval(_tmInterval);
         _tmRunning = false;
+        _tmOrphan = null;
         _tmStepId = stepId || ('paso_' + String(title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').substring(0,40) + '_' + minutes);
         _tmCoins = coins;
         _tmXp = xp;
@@ -26165,9 +26180,54 @@ window.recalcHeroStats = recalcHeroStats;
             clearInterval(_tmInterval); _tmRunning = false;
             _tmClearDelta();
             _tmPlaySound('complete');
-            _tmWin(); return;
+            _tmWin();
+            // Si terminó con la app oculta, repetir el festejo cuando el usuario vuelva
+            if (document.visibilityState === 'hidden') _tmWinReplay = true;
+            else _tmShowLateNote(_tmTargetEndTs, 'en segundo plano');
+            return;
         }
         _updateRing();
+    }
+
+    // "hace 3 min" / "hace 1 h 05 min" — para el aviso de que terminó mientras el usuario no estaba
+    function _tmAgoText(ms) {
+        var min = Math.floor(ms / 60000);
+        if (min < 1) return 'hace menos de 1 min';
+        if (min < 60) return 'hace ' + min + ' min';
+        var h = Math.floor(min / 60), m = min % 60;
+        return 'hace ' + h + ' h' + (m ? ' ' + (m < 10 ? '0' : '') + m + ' min' : '');
+    }
+
+    // Chip premium bajo "¡Paso Completado!" — solo si terminó hace más de 5 s (o sea, el usuario no lo vio terminar)
+    function _tmShowLateNote(finishedAt, where) {
+        var late = Date.now() - finishedAt;
+        if (!(late > 5000)) return;
+        var sub = document.querySelector('#_stepTimerOverlay .tm-win-sub');
+        if (!sub) return;
+        var old = document.querySelector('#_stepTimerOverlay .tm-win-late');
+        if (old) old.remove();
+        var chip = document.createElement('div');
+        chip.className = 'tm-win-late';
+        chip.textContent = '⏳ Terminó ' + _tmAgoText(late) + ' · ' + where;
+        sub.insertAdjacentElement('afterend', chip);
+    }
+
+    // Recompensa del temporizador restaurado tras cerrar la app: el paso ya no existe en pantalla
+    // (la rutina generada no se guarda), así que se entrega aquí al pulsar "¡Genial!".
+    function _tmClaimOrphan() {
+        var o = _tmOrphan; _tmOrphan = null;
+        if (!o) return;
+        var coins = parseInt(o.coins) || 0, xp = parseInt(o.xp) || 0;
+        try { if (typeof window.addGlobalReward === 'function') window.addGlobalReward(xp, coins); } catch (e) {}
+        try {
+            var t = document.getElementById('habStreakToast');
+            if (t) {
+                t.textContent = '🏆 ¡Recompensa reclamada! +' + coins + '🪙  +' + xp + '⚡';
+                t.style.background = 'linear-gradient(135deg,#f59e0b,#fbbf24)';
+                t.classList.add('show');
+                setTimeout(function(){ t.classList.remove('show'); }, 3200);
+            }
+        } catch (e) {}
     }
 
     window._tmReset = function() {
@@ -26207,8 +26267,23 @@ window.recalcHeroStats = recalcHeroStats;
     function _tmColdRestore() {
         var saved = _tmLoadDelta();
         if (!saved || !saved.running || !saved.targetEndTs) return;
-        if (Date.now() >= saved.targetEndTs) { _tmClearDelta(); return; }
+        if (Date.now() >= saved.targetEndTs) {
+            _tmClearDelta();
+            // Venció con la app cerrada: en vez de descartarlo en silencio, mostrar "Paso Completado".
+            // Solo si venció hace menos de 24 h, para no mostrar un aviso viejo y confuso.
+            if (Date.now() - saved.targetEndTs < 24 * 60 * 60 * 1000) {
+                window.openStepTimer(saved.title, saved.desc, saved.minutes, saved.coins, saved.xp, saved.stepId);
+                _tmSecondsLeft = 0;
+                _tmOrphan = { coins: saved.coins, xp: saved.xp };
+                _updateRing();
+                _tmPlaySound('complete');
+                _tmWin();
+                _tmShowLateNote(saved.targetEndTs, 'con la app cerrada');
+            }
+            return;
+        }
         window.openStepTimer(saved.title, saved.desc, saved.minutes, saved.coins, saved.xp, saved.stepId);
+        _tmOrphan = { coins: saved.coins, xp: saved.xp };
         _tmTargetEndTs = saved.targetEndTs;
         _tmRunning = true;
         var btn = document.getElementById('_tmBtnStart');
@@ -26219,7 +26294,19 @@ window.recalcHeroStats = recalcHeroStats;
 
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'hidden') _tmSaveDelta();
-        else if (document.visibilityState === 'visible' && _tmRunning) _tmTick();
+        else if (document.visibilityState === 'visible') {
+            if (_tmRunning) _tmTick();
+            else if (_tmWinReplay) {
+                // Terminó mientras la app estaba en segundo plano: repetir confeti/destello al volver
+                // y avisar cuánto hace que terminó (el festejo original ocurrió sin que el usuario lo viera).
+                _tmWinReplay = false;
+                var w = document.getElementById('_tmWin');
+                if (w && w.classList.contains('visible')) {
+                    _tmWin();
+                    _tmShowLateNote(_tmTargetEndTs, 'en segundo plano');
+                }
+            }
+        }
     });
     window.addEventListener('beforeunload', _tmSaveDelta);
     if (document.readyState === 'loading') {
@@ -26295,10 +26382,15 @@ var _tmTargetCb = null; // referencia al checkbox del paso activo
         _tmClearDelta();
         // Sonido de cierre
         _tmPlaySound('close');
-        // ── Auto-marcar el check del paso si el timer se completó ──
-        if (_tmTargetCb && !_tmTargetCb.checked) {
+        // ── Auto-marcar el check del paso SOLO si el timer se completó ──
+        // (antes también se marcaba y daba recompensas al cerrar con ✕ a mitad del temporizador)
+        var _tmDone = (_tmSecondsLeft <= 0);
+        if (_tmDone && _tmTargetCb && !_tmTargetCb.checked) {
             _tmTargetCb.click();
         }
+        // Si se restauró tras cerrar la app, el paso ya no existe: entregar la recompensa aquí
+        if (_tmDone) _tmClaimOrphan(); else _tmOrphan = null;
+        _tmWinReplay = false;
         _tmTargetCb = null;
         var ov = document.getElementById('_stepTimerOverlay');
         if (ov) { ov.classList.remove('visible'); setTimeout(function() { if (ov.parentNode) ov.remove(); }, 220); }
