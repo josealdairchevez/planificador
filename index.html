@@ -377,8 +377,6 @@
         #kanbanBoard .kanban-card-dates { display:flex; align-items:center; gap:4px; min-width:0; flex-wrap:wrap; }
         #kanbanBoard .kanban-card-date { display:inline-flex; align-items:center; gap:3px; white-space:nowrap; font-weight:800; }
         #kanbanBoard .kanban-card-date-arrow { color:#475569; font-weight:700; flex-shrink:0; }
-        #kanbanBoard .kanban-card-date.overdue { color:#f87171; }
-
         /* ═══ Fase 4: indicador + acordeón de sub-tareas en el Kanban ═══
            Fase 5: anillo dinámico/animado — mismo lenguaje visual que el
            anillo circular de RUTINAS ADAPTATIVAS (glow + arco de "energía"
@@ -492,8 +490,7 @@
         .list-cell-icon:hover { opacity:1; }
 
         .list-chip { display:inline-flex; align-items:center; max-width:100%; min-width:0; font-size:0.6rem; font-weight:900; border-radius:20px; padding:2px 7px; white-space:nowrap; }
-        .list-chip-more { font-size:0.6rem; font-weight:800; color:#94a3b8; margin-left:2px; }
-        /* Todo texto dentro de un .list-chip va envuelto en este span, nunca
+                /* Todo texto dentro de un .list-chip va envuelto en este span, nunca
            suelto como hijo directo del chip: un nodo de texto suelto dentro de
            un contenedor flex se vuelve un "anonymous flex item" al que no se le
            puede aplicar min-width:0, así que NUNCA se encoge ni recorta con
@@ -770,8 +767,7 @@
         }
         .subtask-detail-input:focus, .subtask-detail-textarea:focus { border-color:#00d2ff; }
         .subtask-detail-textarea { resize:vertical; min-height:50px; margin-top:6px; }
-        .subtask-detail-row-2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-        .subtask-name-link { cursor:pointer; }
+                .subtask-name-link { cursor:pointer; }
         .subtask-name-link:hover { color:#7ee8ff; text-decoration:underline; }
         .subtask-detail-save-btn {
             width:100%; margin-top:16px; background:linear-gradient(120deg,#00d2ff,#7c3aed); border:none;
@@ -806,10 +802,7 @@
         /* Estilos compartidos para las opciones con el ASPA (✓) en el extremo derecho */
         .custom-option { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: background 0.1s ease, color 0.1s ease, padding 0.1s ease, border-left 0.1s ease; border-bottom: 1px solid rgba(255,255,255,0.05); border-left: 0px solid transparent; }
         .custom-option:hover, .custom-option.selected { background: linear-gradient(90deg, rgba(0, 229, 255, 0.25) 0%, transparent 100%); color: #fff; padding-left: 28px; border-left: 4px solid var(--accent-cyan); text-shadow: 0 0 10px var(--accent-cyan); }
-        .check-mark { color: var(--accent-green); font-weight: 900; opacity: 0; transform: scale(0.5); transition: all 0.2s; text-shadow: 0 0 10px var(--accent-green); }
-        .custom-option.selected .check-mark { opacity: 1; transform: scale(1.2); }
-        
-        .custom-optgroup { padding: 10px 20px; font-size: 0.8rem; color: var(--accent-cyan); font-weight: 900; text-transform: uppercase; background: rgba(0, 15, 30, 0.95); letter-spacing: 1px; border-bottom: 1px dashed rgba(0,210,255,0.2); pointer-events: none; }
+                .custom-optgroup { padding: 10px 20px; font-size: 0.8rem; color: var(--accent-cyan); font-weight: 900; text-transform: uppercase; background: rgba(0, 15, 30, 0.95); letter-spacing: 1px; border-bottom: 1px dashed rgba(0,210,255,0.2); pointer-events: none; }
 
         /* --- INICIO FASE 1: ESTILO ULTRA PREMIUM PARA EL ÍCONO DE ARCHIVADO --- */
         .archive-method-btn {
@@ -985,10 +978,7 @@
         /* CORRECCIÓN: Centrado perfecto al 100% con padding simétrico */
         .kanban-card-title { font-size: 1.2rem; font-weight: 900; color: #ffffff; text-align: center; line-height: 1.2; position: relative; z-index: 2; width: 100%; padding: 0 25px; }
         
-        .kanban-card-delete { position: absolute; top: 8px; right: 12px; background: transparent; border: none; color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; font-weight: bold; cursor: pointer; z-index: 10; transition: all 0.3s ease; pointer-events: auto; padding: 0; line-height: 1; }
-        .kanban-card-delete:hover { color: #ef4444; transform: scale(1.3); }
-
-        /* --- NUEVO PARCHE 6: BOTÓN DE ARCHIVADO Y ANIMACIÓN (VAULT SUCTION) --- */
+                /* --- NUEVO PARCHE 6: BOTÓN DE ARCHIVADO Y ANIMACIÓN (VAULT SUCTION) --- */
         .kanban-card-archive { 
             position: absolute; top: 8px; right: 12px; background: transparent; border: none; 
             color: rgba(255, 255, 255, 0.5); font-size: 1.2rem; cursor: pointer; z-index: 10; 
@@ -1221,11 +1211,7 @@
             0% { transform: scale(1.15) rotate(10deg); }
             100% { transform: scale(1.15) rotate(-10deg); }
         }
-        .collapsing-item {
-            animation: smoothCollapse 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            pointer-events: none; /* Evita clics dobles mientras colapsa */
-        }
-        @keyframes smoothCollapse {
+                @keyframes smoothCollapse {
             0% { transform: scale(1); opacity: 1; max-height: 200px; margin-bottom: 15px; }
             50% { transform: scale(0.9); opacity: 0; max-height: 200px; margin-bottom: 15px; }
             100% { transform: scale(0.9); opacity: 0; max-height: 0px; margin-bottom: 0px; padding-top: 0; padding-bottom: 0; border: none; overflow: hidden; }
@@ -1257,18 +1243,6 @@
         }
 
         /* --- VENTANA MÉTODO (ESTILO APARTADOS CON FLUJO DIAGONAL MAGENTA) --- */
-        .modal-obsidian-magenta {
-            background-color: transparent !important;
-            background-image: linear-gradient(135deg, rgba(15, 5, 25, 0.95) 10%, rgba(177, 0, 255, 0.25) 40%, rgba(10, 2, 20, 0.98) 60%, rgba(255, 0, 122, 0.25) 90%) !important; 
-            background-size: 300% 300% !important;
-            animation: diagonalGradientFlow 7s ease-in-out infinite !important;
-            transition: opacity 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-            backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
-            border: 1px solid rgba(255, 0, 122, 0.5) !important;
-            box-shadow: 0 0 45px rgba(177, 0, 255, 0.4), 0 10px 40px rgba(0,0,0,0.8), inset 0 0 15px rgba(255, 0, 122, 0.2) !important;
-            border-radius: 20px !important; overflow: visible !important; 
-        }
-        
         #newMethodModal::before { 
             content: "" !important; position: absolute !important; top: -2px !important; left: -2px !important; right: -2px !important; bottom: -2px !important; z-index: -1 !important; border-radius: 22px !important; 
             background-color: transparent !important;
@@ -2763,11 +2737,7 @@
         #archiveVaultBackdrop.show-modal{opacity:1;visibility:visible;}
         /* #archiveVaultModal defined below in landing-bg section */
         /* Interior lights moved to vault-sweep-layer — ::after reserved for border glow */
-        @keyframes vaultBgPulse{
-            0%{opacity:0.5;}
-            100%{opacity:1;}
-        }
-        /* Sweep de luz que cruza sincronizado con el pulso del fondo */
+                /* Sweep de luz que cruza sincronizado con el pulso del fondo */
         #archiveVaultModal .vault-sweep-layer{
             position:absolute;inset:0;border-radius:28px;pointer-events:none;z-index:0;overflow:hidden;
         }
@@ -2864,8 +2834,7 @@
             100%  { left: 140%;  opacity: 0; }
         }
 
-        @keyframes vaultBorderSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-        #archiveVaultModal.show-modal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
+                #archiveVaultModal.show-modal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);}
 
         .vault-modal-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:1.2rem;border-bottom:1px solid rgba(251,191,36,0.2);flex-shrink:0;position:relative;z-index:1;}
         .vault-modal-title-group{display:flex;align-items:center;gap:14px;} .vault-title-text-group{display:flex;flex-direction:column;justify-content:center;}
@@ -3648,11 +3617,7 @@
             box-shadow:0 0 15px rgba(0,210,255,0.2),inset 0 0 10px rgba(0,210,255,0.05);
             overflow:visible; animation:calTriggerFloat 3s ease-in-out infinite alternate; padding:0;
         }
-        @keyframes calIconPulse {
-            0%  {box-shadow:0 0 10px rgba(0,210,255,0.2),inset 0 0 6px rgba(0,210,255,0.04);}
-            100%{box-shadow:0 0 25px rgba(0,210,255,0.6),0 0 45px rgba(0,210,255,0.15),inset 0 0 12px rgba(0,210,255,0.12);border-color:rgba(0,210,255,0.85);}
-        }
-        @keyframes calTriggerFloat {
+                @keyframes calTriggerFloat {
             0%  {box-shadow:0 0 12px rgba(0,210,255,0.3),inset 0 0 8px rgba(0,210,255,0.05);}
             100%{box-shadow:0 0 28px rgba(0,210,255,0.7),0 0 50px rgba(0,210,255,0.2),inset 0 0 15px rgba(0,210,255,0.15);border-color:rgba(0,210,255,0.9);}
         }
@@ -3721,16 +3686,7 @@
             93%  { opacity: 0.2; }
             100% { transform: translateX(260%)  skewX(-15deg); opacity:0; }
         }
-        @keyframes borderRotate {
-            0%   { background-position: 0% 50%; }
-            50%  { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        @keyframes sparkFloat {
-            0%,100% { transform: translateY(0) scale(1); opacity:0.6; }
-            50%      { transform: translateY(-18px) scale(1.3); opacity:1; }
-        }
-        /* Capa 1: shine rápido */
+                        /* Capa 1: shine rápido */
         #calendarModal::after {
             content: '' !important;
             position: absolute !important;
@@ -3985,11 +3941,6 @@
 
         /* SVG Clock — más grande */
         #calSvgClock { width:420px;height:420px;cursor:default;overflow:hidden;flex-shrink:0;margin:0 auto;display:block; }
-        .cal-clock-center-text {
-            text-anchor:middle;dominant-baseline:middle;
-            fill:#fff;font-weight:900;font-family:inherit;
-        }
-
         /* All-day strip — defined in cal-clock-col block above */
         .cal-allday-chip {
             display:inline-flex;align-items:center;gap:4px;
@@ -4802,8 +4753,6 @@
         .cal-month-day.selected-day{background:rgba(0,210,255,0.15);border:1px solid rgba(0,210,255,0.4);}
         .cal-month-day.other-month .cal-day-num{color:#334155;}
         .cal-day-num{font-size:0.85rem;font-weight:700;color:#94a3b8;}
-        .cal-day-mini-ring{width:28px;height:28px;}
-
         /* Full grid mode (Google Calendar style) */
         .cal-month-grid-full{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;padding:0;flex:1;overflow-y:auto;background:rgba(0,10,50,0.25);}
         .cal-month-dow-full{text-align:center;font-size:0.7rem;font-weight:900;color:#64748b;text-transform:uppercase;padding:6px 4px;background:rgba(0,5,15,0.95);border-bottom:1px solid rgba(0,210,255,0.08);}
@@ -5517,42 +5466,8 @@
         /* ═══ HÁBITOS EXTRA: RPG HERO / BOSS / HP / RECORDATORIOS ══ */
 
         /* Panel del Héroe */
-        .hab-hero-panel {
-            background:linear-gradient(135deg,rgba(10,20,50,0.95),rgba(30,15,60,0.9));
-            border:1.5px solid rgba(167,139,250,0.3);border-radius:16px;
-            padding:12px;margin-bottom:10px;
-        }
-        .hab-hero-top { display:flex;align-items:center;gap:12px; }
-        .hab-hero-avatar {
-            width:54px;height:54px;border-radius:14px;font-size:1.8rem;
-            display:flex;align-items:center;justify-content:center;flex-shrink:0;
-            border:2px solid rgba(167,139,250,0.5);
-            box-shadow:0 0 15px rgba(167,139,250,0.3);
-        }
-        .hab-hero-info { flex:1;min-width:0; }
-        .hab-hero-name { font-size:0.85rem;font-weight:900;color:#fff; }
-        .hab-hero-class { font-size:0.6rem;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:1px; }
-        .hab-hero-level { font-size:0.62rem;font-weight:900;color:#fbbf24; }
-
-        /* Barras HP y XP del héroe */
-        .hab-bar-row { margin-top:8px; }
-        .hab-bar-label { display:flex;justify-content:space-between;
-            font-size:0.55rem;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:3px; }
-        .hab-bar-track {
-            height:8px;border-radius:4px;background:rgba(255,255,255,0.07);overflow:hidden;
-        }
-        .hab-bar-fill { height:100%;border-radius:4px;transition:width 0.5s ease; }
-        .hab-hp-fill  { background:linear-gradient(90deg,#ef4444,#f97316); }
-        .hab-xp-fill  { background:linear-gradient(90deg,#a78bfa,#818cf8); }
-        .hab-coins-row {
-            display:flex;gap:12px;margin-top:8px;
-        }
-        .hab-coin-badge {
-            display:flex;align-items:center;gap:4px;
-            font-size:0.68rem;font-weight:900;color:#fbbf24;
-        }
-
-        /* Selector de clase */
+                                                        /* Barras HP y XP del héroe */
+                                                                /* Selector de clase */
         .hab-class-grid { display:flex;gap:6px;margin-top:0.4rem;flex-wrap:wrap; }
         .hab-class-btn {
             flex:1;min-width:70px;padding:8px 4px;border-radius:10px;text-align:center;
@@ -5577,13 +5492,7 @@
         @keyframes tcCardFloat {
             0%,100%{transform:translateY(0);} 50%{transform:translateY(-2px);}
         }
-        @keyframes tcSheetIn {
-            from{transform:translateY(100%);} to{transform:translateY(0);}
-        }
-        @keyframes tcOverlayIn {
-            from{background:rgba(0,0,0,0);} to{background:rgba(0,0,0,0.72);}
-        }
-        @keyframes tcIconPulse {
+                        @keyframes tcIconPulse {
             0%,100%{transform:scale(1) rotate(0deg);filter:drop-shadow(0 0 8px var(--tc-glow));}
             50%    {transform:scale(1.08) rotate(-3deg);filter:drop-shadow(0 0 18px var(--tc-glow));}
         }
@@ -5714,12 +5623,7 @@
         .tc-detail-btn-unequip{background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);color:#94a3b8;}
 
         /* ── Timer Premium por paso/tarea ──────────────────────── */
-        @keyframes timerPulseRing {
-            0%  { transform:scale(1);   opacity:0.8; }
-            50% { transform:scale(1.06); opacity:1;  }
-            100%{ transform:scale(1);   opacity:0.8; }
-        }
-        @keyframes timerBtnShine {
+                @keyframes timerBtnShine {
             0%   { left:-100%; }
             100% { left:200%;  }
         }
@@ -5734,10 +5638,7 @@
             0%,100% { text-shadow: 0 0 20px var(--tc-glow,#00d2ff), 0 0 40px var(--tc-glow,#00d2ff); }
             50%     { text-shadow: 0 0 40px var(--tc-glow,#00d2ff), 0 0 80px var(--tc-glow,#00d2ff), 0 0 120px var(--tc-glow,#00d2ff); }
         }
-        @keyframes timerRingDash {
-            from { stroke-dashoffset: 565; }
-        }
-        @keyframes timerConfetti {
+                @keyframes timerConfetti {
             0%   { transform:translateY(0) rotate(0deg); opacity:1; }
             100% { transform:translateY(-120px) rotate(720deg); opacity:0; }
         }
@@ -5876,11 +5777,7 @@
             background:linear-gradient(135deg,var(--tm-col2,#0284c7),var(--tm-col,#00d2ff));
             color:#fff;box-shadow:0 4px 20px var(--tm-glow,rgba(0,210,255,0.4));
         }
-        .tm-btn-pause {
-            background:rgba(255,255,255,0.07);color:#cbd5e1;
-            border:1.5px solid rgba(255,255,255,0.12);
-        }
-        .tm-btn-reset {
+                .tm-btn-reset {
             background:rgba(239,68,68,0.1);color:#f87171;
             border:1.5px solid rgba(239,68,68,0.3);
         }
@@ -5954,37 +5851,10 @@
         }
 
         /* Panel del Boss/Monstruo */
-        .hab-boss-panel {
-            background:linear-gradient(135deg,rgba(40,5,5,0.95),rgba(80,10,10,0.85));
-            border:1.5px solid rgba(239,68,68,0.4);border-radius:16px;
-            padding:12px;margin-bottom:10px;position:relative;overflow:hidden;
-        }
-        .hab-boss-panel::before {
-            content:'';position:absolute;inset:0;
-            background:radial-gradient(circle at 80% 50%,rgba(239,68,68,0.08) 0%,transparent 70%);
-            pointer-events:none;
-        }
-        .hab-boss-top { display:flex;align-items:center;gap:10px; }
-        .hab-boss-avatar {
-            width:52px;height:52px;font-size:2rem;display:flex;
-            align-items:center;justify-content:center;flex-shrink:0;
-            filter:drop-shadow(0 0 10px rgba(239,68,68,0.6));
-        }
-        .hab-boss-info { flex:1; }
-        .hab-boss-name { font-size:0.82rem;font-weight:900;color:#fca5a5; }
-        .hab-boss-sub  { font-size:0.58rem;color:#888;margin-top:1px; }
-        .hab-boss-hp-track { height:10px;border-radius:5px;background:rgba(255,255,255,0.07);overflow:hidden;margin-top:6px; }
-        .hab-boss-hp-fill  { height:100%;border-radius:5px;transition:width 0.8s ease;
+                                                                        .hab-boss-hp-fill  { height:100%;border-radius:5px;transition:width 0.8s ease;
             background:linear-gradient(90deg,#7f1d1d,#ef4444,#fca5a5); }
         .hab-boss-hp-text  { font-size:0.58rem;color:#888;text-align:right;margin-top:2px; }
-        .hab-boss-dmg-flash {
-            position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;
-            font-size:0.7rem;font-weight:900;padding:2px 8px;border-radius:10px;
-            opacity:0;transition:opacity 0.3s;pointer-events:none;
-        }
-        .hab-boss-dmg-flash.show { opacity:1; }
-
-        /* ── Animación flotante de recompensa al completar hábito ── */
+                /* ── Animación flotante de recompensa al completar hábito ── */
         @keyframes habPillRise {
             0%   { opacity:0; transform:translateY(0)   scale(0.5); }
             18%  { opacity:1; transform:translateY(-16px) scale(1.12); }
@@ -6043,11 +5913,7 @@
             font-size:0.6rem; color:#6366f1; font-weight:900;
             min-width:18px; text-align:center;
         }
-        .hab-reminder-item-time {
-            flex:1; background:transparent; border:none; color:#fff;
-            font-size:0.75rem; font-weight:600; outline:none;
-        }
-        .hab-reminder-item-del {
+                .hab-reminder-item-del {
             font-size:0.75rem; cursor:pointer; color:#555;
             padding:2px 4px; border-radius:4px;
             transition:color 0.2s;
@@ -6228,12 +6094,7 @@
         }
 
         /* Recordatorio por hábito */
-        .hab-reminder-row {
-            display:flex;align-items:center;gap:10px;margin-top:0.4rem;
-            background:rgba(255,255,255,0.04);border-radius:10px;padding:8px 12px;
-            border:1.5px solid rgba(255,255,255,0.07);
-        }
-        .hab-reminder-toggle {
+                .hab-reminder-toggle {
             width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,0.1);
             position:relative;cursor:pointer;transition:background 0.3s;flex-shrink:0;
         }
@@ -6244,11 +6105,7 @@
             transition:transform 0.3s;
         }
         .hab-reminder-toggle.on::after { transform:translateX(16px); }
-        .hab-reminder-time {
-            flex:1;background:none;border:none;color:#fff;
-            font-size:0.82rem;font-weight:800;outline:none;cursor:pointer;
-        }
-        .hab-reminder-label { font-size:0.65rem;color:#888; }
+                .hab-reminder-label { font-size:0.65rem;color:#888; }
 
         /* Hábito negativo — color rojo en card */
         .hab-card.negative-habit { border-color:rgba(239,68,68,0.25); }
@@ -6290,12 +6147,9 @@
             25%{transform:translateX(-4px)}
             75%{transform:translateX(4px)}
         }
-        .hab-boss-shake { animation:habShake 0.3s ease; }
-
         @media (max-width:768px) {
             #habitModal { animation:none !important; }
-            .hab-boss-panel::before { display:none; }
-        }
+                    }
 
         /* ═══ HABITICA FEATURES: Color dinámico, +/-, Avatar, Tienda, Recompensas ═══ */
 
@@ -6341,51 +6195,8 @@
         }
 
         /* ── AVATAR PIXEL ART ─────────────────────────────── */
-        .hab-avatar-wrapper {
-            position:relative;width:90px;height:90px;flex-shrink:0;
-            image-rendering:pixelated;
-        }
-        .hab-avatar-canvas {
-            width:90px;height:90px;border-radius:14px;
-            border:2px solid rgba(167,139,250,0.4);
-            background:linear-gradient(145deg,#0d1b4b,#1e3a8a);
-            display:block;image-rendering:pixelated;
-        }
-        .hab-avatar-level-badge {
-            position:absolute;bottom:-6px;right:-6px;
-            background:linear-gradient(135deg,#fbbf24,#f59e0b);
-            color:#000;font-size:0.55rem;font-weight:900;
-            padding:2px 6px;border-radius:8px;
-            box-shadow:0 2px 8px rgba(251,191,36,0.5);
-        }
-
-        /* Equipo slots */
-        .hab-equip-grid {
-            display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:0.6rem;
-        }
-        .hab-equip-slot {
-            aspect-ratio:1;border-radius:10px;
-            background:rgba(255,255,255,0.04);
-            border:1.5px solid rgba(255,255,255,0.08);
-            display:flex;align-items:center;justify-content:center;
-            font-size:1.2rem;cursor:pointer;position:relative;
-            transition:all 0.2s;
-        }
-        .hab-equip-slot.equipped {
-            border-color:rgba(167,139,250,0.6);
-            background:rgba(167,139,250,0.1);
-            box-shadow:0 0 10px rgba(167,139,250,0.2);
-        }
-        .hab-equip-slot:hover { transform:scale(1.08); }
-        .hab-equip-slot-label {
-            position:absolute;bottom:2px;left:0;right:0;text-align:center;
-            font-size:0.4rem;color:#555;text-transform:uppercase;letter-spacing:0.5px;
-        }
-        .hab-equip-stat {
-            font-size:0.58rem;color:#a78bfa;margin-top:1px;font-weight:800;
-        }
-
-        /* ── TIENDA ───────────────────────────────────────── */
+                        /* Equipo slots */
+                                                /* ── TIENDA ───────────────────────────────────────── */
         .hab-shop-item {
             display:flex;align-items:center;gap:10px;
             background:rgba(8,20,40,0.9);border-radius:14px;
@@ -6513,19 +6324,11 @@
         .hab-reward-card.locked { opacity:0.55;cursor:not-allowed; }
         .hab-reward-card.locked:hover { transform:none;box-shadow:none; }
         /* Icono */
-        .hab-reward-icon {
-            font-size:1.6rem;flex-shrink:0;
-            transition:transform 0.2s;
-        }
-        .hab-reward-card:not(.locked):hover .hab-reward-icon { transform:scale(1.15) rotate(-5deg); }
-        /* Glow de color por tier en el icono del div inline */
+                        /* Glow de color por tier en el icono del div inline */
         .tier-easy  > div:first-child { filter: drop-shadow(0 0 7px rgba(52,211,153,0.8))  drop-shadow(0 0 14px rgba(52,211,153,0.4));  }
         .tier-mid   > div:first-child { filter: drop-shadow(0 0 9px rgba(56,189,248,0.95))  drop-shadow(0 0 18px rgba(14,165,233,0.55));  }
         .tier-epic  > div:first-child { filter: drop-shadow(0 0 7px rgba(192,132,252,0.8)) drop-shadow(0 0 14px rgba(192,132,252,0.4)); }
-        .hab-reward-info { flex:1;min-width:0; }
-        .hab-reward-name { font-size:0.8rem;font-weight:900;color:#f8fafc;line-height:1.2; }
-        .hab-reward-desc { font-size:0.58rem;color:#cbd5e1;margin-top:2px;line-height:1.3; }
-        .hab-reward-cost {
+                                .hab-reward-cost {
             display:inline-flex;align-items:center;gap:3px;
             font-size:0.64rem;font-weight:900;margin-top:5px;
             padding:3px 9px;border-radius:20px;
@@ -6540,23 +6343,8 @@
             border:1.5px solid rgba(100,116,139,0.25);
         }
         /* Badge tier — ahora inline en el header de la tarjeta, no absoluto */
-        .hrp-tier-badge {
-            font-size:0.42rem;font-weight:900;text-transform:uppercase;letter-spacing:0.8px;
-            padding:2px 6px;border-radius:8px;white-space:nowrap;flex-shrink:0;
-        }
-        .hrp-tier-badge.easy { background:rgba(16,185,129,0.18);color:#34d399;border:1px solid rgba(16,185,129,0.3); }
-        .hrp-tier-badge.mid  { background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3); }
-        .hrp-tier-badge.epic { background:rgba(177,0,255,0.18);color:#c084fc;border:1px solid rgba(177,0,255,0.3); }
-        /* Botón comprar */
-        .hrp-buy-btn {
-            flex-shrink:0;width:28px;height:28px;border-radius:50%;
-            display:flex;align-items:center;justify-content:center;
-            font-size:0.7rem;border:none;cursor:pointer;transition:all 0.2s;
-        }
-        .hrp-buy-btn.enabled  { background:rgba(16,185,129,0.2);color:#34d399; }
-        .hrp-buy-btn.disabled { background:rgba(100,116,139,0.1);color:#374151;cursor:not-allowed; }
-        .hrp-buy-btn.enabled:hover { background:rgba(16,185,129,0.4);transform:scale(1.2); }
-        /* Botón añadir */
+                                        /* Botón comprar */
+                                        /* Botón añadir */
         .hab-add-reward-btn {
             width:100%;padding:9px;border-radius:12px;margin-top:8px;
             background:rgba(251,191,36,0.07);border:1.5px dashed rgba(251,191,36,0.3);
@@ -6598,21 +6386,13 @@
         .hab-death-overlay.show { background:rgba(200,0,0,0.15); }
 
         @media (max-width:768px) {
-            .hab-equip-grid { grid-template-columns:repeat(4,1fr); }
-            .hab-float-anim { font-size:0.75rem; }
+                        .hab-float-anim { font-size:0.75rem; }
         }
 
         /* ═══ HABIT HUNTER FEATURES: Mapa, Batalla, Quests, Pomodoro, Cofres ═══ */
 
         /* ── MAPA DEL MUNDO ─────────────────────────────────── */
-        .hab-map-container {
-            position:relative;width:100%;aspect-ratio:16/9;max-height:220px;
-            border-radius:14px;overflow:hidden;margin-bottom:10px;
-            background:linear-gradient(145deg,#0a1628,#0d2137,#0a1628);
-            border:1.5px solid rgba(59,130,246,0.3);
-        }
-        .hab-map-canvas { width:100%;height:100%;display:block; }
-        .hab-map-title {
+                        .hab-map-title {
             font-size:0.6rem;font-weight:900;color:#60a5fa;
             text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;
         }
@@ -6792,13 +6572,7 @@
             text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;
             display:flex;align-items:center;gap:6px;
         }
-        .hab-crono-select {
-            width:100%;background:rgba(255,255,255,0.05);
-            border:1px solid rgba(255,255,255,0.1);border-radius:10px;
-            color:#fff;padding:8px 12px;font-size:0.75rem;margin-bottom:10px;
-            appearance:none;outline:none;
-        }
-        .hab-crono-display {
+                .hab-crono-display {
             background:linear-gradient(135deg,rgba(167,139,250,0.1),rgba(99,102,241,0.08));
             border:1px solid rgba(167,139,250,0.2);border-radius:16px;
             padding:16px;text-align:center;margin-bottom:10px;position:relative;
@@ -6856,16 +6630,7 @@
             display:flex;align-items:center;justify-content:space-between;
         }
         .hab-crono-chart-svg { width:100%;height:120px;overflow:visible; }
-        .hab-crono-chart-empty {
-            font-size:0.65rem;color:#444;text-align:center;padding:20px 0;
-        }
-        .hab-crono-history-item {
-            display:flex;align-items:center;gap:8px;padding:6px 10px;
-            border-radius:8px;background:rgba(255,255,255,0.03);
-            border:1px solid rgba(255,255,255,0.06);margin-bottom:4px;font-size:0.68rem;
-        }
-
-        /* ── BOTONES DE SESIÓN HISTÓRICA ────────────────────── */
+                /* ── BOTONES DE SESIÓN HISTÓRICA ────────────────────── */
         .crono-sess-btn {
             display:flex;align-items:center;gap:8px;width:100%;
             padding:10px 12px;margin-bottom:6px;
@@ -6911,29 +6676,7 @@
             from{opacity:0;transform:translateY(-8px);}
             to{opacity:1;transform:translateY(0);}
         }
-        .csd-header {
-            display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
-        }
-        .csd-title { font-size:0.68rem;font-weight:900;color:#a78bfa;text-transform:uppercase;letter-spacing:1.5px; }
-        .csd-date  { font-size:0.58rem;color:#555;margin-top:1px; }
-        .csd-close {
-            background:rgba(255,255,255,0.06);border:none;color:#666;
-            border-radius:50%;width:24px;height:24px;font-size:0.85rem;
-            cursor:pointer;display:flex;align-items:center;justify-content:center;
-            transition:all 0.2s;flex-shrink:0;
-        }
-        .csd-close:hover { background:rgba(239,68,68,0.2);color:#f87171; }
-        .csd-stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:6px;margin-bottom:10px; }
-        .csd-stat {
-            background:rgba(255,255,255,0.04);border-radius:10px;
-            padding:7px 4px;text-align:center;border:1px solid rgba(167,139,250,0.1);
-        }
-        .csd-stat-val { font-size:0.9rem;font-weight:900;color:#a78bfa; }
-        .csd-stat-lbl { font-size:0.5rem;color:#555;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px; }
-        .csd-chart { width:100%;height:90px;overflow:visible;margin-bottom:10px;display:block; }
-        .csd-laps-title { font-size:0.55rem;font-weight:900;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px; }
-
-        /* ── CRONO CHART TOOLTIPS & SESSION MODAL ───────────── */
+                                                                                        /* ── CRONO CHART TOOLTIPS & SESSION MODAL ───────────── */
         .crono-chart-dot { cursor:pointer;transition:r 0.15s ease; }
         .crono-chart-dot:hover { r:6; }
         .crono-tooltip {
@@ -6949,21 +6692,7 @@
         .crono-tooltip-time { color:#a78bfa;font-size:0.75rem; }
         .crono-tooltip-label { color:#666;font-size:0.58rem;margin-top:1px; }
         /* History item clickeable */
-        .hab-crono-history-item {
-            cursor:pointer;transition:all 0.2s;
-            position:relative;
-        }
-        .hab-crono-history-item > span { pointer-events:none; }
-        .hab-crono-history-item:hover {
-            background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.35);
-            transform:translateX(3px);
-        }
-        .hab-crono-history-item .hi-arrow {
-            margin-left:auto;color:#555;font-size:0.65rem;transition:color 0.2s;pointer-events:none;
-        }
-        .hab-crono-history-item:hover .hi-arrow { color:#a78bfa; }
-
-        /* ── POMODORO TIMER ─────────────────────────────────── */
+                                        /* ── POMODORO TIMER ─────────────────────────────────── */
         .hab-pomodoro {
             background:linear-gradient(145deg,rgba(8,18,40,0.95),rgba(15,10,30,0.9));
             border:1.5px solid rgba(239,68,68,0.3);border-radius:16px;
@@ -7035,12 +6764,6 @@
         .hab-pomo-btn.stop  { background:rgba(255,255,255,0.08);color:#aaa;border:1px solid rgba(255,255,255,0.1); }
         .hab-pomo-btn:hover { transform:scale(1.05); }
         .hab-pomo-sessions { font-size:0.65rem;color:#666;margin-top:6px; }
-        .hab-pomo-hab-select {
-            width:100%;padding:6px 10px;border-radius:8px;margin-bottom:8px;
-            background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
-            color:#fff;font-size:0.72rem;outline:none;
-        }
-
         /* ── POMO CUSTOM DROPDOWNS ──────────────────────────── */
         .pomo-dropdown-wrapper {
             position:relative;user-select:none;width:100%;margin-bottom:8px;
@@ -7246,148 +6969,16 @@
         .hr-gen-dot.lv3 { background:var(--hc,#10b981);opacity:0.8; }
         .hr-gen-dot.lv4 { background:var(--hc,#10b981);opacity:1; }
 
-        /* ── SELECTOR VIEJO — mantener para compatibilidad ── */
-            display:flex;gap:3px;background:rgba(0,0,0,0.4);
-            border:1px solid rgba(255,255,255,0.06);
-            border-radius:14px;padding:4px;margin-bottom:16px;
-        }
-        .hab-view-btn {
-            flex:1;padding:7px 2px;border-radius:10px;text-align:center;
-            font-size:0.58rem;font-weight:900;color:#555;cursor:pointer;
-            text-transform:uppercase;letter-spacing:0.6px;transition:all 0.25s;
-        }
-        .hab-view-btn.active {
-            background:linear-gradient(135deg,#6366f1,#a78bfa);
-            color:#fff;box-shadow:0 4px 15px rgba(99,102,241,0.4);
-            transform:scale(1.02);
-        }
         /* ── TARJETAS KPI ───────────────────────────────────── */
-        .radar-kpi-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px; }
-        .radar-kpi-card {
-            background:linear-gradient(135deg,rgba(15,5,40,0.95),rgba(8,3,25,0.9));
-            border:1px solid rgba(255,255,255,0.07);border-radius:14px;
-            padding:12px 8px;text-align:center;position:relative;overflow:hidden;
-            transition:transform 0.2s,box-shadow 0.2s;cursor:default;
-        }
-        .radar-kpi-card::before {
-            content:'';position:absolute;inset:0;border-radius:14px;
-            background:radial-gradient(circle at 50% 0%,var(--kpi-color,#6366f1)15 0%,transparent 70%);
-            opacity:0.15;
-        }
-        .radar-kpi-card:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4); }
-        .radar-kpi-icon { font-size:1.3rem;margin-bottom:4px; }
-        .radar-kpi-val {
-            font-size:1.35rem;font-weight:900;line-height:1;margin-bottom:3px;
-            background:linear-gradient(135deg,#fff,var(--kpi-color,#a78bfa));
-            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-        }
-        .radar-kpi-label { font-size:0.5rem;color:#555;text-transform:uppercase;letter-spacing:0.8px; }
-        /* ── SECCIÓN TITLE ──────────────────────────────────── */
-        .radar-section-title {
-            font-size:0.58rem;font-weight:900;color:#555;text-transform:uppercase;
-            letter-spacing:1.5px;margin:12px 0 8px;display:flex;align-items:center;gap:6px;
-        }
-        .radar-section-title::after { content:'';flex:1;height:1px;background:rgba(255,255,255,0.05); }
-        /* ── BARRAS DE DÍAS ─────────────────────────────────── */
-        .radar-day-bars {
-            display:flex;gap:6px;align-items:flex-end;height:70px;
-            background:rgba(0,0,0,0.3);border-radius:12px;padding:10px 10px 0;margin-bottom:4px;
-        }
-        .radar-day-col { flex:1;display:flex;flex-direction:column;align-items:center;gap:4px; }
-        .radar-day-bar-wrap { flex:1;width:100%;display:flex;align-items:flex-end;min-height:4px; }
-        .radar-day-bar {
-            width:100%;border-radius:4px 4px 0 0;
-            transition:height 0.6s cubic-bezier(0.34,1.56,0.64,1);min-height:3px;cursor:pointer;
-        }
-        .radar-day-bar:hover { filter:brightness(1.3); }
-        .radar-day-label { font-size:0.5rem;font-weight:900;color:#555;text-transform:uppercase; }
-        .radar-day-pct { font-size:0.48rem;color:#666;margin-bottom:2px; }
-        /* ── RESUMEN MENSUAL ────────────────────────────────── */
-        .radar-month-summary { display:flex;gap:8px;margin-bottom:12px; }
-        .radar-month-stat { flex:1;background:rgba(0,0,0,0.3);border-radius:10px;padding:8px;text-align:center; }
-        .radar-month-stat-val { font-size:1rem;font-weight:900;color:#a78bfa; }
-        .radar-month-stat-lbl { font-size:0.48rem;color:#555;text-transform:uppercase;margin-top:2px; }
-        /* ── LEYENDA ANUAL ──────────────────────────────────── */
-        .radar-year-legend {
-            display:flex;align-items:center;gap:5px;margin-top:10px;justify-content:flex-end;
-        }
-        .radar-year-legend span { font-size:0.5rem;color:#555; }
-        .radar-year-legend div { width:9px;height:9px;border-radius:2px; }
-        /* ── STATS POR HÁBITO ───────────────────────────────── */
-        .hab-individual-stat {
-            background:linear-gradient(135deg,rgba(10,5,30,0.98),rgba(5,3,15,0.95));
-            border-radius:16px;border:1px solid rgba(255,255,255,0.07);
-            padding:14px;margin-bottom:10px;position:relative;
-            transition:transform 0.2s,box-shadow 0.2s;
-        }
-        .hab-individual-stat:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.5); }
-        .hab-individual-stat::before {
-            content:'';position:absolute;top:0;left:0;right:0;height:2px;
-            background:var(--hab-color,#6366f1);border-radius:16px 16px 0 0;
-        }
-        .hab-ind-header { display:flex;align-items:center;gap:10px;margin-bottom:10px; }
-        .hab-ind-emoji {
-            font-size:1.4rem;width:42px;height:42px;border-radius:12px;
-            display:flex;align-items:center;justify-content:center;
-            background:rgba(255,255,255,0.06);flex-shrink:0;
-        }
-        .hab-ind-name { font-size:0.85rem;font-weight:900;color:#fff; }
-        .hab-ind-freq { font-size:0.55rem;color:#666;margin-top:2px; }
-        .hab-ind-stats-row {
-            display:grid;grid-template-columns:repeat(4,1fr);
-            background:rgba(0,0,0,0.3);border-radius:10px;overflow:hidden;margin-top:10px;
-        }
-        .hab-ind-stat { padding:8px 4px;text-align:center;border-right:1px solid rgba(255,255,255,0.04); }
-        .hab-ind-stat:last-child { border-right:none; }
-        .hab-ind-val { font-size:0.95rem;font-weight:900;color:#fff; }
-        .hab-ind-lbl { font-size:0.48rem;color:#555;text-transform:uppercase;letter-spacing:0.6px;margin-top:2px; }
-        .hab-ind-minibar { height:3px;border-radius:2px;background:rgba(255,255,255,0.06);margin-top:10px;overflow:hidden; }
-        .hab-ind-minibar-fill { height:100%;border-radius:2px;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1); }
-        /* ── GRÁFICO RADAR (SPIDER WEB) ─────────────────────── */
-        .hab-radar-container {
-            display:flex;flex-direction:column;align-items:center;margin-bottom:12px;
-        }
-        .hab-radar-svg { width:200px;height:200px;overflow:visible; }
-        .hab-radar-title {
-            font-size:0.62rem;font-weight:900;color:#888;text-transform:uppercase;
-            letter-spacing:1.2px;margin-bottom:8px;text-align:center;
-        }
-        .hab-radar-legend {
-            display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px;
-        }
-        .hab-radar-leg-item {
-            display:flex;align-items:center;gap:4px;font-size:0.58rem;color:#888;
-        }
-        .hab-radar-leg-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
-
-        /* ── GRÁFICO DE LÍNEA ───────────────────────────────── */
-        .hab-line-chart-container { margin-bottom:12px; }
-        .hab-line-chart-title {
-            font-size:0.62rem;font-weight:900;color:#888;text-transform:uppercase;
-            letter-spacing:1.2px;margin-bottom:6px;
-        }
-        .hab-line-svg { width:100%;height:80px;overflow:visible; }
-
-        /* ── VISTA ANUAL ────────────────────────────────────── */
-        .hab-year-grid {
-            display:grid;grid-template-columns:repeat(53,1fr);gap:1.5px;margin-bottom:8px;
-        }
-        .hab-year-cell {
-            aspect-ratio:1;border-radius:2px;background:rgba(255,255,255,0.04);
-            cursor:pointer;transition:background 0.2s;
-        }
-        .hab-year-cell.y-lv1 { background:rgba(16,185,129,0.2); }
-        .hab-year-cell.y-lv2 { background:rgba(16,185,129,0.45); }
-        .hab-year-cell.y-lv3 { background:rgba(16,185,129,0.7); }
-        .hab-year-cell.y-lv4 { background:#10b981; }
-        .hab-year-months {
-            display:flex;justify-content:space-between;
-            font-size:0.5rem;color:#444;text-transform:uppercase;margin-bottom:4px;
-        }
-
-
-
-        /* ═══ LIFE RESET FEATURES: 66 Días, Pilares, Cartas, Modo Difícil, Diario ══ */
+                                                                /* ── SECCIÓN TITLE ──────────────────────────────────── */
+                        /* ── BARRAS DE DÍAS ─────────────────────────────────── */
+                                                                /* ── RESUMEN MENSUAL ────────────────────────────────── */
+                                        /* ── LEYENDA ANUAL ──────────────────────────────────── */
+                                /* ── STATS POR HÁBITO ───────────────────────────────── */
+                                                                                                                        /* ── GRÁFICO RADAR (SPIDER WEB) ─────────────────────── */
+                                                /* ── GRÁFICO DE LÍNEA ───────────────────────────────── */
+                        /* ── VISTA ANUAL ────────────────────────────────────── */
+                                        /* ═══ LIFE RESET FEATURES: 66 Días, Pilares, Cartas, Modo Difícil, Diario ══ */
 
         /* ── PROGRAMA 66 DÍAS ───────────────────────────────── */
         .hab-journey-banner {
@@ -7660,32 +7251,7 @@
         }
 
         /* ── TRACKER DE CANTIDAD ─────────────────────────────── */
-        .hab-qty-row {
-            display:flex;align-items:center;gap:6px;
-            background:rgba(255,255,255,0.04);border-radius:10px;
-            padding:6px 10px;margin-top:4px;
-        }
-        .hab-qty-btn {
-            width:28px;height:28px;border-radius:8px;border:none;
-            display:flex;align-items:center;justify-content:center;
-            font-size:1rem;font-weight:900;cursor:pointer;flex-shrink:0;
-            transition:all 0.15s;
-        }
-        .hab-qty-minus { background:rgba(239,68,68,0.15);color:#ef4444; }
-        .hab-qty-minus:hover { background:rgba(239,68,68,0.3);transform:scale(1.1); }
-        .hab-qty-plus  { background:rgba(16,185,129,0.15);color:#10b981; }
-        .hab-qty-plus:hover { background:rgba(16,185,129,0.3);transform:scale(1.1); }
-        .hab-qty-display {
-            flex:1;text-align:center;font-size:0.88rem;font-weight:900;color:#fff;
-        }
-        .hab-qty-unit { font-size:0.6rem;color:#666;margin-top:1px; }
-        .hab-qty-progress {
-            width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,0.07);
-            overflow:hidden;margin-top:4px;
-        }
-        .hab-qty-fill { height:100%;border-radius:2px;transition:width 0.4s ease; }
-
-        /* ── RUTINAS MAÑANA/NOCHE ───────────────────────────── */
+                                                                                /* ── RUTINAS MAÑANA/NOCHE ───────────────────────────── */
         .hab-routine-selector {
             display:flex;gap:4px;margin-bottom:10px;
         }
@@ -7839,11 +7405,6 @@
             font-size:0.72rem;font-weight:900;color:#fff;
             text-transform:uppercase;letter-spacing:2px;text-align:center;flex:1;
         }
-        .hab-market-timer {
-            background:#7c3aed;color:#e9d5ff;font-size:0.6rem;font-weight:800;
-            padding:4px 10px;border-radius:6px;text-align:center;margin-top:4px;
-        }
-
         /* ── TABS DE MERCADO ─────────────────────────────────── */
         .hab-market-tabs {
             display:flex;gap:3px;background:rgba(0,0,0,0.3);
@@ -7908,16 +7469,7 @@
         .hab-class-filter {
             display:flex;gap:4px;margin-bottom:8px;
         }
-        .hab-class-filter-btn {
-            flex:1;padding:6px 4px;border-radius:8px;text-align:center;
-            font-size:0.58rem;font-weight:900;cursor:pointer;transition:all 0.2s;
-            background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:#666;
-        }
-        .hab-class-filter-btn.active {
-            background:rgba(239,68,68,0.2);border-color:#ef4444;color:#fca5a5;
-        }
-
-        /* ── MASCOTAS ─────────────────────────────────────────── */
+                /* ── MASCOTAS ─────────────────────────────────────────── */
         .hab-pet-grid {
             display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;
         }
@@ -8034,12 +7586,6 @@
         }
 
         /* ── CANVAS DE PERSONAJES 3D ────────────────────────── */
-        .hab-char-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
         /* Panel de boss con canvas */
         /* ═══════════════════════════════════════════════════════
            MEJORA 1: Boss panel épico rediseñado — más grande,
@@ -8161,113 +7707,10 @@
            MEJORA 2: Panel de equipamiento estilo Habit Hunter
            Con grid de slots visuales + stats del personaje
            ═══════════════════════════════════════════════════════ */
-        .hab-equip-panel-v2 {
-            background: linear-gradient(145deg, #0a0018, #12002a, #0a0018);
-            border: 1.5px solid rgba(167,139,250,0.3);
-            border-radius: 18px;
-            padding: 14px;
-            margin-top: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.7), 0 0 15px rgba(167,139,250,0.08);
-        }
-        .hab-equip-v2-title {
-            font-size: 0.65rem; font-weight: 900; color: #a78bfa;
-            text-transform: uppercase; letter-spacing: 2px;
-            margin-bottom: 12px;
-            display: flex; align-items: center; gap: 6px;
-        }
-        .hab-equip-v2-title::after {
-            content: ''; flex: 1; height: 1px;
-            background: linear-gradient(90deg, rgba(167,139,250,0.3), transparent);
-        }
-        .hab-equip-v2-layout {
-            display: flex; gap: 12px; align-items: flex-start;
-        }
-        /* Grid de slots de equipo — distribución tipo RPG */
-        .hab-equip-v2-slots {
-            display: grid;
-            grid-template-columns: 44px 44px 44px;
-            grid-template-rows: 44px 44px 44px;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-        .hab-equip-v2-slot {
-            width: 44px; height: 44px;
-            border-radius: 10px;
-            border: 1.5px solid rgba(255,255,255,0.08);
-            background: rgba(0,0,0,0.4);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            font-size: 1.3rem;
-        }
-        .hab-equip-v2-slot:hover { transform: scale(1.1); border-color: rgba(167,139,250,0.5); }
-        .hab-equip-v2-slot.has-item {
-            border-color: rgba(167,139,250,0.5);
-            background: rgba(167,139,250,0.12);
-            box-shadow: 0 0 10px rgba(167,139,250,0.2);
-        }
-        .hab-equip-v2-slot.has-item.gold {
-            border-color: rgba(251,191,36,0.5);
-            background: rgba(251,191,36,0.1);
-            box-shadow: 0 0 10px rgba(251,191,36,0.2);
-        }
-        .hab-equip-v2-slot-lbl {
-            font-size: 0.38rem; color: #555;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            margin-top: 1px;
-        }
-        /* Stats del héroe a la derecha del equipo */
-        .hab-equip-v2-stats {
-            flex: 1; display: flex; flex-direction: column; gap: 6px;
-        }
-        .hab-equip-v2-stat-row {
-            display: flex; align-items: center; gap: 6px;
-        }
-        .hab-equip-v2-stat-lbl {
-            font-size: 0.58rem; color: #888;
-            width: 42px; flex-shrink: 0;
-            font-weight: 700;
-        }
-        .hab-equip-v2-stat-bar {
-            flex: 1; height: 6px; border-radius: 3px;
-            background: rgba(255,255,255,0.06); overflow: hidden;
-        }
-        .hab-equip-v2-stat-fill {
-            height: 100%; border-radius: 3px;
-            transition: width 0.5s ease;
-        }
-        .hab-equip-v2-stat-val {
-            font-size: 0.6rem; font-weight: 900; color: #fff;
-            width: 24px; text-align: right; flex-shrink: 0;
-        }
-        /* Inventario / bolsa */
-        .hab-equip-v2-bag {
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .hab-equip-v2-bag-title {
-            font-size: 0.58rem; font-weight: 900; color: #666;
-            text-transform: uppercase; letter-spacing: 1.5px;
-            margin-bottom: 8px;
-        }
-        .hab-equip-v2-bag-grid {
-            display: flex; flex-wrap: wrap; gap: 6px;
-        }
-        .hab-equip-v2-bag-item {
-            width: 38px; height: 38px;
-            border-radius: 8px;
-            border: 1px solid rgba(251,191,36,0.25);
-            background: rgba(251,191,36,0.06);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .hab-equip-v2-bag-item:hover { transform: scale(1.15); }
-
-        /* ═══════════════════════════════════════════════════════
+                                        /* Grid de slots de equipo — distribución tipo RPG */
+                                                        /* Stats del héroe a la derecha del equipo */
+                                                        /* Inventario / bolsa */
+                                        /* ═══════════════════════════════════════════════════════
            MEJORA 3: Modal de detalle de hábito al hacer clic
            Estilo HabitRix — heatmap + stats + acciones
            ═══════════════════════════════════════════════════════ */
@@ -8314,11 +7757,7 @@
             transform: translateY(0);
             opacity: 1;
         }
-        @keyframes slideUpModal {
-            from { transform: translateY(100%); opacity: 0; }
-            to   { transform: translateY(0);   opacity: 1; }
-        }
-        .hab-detail-header {
+                .hab-detail-header {
             display: flex; align-items: center; gap: 12px;
             padding: 20px 18px 14px 18px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -10748,8 +10187,26 @@ window.hrpFilter        = _hrpApplyFilter;
                     const label = task.querySelector('label');
                     if(label) label.textContent = `Tarea ${newProjectTaskCount}:`;
                 });
-            }, 500); 
+            }, 500);
         };
+
+        // ── Feedback visual para campos obligatorios vacíos (Tareas/Proyectos del Kanban) ──
+        // Mismo patrón de resplandor rojo ya usado en initKanbanIfNeeded() para el Pomodoro.
+        function flashFieldInvalid(el) {
+            if(!el) return;
+            const prevShadow = el.style.boxShadow;
+            const prevBorderColor = el.style.borderColor;
+            const prevTransition = el.style.transition;
+            el.style.transition = "all 0.3s";
+            el.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.4)";
+            el.style.borderColor = "#ef4444";
+            if (typeof el.focus === 'function') el.focus();
+            setTimeout(() => {
+                el.style.boxShadow = prevShadow;
+                el.style.borderColor = prevBorderColor;
+                el.style.transition = prevTransition;
+            }, 1500);
+        }
 
         window.saveNewProject = function() {
             // Auto-confirmar etiqueta pendiente en el input (si el usuario no presionó Enter)
@@ -10772,7 +10229,7 @@ window.hrpFilter        = _hrpApplyFilter;
                 }
             })();
             const name = document.getElementById('projectNameInput').value.trim();
-            if(!name) { document.getElementById('projectNameInput').focus(); return; }
+            if(!name) { flashFieldInvalid(document.getElementById('projectNameInput')); return; }
 
             const taskContainers = document.querySelectorAll('#newProjectStepsContainer .project-task-container');
             let tasksHtml = '';
@@ -10797,7 +10254,11 @@ window.hrpFilter        = _hrpApplyFilter;
                 }
             });
 
-            if(validTasks === 0) { document.getElementById('projectNameInput').focus(); return; }
+            if(validTasks === 0) {
+                const firstTaskInput = document.querySelector('#newProjectStepsContainer .project-task-title-input');
+                flashFieldInvalid(firstTaskInput || document.getElementById('projectNameInput'));
+                return;
+            }
 
             playSparkleSound();
             const methodId = 'project_' + Date.now();
@@ -12506,7 +11967,7 @@ window.hrpFilter        = _hrpApplyFilter;
                 }
             })();
             const name = document.getElementById('taskNameInput').value.trim();
-            if(!name) { document.getElementById('taskNameInput').focus(); return; }
+            if(!name) { flashFieldInvalid(document.getElementById('taskNameInput')); return; }
 
             const subtaskContainers = document.querySelectorAll('#newTaskStepsContainer .project-task-container');
             let tasksHtml = '';
@@ -12527,7 +11988,11 @@ window.hrpFilter        = _hrpApplyFilter;
                 }
             });
 
-            if(validSubtasks === 0) { document.getElementById('taskNameInput').focus(); return; }
+            if(validSubtasks === 0) {
+                const firstSubInput = document.querySelector('#newTaskStepsContainer .task-subtask-title-input');
+                flashFieldInvalid(firstSubInput || document.getElementById('taskNameInput'));
+                return;
+            }
 
             playSparkleSound();
             const taskId = 'task_' + Date.now();
@@ -12772,7 +12237,6 @@ window.hrpFilter        = _hrpApplyFilter;
         /* === PROYECTO PADRE (EDITAR PROYECTO) — lista propia e independiente
            de cursos, empieza vacía, se guarda en su propia localStorage === */
         let customParentProjects = JSON.parse(localStorage.getItem('calCustomParentProjectsV1')) || [];
-        window.getCustomParentProjects = function() { return customParentProjects; };
         window.calProjectParentVal = window.calProjectParentVal || '';
         window.renderCalProjectParentOptions = function() {
             const container = document.getElementById('calProjectParentOptionsItems');
@@ -13565,8 +13029,6 @@ window.hrpFilter        = _hrpApplyFilter;
         }, 460);
     };
 
-    function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
     // Limpia el buscador de la Bóveda de un toque — toda la lógica de
     // mostrar/ocultar el botón "✕" y filtrar ya vivía en filterVaultCards(),
     // solo faltaba este atajo para el botón.
@@ -13685,18 +13147,6 @@ window.hrpFilter        = _hrpApplyFilter;
             renderArchiveVaultContent();
             if (typeof updateArchiveBadge === 'function') updateArchiveBadge();
         }, 560);
-    };
-
-    /* Parchar triggerArchiveVault para actualizar badge con sesiones también */
-    window.updateArchiveBadgeExtended = function() {
-        const archived = getArchivedMethods();
-        const sessions = getArchivedSessions ? getArchivedSessions() : [];
-        const count = Object.keys(archived).length + sessions.length;
-        const badge = document.getElementById('archiveBadgeCount');
-        if (!badge) return;
-        badge.textContent = count;
-        if (count > 0) badge.classList.add('visible');
-        else badge.classList.remove('visible');
     };
 
     /* Parchar onload para inicializar badge */
@@ -21408,55 +20858,6 @@ function renderHabHero() {
       :'<span style="font-size:0.7rem;color:#444;">Sin items. ¡Compra en 🛒 Tienda!</span>'}</div>`;
 }
 
-function _legacyRenderBossMini_DISABLED() {
-    const boss=BOSSES[Math.min(hero.bossIndex||0,BOSSES.length-1)];
-    const bossMaxHp=boss.maxHp, bossHp=Math.max(0,hero.bossHp||boss.maxHp);
-    const pct=Math.round(bossHp/bossMaxHp*100);
-    return `
-    <div class="hab-boss-panel" style="margin-bottom:10px;">
-        <div class="hab-boss-top">
-            <div class="hab-boss-avatar">${boss.emoji}</div>
-            <div class="hab-boss-info">
-                <div class="hab-boss-name">${boss.name}</div>
-                <div class="hab-boss-sub">⚔️ Completa hábitos para derrotarlo</div>
-            </div>
-            <div id="habBossDmg" class="hab-boss-dmg-flash"></div>
-        </div>
-        <div class="hab-boss-hp-track">
-            <div class="hab-boss-hp-fill" id="habBossHpBar" style="width:${pct}%"></div>
-        </div>
-        <div class="hab-boss-hp-text">${bossHp}/${bossMaxHp} HP</div>
-    </div>`;
-}
-
-function renderBossFull(boss) {
-    var hero2  = loadHero();
-    var bossI  = Math.min(hero2.bossIndex||0, 19);
-    var bossObj= BOSSES[bossI];
-    var rawHp  = parseFloat(hero2.bossHp);
-    var bossHp = (!isNaN(rawHp) && rawHp <= bossObj.maxHp && rawHp >= 0) ? rawHp : bossObj.maxHp;
-    var pct    = Math.round((bossHp / bossObj.maxHp) * 100);
-    var hpColor= pct > 60 ? "linear-gradient(90deg,#7f1d1d,#dc2626,#ef4444,#fca5a5)"
-                : pct > 30 ? "linear-gradient(90deg,#78350f,#d97706,#fbbf24)"
-                : "linear-gradient(90deg,#450a0a,#b91c1c,#ef4444)";
-    return '<div class="hab-boss-3d-panel" style="margin-bottom:14px;">'
-        + '<div class="hab-boss-3d-inner">'
-        + '<div id="habHeroBossSVG2" style="width:110px;height:110px;flex-shrink:0;border-radius:16px;overflow:hidden;'
-        + 'background:radial-gradient(circle at 50% 35%,rgba(239,68,68,0.25),rgba(120,0,0,0.3) 60%,transparent 80%);'
-        + 'border:1.5px solid rgba(239,68,68,0.3);box-shadow:0 0 20px rgba(239,68,68,0.2),inset 0 0 15px rgba(0,0,0,0.5);"></div>'
-        + '<div class="hab-boss-3d-info">'
-        + '<div class="hab-boss-badges">'
-        + '<span class="hab-boss-badge lv">' + (bossObj.lv||"Nv.1") + '</span>'
-        + '<span class="hab-boss-badge type">' + (bossObj.type||"Bestia") + '</span>'
-        + '</div>'
-        + '<div class="hab-boss-3d-name">' + bossObj.name + '</div>'
-        + '<div class="hab-boss-3d-sub">⚔️ ¡Completa hábitos para atacar!</div>'
-        + '<div class="hab-boss-3d-hp-bar"><div class="hab-boss-3d-hp-fill" style="width:' + pct + "%;background:" + hpColor + '"></div></div>'
-        + '<div class="hab-boss-3d-hp-text">' + Math.round(bossHp) + " / " + bossObj.maxHp + " HP · " + pct + "%</div>"
-        + '<div class="hab-boss-reward-row">🎁 Recompensa: ' + bossObj.reward + " · +" + (bossObj.xpReward||50) + " XP</div>"
-        + '</div></div></div>';
-}
-
 // ── Tab LOGROS ────────────────────────────────────────────────
 function renderHabAchievements() {
     const el=document.getElementById('habAchievements');
@@ -23551,6 +22952,8 @@ function updateHabReminderCounter() {
     const addBtn = document.getElementById('habReminderAddBtn');
     if (addBtn) addBtn.classList.toggle('maxed', reminderTimes.length >= maxQty);
 }
+// Exposición global: saveHabit (otro bloque) la invoca con setTimeout y no veía esta función (ámbito de IIFE).
+window.updateHabReminderCounter = function() { try { updateHabReminderCounter(); } catch(e) {} };
 
 window.addHabReminder = function() {
     const htNow  = (document.querySelector('.hab-htype-btn.selected[data-ht]')||{}).dataset.ht || 'check';
@@ -24107,7 +23510,6 @@ window.habitPlus = function(id, evt) {
     }
 
     localStorage.setItem('jch_hero_v1', JSON.stringify(hero));
-    console.log('[DEBUG habitPlus] hero guardado: xp='+hero.xp+' coins='+hero.coins+' bossHp='+hero.bossHp+' dmg='+dmg);
     if (typeof addGlobalReward === 'function') addGlobalReward(h.xp||10, 1);
     if (typeof playSparkleSound === 'function') playSparkleSound();
 
@@ -24247,160 +23649,6 @@ window.drawHabitAvatar = function(canvasId) {
     ctx.font = 'bold 8px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(`Lv.${hero.level}`, 45, 88);
-};
-
-// ── Render Héroe con avatar ───────────────────────────────────
-window.renderHabHeroFull = function() {
-    const hero = loadHero();
-    const el   = document.getElementById('habHeroPanel');
-    const detEl= document.getElementById('habHeroDetails');
-    if (!el) return;
-
-    const CLASSES_REF = window._HAB_CLASSES || [{id:'warrior',name:'Guerrero',icon:'⚔️',bonus:'HP +20%',color:'#ef4444'},{id:'mage',name:'Mago',icon:'🔮',bonus:'XP +25%',color:'#a78bfa'},{id:'rogue',name:'Pícaro',icon:'🗡️',bonus:'🪙 +30%',color:'#fbbf24'},{id:'healer',name:'Sanador',icon:'💚',bonus:'Inmune a malos hábitos',color:'#10b981'}];
-    const cls  = CLASSES_REF.find(c => c.id === hero.class) || CLASSES_REF[0];
-    const hpPct= Math.min(100, Math.max(0, Math.round(hero.hp/hero.maxHp*100)));
-    const xpPct= Math.round((hero.xp/hero.xpNext)*100);
-    const hpColor = hpPct > 60 ? '#22c55e' : hpPct > 30 ? '#eab308' : '#ef4444';
-
-    // Equipo equipado
-    const equip = hero.equipment || {};
-    const slots = [
-        {key:'weapon',label:'Arma',    icon:'⚔️'},
-        {key:'shield',label:'Escudo',  icon:'🛡️'},
-        {key:'helm',  label:'Yelmo',   icon:'⛑️'},
-        {key:'armor', label:'Armadura',icon:'🦺'},
-        {key:'boots', label:'Botas',   icon:'👢'},
-        {key:'amulet',label:'Amuleto', icon:'📿'},
-    ];
-
-    el.innerHTML = `
-        <div class="hab-hero-panel">
-            <div style="display:flex;gap:14px;align-items:flex-start;">
-                <!-- Avatar pixel art -->
-                <div class="hab-avatar-wrapper">
-                    <canvas class="hab-avatar-canvas" id="habAvatarCanvas" width="90" height="90"></canvas>
-                    <div class="hab-avatar-level-badge">Lv.${hero.level}</div>
-                </div>
-                <div style="flex:1;min-width:0;">
-                    <div class="hab-hero-name" style="font-size:1rem;">${hero.name||'Héroe JCH'}</div>
-                    <div class="hab-hero-class" style="color:${cls.color};">${cls.icon} ${cls.name} — ${cls.bonus}</div>
-                    <div class="hab-coins-row" style="margin-top:4px;">
-                        <span class="hab-coin-badge">🪙 ${hero.coins||0} oro</span>
-                        <span style="font-size:0.62rem;color:#555;">💀 Boss: ${hero.bossesDefeated||0}</span>
-                    </div>
-                </div>
-            </div>
-            <!-- HP -->
-            <div class="hab-bar-row" style="margin-top:10px;">
-                <div class="hab-bar-label">
-                    <span>❤️ HP ${hpPct < 30 ? '⚠️ ¡PELIGRO!' : ''}</span>
-                    <span style="color:${hpColor};">${Math.round(hero.hp)}/${hero.maxHp}</span>
-                </div>
-                <div class="hab-bar-track">
-                    <div class="hab-bar-fill hab-hp-fill" style="width:${hpPct}%;background:linear-gradient(90deg,${hpColor}aa,${hpColor});"></div>
-                </div>
-            </div>
-            <!-- XP -->
-            <div class="hab-bar-row">
-                <div class="hab-bar-label"><span>⚡ XP</span><span>${hero.xp}/${hero.xpNext}</span></div>
-                <div class="hab-bar-track"><div class="hab-bar-fill hab-xp-fill" style="width:${xpPct}%"></div></div>
-            </div>
-
-            <!-- MEJORA 2: Panel de equipamiento estilo Habit Hunter -->
-            <div class="hab-equip-panel-v2">
-                <div class="hab-equip-v2-title">⚔️ Equipamiento</div>
-                <div class="hab-equip-v2-layout">
-                    <!-- Grid de slots 3x3 — distribución RPG clásica -->
-                    <div class="hab-equip-v2-slots">
-                        ${[
-                            {key:'helm',   label:'Yelmo',    icon:'⛑️',  pos:0},
-                            {key:'amulet', label:'Amuleto',  icon:'📿',  pos:1},
-                            {key:'',       label:'',         icon:'',    pos:2, empty:true},
-                            {key:'weapon', label:'Arma',     icon:'⚔️',  pos:3},
-                            {key:'armor',  label:'Armadura', icon:'🦺',  pos:4},
-                            {key:'shield', label:'Escudo',   icon:'🛡️',  pos:5},
-                            {key:'boots',  label:'Botas',    icon:'👢',  pos:6},
-                            {key:'',       label:'Bolsa',    icon:'🎒',  pos:7, bag:true},
-                            {key:'',       label:'Poción',   icon:'🧪',  pos:8, consumable:true},
-                        ].map(s => {
-                            if (s.empty) return `<div class="hab-equip-v2-slot" style="opacity:0;pointer-events:none;"></div>`;
-                            const item = s.key ? SHOP_ITEMS.find(i => i.id === equip[s.key]) : null;
-                            const gold = item && (item.slot === 'amulet' || item.slot === 'weapon');
-                            return `<div class="hab-equip-v2-slot ${item?'has-item':''}${gold?' gold':''}"
-                                title="${item?item.name:s.label}"
-                                onclick="${s.key ? `window.renderHabShop&&window.renderHabShop()` : ''}">
-                                ${item ? item.icon : s.icon}
-                                <div class="hab-equip-v2-slot-lbl">${item ? item.stat.split(' ')[0] : s.label}</div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                    <!-- Stats del héroe -->
-                    <div class="hab-equip-v2-stats">
-                        ${[
-                            {lbl:'ATK', key:'atk', max:50, color:'#ef4444', icon:'⚔️'},
-                            {lbl:'DEF', key:'def', max:50, color:'#3b82f6', icon:'🛡️'},
-                            {lbl:'SPD', key:'spd', max:50, color:'#fbbf24', icon:'💨'},
-                            {lbl:'XP%', key:'xpm', max:100, color:'#a78bfa', icon:'⭐'},
-                            {lbl:'ORO%',key:'gld', max:100, color:'#f59e0b', icon:'🪙'},
-                        ].map(st => {
-                            const base = {atk:5, def:3, spd:5, xpm:0, gld:0};
-                            const bonus= slots.reduce((acc,s) => {
-                                const it = SHOP_ITEMS.find(i => i.id === equip[s.key]);
-                                if (it && it.statKey === st.key) acc += it.statVal||0;
-                                return acc;
-                            }, 0);
-                            const total = (base[st.key]||0) + bonus;
-                            const pct = Math.min(100, Math.round(total/st.max*100));
-                            return `<div class="hab-equip-v2-stat-row">
-                                <div class="hab-equip-v2-stat-lbl">${st.icon} ${st.lbl}</div>
-                                <div class="hab-equip-v2-stat-bar">
-                                    <div class="hab-equip-v2-stat-fill" style="width:${pct}%;background:${st.color};"></div>
-                                </div>
-                                <div class="hab-equip-v2-stat-val" style="color:${st.color};">${total}</div>
-                            </div>`;
-                        }).join('')}
-                        <div style="font-size:0.55rem;color:#444;margin-top:4px;text-align:center;">Toca un slot para equipar</div>
-                    </div>
-                </div>
-                <!-- Bolsa / Inventario -->
-                <div class="hab-equip-v2-bag">
-                    <div class="hab-equip-v2-bag-title">🎒 Bolsa (${(hero.inventory||[]).length} ítems)</div>
-                    <div class="hab-equip-v2-bag-grid">
-                        ${(hero.inventory||[]).length
-                            ? hero.inventory.map(it => {
-                                const si = SHOP_ITEMS.find(x => x.name === it);
-                                return `<div class="hab-equip-v2-bag-item" title="${it}">${si?si.icon:'📦'}</div>`;
-                              }).join('')
-                            : `<div style="font-size:0.68rem;color:#444;padding:4px 0;">Sin items. ¡Derrota bosses o compra en la Tienda!</div>`}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Dibujar avatar
-    setTimeout(() => window.drawHabitAvatar('habAvatarCanvas'), 50);
-
-    // Clases + inventario
-    if (detEl) {
-        detEl.innerHTML = `
-            <div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.8rem 0 0.4rem;">Clase del Héroe</div>
-            <div class="hab-class-grid">
-                ${CLASSES_REF.map(c=>`
-                <div class="hab-class-btn ${hero.class===c.id?'selected':''}" onclick="selectHeroClass('${c.id}')">
-                    <span class="hab-class-icon">${c.icon}</span>
-                    <span class="hab-class-name">${c.name}</span>
-                    <span style="font-size:0.52rem;color:#666;">${c.bonus}</span>
-                </div>`).join('')}
-            </div>
-            <div style="font-size:0.65rem;font-weight:900;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0.8rem 0 0.4rem;">🎒 Inventario (${(hero.inventory||[]).length} ítems)</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                ${(hero.inventory||[]).length
-                    ? hero.inventory.map(it=>`<span style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:4px 10px;font-size:0.68rem;color:#fbbf24;">${it}</span>`).join('')
-                    : '<span style="font-size:0.72rem;color:#444;">Sin items. ¡Derrota bosses o compra en la Tienda!</span>'}
-            </div>
-        `;
-    }
 };
 
 // Parchar renderHabHero global
@@ -25953,6 +25201,47 @@ function renderCardsCollection() {
     }).join('');
 }
 
+// ── Coleccionar una carta ─────────────────────────────────────
+// La invocan los onclick de la carta del día, la aleatoria y la grilla de colección.
+// Usa loadCards/saveCards (clave jch_cards_v1, que ya se sincroniza con la nube).
+window.collectCard = function(cardId) {
+    var card = CARDS_DB.find(function(c){ return c.id === cardId; });
+    if (!card) return;
+    var toast = function(msg, bg) {
+        var t = document.getElementById('habStreakToast');
+        if (!t) return;
+        t.textContent = msg; t.style.background = bg; t.classList.add('show');
+        setTimeout(function(){ t.classList.remove('show'); }, 2500);
+    };
+    if (!isCardUnlocked(cardId)) {
+        var cic    = CARDS_DB.filter(function(c){ return c.cat === card.cat; });
+        var needed = cic.findIndex(function(c){ return c.id === cardId; }) * 2;
+        toast('🔒 Completa ' + needed + ' hábitos para desbloquear esta carta', 'linear-gradient(135deg,#374151,#1f2937)');
+        return;
+    }
+    var collected = loadCards();
+    if (collected.includes(cardId)) {
+        toast('✅ Esta carta ya está en tu colección', 'linear-gradient(135deg,#374151,#1f2937)');
+        return;
+    }
+    collected.push(cardId);
+    saveCards(collected);
+    toast('🃏 Carta añadida a tu colección', 'linear-gradient(135deg,#a78bfa,#818cf8)');
+    // Actualizar la carta visible sin re-render (así no se pierde una carta aleatoria en pantalla)
+    var dailyEl = document.getElementById('habDailyCard');
+    if (dailyEl && dailyEl.getAttribute('data-showing') === cardId) {
+        var el = dailyEl.querySelector('.hab-mot-card');
+        if (el && !el.querySelector('.hab-mot-card-collected')) {
+            var badge = document.createElement('div');
+            badge.className = 'hab-mot-card-collected';
+            badge.textContent = '✅ En colección';
+            el.insertBefore(badge, el.firstChild);
+            Array.from(el.children).forEach(function(ch){ if (/Toca para a/.test(ch.textContent)) ch.remove(); });
+        }
+    }
+    if (typeof renderCardsCollection === 'function') renderCardsCollection();
+};
+
 window.showRandomCard = function() {
     var habits    = loadHabits();
     var collected = loadCards();
@@ -26236,95 +25525,6 @@ function setQtyValue(habitId, val) {
     qty[getQtyKey(habitId, todayKey())] = Math.max(0, val);
     saveQty(qty);
 }
-
-window.incrementQty = function(habitId, delta, targetVal) {
-    const cur    = getQtyValue(habitId);
-    const newVal = Math.max(0, cur + delta);
-    setQtyValue(habitId, newVal);
-
-    const habits = loadHabits();
-    const h = habits.find(x => x.id === habitId);
-
-    // Actualizar display sin re-render completo
-    const valEl  = document.getElementById('habQtyVal_'+habitId);
-    const fillEl = document.getElementById('habQtyFill_'+habitId);
-    if (valEl) valEl.textContent = newVal;
-    if (fillEl && h) {
-        const pct = Math.min(100, Math.round((newVal / (h.qtyTarget||targetVal||1)) * 100));
-        fillEl.style.width = pct + '%';
-        fillEl.style.background = pct >= 100 ? '#22c55e' : h.color || '#6366f1';
-    }
-
-    // Si alcanzó la meta y aún no estaba completado → XP + boss + confeti
-    if (h && newVal >= (h.qtyTarget || targetVal || 1)) {
-        const today = new Date().toISOString().split('T')[0];
-        if (!(h.log||[]).includes(today)) {
-            // Marcar como completado en log
-            h.log = h.log || [];
-            h.log.push(today);
-            localStorage.setItem('jch_habits_v1', JSON.stringify(habits));
-
-            // XP al héroe
-            try {
-                const heroRaw = JSON.parse(localStorage.getItem('jch_hero_v1')||'{}');
-                const xpGain  = Math.round((h.xp||10) * (heroRaw.class==='mage'?1.25:1));
-                const coinGain= Math.round((h.diff==='hard'?3:h.diff==='medium'?2:1)*(heroRaw.class==='rogue'?1.3:1));
-                heroRaw.xp    = (heroRaw.xp||0) + xpGain;
-                heroRaw.coins = (heroRaw.coins||0) + coinGain;
-                // Daño al boss
-                var BOSSES_REF2 = window._HAB_BOSSES || [];
-                if (BOSSES_REF2.length) {
-                    var bossIdx2 = Math.min(heroRaw.bossIndex||0, BOSSES_REF2.length-1);
-                    var dmg2 = Math.max(1, Math.round((h.xp||10)/5));
-                    heroRaw.bossHp = Math.max(0, (heroRaw.bossHp ?? BOSSES_REF2[bossIdx2].maxHp) - dmg2);
-                    if (heroRaw.bossHp <= 0) {
-                        heroRaw.bossIndex = Math.min((heroRaw.bossIndex||0)+1, BOSSES_REF2.length-1);
-                        heroRaw.bossesDefeated = (heroRaw.bossesDefeated||0)+1;
-                        heroRaw.bossHp = BOSSES_REF2[heroRaw.bossIndex]?.maxHp || 100;
-                    }
-                }
-                while (heroRaw.xp >= (heroRaw.xpNext||100)) {
-                    heroRaw.xp -= heroRaw.xpNext;
-                    heroRaw.level = (heroRaw.level||1)+1;
-                    heroRaw.xpNext = Math.round(heroRaw.xpNext*1.5);
-                    if (typeof showLevelUp==='function') showLevelUp(heroRaw.level);
-                }
-                localStorage.setItem('jch_hero_v1', JSON.stringify(heroRaw));
-            } catch(err) {}
-
-            // XP sistema global
-            if (typeof addGlobalReward==='function') addGlobalReward(h.xp||10, 1);
-            if (typeof playSparkleSound==='function') playSparkleSound();
-
-            // Marcar card visualmente con color del hábito
-            const cardEl = document.getElementById('habCard-'+habitId);
-            if (cardEl) {
-                cardEl.classList.add('completed-today');
-                var hColor = h.color || '#10b981';
-                cardEl.style.backgroundImage = 'linear-gradient(135deg,'+hColor+'18 0%,transparent 60%)';
-                cardEl.style.borderColor = hColor;
-                cardEl.style.boxShadow  = '0 0 18px '+hColor+'40';
-                var tDot = cardEl.querySelector('.hab-day-dot.today-dot');
-                if (tDot) {
-                    tDot.classList.add('done-dot');
-                    tDot.classList.remove('today-dot');
-                    tDot.style.background = hColor;
-                }
-            }
-
-            // ── Actualizar PROGRESO DE HOY en tiempo real ────────
-            if (typeof _habUpdateTodayProgress==='function') _habUpdateTodayProgress();
-
-            // Actualizar UI al instante (XP bar, boss HP, monedas)
-            if (typeof _habInstantUIUpdate==='function') _habInstantUIUpdate(h);
-
-            if (typeof updateHabitBadge==='function') updateHabitBadge();
-            if (typeof renderHabStats==='function')   renderHabStats();
-            if (typeof renderHabHero==='function')    renderHabHero();
-            if (typeof launchConfetti==='function')   launchConfetti(50);
-        }
-    }
-};
 
 // ── CONFETI ───────────────────────────────────────────────────
 window.launchConfetti = function(count) {
@@ -28802,21 +28002,6 @@ function getItemLabel(itemId) {
     var egg = EGGS_DB.find(function(e){ return e.id===itemId; });
     if (egg) return {name:'Huevo de '+egg.name, icon:egg.icon, type:'huevo'};
     return {name:itemId, icon:'🎁', type:'objeto'};
-}
-
-function canBuyScroll(scr, hero, inv) {
-    var owned = inv.scrolls||[];
-    var done  = inv.scrollsDone||[];
-    if (owned.includes(scr.id)||done.includes(scr.id)) return 'owned';
-    if (scr.currency==='quest') {
-        var prereq = scr.reqVal;
-        if (!owned.includes(prereq)&&!done.includes(prereq)) return 'locked';
-        return 'available';
-    }
-    if ((hero.level||1) < (scr.reqVal||1)) return 'locked';
-    if (scr.currency==='gem'  && (hero.gems||0)  < scr.cost) return 'no_funds';
-    if (scr.currency==='gold' && (hero.coins||0) < scr.cost) return 'no_funds';
-    return 'available';
 }
 
 // ── Progreso dinámico de pergaminos activos ───────────────────
@@ -32592,60 +31777,6 @@ window.renderBossMini = function() {
     </div>`;
 };
 
-// Versión para panel HÉROE — ID único para evitar conflicto con panel HOY
-window.renderBossMiniHero = function() {
-    const hero  = JSON.parse(localStorage.getItem('jch_hero_v1')||'null')||{bossIndex:0,bossHp:100};
-    const BOSSES= window._HAB_BOSSES||[
-        {name:'Goblin del Caos',     maxHp:100,  xpReward:50,   reward:'⚔️ Espada de Inicio',         type:'Bestia',   lv:'Nv.1'},
-        {name:'Lobo Zombie',         maxHp:180,  xpReward:80,   reward:'🦴 Colmillo Maldito',          type:'No-muerto',lv:'Nv.2'},
-        {name:'Troll del Pantano',   maxHp:280,  xpReward:120,  reward:'🛡️ Escudo de Barro',           type:'Bestia',   lv:'Nv.3'},
-        {name:'Oso Zombie',          maxHp:380,  xpReward:160,  reward:'🐾 Garra Putrefacta',          type:'No-muerto',lv:'Nv.4'},
-        {name:'Espectro',            maxHp:500,  xpReward:220,  reward:'🔮 Orbe Oscuro',               type:'Espectral',lv:'Nv.5'},
-        {name:'Ghoul Devorador',     maxHp:650,  xpReward:290,  reward:'🦷 Colmillo del Vacío',        type:'No-muerto',lv:'Nv.6'},
-        {name:'Momia Ancestral',     maxHp:800,  xpReward:370,  reward:'📜 Pergamino Maldito',         type:'No-muerto',lv:'Nv.7'},
-        {name:'Hombre Lobo',         maxHp:980,  xpReward:460,  reward:'🌕 Piedra Lunar',              type:'Hombre-bestia',lv:'Nv.8'},
-        {name:'Vampiro Noble',       maxHp:1150, xpReward:560,  reward:'🩸 Capa de Sangre',            type:'No-muerto',lv:'Nv.9'},
-        {name:'Gigante Maldito',     maxHp:1350, xpReward:680,  reward:'🪨 Roca del Titán',            type:'Gigante',  lv:'Nv.10'},
-        {name:'Golem de Piedra',     maxHp:1550, xpReward:820,  reward:'⚙️ Núcleo Pétreo',            type:'Constructo',lv:'Nv.11'},
-        {name:'Caballero Vampiro',   maxHp:1780, xpReward:980,  reward:'🗡️ Espada Oscura',            type:'No-muerto',lv:'Nv.12'},
-        {name:'Golem de Fuego',      maxHp:2050, xpReward:1200, reward:'💎 Gema del Campeón',          type:'Constructo',lv:'Nv.13'},
-        {name:'Demonio Ancestral',   maxHp:2400, xpReward:1450, reward:'🌟 Estrella Legendaria',       type:'Demonio',  lv:'Nv.14'},
-        {name:'Hidra Legendaria',    maxHp:2800, xpReward:1750, reward:'🏆 Escama de Hidra',           type:'Bestia',   lv:'Nv.15'},
-        {name:'Dragón Verde',        maxHp:3200, xpReward:2100, reward:'🌿 Corazón del Bosque',        type:'Dragón',   lv:'Nv.16'},
-        {name:'Demonio Oscuro',      maxHp:3700, xpReward:2500, reward:'🔱 Tridente Infernal',         type:'Demonio',  lv:'Nv.17'},
-        {name:'Dragón Azul',         maxHp:4300, xpReward:3000, reward:'⚡ Escama Tormentosa',         type:'Dragón',   lv:'Nv.18'},
-        {name:'Dragón Rojo',         maxHp:5000, xpReward:3600, reward:'🔥 Corazón de Llamas',        type:'Dragón',   lv:'Nv.19'},
-        {name:'Dragón Negro',        maxHp:6000, xpReward:4500, reward:'👑 Corona del Campeón Eterno', type:'Dragón',   lv:'Nv.20'},
-    ];
-    const bossI = Math.min(hero.bossIndex||0,19);
-    const boss  = BOSSES[bossI];
-    const rawHp = parseFloat(hero.bossHp);
-    const bossHp = (!isNaN(rawHp) && rawHp <= boss.maxHp && rawHp >= 0) ? rawHp : boss.maxHp;
-    const pct   = Math.round((bossHp / boss.maxHp) * 100);
-    const hpColor = pct > 60 ? 'linear-gradient(90deg,#7f1d1d,#dc2626,#ef4444,#fca5a5)' :
-                    pct > 30 ? 'linear-gradient(90deg,#78350f,#d97706,#fbbf24)' :
-                               'linear-gradient(90deg,#450a0a,#b91c1c,#ef4444)';
-    return `<div class="hab-boss-3d-panel" style="margin-bottom:14px;">
-      <div class="hab-boss-3d-inner">
-        <div id="habBossMiniSVGHero" style="width:110px;height:110px;flex-shrink:0;border-radius:16px;overflow:hidden;
-          background:radial-gradient(circle at 50% 35%,rgba(239,68,68,0.25),rgba(120,0,0,0.3) 60%,transparent 80%);
-          border:1.5px solid rgba(239,68,68,0.3);box-shadow:0 0 20px rgba(239,68,68,0.2),inset 0 0 15px rgba(0,0,0,0.5);"></div>
-        <div class="hab-boss-3d-info">
-          <div class="hab-boss-badges">
-            <span class="hab-boss-badge lv">${boss.lv||'Nv.1'}</span>
-            <span class="hab-boss-badge type">${boss.type||'Bestia'}</span>
-          </div>
-          <div class="hab-boss-3d-name">${boss.name}</div>
-          <div class="hab-boss-3d-sub">⚔️ ¡Completa hábitos para atacar!</div>
-          <div class="hab-boss-3d-hp-bar">
-            <div class="hab-boss-3d-hp-fill" style="width:${pct}%;background:${hpColor}"></div>
-          </div>
-          <div class="hab-boss-3d-hp-text">${Math.round(bossHp)} / ${boss.maxHp} HP · ${pct}%</div>
-          <div class="hab-boss-reward-row">🎁 Recompensa: ${boss.reward} · +${boss.xpReward||50} XP</div>
-        </div>
-      </div>
-    </div>`;
-};
 const _origSelCls = window.selectHeroClass;
 window.selectHeroClass = function(cls) {
     _origSelCls && _origSelCls(cls);
