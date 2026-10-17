@@ -1281,6 +1281,22 @@
 
         .btn-generate-routine { display: none; width: 100%; margin-bottom: 1rem; background: linear-gradient(90deg, #0088ff, #00d2ff); border: none; box-shadow: 0 0 20px rgba(0, 210, 255, 0.6); color: #fff; font-weight: 900; border-radius: 12px; padding: 1.2rem; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
         .btn-generate-routine:hover { box-shadow: 0 0 30px rgba(0, 210, 255, 0.9); transform: translateY(-2px); filter: brightness(1.2); }
+        /* Retomar último bloque de estudio */
+        .resume-block-wrap { display: none; align-items: stretch; gap: 0.5rem; margin-bottom: 1rem; }
+        .btn-resume-block { flex: 1; min-width: 0; position: relative; overflow: hidden; display: flex; align-items: center; gap: 0.9rem; text-align: left; padding: 0.85rem 1rem; border-radius: 12px; cursor: pointer; color: #e6fbff; font-family: inherit; background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(0, 210, 255, 0.14)); border: 1.5px solid rgba(16, 185, 129, 0.55); box-shadow: 0 0 18px rgba(16, 185, 129, 0.28), inset 0 0 14px rgba(0, 210, 255, 0.08); transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease; animation: rbGlow 2.8s ease-in-out infinite; -webkit-tap-highlight-color: transparent; }
+        .btn-resume-block:hover { transform: translateY(-2px); filter: brightness(1.15); box-shadow: 0 0 28px rgba(16, 185, 129, 0.55), inset 0 0 16px rgba(0, 210, 255, 0.12); }
+        .btn-resume-block:active { transform: scale(0.98); }
+        .rb-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 1.3rem; font-weight: 900; color: #00241a; background: radial-gradient(circle at 30% 30%, #6ee7b7, #059669); box-shadow: 0 0 14px rgba(52, 211, 153, 0.65); }
+        .rb-main { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; flex: 1; }
+        .rb-main b { font-size: 0.9rem; letter-spacing: 0.4px; text-transform: uppercase; color: #d1fae5; text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .rb-main small { font-size: 0.74rem; line-height: 1.4; color: #94a3b8; overflow-wrap: anywhere; }
+        .rb-bar { display: block; height: 5px; margin-top: 0.15rem; border-radius: 99px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+        .rb-bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #10b981, #00d2ff); box-shadow: 0 0 8px #10b981; transition: width 0.5s ease; }
+        .rb-discard { flex-shrink: 0; width: 44px; border-radius: 12px; cursor: pointer; font-size: 1rem; color: #94a3b8; background: rgba(0, 0, 0, 0.35); border: 1.5px solid rgba(255, 255, 255, 0.12); transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
+        .rb-discard:hover { color: #fff; border-color: rgba(239, 68, 68, 0.6); }
+        .rb-discard.confirm { width: auto; padding: 0 0.8rem; font-size: 0.72rem; font-weight: 800; color: #fff; border-color: #ef4444; background: rgba(239, 68, 68, 0.35); }
+        @keyframes rbGlow { 0%, 100% { box-shadow: 0 0 14px rgba(16, 185, 129, 0.22), inset 0 0 14px rgba(0, 210, 255, 0.06); } 50% { box-shadow: 0 0 26px rgba(16, 185, 129, 0.5), inset 0 0 16px rgba(0, 210, 255, 0.1); } }
+        @media (prefers-reduced-motion: reduce) { .btn-resume-block { animation: none; } }
 
         .routines-scroll-area { flex: 1; overflow-y: auto; padding-right: 15px; margin-top: 0.5rem; }
         .routines-scroll-area::-webkit-scrollbar { width: 6px; } .routines-scroll-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; } .routines-scroll-area::-webkit-scrollbar-thumb { background: var(--accent-cyan); border-radius: 4px; }
@@ -8510,6 +8526,19 @@ window.hrpFilter        = _hrpApplyFilter;
                 
                 <button id="btnGenerateRoutine" class="btn-generate-routine">✨ Generar Bloque de Estudio</button>
 
+                <!-- Recuperar el último bloque de estudio guardado (visible solo si hay uno sin terminar) -->
+                <div class="resume-block-wrap" id="resumeBlockWrap">
+                    <button type="button" class="btn-resume-block" id="btnResumeBlock">
+                        <span class="rb-icon">↩</span>
+                        <span class="rb-main">
+                            <b>Retomar último bloque de estudio</b>
+                            <small id="rbMeta"></small>
+                            <span class="rb-bar"><i id="rbBarFill"></i></span>
+                        </span>
+                    </button>
+                    <button type="button" class="rb-discard" id="btnDiscardBlock" title="Descartar bloque guardado">✕</button>
+                </div>
+
                 <div class="routines-scroll-area">
                     <div id="dynamicChecklistContainer"></div>
                     <div class="completed-separator" id="completedSeparator"><span>LOGRADO CON ÉXITO</span></div>
@@ -11692,6 +11721,153 @@ window.hrpFilter        = _hrpApplyFilter;
             renderTags();
         });
 
+        /* === GUARDADO Y RECUPERACIÓN DEL ÚLTIMO BLOQUE DE ESTUDIO ===
+           Android puede descartar la página cuando la app pasa un rato en segundo plano; el bloque generado
+           vivía solo en el DOM y se perdía. Aquí se guarda una copia (pasos, estado, tiempos, recompensas por
+           paso) y se puede recuperar con el botón "Retomar último bloque de estudio". */
+        (function jchStudyBlockPersist() {
+            const KEY = 'jch_study_block_v1';
+            const MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+            let saveTimer = null, restoring = false, discardTimer = null;
+
+            function stepCbs() {
+                const out = [];
+                [checklistContainer, completedContainer].forEach(c => { if (c) c.querySelectorAll('.rutina-cb').forEach(cb => out.push(cb)); });
+                return out;
+            }
+            function minsOf(cb) {
+                const item = cb.closest('.check-item'); const tb = item && item.querySelector('.time-badge');
+                const m = tb && tb.textContent.match(/\d+/); return m ? parseInt(m[0]) : 0;
+            }
+            function ser(container) {
+                const clone = container.cloneNode(true);
+                const src = container.querySelectorAll('.rutina-cb'), dst = clone.querySelectorAll('.rutina-cb');
+                src.forEach((cb, i) => { if (cb.checked) dst[i].setAttribute('checked', ''); else dst[i].removeAttribute('checked'); });
+                // Los botones ⏱ se vuelven a inyectar solos al restaurar
+                clone.querySelectorAll('.step-timer-btn').forEach(b => b.remove());
+                clone.querySelectorAll('[data-timer-injected]').forEach(e => e.removeAttribute('data-timer-injected'));
+                return clone.innerHTML;
+            }
+            function load() {
+                try {
+                    const s = JSON.parse(localStorage.getItem(KEY) || 'null');
+                    if (!s || s.v !== 1 || typeof s.pending !== 'string' || typeof s.done !== 'string' || !s.meta) return null;
+                    if (Date.now() - s.savedAt > MAX_AGE) { localStorage.removeItem(KEY); return null; }
+                    return s;
+                } catch (e) { return null; }
+            }
+            function clear() { try { localStorage.removeItem(KEY); } catch (e) {} refresh(); }
+            function agoText(ts) {
+                const m = Math.max(0, Math.round((Date.now() - ts) / 60000));
+                if (m < 1) return 'hace un momento'; if (m < 60) return 'hace ' + m + ' min';
+                const h = Math.round(m / 60); if (h < 24) return 'hace ' + h + ' h';
+                const d = Math.round(h / 24); return 'hace ' + d + (d === 1 ? ' día' : ' días');
+            }
+            function refresh() {
+                const wrap = document.getElementById('resumeBlockWrap'); if (!wrap) return;
+                const s = load();
+                if (!s || stepCbs().length > 0 || !(s.meta.total > s.meta.done)) { wrap.style.display = 'none'; return; }
+                const mt = s.meta;
+                const small = document.getElementById('rbMeta');
+                if (small) small.textContent = (mt.titles && mt.titles.length ? mt.titles.join(' + ') + ' · ' : '') +
+                    mt.done + '/' + mt.total + ' pasos · ✅ ' + mt.minDone + ' min hechos · ⏳ ' + mt.minPending + ' min pendientes · ' + agoText(s.savedAt);
+                const fill = document.getElementById('rbBarFill');
+                if (fill) fill.style.width = Math.round((mt.done / mt.total) * 100) + '%';
+                wrap.style.display = 'flex';
+            }
+            function saveNow() {
+                clearTimeout(saveTimer); saveTimer = null;
+                if (restoring) return;
+                try {
+                    const cbs = stepCbs();
+                    if (!cbs.length) { refresh(); return; }              // estado vacío (tras recarga o celebración): conservar lo guardado
+                    if (cbs.every(cb => cb.checked)) { clear(); return; } // bloque terminado al 100 %: ya no hay nada que retomar
+                    let done = 0, minDone = 0, minPending = 0;
+                    cbs.forEach(cb => { const m = minsOf(cb); if (cb.checked) { done++; minDone += m; } else minPending += m; });
+                    const titles = [];
+                    checklistContainer.querySelectorAll('.generated-block .checklist-title').forEach(t => {
+                        const x = t.textContent.trim(); if (x && titles.indexOf(x) < 0) titles.push(x);
+                    });
+                    localStorage.setItem(KEY, JSON.stringify({
+                        v: 1, savedAt: Date.now(), day: getTodayStr(),
+                        pending: ser(checklistContainer), done: ser(completedContainer),
+                        meta: { total: cbs.length, done: done, minDone: minDone, minPending: minPending, titles: titles.slice(0, 3) }
+                    }));
+                    refresh();
+                } catch (e) {}
+            }
+            function schedule() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 250); }
+
+            function restore() {
+                if (stepCbs().length) return false;          // ya hay un bloque activo: no pisarlo
+                const s = load(); if (!s) return false;
+                restoring = true; let ok = false;
+                try {
+                    checklistContainer.innerHTML = s.pending;
+                    completedContainer.innerHTML = s.done;
+                    const cbs = stepCbs();
+                    if (!cbs.length) { checklistContainer.innerHTML = ''; completedContainer.innerHTML = ''; return false; }
+                    completedSeparator.style.display = completedContainer.querySelector('.check-item') ? 'block' : 'none';
+                    // Mismos listeners que al generar. Los pasos ya marcados NO vuelven a dar recompensa (ya se entregó).
+                    cbs.forEach(cb => cb.addEventListener('change', (e) => updateProgress(cb, e)));
+                    let c = 0, x = 0;
+                    cbs.forEach(cb => { if (cb.checked) { c += parseInt(cb.getAttribute('data-coins') || 0); x += parseInt(cb.getAttribute('data-xp') || 0); } });
+                    const elC = document.getElementById('coinTotalText'); if (elC) elC.textContent = c;
+                    const elX = document.getElementById('xpTotalText'); if (elX) elX.textContent = x;
+                    const pCont = document.getElementById('progressContainer'); if (pCont) { pCont.style.display = 'flex'; pCont.style.setProperty('--ring-color', 'var(--accent-cyan)'); }
+                    // Si el bloque es de un día anterior, los pasos pendientes cuentan en las estadísticas de hoy
+                    if (s.day && s.day !== getTodayStr()) {
+                        dailyStats.totalTasks += cbs.filter(cb => !cb.checked).length;
+                        localStorage.setItem('jch_daily_stats_v1', JSON.stringify(dailyStats)); updateStatsUI();
+                    }
+                    updateProgress(null, null);
+                    if (typeof window._injectTimerBtns === 'function') window._injectTimerBtns();
+                    ok = true;
+                } finally { restoring = false; }
+                if (ok) saveNow();
+                return ok;
+            }
+            window.jchStudyBlock = { restore: restore, save: saveNow, clear: clear, hasSaved: function () { return !!load(); } };
+
+            // Cambios en el bloque (marcar, mover, editar tiempo, generar) → guardar
+            const mo = new MutationObserver(schedule);
+            [checklistContainer, completedContainer].forEach(c => { if (c) mo.observe(c, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-coins', 'data-xp'] }); });
+            const area = document.querySelector('.routines-scroll-area');
+            if (area) area.addEventListener('change', e => { if (e.target && e.target.classList && e.target.classList.contains('rutina-cb')) schedule(); });
+            // Android puede matar la página sin avisar: guardar al pasar a segundo plano
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); else refresh(); });
+            window.addEventListener('pagehide', saveNow);
+
+            const btnResume = document.getElementById('btnResumeBlock');
+            if (btnResume) btnResume.addEventListener('click', () => {
+                playSparkleSound();
+                const info = load();
+                if (restore()) {
+                    try {
+                        const t = document.getElementById('habStreakToast');
+                        if (t && info) {
+                            t.textContent = '↩ Bloque recuperado · ' + info.meta.done + '/' + info.meta.total + ' pasos hechos';
+                            t.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+                            t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+                        }
+                        checklistContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } catch (e) {}
+                }
+            });
+            const btnDiscard = document.getElementById('btnDiscardBlock');
+            if (btnDiscard) btnDiscard.addEventListener('click', () => {
+                if (!btnDiscard.classList.contains('confirm')) {
+                    btnDiscard.classList.add('confirm'); btnDiscard.textContent = '¿Descartar?';
+                    clearTimeout(discardTimer);
+                    discardTimer = setTimeout(() => { btnDiscard.classList.remove('confirm'); btnDiscard.textContent = '✕'; }, 3000);
+                    return;
+                }
+                clearTimeout(discardTimer); btnDiscard.classList.remove('confirm'); btnDiscard.textContent = '✕';
+                clear();
+            });
+            refresh();
+        })();
+
         /* === TABLAS Y PAGINACIÓN === */
         function renderPaginator(totalItems, currentPage, containerId, actionPrefix) {
             const container = document.getElementById(containerId); if(!container) return; container.innerHTML = ''; const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
@@ -12428,7 +12604,9 @@ window.hrpFilter        = _hrpApplyFilter;
             renderCustomCourseType(); renderCustomMethods();
             document.querySelectorAll('.stat-tab-btn').forEach(tab => { tab.addEventListener('click', () => { playSparkleSound(); document.querySelectorAll('.stat-tab-btn').forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentChartType = tab.getAttribute('data-tab'); updateChartUI(); }); });
             updateStatsUI(); updateLevelUI(); updateDisplay(); renderLeitnerTable(); renderKanban(); renderSessionTrackingTable(); loadCourseStatsUI(); initKanbanIfNeeded(0);
-            renderChecklist();
+            // Si el temporizador de paso ya recuperó el bloque (restauración en frío), no pisarlo con el mensaje vacío
+            if (!document.querySelector('.rutina-cb')) renderChecklist();
+            if (window.jchStudyBlock) window.jchStudyBlock.save();
             // Dejar que el grid renderice, luego fijar la altura natural
             setTimeout(setRutinasFixedHeight, 500);
         };
@@ -21147,7 +21325,10 @@ window.buildHabControl = function(h, done) {
     if (ht === 'timer') {
         const mins     = h.qtyTarget || 5;
         const totalSec = mins * 60;
-        const elapsed  = cur;
+        // Si el timer está corriendo, la tarjeta se dibuja con el tiempo real (no con el último valor guardado)
+        // y conserva el estado "running": así un re-render no devuelve el ícono ⏱️ ni retrasa el contador.
+        const _live    = (typeof window._habTimerLive === 'function') ? window._habTimerLive(h.id) : null;
+        const elapsed  = _live ? Math.min(totalSec, _live.elapsed) : cur;
         const secLeft  = Math.max(0, totalSec - elapsed);
         const timerDone = elapsed >= totalSec;
         const r = 17, circ = 2 * Math.PI * r;
@@ -21158,7 +21339,7 @@ window.buildHabControl = function(h, done) {
         const ss = String(secLeft%60).padStart(2,'0');
 
         return `
-        <div class="hab-timer-ctrl ${timerDone?'done-timer':''}" id="habTimerCtrl_${h.id}"
+        <div class="hab-timer-ctrl ${timerDone?'done-timer':''}${(_live && !timerDone)?' running':''}" id="habTimerCtrl_${h.id}"
             onclick="event.stopPropagation();startHabTimer('${h.id}',${totalSec})"
             title="${timerDone?'¡Completado!':'Toca para iniciar el timer'}">
             <div class="hab-timer-ring-wrap">
@@ -21528,9 +21709,54 @@ function playHabTimerComplete() {
         });
     } catch(e) {}
 }
-const _habTimers = {}; // { habitId: { interval, elapsed, total } }
+const _habTimers = {}; // { habitId: { interval, elapsed, base, startTs, totalSec, qtyKey, tick } }
 
-window.startHabTimer = function(habitId, totalSec) {
+// ── CÁLCULO DELTA del timer de hábitos ───────────────────────────
+// Antes cada tick sumaba "+1 segundo": en segundo plano Android/Chrome frenan los intervalos y el
+// contador se atrasaba (y si la app se cerraba, el timer se perdía). Ahora el tiempo transcurrido se
+// calcula con la hora real (base + ahora − inicio) y la toma en curso se guarda para poder retomarla.
+const HABTIMER_DELTA_KEY = 'jch_habtimer_delta_v1';
+function _habDeltaAll() { try { return JSON.parse(localStorage.getItem(HABTIMER_DELTA_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function _habDeltaSave(id, t, day) {
+    try {
+        const m = _habDeltaAll();
+        m[id] = { totalSec: t.totalSec, base: t.base, startTs: t.startTs, day: day };
+        localStorage.setItem(HABTIMER_DELTA_KEY, JSON.stringify(m));
+    } catch (e) {}
+}
+function _habDeltaRemove(id) {
+    try {
+        const m = _habDeltaAll();
+        if (!(id in m)) return;
+        delete m[id];
+        if (Object.keys(m).length) localStorage.setItem(HABTIMER_DELTA_KEY, JSON.stringify(m));
+        else localStorage.removeItem(HABTIMER_DELTA_KEY);
+    } catch (e) {}
+}
+function _habElapsedNow(t) { return Math.min(t.totalSec, t.base + Math.max(0, Math.floor((Date.now() - t.startTs) / 1000))); }
+// ¿Hay un timer corriendo para este hábito? (lo usa buildHabControl al redibujar la tarjeta)
+window._habTimerLive = function(id) {
+    const t = _habTimers[id];
+    return (t && t.interval) ? { elapsed: _habElapsedNow(t) } : null;
+};
+// Al pasar a segundo plano: volcar el tiempo real al progreso guardado (por si Android cierra la app)
+function _habTimersSyncAll() {
+    try {
+        const ids = Object.keys(_habTimers).filter(function(k){ return _habTimers[k] && _habTimers[k].interval; });
+        if (!ids.length) return;
+        const q = JSON.parse(localStorage.getItem('jch_qty_v1') || '{}');
+        ids.forEach(function(k){ q[_habTimers[k].qtyKey] = _habElapsedNow(_habTimers[k]); });
+        localStorage.setItem('jch_qty_v1', JSON.stringify(q));
+    } catch (e) {}
+}
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') { _habTimersSyncAll(); return; }
+    // Al volver: ponerse al día de inmediato con la hora real (y completar si ya terminó)
+    Object.keys(_habTimers).forEach(function(k){ const t = _habTimers[k]; if (t && t.interval && t.tick) t.tick(); });
+});
+window.addEventListener('pagehide', _habTimersSyncAll);
+
+window.startHabTimer = function(habitId, totalSec, _resume) {
     const QTY_KEY = 'jch_qty_v1';
     const today   = (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()
     const qty     = JSON.parse(localStorage.getItem(QTY_KEY)||'{}');
@@ -21538,15 +21764,27 @@ window.startHabTimer = function(habitId, totalSec) {
 
     // Si ya está corriendo → pausar
     if (_habTimers[habitId] && _habTimers[habitId].interval) {
+        // Si con el tiempo real ya llegó al final (no hubo tick a tiempo), completar en vez de pausar
+        if (_habElapsedNow(_habTimers[habitId]) >= totalSec && _habTimers[habitId].tick) { _habTimers[habitId].tick(); return; }
         clearInterval(_habTimers[habitId].interval);
         _habTimers[habitId].interval = null;
+        // Pausa exacta: guardar el tiempo real transcurrido y quitar la toma en curso
+        const _ep = _habElapsedNow(_habTimers[habitId]);
+        _habTimers[habitId].elapsed = _ep;
+        qty[qtyKey] = _ep;
+        localStorage.setItem(QTY_KEY, JSON.stringify(qty));
+        _habDeltaRemove(habitId);
+        const _arcP = document.getElementById('habTimerArc_' + habitId);
+        if (_arcP) _arcP.setAttribute('stroke-dashoffset', (2 * Math.PI * 17 * (1 - Math.min(1, _ep / totalSec))).toFixed(1));
+        const _cdP = document.getElementById('habTimerCd_' + habitId);
+        if (_cdP) { const _sl = Math.max(0, totalSec - _ep); _cdP.textContent = String(Math.floor(_sl/60)).padStart(2,'0') + ':' + String(_sl%60).padStart(2,'0'); }
         const ctrl = document.getElementById('habTimerCtrl_' + habitId);
         if (ctrl) ctrl.classList.remove('running');
         return;
     }
 
     // Si ya está completado → no hacer nada
-    const elapsed = qty[qtyKey] || 0;
+    const elapsed = _resume ? _resume.base : (qty[qtyKey] || 0);
     if (elapsed >= totalSec) return;
 
     const r = 17, circ = 2 * Math.PI * r;
@@ -21554,14 +21792,22 @@ window.startHabTimer = function(habitId, totalSec) {
     const h = habits.find(x => x.id === habitId);
     const color = h ? (h.color || '#10b981') : '#10b981';
 
-    _habTimers[habitId] = { interval: null, elapsed };
+    _habTimers[habitId] = { interval: null, elapsed, base: elapsed, startTs: _resume ? _resume.startTs : Date.now(), totalSec: totalSec, qtyKey: qtyKey, tick: null };
+    _habDeltaSave(habitId, _habTimers[habitId], today);
 
     const ctrl = document.getElementById('habTimerCtrl_' + habitId);
     if (ctrl) ctrl.classList.add('running');
 
-    _habTimers[habitId].interval = setInterval(function() {
-        _habTimers[habitId].elapsed++;
-        const e   = _habTimers[habitId].elapsed;
+    const _tickFn = function() {
+        const _t = _habTimers[habitId];
+        if (!_t || !_t.interval) return;
+        // Tiempo REAL transcurrido (no se cuentan ticks): exacto aunque el intervalo se frene o se pierda
+        const e = _habElapsedNow(_t);
+        // Si la tarjeta se redibujó mientras corría, devolverle el estado "running"
+        const _cR = document.getElementById('habTimerCtrl_' + habitId);
+        if (_cR && e < totalSec && !_cR.classList.contains('running') && !_cR.classList.contains('done-timer')) _cR.classList.add('running');
+        if (e === _t.elapsed) return;   // aún no cambió el segundo
+        _t.elapsed = e;
         const pct = Math.min(1, e / totalSec);
         const off = circ * (1 - pct);
         const secLeft = Math.max(0, totalSec - e);
@@ -21585,6 +21831,7 @@ window.startHabTimer = function(habitId, totalSec) {
             // ¡Completado!
             clearInterval(_habTimers[habitId].interval);
             _habTimers[habitId].interval = null;
+            _habDeltaRemove(habitId);
             const ctrl2 = document.getElementById('habTimerCtrl_' + habitId);
             if (ctrl2) { ctrl2.classList.remove('running'); ctrl2.classList.add('done-timer'); }
             const lbl = document.getElementById('habTimerLbl_' + habitId);
@@ -21768,8 +22015,51 @@ window.startHabTimer = function(habitId, totalSec) {
             playHabTimerComplete();
             if (typeof window.launchConfetti === 'function') window.launchConfetti(60);
         }
-    }, 1000);
+    };
+    _habTimers[habitId].tick = _tickFn;
+    _habTimers[habitId].interval = setInterval(_tickFn, 500);
+    if (_resume) _tickFn();   // retomado tras cerrar/recargar la app: ponerse al día (o completar) al instante
 };
+
+// ── Retomar timers de hábitos que seguían corriendo cuando la app se cerró/recargó ──
+function _habTimerColdRestore() {
+    let m = _habDeltaAll();
+    const ids = Object.keys(m);
+    if (!ids.length) return;
+    const d0 = new Date();
+    const today = d0.getFullYear()+'-'+String(d0.getMonth()+1).padStart(2,'0')+'-'+String(d0.getDate()).padStart(2,'0');
+    let habits = [];
+    try { habits = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]'); } catch (e) {}
+    ids.forEach(function(id) {
+        const s = m[id];
+        const h = habits.find(function(x){ return x.id === id; });
+        // Toma de otro día, hábito borrado o ya no es de tipo timer: descartar sin dar recompensas
+        if (!s || !h || h.habitType !== 'timer' || s.day !== today || !(s.totalSec > 0) || !s.startTs) { _habDeltaRemove(id); return; }
+        const wasDone = (h.log || []).includes(today);
+        const endTs = s.startTs + Math.max(0, s.totalSec - s.base) * 1000;
+        window.startHabTimer(id, s.totalSec, { base: s.base || 0, startTs: s.startTs });
+        // Si venció con la app cerrada, avisar
+        if (!wasDone && !(_habTimers[id] && _habTimers[id].interval)) {
+            try {
+                const ago = Math.max(0, Math.round((Date.now() - endTs) / 60000));
+                const msg = '⏱️ ¡' + (h.name || 'Hábito') + ' completado! Terminó ' + (ago < 1 ? 'hace un momento' : 'hace ' + ago + ' min') + ' · con la app cerrada';
+                // Esperar a que cargue la cola de avisos (se inicializa al final de la carga)
+                setTimeout(function() {
+                    try {
+                        if (window._toastQueue && typeof window._toastQueue.push === 'function') {
+                            window._toastQueue.push(msg, 'linear-gradient(135deg,#059669,#10b981)', 5000);
+                        } else {
+                            const t = document.getElementById('habStreakToast');
+                            if (t) { t.textContent = msg; t.style.background = 'linear-gradient(135deg,#059669,#10b981)'; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 4500); }
+                        }
+                    } catch (e) {}
+                }, 1500);
+            } catch (e) {}
+        }
+    });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _habTimerColdRestore);
+else _habTimerColdRestore();
 
 // ── GUARDAR HÁBITO ────────────────────────────────────────────
 window.saveHabit = function() {
@@ -24494,7 +24784,16 @@ window.openChest = function(id) {
 
 // ── TEMPORIZADOR POMODORO ─────────────────────────────────────
 let _pomoInterval = null;
-let _pomoState = { running:false, phase:'work', remaining:25*60, sessions:0, todaySessions:0 };
+// endTs = hora real (ms) en que termina la fase en curso; total = duración de la fase (seg). El tiempo restante se
+// calcula SIEMPRE con la hora real (endTs − ahora): antes se restaba 1 por tick y en segundo plano se atrasaba.
+let _pomoState = { running:false, phase:'work', remaining:25*60, total:25*60, endTs:0, sessions:0, todaySessions:0 };
+
+function pomoMins() {
+    return {
+        work:  Math.max(1, parseInt(document.getElementById('habPomoWork')?.value  || 25) || 25),
+        brk:   Math.max(1, parseInt(document.getElementById('habPomoBreak')?.value || 5)  || 5)
+    };
+}
 
 function updatePomoDisplay() {
     const m = Math.floor(_pomoState.remaining/60);
@@ -24514,9 +24813,10 @@ function updatePomoDisplay() {
     if (circEl) {
         const workMins  = parseInt(document.getElementById('habPomoWork')?.value  || 25);
         const breakMins = parseInt(document.getElementById('habPomoBreak')?.value || 5);
-        const total = (_pomoState.phase==='work' ? workMins : breakMins) * 60;
+        // Duración real de la fase en curso (no la de los campos: si se editan con el timer corriendo, el anillo no salta)
+        const total = _pomoState.total || ((_pomoState.phase==='work' ? workMins : breakMins) * 60);
         const circumference = 2 * Math.PI * 56;
-        const pct = _pomoState.remaining / total;
+        const pct = Math.max(0, Math.min(1, _pomoState.remaining / total));
         circEl.style.strokeDasharray  = circumference;
         circEl.style.strokeDashoffset = circumference * (1-pct);
         circEl.className = 'hab-pomo-progress ' + _pomoState.phase;
@@ -24533,90 +24833,178 @@ function updatePomoDisplay() {
     }
 }
 
-// ── CÁLCULO DELTA: persistencia del Pomodoro en segundo plano ──
+// ── CÁLCULO DELTA: persistencia del Pomodoro (hora real) ──────
 const POMO_DELTA_KEY = 'jch_pomo_delta_v1';
 
+// Guarda el estado ABSOLUTO (hora de fin si corre, tiempo restante si está en pausa), la configuración y el
+// hábito vinculado. Ya no recalcula la hora de fin a partir de un contador atrasado (eso causaba la carrera
+// que perdía tiempo al volver). Si no hay nada que recordar (inactivo, trabajo completo), borra el guardado.
 function pomoSaveDelta() {
-    if (!_pomoState.running) { localStorage.removeItem(POMO_DELTA_KEY); return; }
-    localStorage.setItem(POMO_DELTA_KEY, JSON.stringify({
-        phase: _pomoState.phase,
-        targetEndTs: Date.now() + _pomoState.remaining * 1000,
-        sessions: _pomoState.sessions,
-        todaySessions: _pomoState.todaySessions
-    }));
+    try {
+        const idle = !_pomoState.running && _pomoState.phase==='work' && _pomoState.remaining >= _pomoState.total;
+        if (idle) { localStorage.removeItem(POMO_DELTA_KEY); return; }
+        const m = pomoMins();
+        localStorage.setItem(POMO_DELTA_KEY, JSON.stringify({
+            running: _pomoState.running,
+            phase: _pomoState.phase,
+            endTs: _pomoState.running ? _pomoState.endTs : 0,
+            remaining: _pomoState.remaining,
+            total: _pomoState.total,
+            workMins: m.work,
+            breakMins: m.brk,
+            habitId: window._pomoHabitVal || '',
+            sessions: _pomoState.sessions,
+            todaySessions: _pomoState.todaySessions
+        }));
+    } catch (e) {}
+}
+
+// Aviso (usa la cola de avisos si ya cargó; si no, el aviso clásico)
+function _pomoToast(msg, bg, delay) {
+    setTimeout(function() {
+        try {
+            const t = document.getElementById('habStreakToast');
+            if (t) { t.textContent = msg; t.style.background = bg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); }
+        } catch (e) {}
+    }, delay || 0);
+}
+function _pomoAgo(ms) {
+    const m = Math.round(ms / 60000);
+    return m < 1 ? 'hace un momento' : (m < 60 ? 'hace ' + m + ' min' : 'hace ' + Math.round(m/60) + ' h');
+}
+
+// Sesiones de hoy: se leen del guardado (y se reinician cada día), no solo de memoria
+function _pomoLoadToday() {
+    try {
+        const pomo = JSON.parse(localStorage.getItem(POMO_KEY)||'{}');
+        _pomoState.todaySessions = (pomo.todayDate === todayKey()) ? (pomo.todaySessions||0) : 0;
+    } catch (e) {}
+}
+
+// Recompensa de una sesión de trabajo completada (una sola vez por fase)
+function _pomoAwardSession(lateMs) {
+    _pomoState.sessions++;
+    // Guardar sesión y dar recompensa
+    const pomo=JSON.parse(localStorage.getItem(POMO_KEY)||'{}');
+    const _tk = todayKey();
+    if (pomo.todayDate !== _tk) { pomo.todayDate = _tk; pomo.todaySessions = 0; }
+    pomo.totalSessions=(pomo.totalSessions||0)+1;
+    pomo.todaySessions=(pomo.todaySessions||0)+1;
+    localStorage.setItem(POMO_KEY,JSON.stringify(pomo));
+    _pomoState.todaySessions = pomo.todaySessions;
+    const hero=loadHero(); hero.xp=(hero.xp||0)+15; hero.coins=(hero.coins||0)+5; saveHero(hero);
+    // Marcar hábito vinculado
+    const habSel=document.getElementById('habPomoHabitSel');
+    if(habSel&&habSel.value&&typeof habitPlus==='function') habitPlus(habSel.value,null);
+    _pomoToast('🍅 ¡Sesión Pomodoro completada! +15 XP +5🪙' + (lateMs > 2500 ? ' · terminó ' + _pomoAgo(lateMs) : ''), 'linear-gradient(135deg,#ef4444,#dc2626)', lateMs > 2500 ? 1500 : 0);
+    if(typeof playSparkleSound==='function') playSparkleSound();
+}
+
+// Pone el estado al día con la hora real. Si una fase terminó mientras la app estaba en segundo plano o
+// cerrada, se completa UNA vez (con su recompensa) y se encadena según la hora real; pero no arranca sola
+// una fase de trabajo que nadie vio (si el descanso también venció, queda lista para pulsar ▶ Iniciar).
+function pomoAdvance() {
+    let guard = 0;
+    while (_pomoState.running && Date.now() >= _pomoState.endTs && guard++ < 4) {
+        const late = Date.now() - _pomoState.endTs;
+        const seen = late <= 2500;                     // fin visto en pantalla (primer plano)
+        const m = pomoMins();
+        if (_pomoState.phase==='work') {
+            _pomoAwardSession(late);
+            _pomoState.phase='break';
+            _pomoState.total=m.brk*60;
+            _pomoState.endTs = (seen ? Date.now() : _pomoState.endTs) + _pomoState.total*1000;
+        } else {
+            _pomoState.phase='work';
+            _pomoState.total=m.work*60;
+            if (seen) {
+                _pomoState.endTs = Date.now() + _pomoState.total*1000;
+                if(typeof playSparkleSound==='function') playSparkleSound();
+            } else {
+                clearInterval(_pomoInterval);
+                _pomoState.running=false;
+                _pomoState.remaining=_pomoState.total;
+                _pomoToast('🟢 Descanso terminado ' + _pomoAgo(late) + ' · pulsa ▶ Iniciar para otra sesión', 'linear-gradient(135deg,#059669,#10b981)', 1200);
+                break;
+            }
+        }
+    }
+    if (_pomoState.running) _pomoState.remaining = Math.max(0, Math.ceil((_pomoState.endTs - Date.now()) / 1000));
 }
 
 function pomoRestoreDelta() {
+    _pomoLoadToday();
     let raw;
     try { raw = JSON.parse(localStorage.getItem(POMO_DELTA_KEY) || 'null'); } catch (e) { raw = null; }
-    if (!raw) return;
+    if (!raw || !raw.phase) { updatePomoDisplay(); return; }
     clearInterval(_pomoInterval);
+    // Recuperar la configuración con la que se estaba trabajando
+    const wIn = document.getElementById('habPomoWork'), bIn = document.getElementById('habPomoBreak');
+    if (wIn && raw.workMins) wIn.value = raw.workMins;
+    if (bIn && raw.breakMins) bIn.value = raw.breakMins;
+    // Recuperar el hábito vinculado (se perdía al recargar y la sesión dejaba de marcarlo)
+    if (raw.habitId && typeof window.selectPomoHabit === 'function') {
+        try {
+            const hh = loadHabits().find(h => h.id === raw.habitId);
+            if (hh) window.selectPomoHabit(hh.id, (hh.emoji||'🌿')+' '+hh.name);
+        } catch (e) {}
+    }
     _pomoState.phase = raw.phase;
-    _pomoState.remaining = Math.max(0, Math.round((raw.targetEndTs - Date.now()) / 1000));
+    _pomoState.total = raw.total || ((raw.phase==='work' ? (raw.workMins||25) : (raw.breakMins||5)) * 60);
     _pomoState.sessions = raw.sessions || _pomoState.sessions;
-    _pomoState.todaySessions = raw.todaySessions || _pomoState.todaySessions;
-    _pomoState.running = true;
-    _pomoInterval = setInterval(pomoTick, 1000);
-    updatePomoDisplay();
-}
-
-function pomoTick() {
-    _pomoState.remaining--;
-    if (_pomoState.remaining <= 0) {
-        // Cambiar fase
-        const workMins  = parseInt(document.getElementById('habPomoWork')?.value  || 25);
-        const breakMins = parseInt(document.getElementById('habPomoBreak')?.value || 5);
-        if (_pomoState.phase==='work') {
-            _pomoState.sessions++;
-            _pomoState.todaySessions++;
-            _pomoState.phase='break';
-            _pomoState.remaining=breakMins*60;
-            // Guardar sesión y dar recompensa
-            const pomo=JSON.parse(localStorage.getItem(POMO_KEY)||'{}');
-            pomo.totalSessions=(pomo.totalSessions||0)+1;
-            pomo.todaySessions=(pomo.todaySessions||0)+1;
-            localStorage.setItem(POMO_KEY,JSON.stringify(pomo));
-            const hero=loadHero(); hero.xp=(hero.xp||0)+15; hero.coins=(hero.coins||0)+5; saveHero(hero);
-            // Marcar hábito vinculado
-            const habSel=document.getElementById('habPomoHabitSel');
-            if(habSel&&habSel.value&&typeof habitPlus==='function') habitPlus(habSel.value,null);
-            const t=document.getElementById('habStreakToast');
-            if(t){t.textContent='🍅 ¡Sesión Pomodoro completada! +15 XP +5🪙';t.style.background='linear-gradient(135deg,#ef4444,#dc2626)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-            if(typeof playSparkleSound==='function') playSparkleSound();
-        } else {
-            _pomoState.phase='work';
-            _pomoState.remaining=workMins*60;
-        }
+    if (raw.running && raw.endTs) {
+        _pomoState.running = true;
+        _pomoState.endTs = raw.endTs;
+        pomoAdvance();
+        if (_pomoState.running) _pomoInterval = setInterval(pomoTick, 500);
+    } else {
+        _pomoState.running = false;
+        _pomoState.remaining = Math.max(0, Math.min(_pomoState.total, raw.remaining != null ? raw.remaining : _pomoState.total));
     }
     pomoSaveDelta();
     updatePomoDisplay();
 }
 
+function pomoTick() {
+    if (!_pomoState.running) return;
+    const before = _pomoState.phase + _pomoState.total;
+    pomoAdvance();
+    if (before !== _pomoState.phase + _pomoState.total || !_pomoState.running) pomoSaveDelta();   // cambió de fase / se detuvo
+    updatePomoDisplay();
+}
+
 window.togglePomo = function() {
     if (_pomoState.running) {
-        clearInterval(_pomoInterval); _pomoState.running=false;
-        localStorage.removeItem(POMO_DELTA_KEY);
+        pomoAdvance();                       // por si la fase ya había terminado sin que se notara
+        if (_pomoState.running) {
+            clearInterval(_pomoInterval); _pomoState.running=false;
+            _pomoState.remaining = Math.max(0, Math.ceil((_pomoState.endTs - Date.now()) / 1000));   // pausa exacta
+        }
     } else {
+        if (_pomoState.remaining <= 0) _pomoState.remaining = _pomoState.total;
         _pomoState.running=true;
-        pomoSaveDelta();
-        _pomoInterval = setInterval(pomoTick, 1000);
+        _pomoState.endTs = Date.now() + _pomoState.remaining*1000;
+        clearInterval(_pomoInterval);
+        _pomoInterval = setInterval(pomoTick, 500);
     }
+    pomoSaveDelta();
     updatePomoDisplay();
 };
 
 window.resetPomo = function() {
     clearInterval(_pomoInterval);
     localStorage.removeItem(POMO_DELTA_KEY);
-    const workMins=parseInt(document.getElementById('habPomoWork')?.value||25);
-    _pomoState={running:false,phase:'work',remaining:workMins*60,sessions:_pomoState.sessions,todaySessions:_pomoState.todaySessions};
+    const workMins=pomoMins().work;
+    _pomoState={running:false,phase:'work',remaining:workMins*60,total:workMins*60,endTs:0,sessions:_pomoState.sessions,todaySessions:_pomoState.todaySessions};
     updatePomoDisplay();
 };
 
-// Recalcular al volver a primer plano / cargar la app (motor de Cálculo Delta)
+// Al pasar a segundo plano: guardar el estado absoluto. Al volver: ponerse al día con la hora real al instante.
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') pomoSaveDelta();
-    else if (document.visibilityState === 'visible') pomoRestoreDelta();
+    else if (document.visibilityState === 'visible') pomoTick();
 });
+window.addEventListener('pagehide', pomoSaveDelta);
 window.addEventListener('beforeunload', pomoSaveDelta);
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', pomoRestoreDelta);
@@ -24626,9 +25014,11 @@ if (document.readyState === 'loading') {
 
 window.updatePomoConfig = function() {
     if(!_pomoState.running) {
-        const workMins=parseInt(document.getElementById('habPomoWork')?.value||25);
+        const workMins=pomoMins().work;
         _pomoState.remaining=workMins*60;
+        _pomoState.total=workMins*60;
         _pomoState.phase='work';
+        pomoSaveDelta();
         updatePomoDisplay();
     }
 };
@@ -26262,6 +26652,24 @@ window.recalcHeroStats = recalcHeroStats;
 
     function _tmClearDelta() { localStorage.removeItem(TM_DELTA_KEY); }
 
+    // Tras una recarga/cierre de la app, recuperar el último bloque de estudio y volver a enlazar el paso
+    // del temporizador con su casilla. Así, al terminar, el paso se marca/tacha/mueve y da su recompensa
+    // UNA sola vez (en vez de reclamarla "huérfana"). Devuelve true si encontró el paso.
+    function _tmRelinkStep(stepId) {
+        try {
+            if (window.jchStudyBlock) window.jchStudyBlock.restore();   // no hace nada si ya hay un bloque activo
+            if (typeof window._injectTimerBtns === 'function') window._injectTimerBtns();
+            var items = document.querySelectorAll('#dynamicChecklistContainer .check-item, #completedTasksContainer .check-item');
+            for (var i = 0; i < items.length; i++) {
+                var cb = items[i].querySelector('.rutina-cb');
+                if (!cb || cb.checked || !items[i]._tmTitle) continue;
+                var id = 'paso_' + String(items[i]._tmTitle || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').substring(0,40) + '_' + items[i]._tmMins;
+                if (id === stepId) { _tmTargetCb = cb; return true; }
+            }
+        } catch (e) {}
+        return false;
+    }
+
     // Reabrir automáticamente el modal si la app se cerró por completo
     // mientras un temporizador de paso seguía corriendo
     function _tmColdRestore() {
@@ -26274,7 +26682,7 @@ window.recalcHeroStats = recalcHeroStats;
             if (Date.now() - saved.targetEndTs < 24 * 60 * 60 * 1000) {
                 window.openStepTimer(saved.title, saved.desc, saved.minutes, saved.coins, saved.xp, saved.stepId);
                 _tmSecondsLeft = 0;
-                _tmOrphan = { coins: saved.coins, xp: saved.xp };
+                _tmOrphan = _tmRelinkStep(saved.stepId) ? null : { coins: saved.coins, xp: saved.xp };
                 _updateRing();
                 _tmPlaySound('complete');
                 _tmWin();
@@ -26283,7 +26691,7 @@ window.recalcHeroStats = recalcHeroStats;
             return;
         }
         window.openStepTimer(saved.title, saved.desc, saved.minutes, saved.coins, saved.xp, saved.stepId);
-        _tmOrphan = { coins: saved.coins, xp: saved.xp };
+        _tmOrphan = _tmRelinkStep(saved.stepId) ? null : { coins: saved.coins, xp: saved.xp };
         _tmTargetEndTs = saved.targetEndTs;
         _tmRunning = true;
         var btn = document.getElementById('_tmBtnStart');
@@ -26483,6 +26891,7 @@ var _tmTargetCb = null; // referencia al checkbox del paso activo
             var titleMatch = rawText.match(/^\s*(?:\d+\.\s*)?([^\n]{3,80})/);
             var title = titleMatch ? titleMatch[1].trim() : ('Paso ' + mins + ' min');
             var desc  = rawText.replace(title, '').trim().substring(0, 120);
+            item._tmTitle = title; item._tmMins = mins; // para reenlazar el paso tras restaurar el bloque (ver _tmRelinkStep)
             var btn = document.createElement('button');
             btn.className = 'step-timer-btn';
             btn.innerHTML = '<span class="step-timer-btn-icon">⏱</span>' + mins + 'm';
