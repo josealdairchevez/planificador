@@ -17,7 +17,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v35';
+const CACHE_VERSION = 'v36';
 const CACHE_NAME = 'planificador-jch-' + CACHE_VERSION;
 
 const ASSETS_PROPIOS = [
@@ -311,12 +311,17 @@ function _timerNotifOpts(rec, live) {
     data: { jchTimer: true, id: rec.id, url: './index.html' }
   };
 }
+const _shownAt = new Map();
 async function _showTimerNotif(rec, live) {
+  const k0 = _snapKey(rec.snap || {});
+  _shownAt.set(rec.id, Date.now());
   const o = _timerNotifOpts(rec, live);
   try { await self.registration.showNotification(rec.title || 'Reloj', o); }
   catch (err) { delete o.actions; try { await self.registration.showNotification(rec.title || 'Reloj', o); } catch (_) {} }
   // Si el reloj se detuvo/limpió mientras se estaba mostrando (el bucle va por segundo), no dejar la notificación viva
-  if (typeof _recs !== 'undefined' && !_recs.has(rec.id)) await _closeTimerNotif(rec.id);
+  if (typeof _recs !== 'undefined' && !_recs.has(rec.id)) { await _closeTimerNotif(rec.id); return; }
+  // Si el estado cambió (pausa/reanudar) mientras se mostraba, lo que quedó en pantalla es el estado viejo: mostrar el actual
+  if (typeof _recs !== 'undefined' && _snapKey(rec.snap || {}) !== k0 && _recs.get(rec.id) === rec) await _showTimerNotif(rec, live);
 }
 async function _closeTimerNotif(id) {
   try { (await self.registration.getNotifications({ tag: 'jch-timer-' + id })).forEach(n => n.close()); } catch (_) {}
@@ -348,7 +353,7 @@ async function _tickLoop(gen) {
       const live = run.filter(r => r.snap.endTs > now);
       const ended = run.filter(r => r.snap.endTs <= now && r.snap.endTs > now - 3600000 && !_endedShown.has(r.id + '|' + r.snap.endTs));
       ended.forEach(r => _endedShown.add(r.id + '|' + r.snap.endTs));
-      await Promise.all(live.concat(ended).map(r => _showTimerNotif(r)));
+      await Promise.all(live.concat(ended).filter(r => now - (_shownAt.get(r.id) || 0) > 700).map(r => _showTimerNotif(r)));
       if (!live.length) return;
       await _sleepToSecond();
     }
@@ -368,8 +373,10 @@ self.addEventListener('message', e => {
   const d = e.data;
   if (!d) return;
   if (d.type === 'JCH_TIMER_NOTIFY' && d.rec && d.rec.id) {
+    const prev = _recs.get(d.rec.id);
+    const same = !!prev && prev.title === d.rec.title && prev.desc === d.rec.desc && _snapKey(prev.snap || {}) === _snapKey(d.rec.snap || {});
     _recs.set(d.rec.id, d.rec); _lastPing = Date.now();
-    e.waitUntil(tPut(d.rec).then(() => _showTimerNotif(d.rec)).then(() => _ensureLoop()).catch(() => {}));
+    e.waitUntil(tPut(d.rec).then(() => same ? null : _showTimerNotif(d.rec)).then(() => _ensureLoop()).catch(() => {}));
   } else if (d.type === 'JCH_TIMER_CLEAR' && d.id) {
     _recs.delete(d.id);
     e.waitUntil(tDel(d.id).then(() => _closeTimerNotif(d.id)).catch(() => {}));
@@ -391,37 +398,37 @@ async function _focusOrOpenApp() {
 self.addEventListener('notificationclick', e => {
   const n = e.notification, d = (n && n.data) || {};
   if (!d.jchTimer) return;
-  n.close();
   const id = d.id, action = e.action || '';
+  const at = Date.now();
+  // Android/Chrome retiran la notificación al tocarla (también un botón) y desde JS no se puede impedir. Para que no se note,
+  // NO se cierra ni se espera nada: lo primero es volver a mostrar la MISMA notificación (mismo tag) ya con el estado nuevo,
+  // calculado en memoria. Después se guarda, se avisa a la app o se deja la acción pendiente.
   const work = (async () => {
-    const at = Date.now();
-    let rec = null;
-    try { rec = await tGet(id); } catch (_) {}
+    let rec = _recs.get(id) || null;
+    if (!rec) { try { rec = await tGet(id); } catch (_) {} if (rec) _recs.set(id, rec); }   // SW recién despertado
+    const isAct = action === 'pause' || action === 'resume' || action === 'stop';
+    let applied = false, from = '';
+    if (isAct && rec) {
+      from = _snapKey(rec.snap || {});
+      if (action === 'stop') { _recs.delete(id); applied = true; }
+      else { const ns = _snapApply(rec.snap || {}, action, at); if (ns) { rec.snap = ns; applied = true; } }
+    }
+    // 1) volver a mostrar ya (pausa / reanudar / toque en el cuerpo); en "detener" se cierra
+    if (rec && action !== 'stop' && (applied || !isAct)) await _showTimerNotif(rec);
+    if (action === 'stop') { try { n.close(); } catch (_) {} await _closeTimerNotif(id); }
+    // 2) persistir
+    if (rec && applied) { try { if (action === 'stop') await tDel(id); else await tPut(rec); } catch (_) {} }
     const cls = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-
-    if (action === 'pause' || action === 'resume' || action === 'stop') {
-      let applied = false, from = '';
-      if (rec) {
-        from = _snapKey(rec.snap || {});
-        if (action === 'stop') { await tDel(id); _recs.delete(id); applied = true; }
-        else {
-          const ns = _snapApply(rec.snap || {}, action, at);
-          if (ns) { rec.snap = ns; await tPut(rec); _recs.set(id, rec); applied = true; }
-        }
-      }
+    if (isAct) {
       // App abierta (aunque en segundo plano): ella aplica la acción con la hora real del toque.
       cls.forEach(c => { try { c.postMessage({ type: 'JCH_TIMER_ACTION', id, action, at }); } catch (_) {} });
       // App cerrada: se deja pendiente para aplicarla al abrir
       if (applied && !cls.length) { try { await pAdd({ id, action, at, from }); } catch (_) {} }
-      if (rec && action !== 'stop') {
-        if (applied) await _showTimerNotif(rec);
-        else await _focusOrOpenApp();                             // el reloj ya había terminado: abrir la app
-      }
+      if (rec && action !== 'stop' && !applied) await _focusOrOpenApp();   // el reloj ya había terminado: abrir la app
       return;
     }
-    // Toque en el cuerpo: abrir/enfocar la app y mantener la notificación
+    // Toque en el cuerpo: abrir/enfocar la app
     await _focusOrOpenApp();
-    if (rec) await _showTimerNotif(rec);
   })();
   self._jchLastClick = work;                                      // (pruebas)
   try { e.waitUntil(work.then(() => _ensureLoop()).catch(() => {})); } catch (_) {}
