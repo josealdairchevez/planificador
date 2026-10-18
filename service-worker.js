@@ -17,7 +17,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v34';
+const CACHE_VERSION = 'v35';
 const CACHE_NAME = 'planificador-jch-' + CACHE_VERSION;
 
 const ASSETS_PROPIOS = [
@@ -281,15 +281,29 @@ function _snapApply(s, action, at) {
   return null;
 }
 
-function _timerNotifOpts(rec) {
+function _timerNotifOpts(rec, live) {
+  if (live === undefined) live = true;
   const s = rec.snap || {};
+  const pad = n => String(n).padStart(2, '0');
   const hm = ts => new Date(ts).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
-  const mmss = sec => { sec = Math.max(0, sec | 0); return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); };
-  const pre = rec.desc ? rec.desc + ' · ' : '';
-  const body = s.running ? pre + 'Termina a las ' + hm(s.endTs) : pre + '⏸ En pausa · quedan ' + mmss(s.remaining);
-  const actions = s.running
-    ? [{ action: 'pause', title: '⏸ Pausar' },   { action: 'stop', title: '⏹ Detener' }]
-    : [{ action: 'resume', title: '▶ Reanudar' }, { action: 'stop', title: '⏹ Detener' }];
+  const clock = sec => {
+    sec = Math.max(0, sec | 0);
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), x = sec % 60;
+    return (h ? h + ':' + pad(m) : pad(m)) + ':' + pad(x);
+  };
+  const pre = rec.desc ? rec.desc + '\n' : '';
+  let body, actions;
+  if (s.running) {
+    const left = Math.ceil((s.endTs - Date.now()) / 1000);
+    if (left <= 0) { body = pre + '⌛ Terminó a las ' + hm(s.endTs) + ' · abre la app'; actions = []; }
+    else {
+      body = pre + (live ? '⏳ Quedan ' + clock(left) + ' · ' : '') + 'Termina a las ' + hm(s.endTs);
+      actions = [{ action: 'pause', title: '⏸ Pausar' }, { action: 'stop', title: '⏹ Detener' }];
+    }
+  } else {
+    body = pre + '⏸ En pausa · quedan ' + clock(s.remaining);
+    actions = [{ action: 'resume', title: '▶ Reanudar' }, { action: 'stop', title: '⏹ Detener' }];
+  }
   return {
     body, actions,
     icon: './icon-192.png', badge: './icon-192.png',
@@ -297,22 +311,71 @@ function _timerNotifOpts(rec) {
     data: { jchTimer: true, id: rec.id, url: './index.html' }
   };
 }
-async function _showTimerNotif(rec) {
-  const o = _timerNotifOpts(rec);
+async function _showTimerNotif(rec, live) {
+  const o = _timerNotifOpts(rec, live);
   try { await self.registration.showNotification(rec.title || 'Reloj', o); }
   catch (err) { delete o.actions; try { await self.registration.showNotification(rec.title || 'Reloj', o); } catch (_) {} }
+  // Si el reloj se detuvo/limpió mientras se estaba mostrando (el bucle va por segundo), no dejar la notificación viva
+  if (typeof _recs !== 'undefined' && !_recs.has(rec.id)) await _closeTimerNotif(rec.id);
 }
 async function _closeTimerNotif(id) {
   try { (await self.registration.getNotifications({ tag: 'jch-timer-' + id })).forEach(n => n.close()); } catch (_) {}
+}
+
+// ── CUENTA REGRESIVA VIVA ────────────────────────────────────────
+// Una notificación web no puede contar sola (eso solo lo hacen las notificaciones nativas de Android), así que el SW
+// la reemplaza cada segundo con el tiempo restante calculado con la hora real. El bucle vive dentro de un waitUntil
+// (Chrome permite ~5 min por evento): se renueva con cada aviso de la página (JCH_TIMER_PING) y, si la página deja
+// de avisar (segundo plano / congelada), se detiene al llegar al límite dejando solo la hora de fin.
+let _LOOP_MAX = 270000;
+const _recs = new Map();
+const _endedShown = new Set();
+let _loopGen = 0, _loopStart = 0, _loopRunning = false, _lastPing = 0;
+const tAll = () => _tx('timers', 'readonly', s => s.getAll());
+const _sleepToSecond = () => new Promise(r => setTimeout(r, 1000 - (Date.now() % 1000) + 5));
+async function _loadRecs() {
+  if (_recs.size) return;
+  try { (await tAll() || []).forEach(r => _recs.set(r.id, r)); } catch (_) {}
+}
+const _runningRecs = () => [..._recs.values()].filter(r => r.snap && r.snap.running);
+async function _tickLoop(gen) {
+  _loopRunning = true; _loopStart = Date.now();
+  try {
+    await _loadRecs();
+    while (gen === _loopGen && Date.now() - _loopStart < _LOOP_MAX) {
+      const now = Date.now();
+      const run = _runningRecs();
+      const live = run.filter(r => r.snap.endTs > now);
+      const ended = run.filter(r => r.snap.endTs <= now && r.snap.endTs > now - 3600000 && !_endedShown.has(r.id + '|' + r.snap.endTs));
+      ended.forEach(r => _endedShown.add(r.id + '|' + r.snap.endTs));
+      await Promise.all(live.concat(ended).map(r => _showTimerNotif(r)));
+      if (!live.length) return;
+      await _sleepToSecond();
+    }
+    // Límite alcanzado: si la página no sigue avisando, dejar el texto fijo (sin cuenta que quedaría atrasada)
+    if (gen === _loopGen && Date.now() - _lastPing > 4000) {
+      const now = Date.now();
+      await Promise.all(_runningRecs().filter(r => r.snap.endTs > now).map(r => _showTimerNotif(r, false)));
+    }
+  } finally { if (gen === _loopGen) _loopRunning = false; }
+}
+function _ensureLoop() {
+  if (_loopRunning && Date.now() - _loopStart < _LOOP_MAX * 0.9) return Promise.resolve();
+  return _tickLoop(++_loopGen);
 }
 
 self.addEventListener('message', e => {
   const d = e.data;
   if (!d) return;
   if (d.type === 'JCH_TIMER_NOTIFY' && d.rec && d.rec.id) {
-    e.waitUntil(tPut(d.rec).then(() => _showTimerNotif(d.rec)).catch(() => {}));
+    _recs.set(d.rec.id, d.rec); _lastPing = Date.now();
+    e.waitUntil(tPut(d.rec).then(() => _showTimerNotif(d.rec)).then(() => _ensureLoop()).catch(() => {}));
   } else if (d.type === 'JCH_TIMER_CLEAR' && d.id) {
+    _recs.delete(d.id);
     e.waitUntil(tDel(d.id).then(() => _closeTimerNotif(d.id)).catch(() => {}));
+  } else if (d.type === 'JCH_TIMER_PING') {
+    _lastPing = Date.now();
+    e.waitUntil(_loadRecs().then(() => _ensureLoop()).catch(() => {}));
   }
 });
 
@@ -340,10 +403,10 @@ self.addEventListener('notificationclick', e => {
       let applied = false, from = '';
       if (rec) {
         from = _snapKey(rec.snap || {});
-        if (action === 'stop') { await tDel(id); applied = true; }
+        if (action === 'stop') { await tDel(id); _recs.delete(id); applied = true; }
         else {
           const ns = _snapApply(rec.snap || {}, action, at);
-          if (ns) { rec.snap = ns; await tPut(rec); applied = true; }
+          if (ns) { rec.snap = ns; await tPut(rec); _recs.set(id, rec); applied = true; }
         }
       }
       // App abierta (aunque en segundo plano): ella aplica la acción con la hora real del toque.
@@ -361,5 +424,5 @@ self.addEventListener('notificationclick', e => {
     if (rec) await _showTimerNotif(rec);
   })();
   self._jchLastClick = work;                                      // (pruebas)
-  try { e.waitUntil(work); } catch (_) {}
+  try { e.waitUntil(work.then(() => _ensureLoop()).catch(() => {})); } catch (_) {}
 });
