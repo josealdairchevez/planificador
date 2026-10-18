@@ -22597,6 +22597,8 @@ window.habCronoStart = function() {
         if (timeEl)   { timeEl.classList.add('running'); }
         _cronoState.interval = setInterval(habCronoTick, 100);
         habCronoSaveDelta();
+        var _inf = document.getElementById('habCronoLapInfo');
+        if (_inf) _inf.textContent = 'Toma ' + (_cronoState.laps.length + 1) + ' en curso…';
     } else {
         // Detener y guardar toma automáticamente
         habCronoLap();
@@ -22663,9 +22665,11 @@ function habCronoTick() {
 var CRONO_DELTA_KEY = 'jch_crono_delta_v1';
 
 function habCronoSaveDelta() {
-    if (!_cronoState.running) { localStorage.removeItem(CRONO_DELTA_KEY); return; }
+    // Antes solo se guardaba con la toma corriendo: al detener una toma y cerrar la app se perdían las tomas ya hechas.
+    // Ahora se guarda mientras haya una toma en curso O tomas registradas (se borra solo con Reset / sin nada que guardar).
+    if (!_cronoState.running && !(_cronoState.laps && _cronoState.laps.length)) { localStorage.removeItem(CRONO_DELTA_KEY); return; }
     localStorage.setItem(CRONO_DELTA_KEY, JSON.stringify({
-        startTs:    _cronoState.startTs,
+        startTs:    _cronoState.running ? _cronoState.startTs : 0,
         habitId:    _cronoState.habitId,
         habitName:  _cronoState.habitName,
         habitColor: _cronoState.habitColor,
@@ -22676,30 +22680,47 @@ function habCronoSaveDelta() {
 function habCronoRestoreDelta() {
     var raw;
     try { raw = JSON.parse(localStorage.getItem(CRONO_DELTA_KEY) || 'null'); } catch (e) { raw = null; }
-    if (!raw || !raw.startTs) return;
+    if (!raw || (!raw.startTs && !(raw.laps && raw.laps.length))) return;
 
+    var wasRunning = !!raw.startTs;
     _cronoState.habitId    = raw.habitId;
     _cronoState.habitName  = raw.habitName;
     _cronoState.habitColor = raw.habitColor;
     _cronoState.laps       = raw.laps || [];
-    _cronoState.startTs    = raw.startTs;
-    _cronoState.running    = true;
+    _cronoState.startTs    = wasRunning ? raw.startTs : 0;
+    _cronoState.running    = wasRunning;
 
-    var sel = document.getElementById('habCronoSelect');
-    if (sel && raw.habitId) sel.value = raw.habitId;
+    // Mostrar el hábito elegido (antes, tras cerrar la app, el selector decía "Selecciona un hábito" con la toma corriendo)
+    if (raw.habitId) {
+        window._cronoHabitVal = raw.habitId;
+        habCronoRefreshSelect();
+        var sel = document.getElementById('habCronoSelect');
+        if (sel) sel.value = raw.habitId;
+        var ddLbl = document.getElementById('ddCronoHabitLabel');
+        if (ddLbl && raw.habitName) ddLbl.textContent = raw.habitName;
+    }
     var btnStart = document.getElementById('habCronoBtnStart');
     var btnLap   = document.getElementById('habCronoBtnLap');
     var timeEl   = document.getElementById('habCronoTime');
-    if (btnStart) { btnStart.textContent = '⏹ Detener'; btnStart.className = 'hab-crono-btn stop'; }
-    if (btnLap)   { btnLap.style.display = ''; }
-    if (timeEl)   { timeEl.classList.add('running'); }
-
+    var info     = document.getElementById('habCronoLapInfo');
     clearInterval(_cronoState.interval);
-    _cronoState.interval = setInterval(habCronoTick, 100);
-    habCronoTick();
+    if (wasRunning) {
+        if (btnStart) { btnStart.textContent = '⏹ Detener'; btnStart.className = 'hab-crono-btn stop'; }
+        if (btnLap)   { btnLap.style.display = ''; }
+        if (timeEl)   { timeEl.classList.add('running'); }
+        if (info)     { info.textContent = 'Toma ' + (_cronoState.laps.length + 1) + ' en curso…'; }
+        _cronoState.interval = setInterval(habCronoTick, 100);
+        habCronoTick();
+    } else {
+        if (btnStart) { btnStart.textContent = '▶ Iniciar'; btnStart.className = 'hab-crono-btn start'; }
+        if (btnLap)   { btnLap.style.display = 'none'; }
+        if (timeEl)   { timeEl.textContent = '00:00.0'; timeEl.classList.remove('running'); }
+        if (info)     { info.textContent = 'Toma ' + _cronoState.laps.length + ' registrada · Inicia otra'; }
+    }
     habCronoRenderLaps();
     habCronoRenderStats();
     habCronoRenderChart();
+    habCronoRenderHistory();
 }
 
 document.addEventListener('visibilitychange', function() {
@@ -22707,6 +22728,7 @@ document.addEventListener('visibilitychange', function() {
     else if (document.visibilityState === 'visible') habCronoRestoreDelta();
 });
 window.addEventListener('beforeunload', habCronoSaveDelta);
+window.addEventListener('pagehide', habCronoSaveDelta);
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', habCronoRestoreDelta);
 } else {
@@ -24754,10 +24776,16 @@ window.openChest = function(id) {
 
     // Validar requisito
     const todayDone = habits.filter(h=>(h.log||[]).includes(today)).length;
-    const weekDone  = 30; // simplificado
+    // Hábitos completados en la semana actual (lun-dom): mismo cálculo que muestra el cofre (antes era un 30 fijo
+    // y el cofre semanal se podía reclamar sin cumplir 20)
+    const weekDone  = (()=>{
+        let c=0; const d=new Date(), dow=(d.getDay()+6)%7; d.setDate(d.getDate()-dow);
+        for(let i=0;i<7;i++){ const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; habits.forEach(h=>{if((h.log||[]).includes(k))c++;}); d.setDate(d.getDate()+1); }
+        return c;
+    })();
     const topStreak = habits.reduce((m,h)=>Math.max(m,calcQStreak(h)),0);
     if (id==='daily'  && (todayDone<3 || hero.chestClaimedToday===today)) return;
-    if (id==='weekly' && (hero.chestClaimedWeek===getWeekKey())) return;
+    if (id==='weekly' && (weekDone<20 || hero.chestClaimedWeek===getWeekKey())) return;
     if (id==='streak' && (topStreak<7 || hero.chestClaimedStreak===today)) return;
     if (id==='boss'   && ((hero.bossesDefeated||0)<1 || (hero.chestClaimedBossCount||0)>=(hero.bossesDefeated||0))) return;
 
@@ -24772,7 +24800,24 @@ window.openChest = function(id) {
     if (id==='streak') hero.chestClaimedStreak = today;
     if (id==='boss')   hero.chestClaimedBossCount = hero.bossesDefeated||0;
 
+    // Subida de nivel con el XP del cofre (antes el XP se acumulaba por encima del tope sin subir de nivel)
+    let _chestLeveled = false;
+    while (hero.xp >= (hero.xpNext||100)) {
+        hero.xp -= (hero.xpNext||100);
+        hero.level  = (hero.level||1) + 1;
+        hero.xpNext = Math.round((hero.xpNext||100) * 1.5);
+        hero.maxHp  = (hero.maxHp||100) + (hero.class==='warrior' ? 30 : 20);
+        hero.hp     = hero.maxHp;
+        _chestLeveled = true;
+    }
     saveHero(hero);
+    // Igual que al completar un hábito: sumar también a la maestría global y refrescar los contadores al instante
+    try { if (typeof window.addGlobalReward==='function') window.addGlobalReward(ch.reward.xp, ch.reward.gold); } catch(e) {}
+    try {
+        document.querySelectorAll('#habShopGold,#habRewardGold').forEach(el => { el.textContent = '🪙 ' + (hero.coins||0); });
+        if (typeof window.renderHabHero==='function') window.renderHabHero();
+        if (_chestLeveled && typeof window.showLevelUp==='function') window.showLevelUp(hero.level);
+    } catch(e) {}
     if (typeof createFireworks==='function') createFireworks();
     if (typeof playSparkleSound==='function') playSparkleSound();
 
@@ -24781,6 +24826,81 @@ window.openChest = function(id) {
 
     renderHabChests();
 };
+
+// ── REGISTRO DE RELOJES → NOTIFICACIÓN PERSISTENTE (Fase 1) ───────
+// Cada reloj informa su estado (update) y el service worker muestra una notificación con título, descripción y
+// botones Pausar / Reanudar / Detener. Si se toca un botón con la app cerrada, el SW deja la acción pendiente
+// (IndexedDB) y la página la lee al abrir (drainPending). Se puede desactivar con localStorage jch_timer_notif_off=1.
+(function () {
+    var DB = 'jch_timers_v1', handlers = {}, lastSig = {};
+    function enabled() { try { return localStorage.getItem('jch_timer_notif_off') !== '1'; } catch (e) { return true; } }
+    function granted() { return ('Notification' in window) && Notification.permission === 'granted'; }
+    function toSW(msg) {
+        try {
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.ready.then(function (reg) {
+                var w = reg.active || navigator.serviceWorker.controller;
+                if (w) w.postMessage(msg);
+            }).catch(function () {});
+        } catch (e) {}
+    }
+    window.jchTimerNotif = {
+        update: function (rec) {
+            if (!rec || !rec.id || !enabled() || !granted()) return;
+            var s = rec.snap || {};
+            var sig = [rec.id, rec.title, rec.desc, s.phase, s.running, s.running ? s.endTs : s.remaining].join('|');
+            if (lastSig[rec.id] === sig) return;
+            lastSig[rec.id] = sig;
+            toSW({ type: 'JCH_TIMER_NOTIFY', rec: rec });
+        },
+        clear: function (id) {
+            if (lastSig[id] === '__clear') return;
+            lastSig[id] = '__clear';
+            toSW({ type: 'JCH_TIMER_CLEAR', id: id });
+        },
+        onAction: function (id, fn) { handlers[id] = fn; },
+        ensurePermission: function (cb) {
+            try {
+                if (!enabled() || !('Notification' in window) || Notification.permission !== 'default') return;
+                var r = Notification.requestPermission();
+                if (r && r.then) r.then(function (p) { if (p === 'granted' && cb) cb(); });
+            } catch (e) {}
+        },
+        drainPending: function (id) {
+            return new Promise(function (res) {
+                try {
+                    var rq = indexedDB.open(DB, 1);
+                    rq.onupgradeneeded = function () {
+                        var d = rq.result;
+                        if (!d.objectStoreNames.contains('timers'))  d.createObjectStore('timers',  { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('pending')) d.createObjectStore('pending', { keyPath: 'k', autoIncrement: true });
+                    };
+                    rq.onerror = function () { res([]); };
+                    rq.onsuccess = function () {
+                        var db = rq.result, out = [];
+                        try {
+                            var t = db.transaction('pending', 'readwrite'), st = t.objectStore('pending');
+                            var cur = st.openCursor();
+                            cur.onsuccess = function () {
+                                var c = cur.result;
+                                if (c) { if (c.value.id === id) { out.push(c.value); c.delete(); } c.continue(); }
+                            };
+                            t.oncomplete = function () { db.close(); out.sort(function (a, b) { return a.at - b.at; }); res(out); };
+                            t.onerror = t.onabort = function () { db.close(); res([]); };
+                        } catch (e) { try { db.close(); } catch (_) {} res([]); }
+                    };
+                } catch (e) { res([]); }
+            });
+        }
+    };
+    // Acción tocada en la notificación con la app abierta (o en segundo plano): el SW la reenvía aquí
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', function (e) {
+            var d = e.data;
+            if (d && d.type === 'JCH_TIMER_ACTION' && handlers[d.id]) { try { handlers[d.id](d.action, d.at); } catch (err) {} }
+        });
+    }
+})();
 
 // ── TEMPORIZADOR POMODORO ─────────────────────────────────────
 let _pomoInterval = null;
@@ -24842,7 +24962,7 @@ const POMO_DELTA_KEY = 'jch_pomo_delta_v1';
 function pomoSaveDelta() {
     try {
         const idle = !_pomoState.running && _pomoState.phase==='work' && _pomoState.remaining >= _pomoState.total;
-        if (idle) { localStorage.removeItem(POMO_DELTA_KEY); return; }
+        if (idle) { localStorage.removeItem(POMO_DELTA_KEY); if (window.jchTimerNotif) window.jchTimerNotif.clear('pomo'); return; }
         const m = pomoMins();
         localStorage.setItem(POMO_DELTA_KEY, JSON.stringify({
             running: _pomoState.running,
@@ -24856,7 +24976,70 @@ function pomoSaveDelta() {
             sessions: _pomoState.sessions,
             todaySessions: _pomoState.todaySessions
         }));
+        _pomoNotifySync();
     } catch (e) {}
+}
+
+// Notificación persistente del Pomodoro (título por fase, hábito vinculado como descripción, estado absoluto)
+function _pomoNotifySync() {
+    try {
+        const J = window.jchTimerNotif; if (!J) return;
+        let desc = '';
+        try {
+            const hid = window._pomoHabitVal;
+            if (hid) { const hh = loadHabits().find(h => h.id === hid); if (hh) desc = (hh.emoji||'🌿') + ' ' + hh.name; }
+        } catch (e) {}
+        J.update({
+            id: 'pomo', kind: 'countdown',
+            title: _pomoState.phase === 'work' ? '🍅 Pomodoro · Trabajo' : '☕ Pomodoro · Descanso',
+            desc: desc,
+            snap: { phase: _pomoState.phase, running: _pomoState.running, endTs: _pomoState.running ? _pomoState.endTs : 0,
+                    remaining: _pomoState.remaining, total: _pomoState.total }
+        });
+    } catch (e) {}
+}
+
+// Misma matemática en la página y en el service worker (_snapApply). Devuelve el nuevo estado o null si no cambia.
+function _pomoSnapKey(s) { return (s.phase || '') + '|' + (s.running ? 'r' + s.endTs : 'p' + s.remaining); }
+function _pomoSnapApply(s, action, at) {
+    s = Object.assign({}, s);
+    if (action === 'pause') {
+        if (!s.running || s.endTs <= at) return null;           // la fase ya había terminado antes del toque
+        s.remaining = Math.max(0, Math.ceil((s.endTs - at) / 1000)); s.running = false; s.endTs = 0; return s;
+    }
+    if (action === 'resume') {
+        if (s.running) return null;
+        if (!(s.remaining > 0)) s.remaining = s.total;
+        s.running = true; s.endTs = at + s.remaining * 1000; return s;
+    }
+    return null;
+}
+// Acción tocada en la notificación con la app ya abierta (o en segundo plano): se aplica con la hora real del toque
+function _pomoRemoteAction(action, at) {
+    if (action === 'stop') { window.resetPomo(); return; }
+    const cur = { phase: _pomoState.phase, running: _pomoState.running, endTs: _pomoState.running ? _pomoState.endTs : 0,
+                  remaining: _pomoState.remaining, total: _pomoState.total };
+    const n = _pomoSnapApply(cur, action, at || Date.now());
+    if (!n) { pomoTick(); return; }
+    clearInterval(_pomoInterval);
+    _pomoState.running = n.running; _pomoState.endTs = n.endTs; _pomoState.remaining = n.remaining;
+    if (n.running) { _pomoInterval = setInterval(pomoTick, 500); pomoTick(); }
+    pomoSaveDelta();
+    updatePomoDisplay();
+}
+if (window.jchTimerNotif) window.jchTimerNotif.onAction('pomo', _pomoRemoteAction);
+// Acciones que se tocaron en la notificación con la app CERRADA: se aplican al estado guardado antes de restaurarlo
+function _pomoApplyPending(list) {
+    if (!list || !list.length) return;
+    let raw; try { raw = JSON.parse(localStorage.getItem(POMO_DELTA_KEY) || 'null'); } catch (e) { raw = null; }
+    if (!raw) return;
+    for (const p of list) {
+        if (_pomoSnapKey(raw) !== p.from) continue;             // ya no corresponde al estado guardado
+        if (p.action === 'stop') { localStorage.removeItem(POMO_DELTA_KEY); return; }
+        const n = _pomoSnapApply(raw, p.action, p.at);
+        if (n) raw = n;
+    }
+    localStorage.setItem(POMO_DELTA_KEY, JSON.stringify(raw));
 }
 
 // Aviso (usa la cola de avisos si ya cargó; si no, el aviso clásico)
@@ -24986,6 +25169,7 @@ window.togglePomo = function() {
         _pomoState.endTs = Date.now() + _pomoState.remaining*1000;
         clearInterval(_pomoInterval);
         _pomoInterval = setInterval(pomoTick, 500);
+        if (window.jchTimerNotif) window.jchTimerNotif.ensurePermission(_pomoNotifySync);   // primera vez: pedir permiso de notificaciones
     }
     pomoSaveDelta();
     updatePomoDisplay();
@@ -24994,6 +25178,7 @@ window.togglePomo = function() {
 window.resetPomo = function() {
     clearInterval(_pomoInterval);
     localStorage.removeItem(POMO_DELTA_KEY);
+    if (window.jchTimerNotif) window.jchTimerNotif.clear('pomo');
     const workMins=pomoMins().work;
     _pomoState={running:false,phase:'work',remaining:workMins*60,total:workMins*60,endTs:0,sessions:_pomoState.sessions,todaySessions:_pomoState.todaySessions};
     updatePomoDisplay();
@@ -25006,10 +25191,23 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', pomoSaveDelta);
 window.addEventListener('beforeunload', pomoSaveDelta);
+let _pomoBooted = false;
+function _pomoBoot() {
+    if (_pomoBooted) return; _pomoBooted = true;
+    const go = (list) => { try { _pomoApplyPending(list); } catch (e) {} pomoRestoreDelta(); };
+    if (!window.jchTimerNotif) { go([]); return; }
+    let done = false;
+    const fin = (list) => {
+        if (done) { if (list && list.length) list.forEach(p => { try { _pomoRemoteAction(p.action, p.at); } catch (e) {} }); return; }
+        done = true; go(list || []);
+    };
+    window.jchTimerNotif.drainPending('pomo').then(fin, () => fin([]));
+    setTimeout(() => fin([]), 1500);                            // por si IndexedDB tarda: se restaura igual
+}
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', pomoRestoreDelta);
+    document.addEventListener('DOMContentLoaded', _pomoBoot);
 } else {
-    pomoRestoreDelta();
+    _pomoBoot();
 }
 
 window.updatePomoConfig = function() {
@@ -33777,10 +33975,16 @@ window._checkAchievementGems = function() {
     if (!_showing) _processNext();
   }
 
+  // Con la app en segundo plano el navegador pausa requestAnimationFrame: el aviso quedaba "visible" para
+  // siempre al volver (el temporizador de ocultado corría antes que el rAF que lo mostraba). Ahora los avisos
+  // esperan a que la app esté visible, y un rAF atrasado nunca reabre un aviso que ya se ocultó.
+  var _tok = 0;
   function _processNext() {
     if (_queue.length === 0) { _showing = false; return; }
+    if (document.visibilityState === 'hidden') { _showing = false; return; }   // se mostrará al volver (ver listener abajo)
     _showing = true;
     _ensureContainer();
+    var _myTok = ++_tok;
 
     var item  = _queue.shift();
     var toast = document.getElementById('_tqToast');
@@ -33804,13 +34008,14 @@ window._checkAchievementGems = function() {
     // Mostrar
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
-        toast.classList.add('tq-visible');
+        if (_myTok === _tok) toast.classList.add('tq-visible');
       });
     });
 
     // Auto-ocultar
     if (_timer) clearTimeout(_timer);
     _timer = setTimeout(function() {
+      _tok++;   // invalida cualquier rAF pendiente de este aviso
       toast.classList.add('tq-hiding');
       toast.classList.remove('tq-visible');
       setTimeout(function() {
@@ -33915,6 +34120,11 @@ window._checkAchievementGems = function() {
     },
     size: function() { return _queue.length; },
   };
+
+  // Al volver a primer plano, mostrar los avisos que quedaron esperando
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && !_showing && _queue.length) _processNext();
+  });
 
   // Inicializar el contenedor al cargar
   if (document.readyState === 'loading') {
@@ -34576,8 +34786,11 @@ window._showMiniToast2 = function(opts) {
       ch = CHESTS.find(function(c) { return c.id === id; });
     } catch(e) {}
 
-    // Llamar al original
+    // Llamar al original. El aviso de "Tesoro reclamado" solo debe salir si el cofre realmente se entregó:
+    // antes salía en cada toque (aunque no cumplieras el requisito o ya lo hubieras reclamado).
+    var _heroBefore = localStorage.getItem('jch_hero_v1');
     if (typeof _prevChest === 'function') _prevChest.apply(this, arguments);
+    if (localStorage.getItem('jch_hero_v1') === _heroBefore) return;
 
     if (!ch) return;
     setTimeout(function() {
