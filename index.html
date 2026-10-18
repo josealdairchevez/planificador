@@ -24832,7 +24832,7 @@ window.openChest = function(id) {
 // botones Pausar / Reanudar / Detener. Si se toca un botón con la app cerrada, el SW deja la acción pendiente
 // (IndexedDB) y la página la lee al abrir (drainPending). Se puede desactivar con localStorage jch_timer_notif_off=1.
 (function () {
-    var DB = 'jch_timers_v1', handlers = {}, lastSig = {};
+    var DB = 'jch_timers_v1', handlers = {}, lastSig = {}, running = {}, pingT = null;
     function enabled() { try { return localStorage.getItem('jch_timer_notif_off') !== '1'; } catch (e) { return true; } }
     function granted() { return ('Notification' in window) && Notification.permission === 'granted'; }
     function toSW(msg) {
@@ -24844,16 +24844,28 @@ window.openChest = function(id) {
             }).catch(function () {});
         } catch (e) {}
     }
+    // Mientras haya un reloj corriendo, la página avisa al SW cada 2 s para que mantenga viva la cuenta regresiva
+    // de la notificación (el SW la reemplaza cada segundo con la hora real).
+    function syncPing() {
+        var any = false; for (var k in running) { if (running[k]) { any = true; break; } }
+        if (any && !pingT) { toSW({ type: 'JCH_TIMER_PING' }); pingT = setInterval(function () { toSW({ type: 'JCH_TIMER_PING' }); }, 2000); }
+        else if (!any && pingT) { clearInterval(pingT); pingT = null; }
+    }
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && pingT) toSW({ type: 'JCH_TIMER_PING' });
+    });
     window.jchTimerNotif = {
         update: function (rec) {
             if (!rec || !rec.id || !enabled() || !granted()) return;
             var s = rec.snap || {};
+            running[rec.id] = !!s.running; syncPing();
             var sig = [rec.id, rec.title, rec.desc, s.phase, s.running, s.running ? s.endTs : s.remaining].join('|');
             if (lastSig[rec.id] === sig) return;
             lastSig[rec.id] = sig;
             toSW({ type: 'JCH_TIMER_NOTIFY', rec: rec });
         },
         clear: function (id) {
+            running[id] = false; syncPing();
             if (lastSig[id] === '__clear') return;
             lastSig[id] = '__clear';
             toSW({ type: 'JCH_TIMER_CLEAR', id: id });
