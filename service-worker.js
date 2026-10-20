@@ -17,7 +17,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v36';
+const CACHE_VERSION = 'v39';
 const CACHE_NAME = 'planificador-jch-' + CACHE_VERSION;
 
 const ASSETS_PROPIOS = [
@@ -211,6 +211,8 @@ self.addEventListener('periodicsync', e => {
 // ── RECEPTOR FIREBASE BACKGROUND (El eslabón perdido) ──
 messaging.onBackgroundMessage((payload) => {
   console.log('[Service Worker] Paquete FCM recibido en background:', payload);
+  // Los avisos de relojes (timer_tick / timer_end) los atiende el manejador de "RELOJES" (listener 'push' más abajo)
+  { const _ty = payload && payload.data && payload.data.type; if (_ty === 'timer_tick' || _ty === 'timer_end') return; }
 
   // Extraemos los datos enviados desde index.js
   const notificationTitle = payload.notification?.title || payload.data?.title || 'Planificador JCH';
@@ -297,7 +299,7 @@ function _timerNotifOpts(rec, live) {
     const left = Math.ceil((s.endTs - Date.now()) / 1000);
     if (left <= 0) { body = pre + '⌛ Terminó a las ' + hm(s.endTs) + ' · abre la app'; actions = []; }
     else {
-      body = pre + (live ? '⏳ Quedan ' + clock(left) + ' · ' : '') + 'Termina a las ' + hm(s.endTs);
+      body = pre + (live ? '⏳ Quedan ' + clock(left) + ' · Termina a las ' + hm(s.endTs) : '⏳ Termina a las ' + hm(s.endTs) + ' · abre la app para ver la cuenta');
       actions = [{ action: 'pause', title: '⏸ Pausar' }, { action: 'stop', title: '⏹ Detener' }];
     }
   } else {
@@ -330,9 +332,11 @@ async function _closeTimerNotif(id) {
 // ── CUENTA REGRESIVA VIVA ────────────────────────────────────────
 // Una notificación web no puede contar sola (eso solo lo hacen las notificaciones nativas de Android), así que el SW
 // la reemplaza cada segundo con el tiempo restante calculado con la hora real. El bucle vive dentro de un waitUntil
-// (Chrome permite ~5 min por evento): se renueva con cada aviso de la página (JCH_TIMER_PING) y, si la página deja
-// de avisar (segundo plano / congelada), se detiene al llegar al límite dejando solo la hora de fin.
+// (Chrome permite ~5 min por evento y cierra el SW si un evento los excede): cada aviso de la página (JCH_TIMER_PING)
+// cede un nuevo tramo de _LOOP_MAX desde ESE instante, así que mientras la página avise la cuenta no se corta, y cuando
+// la página se congela (otra app) la cuenta sigue ~_LOOP_MAX más y luego queda solo la hora de fin.
 let _LOOP_MAX = 270000;
+let _holdAt = 0, _holdUntil = 0, _loopP = null;
 const _recs = new Map();
 const _endedShown = new Set();
 let _loopGen = 0, _loopStart = 0, _loopRunning = false, _lastPing = 0;
@@ -347,17 +351,20 @@ async function _tickLoop(gen) {
   _loopRunning = true; _loopStart = Date.now();
   try {
     await _loadRecs();
-    while (gen === _loopGen && Date.now() - _loopStart < _LOOP_MAX) {
+    while (gen === _loopGen && Date.now() < _holdUntil - 1500) {
       const now = Date.now();
       const run = _runningRecs();
       const live = run.filter(r => r.snap.endTs > now);
       const ended = run.filter(r => r.snap.endTs <= now && r.snap.endTs > now - 3600000 && !_endedShown.has(r.id + '|' + r.snap.endTs));
       ended.forEach(r => _endedShown.add(r.id + '|' + r.snap.endTs));
-      await Promise.all(live.concat(ended).filter(r => now - (_shownAt.get(r.id) || 0) > 700).map(r => _showTimerNotif(r)));
+      await Promise.all(
+        live.filter(r => now - (_shownAt.get(r.id) || 0) > 700).map(r => _showTimerNotif(r))
+          .concat(ended.map(r => r.alert ? _endAlert(r, null).then(res => { if (res !== 'visible') return _closeTimerNotif(r.id); }) : _showTimerNotif(r)))
+      );
       if (!live.length) return;
       await _sleepToSecond();
     }
-    // Límite alcanzado: si la página no sigue avisando, dejar el texto fijo (sin cuenta que quedaría atrasada)
+    // Tramo agotado: si la página no sigue avisando, dejar solo la hora de fin (sin una cuenta que quedaría atrasada)
     if (gen === _loopGen && Date.now() - _lastPing > 4000) {
       const now = Date.now();
       await Promise.all(_runningRecs().filter(r => r.snap.endTs > now).map(r => _showTimerNotif(r, false)));
@@ -365,9 +372,84 @@ async function _tickLoop(gen) {
   } finally { if (gen === _loopGen) _loopRunning = false; }
 }
 function _ensureLoop() {
-  if (_loopRunning && Date.now() - _loopStart < _LOOP_MAX * 0.9) return Promise.resolve();
-  return _tickLoop(++_loopGen);
+  const now = Date.now();
+  const need = !_loopRunning || now - _holdAt > 15000;      // cada evento retiene al SW como mucho _LOOP_MAX (límite de 5 min de Chrome)
+  if (need) { _holdAt = now; _holdUntil = now + _LOOP_MAX; }
+  if (!_loopRunning) _loopP = _tickLoop(++_loopGen);
+  return need ? Promise.race([_loopP, new Promise(r => setTimeout(r, _LOOP_MAX))]) : Promise.resolve();
 }
+
+// ── AVISO DE FIN (Fase 2) ────────────────────────────────────────
+// Se muestra con sonido/vibración y etiqueta propia (jch-timer-alert-<id>) para que no lo pise la cuenta regresiva.
+// Lo puede disparar el propio SW (si sigue vivo cuando el reloj termina) o el push del servidor (timer_end);
+// la clave id|hora-de-fin evita avisar dos veces.
+async function _hasVisibleClient() {
+  try {
+    const cls = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    return cls.some(c => c.visibilityState === 'visible');
+  } catch (_) { return false; }
+}
+async function _endAlert(rec, info) {
+  const id = rec.id, s = rec.snap || {};
+  const base = (info && info.base) || s.endTs;
+  const key = id + '|' + base;
+  const al = (info && info.title) ? info : (rec.alert || {});
+  try {
+    if (await _hasVisibleClient()) return 'visible';          // con la app a la vista, ella misma avisa
+    const tag = 'jch-timer-alert-' + id;
+    const old = await self.registration.getNotifications({ tag });
+    if (old.some(n => n.data && n.data.key === key)) return 'dup';
+    await self.registration.showNotification(al.title || '⏰ Reloj terminado', {
+      body: al.body || 'Tu reloj terminó.',
+      icon: './icon-192.png', badge: './icon-192.png',
+      vibrate: [400, 100, 400, 100, 800],
+      requireInteraction: true, tag, renotify: true, silent: false,
+      data: { jchTimer: true, ended: true, id, key, url: './index.html' }
+    });
+    return 'shown';
+  } catch (_) { return 'err'; }
+}
+// Chrome exige mostrar algo al recibir un push: si no es para este dispositivo se muestra y se cierra al instante
+async function _voidNotif() {
+  try {
+    await self.registration.showNotification('Planificador JCH', { tag: 'jch-void', silent: true, body: ' ', icon: './icon-192.png' });
+    (await self.registration.getNotifications({ tag: 'jch-void' })).forEach(n => n.close());
+  } catch (_) {}
+}
+async function _onTimerPush(d) {
+  await _loadRecs();
+  const isTick = d.type === 'timer_tick';
+  const ids = String(isTick ? (d.ids || d.id || 'pomo') : (d.id || 'pomo')).split(',');
+  let handled = false;
+  for (const id of ids) {
+    let rec = _recs.get(id);
+    if (!rec) { try { rec = await tGet(id); } catch (_) {} if (rec) _recs.set(id, rec); }
+    if (!rec || !rec.snap) continue;                                // este dispositivo no tiene ese reloj
+    const s = rec.snap, now = Date.now();
+    if (isTick) {
+      handled = true;
+      if (!(s.running && s.endTs <= now)) await _showTimerNotif(rec);   // (los ya terminados los avisa el bucle)
+    } else {
+      const base = Number(d.base) || 0;
+      const same = s.running && Math.abs((s.endTs || 0) - base) < 5000;                                 // la página/SW no se enteró: sigue "corriendo"
+      const adv  = s.running && (s.endTs || 0) > base + 5000 && (s.phase || '') !== (d.phase || '');    // la página ya pasó a la fase siguiente
+      if (!same && !adv) continue;                                  // pausado / detenido / reiniciado: aviso viejo
+      handled = true;
+      const res = await _endAlert(rec, { title: d.title, body: d.body, base: String(base) });
+      if (same && res !== 'visible') { _endedShown.add(id + '|' + s.endTs); await _closeTimerNotif(id); }
+    }
+  }
+  if (isTick) await _ensureLoop();
+  if (!handled) await _voidNotif();
+}
+self.addEventListener('push', e => {
+  let d = null;
+  try { const p = e.data && e.data.json(); d = p && p.data; } catch (_) {}
+  if (!d || (d.type !== 'timer_tick' && d.type !== 'timer_end')) return;
+  const w = _onTimerPush(d).catch(() => {});
+  self._jchLastPush = w;                                            // (pruebas)
+  e.waitUntil(w);
+});
 
 self.addEventListener('message', e => {
   const d = e.data;
@@ -398,6 +480,12 @@ async function _focusOrOpenApp() {
 self.addEventListener('notificationclick', e => {
   const n = e.notification, d = (n && n.data) || {};
   if (!d.jchTimer) return;
+  if (d.ended) {                                                   // aviso de fin: solo abrir la app (no volver a mostrar la cuenta)
+    try { n.close(); } catch (_) {}
+    const w = _focusOrOpenApp(); self._jchLastClick = w;
+    try { e.waitUntil(w); } catch (_) {}
+    return;
+  }
   const id = d.id, action = e.action || '';
   const at = Date.now();
   // Android/Chrome retiran la notificación al tocarla (también un botón) y desde JS no se puede impedir. Para que no se note,
