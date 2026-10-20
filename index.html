@@ -10839,76 +10839,113 @@ window.hrpFilter        = _hrpApplyFilter;
            throttlea los setInterval. Al volver, calculamos el
            tiempo real transcurrido con Date.now() y lo aplicamos.
            ═══════════════════════════════════════════════════════ */
-        let _bgHiddenAt = null; // Momento en que la página quedó oculta
+        /* v37 — RELOJ REAL: el temporizador se calcula con la hora de fin (_mtEndTs) y no
+           contando ticks; así no se retrasa, no descuenta dos veces al volver, sigue "corriendo"
+           aunque el sistema congele la página, y se reanuda si la app se cerró. */
+        let _mtEndTs = 0;           // instante absoluto en que termina el bloque
+        let _mtPendingModal = null; // aviso de fin si el bloque terminó con la app oculta
 
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                // Página oculta — guardar timestamp actual
-                _bgHiddenAt = Date.now();
-                // Guardar estado en localStorage por si se cierra la app
-                if (isRunning) {
-                    localStorage.setItem('jch_timer_state', JSON.stringify({
-                        timeLeft,
-                        isRunning,
-                        isWorkMode,
-                        currentModeMins,
-                        hiddenAt: _bgHiddenAt
-                    }));
+        function _mtSave() {
+            try {
+                if (!isRunning || !_mtEndTs) return;
+                localStorage.setItem('studyStats_v18', JSON.stringify(courseStats)); // el estudio acumulado viaja junto con el estado
+                localStorage.setItem('jch_timer_state', JSON.stringify({
+                    v: 2, endTs: _mtEndTs, timeLeft: timeLeft, isWorkMode: isWorkMode, currentModeMins: currentModeMins,
+                    course: document.getElementById('activeCourseSelect').value,
+                    session: document.getElementById('activeSessionSelect').value
+                }));
+            } catch(e) {}
+        }
+
+        function _mainTick() {
+            if (!isRunning) return;
+            const now = Date.now();
+            let remaining = Math.max(0, Math.ceil((_mtEndTs - now) / 1000));
+            if (remaining > timeLeft + 2) { _mtEndTs = now + timeLeft * 1000; remaining = timeLeft; } // reloj del sistema atrasado: re-anclar
+            const elapsed = timeLeft - remaining;
+            if (elapsed <= 0) return;
+            timeLeft = remaining; lastTickTime = now;
+            updateDisplay(); updateRealTimeTracking(elapsed);
+            if (timeLeft <= 0) _mtFinish(); else _mtSave();
+        }
+
+        function _mtFinish() {
+            clearInterval(timer); timer = null; isRunning = false; _mtEndTs = 0; setBtnVisuals('idle');
+            const key = getActiveKey(); if(isWorkMode && key && courseStats[key]) { courseStats[key].pomo++; localStorage.setItem('studyStats_v18', JSON.stringify(courseStats)); }
+            if(isWorkMode) {
+                // ECONOMÍA INTELIGENTE ESCALABLE PARA POMODOROS
+                let mStats = JSON.parse(localStorage.getItem('studyMasteryStats_v3')) || { level: 1 };
+                let lvlMultiplier = 1 + (mStats.level * 0.10); // +10% de bonus por cada nivel
+                let gainedXP = Math.floor(currentModeMins * 12 * lvlMultiplier); // 12 XP por min base
+                let gainedCoins = Math.floor(currentModeMins * 0.8 * lvlMultiplier); // Escasez: 0.8 Monedas por min base
+                if (document.hidden) {
+                    // Con la app oculta no corren las animaciones (requestAnimationFrame): se paga directo y el aviso queda pendiente
+                    addGlobalReward(gainedXP, gainedCoins);
+                    _mtPendingModal = ['¡Bloque de Acción Logrado!', `Has sumado ${currentModeMins} minutos a tu meta.`];
+                } else {
+                    const timerRect = document.getElementById('timer').getBoundingClientRect();
+                    let sX = timerRect.left + timerRect.width / 2; let sY = timerRect.top + timerRect.height / 2;
+                    shootStar(sX, sY, document.getElementById('coinContainer'), 'gold', () => { 
+                        addGlobalReward(0, gainedCoins); 
+                        const coinCont = document.getElementById('coinContainer'); 
+                        if(coinCont) { coinCont.classList.remove('coin-bump'); void coinCont.offsetWidth; coinCont.classList.add('coin-bump'); }
+                    });
+                    shootStar(sX, sY, document.getElementById('xpContainer'), 'purple', () => { 
+                        addGlobalReward(gainedXP, 0); 
+                        const xpCont = document.getElementById('xpContainer'); 
+                        if(xpCont) { xpCont.classList.remove('xp-bump'); void xpCont.offsetWidth; xpCont.classList.add('xp-bump'); }
+                        showVictoryModal('¡Bloque de Acción Logrado!', `Has sumado ${currentModeMins} minutos a tu meta.`); 
+                    });
                 }
             } else {
-                // Página visible de nuevo — calcular tiempo transcurrido en segundo plano
-                if (_bgHiddenAt !== null && isRunning) {
-                    const elapsed = Math.floor((Date.now() - _bgHiddenAt) / 1000);
-                    if (elapsed > 0) {
-                        // Aplicar el tiempo transcurrido en segundo plano
-                        timeLeft = Math.max(0, timeLeft - elapsed);
-                        updateDisplay();
-                        if (isWorkMode) updateRealTimeTracking(elapsed);
-                        lastTickTime = Date.now(); // Resetear para el próximo tick
-
-                        // Si el timer terminó mientras estaba en segundo plano
-                        if (timeLeft <= 0) {
-                            clearInterval(timer); timer = null; isRunning = false;
-                            setBtnVisuals('idle');
-                            const key = getActiveKey();
-                            if (isWorkMode && key && courseStats[key]) {
-                                courseStats[key].pomo++;
-                                localStorage.setItem('studyStats_v18', JSON.stringify(courseStats));
-                            }
-                            timeLeft = currentModeMins * 60; updateDisplay(); loadCourseStatsUI();
-                            if (isWorkMode) {
-                                showVictoryModal('¡Bloque Completado! ✅', `Timer terminó mientras estabas en otra app. +${currentModeMins} min registrados.`);
-                            } else {
-                                showVictoryModal('¡Descanso Finalizado!', 'Regresa a tu posición de enfoque.');
-                            }
-                        }
-                    }
-                }
-                _bgHiddenAt = null;
-                // Limpiar estado guardado
-                localStorage.removeItem('jch_timer_state');
+                if (document.hidden) _mtPendingModal = ['¡Descanso Finalizado!', 'Regresa a tu posición de enfoque.'];
+                else showVictoryModal('¡Descanso Finalizado!', 'Regresa a tu posición de enfoque.');
             }
-        });
+            timeLeft = currentModeMins * 60; updateDisplay(); loadCourseStatsUI(); 
+        }
 
-        // Recuperar estado si la página se recargó mientras el timer estaba corriendo
-        (function recoverTimerState() {
-            try {
-                const saved = JSON.parse(localStorage.getItem('jch_timer_state'));
-                if (saved && saved.isRunning && saved.hiddenAt) {
-                    const elapsed = Math.floor((Date.now() - saved.hiddenAt) / 1000);
-                    timeLeft = Math.max(0, saved.timeLeft - elapsed);
-                    currentModeMins = saved.currentModeMins;
-                    isWorkMode = saved.isWorkMode;
-                    localStorage.removeItem('jch_timer_state');
-                    // Actualizar display con el tiempo recuperado
-                    setTimeout(() => { updateDisplay(); }, 200);
-                }
-            } catch(e) {}
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) { _mtSave(); return; }
+            // Al volver: se pone al día con la hora real (una sola vez, sin descontar doble)
+            if (isRunning) _mainTick();
+            if (_mtPendingModal) { const m = _mtPendingModal; _mtPendingModal = null; showVictoryModal(m[0], m[1]); }
+        });
+        window.addEventListener('pagehide', _mtSave);
+
+        // Si la app se cerró/el sistema la descartó con el temporizador corriendo: reanudar con la hora real
+        (function _mtColdRestore() {
+            function go() {
+                try {
+                    const raw = localStorage.getItem('jch_timer_state'); if (!raw) return;
+                    const s = JSON.parse(raw);
+                    if (!s || s.v !== 2 || !s.endTs || isRunning) { if (!isRunning) localStorage.removeItem('jch_timer_state'); return; }
+                    const remaining = Math.max(0, Math.ceil((s.endTs - Date.now()) / 1000));
+                    const elapsed = Math.max(0, s.timeLeft - remaining);
+                    const inC = document.getElementById('activeCourseSelect'), inS = document.getElementById('activeSessionSelect');
+                    if (inC && s.course) { inC.value = s.course; const tc = document.getElementById('activeCourseSelectedText'); if (tc) tc.textContent = s.course; }
+                    if (inS && s.session) { inS.value = s.session; const ts = document.getElementById('activeSessionSelectedText'); if (ts) ts.textContent = s.session; }
+                    currentModeMins = s.currentModeMins; isWorkMode = !!s.isWorkMode;
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active-btn'));
+                    const mb = [...document.querySelectorAll('.mode-btn[data-type]')].find(b => b.getAttribute('data-time') === String(currentModeMins) && (b.getAttribute('data-type') === 'work') === isWorkMode) || document.getElementById('customTimeBtn');
+                    if (mb) mb.classList.add('active-btn');
+                    timeLeft = s.timeLeft; _mtEndTs = s.endTs; isRunning = true; lastTickTime = Date.now();
+                    const k = getActiveKey();
+                    if (elapsed > 0 && (!isWorkMode || (k && courseStats[k]))) updateRealTimeTracking(elapsed);
+                    timeLeft = remaining; updateDisplay();
+                    if (remaining <= 0) { _mtFinish(); return; }
+                    setBtnVisuals('run');
+                    timer = setInterval(_mainTick, 1000);
+                    _mtSave();
+                } catch(e) { try { localStorage.removeItem('jch_timer_state'); } catch(_) {} }
+            }
+            if (document.readyState === 'complete') setTimeout(go, 300);
+            else window.addEventListener('load', () => setTimeout(go, 300));
         })();
 
         function updateDisplay() { const display = document.getElementById('timer'); if(!display) return; let m = Math.floor(timeLeft / 60); let s = timeLeft % 60; display.textContent = `${m < 10 ? '0':''}${m}:${s < 10 ? '0':''}${s}`; }
         
         function setBtnVisuals(state) { 
+            if(state !== 'run') { _mtEndTs = 0; try { localStorage.removeItem('jch_timer_state'); } catch(e) {} } // v37: pausa/reinicio/fin → ya no hay temporizador corriendo que restaurar
             const sBtn = document.getElementById('startBtn'); const pBtn = document.getElementById('pauseBtn'); const courseGoalFill = document.getElementById('courseGoalFill');
             if(!sBtn || !pBtn || !courseGoalFill) return;
             if(state === 'run') { sBtn.classList.add('btn-running'); pBtn.classList.remove('btn-paused'); courseGoalFill.classList.add('is-running'); } else if(state === 'pause') { sBtn.classList.remove('btn-running'); pBtn.classList.add('btn-paused'); courseGoalFill.classList.remove('is-running'); } else { sBtn.classList.remove('btn-running'); pBtn.classList.remove('btn-paused'); courseGoalFill.classList.remove('is-running'); } 
@@ -10977,40 +11014,9 @@ window.hrpFilter        = _hrpApplyFilter;
                     }
                     isRunning = true; setBtnVisuals('run'); document.querySelectorAll('.mode-btn').forEach(b => { if(b.getAttribute('data-time')==='custom') b.classList.remove('pulse-gold'); });
                     lastTickTime = Date.now();
-                    timer = setInterval(() => {
-                        let now = Date.now(); let elapsed = Math.round((now - lastTickTime) / 1000);
-                        if (elapsed > 0) {
-                            timeLeft = Math.max(0, timeLeft - elapsed); updateDisplay(); updateRealTimeTracking(elapsed); lastTickTime = now;
-                            if (timeLeft <= 0) { 
-                                clearInterval(timer); isRunning = false; setBtnVisuals('idle'); timer = null; 
-                                const key = getActiveKey(); if(isWorkMode && key && courseStats[key]) { courseStats[key].pomo++; localStorage.setItem('studyStats_v18', JSON.stringify(courseStats)); } 
-                                if(isWorkMode) {
-                                    // ECONOMÍA INTELIGENTE ESCALABLE PARA POMODOROS
-                                    let mStats = JSON.parse(localStorage.getItem('studyMasteryStats_v3')) || { level: 1 };
-                                    let lvlMultiplier = 1 + (mStats.level * 0.10); // +10% de bonus por cada nivel
-                                    let gainedXP = Math.floor(currentModeMins * 12 * lvlMultiplier); // 12 XP por min base
-                                    let gainedCoins = Math.floor(currentModeMins * 0.8 * lvlMultiplier); // Escasez: 0.8 Monedas por min base
-                                    
-                                    const timerRect = document.getElementById('timer').getBoundingClientRect();
-                                    let sX = timerRect.left + timerRect.width / 2; let sY = timerRect.top + timerRect.height / 2;
-                                    shootStar(sX, sY, document.getElementById('coinContainer'), 'gold', () => { 
-                                        addGlobalReward(0, gainedCoins); 
-                                        const coinCont = document.getElementById('coinContainer'); 
-                                        if(coinCont) { coinCont.classList.remove('coin-bump'); void coinCont.offsetWidth; coinCont.classList.add('coin-bump'); }
-                                    });
-                                    shootStar(sX, sY, document.getElementById('xpContainer'), 'purple', () => { 
-                                        addGlobalReward(gainedXP, 0); 
-                                        const xpCont = document.getElementById('xpContainer'); 
-                                        if(xpCont) { xpCont.classList.remove('xp-bump'); void xpCont.offsetWidth; xpCont.classList.add('xp-bump'); }
-                                        showVictoryModal('¡Bloque de Acción Logrado!', `Has sumado ${currentModeMins} minutos a tu meta.`); 
-                                    });
-                                } else {
-                                    showVictoryModal('¡Descanso Finalizado!', 'Regresa a tu posición de enfoque.');
-                                }
-                                timeLeft = currentModeMins * 60; updateDisplay(); loadCourseStatsUI(); 
-                            }
-                        }
-                    }, 1000);
+                    _mtEndTs = lastTickTime + timeLeft * 1000;
+                    timer = setInterval(_mainTick, 1000);
+                    _mtSave();
                 }
             });
         }
@@ -24844,6 +24850,41 @@ window.openChest = function(id) {
             }).catch(function () {});
         } catch (e) {}
     }
+    // ── Fase 2: hora de fin de los relojes corriendo → Firestore (users/{uid}.fcm_timers). La Cloud Function sendTimerAlerts
+    // la usa para avisar al terminar y para mandar un "latido" cada minuto que reactiva la cuenta de la notificación aunque
+    // la app esté cerrada. Solo funciona con sesión iniciada; se puede apagar con localStorage jch_timer_cloud_off=1.
+    var cloud = {}, cloudT = null, cloudLast = '', cloudUsed = false;
+    function cloudOn() { try { return localStorage.getItem('jch_timer_cloud_off') !== '1'; } catch (e) { return true; } }
+    function cloudSet(id, entry) {
+        if (!cloudOn()) return;
+        if (entry) cloud[id] = entry; else delete cloud[id];
+        clearTimeout(cloudT); cloudT = setTimeout(function () { cloudWrite(0); }, 600);
+    }
+    function cloudWrite(attempt) {
+        try {
+            var arr = Object.keys(cloud).map(function (k) { return cloud[k]; });
+            var sig = JSON.stringify(arr);
+            if (sig === cloudLast || (!arr.length && !cloudUsed)) return;          // nada que cambiar (y no escribir al abrir sin relojes)
+            if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
+                if (attempt < 20) cloudT = setTimeout(function () { cloudWrite(attempt + 1); }, 1500); return;
+            }
+            var user = firebase.auth().currentUser;
+            if (!user) { if (attempt < 20) cloudT = setTimeout(function () { cloudWrite(attempt + 1); }, 1500); return; }
+            var until = arr.reduce(function (m, e) { return Math.max(m, e.fireAt || 0); }, 0);
+            if (arr.length) cloudUsed = true;
+            firebase.firestore().collection('users').doc(user.uid)
+                .set({ fcm_timers: arr, fcm_timers_until: until }, { merge: true })
+                .then(function () { cloudLast = sig; })
+                .catch(function (e) { console.warn('[JCH] timers → Firestore:', e && e.message); });
+        } catch (e) {}
+    }
+    function cloudSync(rec) {
+        var s = rec.snap || {};
+        if (s.running && s.endTs > Date.now() + 1000) {
+            var al = rec.alert || {};
+            cloudSet(rec.id, { id: rec.id, fireAt: s.endTs, phase: s.phase || '', title: al.title || rec.title || '', body: al.body || '' });
+        } else cloudSet(rec.id, null);
+    }
     // Mientras haya un reloj corriendo, la página avisa al SW cada 2 s para que mantenga viva la cuenta regresiva
     // de la notificación (el SW la reemplaza cada segundo con la hora real).
     function syncPing() {
@@ -24851,9 +24892,19 @@ window.openChest = function(id) {
         if (any && !pingT) { toSW({ type: 'JCH_TIMER_PING' }); pingT = setInterval(function () { toSW({ type: 'JCH_TIMER_PING' }); }, 2000); }
         else if (!any && pingT) { clearInterval(pingT); pingT = null; }
     }
+    // Avisos de fin (Fase 2): al volver a la app ya no hacen falta
+    function closeAlerts() {
+        try {
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.ready.then(function (reg) {
+                reg.getNotifications().then(function (l) { l.forEach(function (n) { if (n.tag && n.tag.indexOf('jch-timer-alert-') === 0) n.close(); }); });
+            }).catch(function () {});
+        } catch (e) {}
+    }
     document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible' && pingT) toSW({ type: 'JCH_TIMER_PING' });
+        if (document.visibilityState === 'visible') { closeAlerts(); if (pingT) toSW({ type: 'JCH_TIMER_PING' }); }
     });
+    setTimeout(function () { if (document.visibilityState === 'visible') closeAlerts(); }, 1500);
     window.jchTimerNotif = {
         update: function (rec) {
             if (!rec || !rec.id || !enabled() || !granted()) return;
@@ -24863,12 +24914,14 @@ window.openChest = function(id) {
             if (lastSig[rec.id] === sig) return;
             lastSig[rec.id] = sig;
             toSW({ type: 'JCH_TIMER_NOTIFY', rec: rec });
+            cloudSync(rec);
         },
         clear: function (id) {
             running[id] = false; syncPing();
             if (lastSig[id] === '__clear') return;
             lastSig[id] = '__clear';
             toSW({ type: 'JCH_TIMER_CLEAR', id: id });
+            cloudSet(id, null);
         },
         onAction: function (id, fn) { handlers[id] = fn; },
         ensurePermission: function (cb) {
@@ -25005,6 +25058,9 @@ function _pomoNotifySync() {
             id: 'pomo', kind: 'countdown',
             title: _pomoState.phase === 'work' ? '🍅 Pomodoro · Trabajo' : '☕ Pomodoro · Descanso',
             desc: desc,
+            alert: _pomoState.phase === 'work'
+                ? { title: '🍅 ¡Pomodoro completado!', body: (desc ? desc + '\n' : '') + 'Buen trabajo. Hora de descansar ☕' }
+                : { title: '☕ ¡Descanso terminado!', body: 'Vuelve a tu posición de enfoque 💪' },
             snap: { phase: _pomoState.phase, running: _pomoState.running, endTs: _pomoState.running ? _pomoState.endTs : 0,
                     remaining: _pomoState.remaining, total: _pomoState.total }
         });
