@@ -17,7 +17,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v40';
+const CACHE_VERSION = 'v41';
 const CACHE_NAME = 'planificador-jch-' + CACHE_VERSION;
 
 const ASSETS_PROPIOS = [
@@ -476,6 +476,14 @@ self.addEventListener('message', e => {
       if (rec && rec.snap && rec.snap.running && rec.kind !== 'stopwatch') { if (d.alert) rec.alert = d.alert; await _endAlert(rec, null); }
       _recs.delete(d.id); try { await tDel(d.id); } catch (_) {}
       await _closeTimerNotif(d.id);
+    })().catch(() => {}));
+  } else if (d.type === 'JCH_TIMER_CLEAR_ALL') {
+    // El usuario apagó las notificaciones de relojes: borrar relojes, acciones pendientes y notificaciones visibles
+    _recs.clear();
+    e.waitUntil((async () => {
+      try { const all = await tAll(); for (const r of all) { try { await tDel(r.id); } catch (_) {} } } catch (_) {}
+      try { await _tx('pending', 'readwrite', s => s.clear()); } catch (_) {}
+      try { (await self.registration.getNotifications()).forEach(n => { const t = n.tag || ''; if (t.indexOf('jch-timer-') === 0) n.close(); }); } catch (_) {}
     })().catch(() => {}));
   } else if (d.type === 'JCH_TIMER_CLEAR' && d.id) {
     _recs.delete(d.id);
