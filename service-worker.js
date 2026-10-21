@@ -17,7 +17,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v39';
+const CACHE_VERSION = 'v40';
 const CACHE_NAME = 'planificador-jch-' + CACHE_VERSION;
 
 const ASSETS_PROPIOS = [
@@ -267,7 +267,7 @@ const tDel = id  => _tx('timers',  'readwrite', s => s.delete(id));
 const pAdd = p   => _tx('pending', 'readwrite', s => s.add(p));
 
 // Identifica el estado de un reloj (la acción pendiente solo se aplica si la app sigue en ese mismo estado)
-function _snapKey(s) { return (s.phase || '') + '|' + (s.running ? 'r' + s.endTs : 'p' + s.remaining); }
+function _snapKey(s) { return (s.phase || '') + '|' + (s.running ? 'r' + (s.endTs || s.startTs || 0) : 'p' + s.remaining); }
 // Misma matemática que _pomoSnapApply() de la página. Devuelve el nuevo estado o null si no hay cambio.
 function _snapApply(s, action, at) {
   s = Object.assign({}, s);
@@ -295,7 +295,12 @@ function _timerNotifOpts(rec, live) {
   };
   const pre = rec.desc ? rec.desc + '\n' : '';
   let body, actions;
-  if (s.running) {
+  if (rec.kind === 'stopwatch' && s.running) {
+    // Cronómetro: cuenta hacia arriba. s.startTs = instante de inicio de la toma (ya descontado lo acumulado)
+    const up = Math.max(0, Math.floor((Date.now() - s.startTs) / 1000));
+    body = pre + (live ? '⏱ ' + clock(up) + ' · Inició a las ' + hm(s.startTs) : '⏱ Inició a las ' + hm(s.startTs) + ' · abre la app para ver el tiempo');
+    actions = [{ action: 'stop', title: '⏹ Detener' }];
+  } else if (s.running) {
     const left = Math.ceil((s.endTs - Date.now()) / 1000);
     if (left <= 0) { body = pre + '⌛ Terminó a las ' + hm(s.endTs) + ' · abre la app'; actions = []; }
     else {
@@ -347,6 +352,7 @@ async function _loadRecs() {
   try { (await tAll() || []).forEach(r => _recs.set(r.id, r)); } catch (_) {}
 }
 const _runningRecs = () => [..._recs.values()].filter(r => r.snap && r.snap.running);
+const _isLive = (r, now) => r.kind === 'stopwatch' || r.snap.endTs > now;      // el cronómetro no termina solo
 async function _tickLoop(gen) {
   _loopRunning = true; _loopStart = Date.now();
   try {
@@ -354,8 +360,8 @@ async function _tickLoop(gen) {
     while (gen === _loopGen && Date.now() < _holdUntil - 1500) {
       const now = Date.now();
       const run = _runningRecs();
-      const live = run.filter(r => r.snap.endTs > now);
-      const ended = run.filter(r => r.snap.endTs <= now && r.snap.endTs > now - 3600000 && !_endedShown.has(r.id + '|' + r.snap.endTs));
+      const live = run.filter(r => _isLive(r, now));
+      const ended = run.filter(r => r.kind !== 'stopwatch' && r.snap.endTs <= now && r.snap.endTs > now - 3600000 && !_endedShown.has(r.id + '|' + r.snap.endTs));
       ended.forEach(r => _endedShown.add(r.id + '|' + r.snap.endTs));
       await Promise.all(
         live.filter(r => now - (_shownAt.get(r.id) || 0) > 700).map(r => _showTimerNotif(r))
@@ -367,7 +373,7 @@ async function _tickLoop(gen) {
     // Tramo agotado: si la página no sigue avisando, dejar solo la hora de fin (sin una cuenta que quedaría atrasada)
     if (gen === _loopGen && Date.now() - _lastPing > 4000) {
       const now = Date.now();
-      await Promise.all(_runningRecs().filter(r => r.snap.endTs > now).map(r => _showTimerNotif(r, false)));
+      await Promise.all(_runningRecs().filter(r => _isLive(r, now)).map(r => _showTimerNotif(r, false)));
     }
   } finally { if (gen === _loopGen) _loopRunning = false; }
 }
@@ -389,10 +395,12 @@ async function _hasVisibleClient() {
     return cls.some(c => c.visibilityState === 'visible');
   } catch (_) { return false; }
 }
+const _alertedKeys = new Set();
 async function _endAlert(rec, info) {
   const id = rec.id, s = rec.snap || {};
   const base = (info && info.base) || s.endTs;
   const key = id + '|' + base;
+  if (_alertedKeys.has(key)) return 'dup';
   const al = (info && info.title) ? info : (rec.alert || {});
   try {
     if (await _hasVisibleClient()) return 'visible';          // con la app a la vista, ella misma avisa
@@ -406,6 +414,7 @@ async function _endAlert(rec, info) {
       requireInteraction: true, tag, renotify: true, silent: false,
       data: { jchTimer: true, ended: true, id, key, url: './index.html' }
     });
+    _alertedKeys.add(key);
     return 'shown';
   } catch (_) { return 'err'; }
 }
@@ -459,6 +468,15 @@ self.addEventListener('message', e => {
     const same = !!prev && prev.title === d.rec.title && prev.desc === d.rec.desc && _snapKey(prev.snap || {}) === _snapKey(d.rec.snap || {});
     _recs.set(d.rec.id, d.rec); _lastPing = Date.now();
     e.waitUntil(tPut(d.rec).then(() => same ? null : _showTimerNotif(d.rec)).then(() => _ensureLoop()).catch(() => {}));
+  } else if (d.type === 'JCH_TIMER_DONE' && d.id) {
+    // La página terminó el reloj (con la app oculta/en otra app): avisar con sonido y retirar la cuenta regresiva
+    e.waitUntil((async () => {
+      let rec = _recs.get(d.id);
+      if (!rec) { try { rec = await tGet(d.id); } catch (_) {} }
+      if (rec && rec.snap && rec.snap.running && rec.kind !== 'stopwatch') { if (d.alert) rec.alert = d.alert; await _endAlert(rec, null); }
+      _recs.delete(d.id); try { await tDel(d.id); } catch (_) {}
+      await _closeTimerNotif(d.id);
+    })().catch(() => {}));
   } else if (d.type === 'JCH_TIMER_CLEAR' && d.id) {
     _recs.delete(d.id);
     e.waitUntil(tDel(d.id).then(() => _closeTimerNotif(d.id)).catch(() => {}));
