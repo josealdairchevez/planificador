@@ -10845,6 +10845,44 @@ window.hrpFilter        = _hrpApplyFilter;
         let _mtEndTs = 0;           // instante absoluto en que termina el bloque
         let _mtPendingModal = null; // aviso de fin si el bloque terminó con la app oculta
 
+        /* v40 — Notificación persistente del temporizador principal (id 'main'): estado absoluto
+           (hora de fin si corre / segundos restantes si está en pausa). La cuenta viva la dibuja el service worker. */
+        const _MT_PAUSE_TTL = 12 * 3600 * 1000;   // una pausa guardada se retoma solo si tiene menos de 12 h
+        function _mtNotify() {
+            try {
+                const J = window.jchTimerNotif; if (!J) return;
+                if (!isRunning && !(timeLeft > 0 && timeLeft < currentModeMins * 60)) return;
+                const c = document.getElementById('activeCourseSelect'), s = document.getElementById('activeSessionSelect');
+                const desc = (c && c.value ? c.value : '') + (s && s.value ? ' · ' + s.value : '');
+                J.update({
+                    id: 'main', kind: 'countdown',
+                    title: isWorkMode ? '🎯 Estudio · Enfoque' : '☕ Descanso',
+                    desc: desc,
+                    alert: isWorkMode
+                        ? { title: '🎯 ¡Bloque completado!', body: (desc ? desc + '\n' : '') + 'Sumaste ' + currentModeMins + ' min a tu meta 💪' }
+                        : { title: '☕ ¡Descanso terminado!', body: 'Regresa a tu posición de enfoque.' },
+                    snap: { phase: isWorkMode ? 'work' : 'break', running: isRunning, endTs: isRunning ? _mtEndTs : 0, remaining: timeLeft, total: currentModeMins * 60 }
+                });
+            } catch (e) {}
+        }
+        function _mtNotifyClear() { try { if (window.jchTimerNotif) window.jchTimerNotif.clear('main'); } catch (e) {} }
+        function _mtNotifyEnd() { try { const J = window.jchTimerNotif; if (!J) return; if (document.hidden) J.done('main'); else J.clear('main'); } catch (e) {} }
+        // Pausa persistente: se guarda el tiempo restante para reanudar desde la notificación o al reabrir la app
+        function _mtSavePaused() {
+            try {
+                if (isRunning || !(timeLeft > 0) || timeLeft >= currentModeMins * 60) return false;
+                localStorage.setItem('studyStats_v18', JSON.stringify(courseStats));
+                localStorage.setItem('jch_timer_state', JSON.stringify({
+                    v: 2, paused: true, timeLeft: timeLeft, isWorkMode: isWorkMode, currentModeMins: currentModeMins,
+                    course: document.getElementById('activeCourseSelect').value,
+                    session: document.getElementById('activeSessionSelect').value, savedAt: Date.now()
+                }));
+                return true;
+            } catch (e) { return false; }
+        }
+        // El tiempo se reinició (otro modo / tiempo personalizado) mientras estaba en pausa: ya no hay nada que reanudar
+        function _mtOnTimeReset() { if (!isRunning) { try { localStorage.removeItem('jch_timer_state'); } catch (e) {} _mtNotifyClear(); } }
+
         function _mtSave() {
             try {
                 if (!isRunning || !_mtEndTs) return;
@@ -10854,12 +10892,14 @@ window.hrpFilter        = _hrpApplyFilter;
                     course: document.getElementById('activeCourseSelect').value,
                     session: document.getElementById('activeSessionSelect').value
                 }));
+                _mtNotify();
             } catch(e) {}
         }
 
-        function _mainTick() {
+        function _mainTick() { _mtAdvance(Date.now()); }
+        // Pone el temporizador al día con la hora 'now' (que puede ser anterior a la actual: toque en la notificación con la página congelada)
+        function _mtAdvance(now) {
             if (!isRunning) return;
-            const now = Date.now();
             let remaining = Math.max(0, Math.ceil((_mtEndTs - now) / 1000));
             if (remaining > timeLeft + 2) { _mtEndTs = now + timeLeft * 1000; remaining = timeLeft; } // reloj del sistema atrasado: re-anclar
             const elapsed = timeLeft - remaining;
@@ -10870,7 +10910,7 @@ window.hrpFilter        = _hrpApplyFilter;
         }
 
         function _mtFinish() {
-            clearInterval(timer); timer = null; isRunning = false; _mtEndTs = 0; setBtnVisuals('idle');
+            clearInterval(timer); timer = null; isRunning = false; _mtEndTs = 0; _mtNotifyEnd(); setBtnVisuals('idle');
             const key = getActiveKey(); if(isWorkMode && key && courseStats[key]) { courseStats[key].pomo++; localStorage.setItem('studyStats_v18', JSON.stringify(courseStats)); }
             if(isWorkMode) {
                 // ECONOMÍA INTELIGENTE ESCALABLE PARA POMODOROS
@@ -10912,22 +10952,80 @@ window.hrpFilter        = _hrpApplyFilter;
         });
         window.addEventListener('pagehide', _mtSave);
 
-        // Si la app se cerró/el sistema la descartó con el temporizador corriendo: reanudar con la hora real
+        // ── Acciones de la notificación (Pausar / Reanudar / Detener) con la app abierta o en segundo plano ──
+        // 'at' = instante real del toque: el tiempo estudiado se cuenta hasta ese instante, no hasta que la página despertó.
+        function _mtRemoteAction(action, at) {
+            try {
+                const now = Date.now(), when = (at && at < now) ? at : now;
+                if (action === 'pause' || action === 'stop') {
+                    if (isRunning) {
+                        // Si la página ya avanzó más allá del toque (se descongeló y contó), no retroceder
+                        if (Math.ceil((_mtEndTs - when) / 1000) < timeLeft) { _mtAdvance(when); if (!isRunning) return; }   // (si terminó antes del toque, ya se resolvió)
+                        clearInterval(timer); timer = null; isRunning = false; setBtnVisuals('pause');
+                    }
+                    if (action === 'stop') { clearInterval(timer); timer = null; isRunning = false; setBtnVisuals('idle'); timeLeft = currentModeMins * 60; updateDisplay(); }
+                    return;
+                }
+                if (action === 'resume') {
+                    if (isRunning || !(timeLeft > 0)) return;
+                    if (_mtStartRun(when)) _mainTick();
+                }
+            } catch (e) {}
+        }
+        // Acciones tocadas con la app CERRADA, aplicadas sobre el estado guardado. Devuelve el estado resultante (o null si quedó detenido)
+        // y los segundos de estudio que corrieron hasta cada toque (para sumarlos al curso).
+        function _mtResolvePending(s, list) {
+            let credit = 0;
+            (list || []).forEach(function(p) {
+                if (!s) return;
+                const phase = s.isWorkMode ? 'work' : 'break';
+                const key = s.paused ? phase + '|p' + s.timeLeft : phase + '|r' + s.endTs;
+                if (key !== p.from) return;                              // ya no corresponde al estado guardado
+                if (p.action === 'stop') {
+                    if (!s.paused) { if (p.at >= s.endTs) return; credit += Math.max(0, s.timeLeft - Math.ceil((s.endTs - p.at) / 1000)); }
+                    s = null; return;
+                }
+                if (p.action === 'pause' && !s.paused) {
+                    if (p.at >= s.endTs) return;                         // ya había terminado antes del toque
+                    const rem = Math.max(1, Math.ceil((s.endTs - p.at) / 1000));
+                    credit += Math.max(0, s.timeLeft - rem);
+                    s = Object.assign({}, s, { paused: true, timeLeft: rem, endTs: 0, savedAt: p.at });
+                } else if (p.action === 'resume' && s.paused) {
+                    s = Object.assign({}, s, { paused: false, endTs: p.at + s.timeLeft * 1000 }); delete s.savedAt;
+                }
+            });
+            return { s: s, credit: credit };
+        }
+
+        // Si la app se cerró/el sistema la descartó con el temporizador corriendo (o en pausa): retomar con la hora real
         (function _mtColdRestore() {
-            function go() {
+            function go(list) {
                 try {
                     const raw = localStorage.getItem('jch_timer_state'); if (!raw) return;
-                    const s = JSON.parse(raw);
-                    if (!s || s.v !== 2 || !s.endTs || isRunning) { if (!isRunning) localStorage.removeItem('jch_timer_state'); return; }
-                    const remaining = Math.max(0, Math.ceil((s.endTs - Date.now()) / 1000));
-                    const elapsed = Math.max(0, s.timeLeft - remaining);
+                    const s0 = JSON.parse(raw);
+                    if (!s0 || s0.v !== 2 || (!s0.endTs && !s0.paused) || isRunning) { if (!isRunning) { localStorage.removeItem('jch_timer_state'); _mtNotifyClear(); } return; }
                     const inC = document.getElementById('activeCourseSelect'), inS = document.getElementById('activeSessionSelect');
-                    if (inC && s.course) { inC.value = s.course; const tc = document.getElementById('activeCourseSelectedText'); if (tc) tc.textContent = s.course; }
-                    if (inS && s.session) { inS.value = s.session; const ts = document.getElementById('activeSessionSelectedText'); if (ts) ts.textContent = s.session; }
-                    currentModeMins = s.currentModeMins; isWorkMode = !!s.isWorkMode;
+                    if (inC && s0.course) { inC.value = s0.course; const tc = document.getElementById('activeCourseSelectedText'); if (tc) tc.textContent = s0.course; }
+                    if (inS && s0.session) { inS.value = s0.session; const ts = document.getElementById('activeSessionSelectedText'); if (ts) ts.textContent = s0.session; }
+                    currentModeMins = s0.currentModeMins; isWorkMode = !!s0.isWorkMode;
+                    // Acciones de la notificación tocadas mientras la app estaba cerrada
+                    const r = _mtResolvePending(s0, list);
+                    const k0 = getActiveKey();
+                    if (r.credit > 0 && isWorkMode && k0 && courseStats[k0]) updateRealTimeTracking(r.credit);
+                    const s = r.s;
                     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active-btn'));
                     const mb = [...document.querySelectorAll('.mode-btn[data-type]')].find(b => b.getAttribute('data-time') === String(currentModeMins) && (b.getAttribute('data-type') === 'work') === isWorkMode) || document.getElementById('customTimeBtn');
                     if (mb) mb.classList.add('active-btn');
+                    if (!s) { localStorage.removeItem('jch_timer_state'); _mtNotifyClear(); timeLeft = currentModeMins * 60; updateDisplay(); return; }    // "Detener" con la app cerrada
+                    if (s.paused) {
+                        // En pausa al cerrarse la app: volver a mostrar el tiempo que quedaba (solo si es reciente)
+                        if (s.timeLeft > 0 && s.savedAt && Date.now() - s.savedAt < _MT_PAUSE_TTL) {
+                            timeLeft = s.timeLeft; updateDisplay(); setBtnVisuals('pause');
+                        } else { localStorage.removeItem('jch_timer_state'); _mtNotifyClear(); }
+                        return;
+                    }
+                    const remaining = Math.max(0, Math.ceil((s.endTs - Date.now()) / 1000));
+                    const elapsed = Math.max(0, s.timeLeft - remaining);
                     timeLeft = s.timeLeft; _mtEndTs = s.endTs; isRunning = true; lastTickTime = Date.now();
                     const k = getActiveKey();
                     if (elapsed > 0 && (!isWorkMode || (k && courseStats[k]))) updateRealTimeTracking(elapsed);
@@ -10938,14 +11036,28 @@ window.hrpFilter        = _hrpApplyFilter;
                     _mtSave();
                 } catch(e) { try { localStorage.removeItem('jch_timer_state'); } catch(_) {} }
             }
-            if (document.readyState === 'complete') setTimeout(go, 300);
-            else window.addEventListener('load', () => setTimeout(go, 300));
+            function boot() {
+                const J = window.jchTimerNotif;
+                if (J && J.onAction) J.onAction('main', _mtRemoteAction);
+                if (!J || !J.drainPending) { go([]); return; }
+                let done = false;
+                const fin = function(list) {
+                    if (done) { if (list && list.length) list.forEach(function(p) { try { _mtRemoteAction(p.action, p.at); } catch (e) {} }); return; }
+                    done = true; go(list || []);
+                };
+                J.drainPending('main').then(fin, function() { fin([]); });
+                setTimeout(function() { fin([]); }, 1500);      // por si IndexedDB tarda: se restaura igual
+            }
+            window._mtRemoteAction = _mtRemoteAction;   // (también lo usan las pruebas)
+            if (document.readyState === 'complete') setTimeout(boot, 300);
+            else window.addEventListener('load', () => setTimeout(boot, 300));
         })();
 
         function updateDisplay() { const display = document.getElementById('timer'); if(!display) return; let m = Math.floor(timeLeft / 60); let s = timeLeft % 60; display.textContent = `${m < 10 ? '0':''}${m}:${s < 10 ? '0':''}${s}`; }
         
         function setBtnVisuals(state) { 
             if(state !== 'run') { _mtEndTs = 0; try { localStorage.removeItem('jch_timer_state'); } catch(e) {} } // v37: pausa/reinicio/fin → ya no hay temporizador corriendo que restaurar
+            if(state === 'pause') { if(_mtSavePaused()) _mtNotify(); else _mtNotifyClear(); } else if(state === 'idle') _mtNotifyClear();   // v40: pausa guardada + notificación
             const sBtn = document.getElementById('startBtn'); const pBtn = document.getElementById('pauseBtn'); const courseGoalFill = document.getElementById('courseGoalFill');
             if(!sBtn || !pBtn || !courseGoalFill) return;
             if(state === 'run') { sBtn.classList.add('btn-running'); pBtn.classList.remove('btn-paused'); courseGoalFill.classList.add('is-running'); } else if(state === 'pause') { sBtn.classList.remove('btn-running'); pBtn.classList.add('btn-paused'); courseGoalFill.classList.remove('is-running'); } else { sBtn.classList.remove('btn-running'); pBtn.classList.remove('btn-paused'); courseGoalFill.classList.remove('is-running'); } 
@@ -11003,20 +11115,26 @@ window.hrpFilter        = _hrpApplyFilter;
         const elBtnVictoryClose = document.getElementById('btnVictoryClose');
         if(elBtnVictoryClose) elBtnVictoryClose.addEventListener('click', () => { stopVictoryLoop(); playSparkleSound(); document.getElementById('victoryModalBackdrop').classList.remove('show-modal'); document.getElementById('victoryModal').classList.remove('show-modal'); createFireworks(); }); 
 
+        // Inicia/reanuda el bloque. 'when' = instante real del toque en la notificación (si no, ahora)
+        function _mtStartRun(when) {
+            if (isRunning) return false;
+            if(isWorkMode) {
+                const canStart = initKanbanIfNeeded(currentModeMins);
+                if (!canStart) return false; // Detiene el inicio si no hay curso/sesión
+            }
+            isRunning = true; setBtnVisuals('run'); document.querySelectorAll('.mode-btn').forEach(b => { if(b.getAttribute('data-time')==='custom') b.classList.remove('pulse-gold'); });
+            lastTickTime = Date.now();
+            _mtEndTs = (when && when < lastTickTime ? when : lastTickTime) + timeLeft * 1000;
+            timer = setInterval(_mainTick, 1000);
+            _mtSave();
+            return true;
+        }
         const elStartBtn = document.getElementById('startBtn');
         if(elStartBtn) {
             elStartBtn.addEventListener('click', () => {
                 playSparkleSound();
                 if (!isRunning) {
-                    if(isWorkMode) {
-                        const canStart = initKanbanIfNeeded(currentModeMins);
-                        if (!canStart) return; // Detiene el inicio si no hay curso/sesión
-                    }
-                    isRunning = true; setBtnVisuals('run'); document.querySelectorAll('.mode-btn').forEach(b => { if(b.getAttribute('data-time')==='custom') b.classList.remove('pulse-gold'); });
-                    lastTickTime = Date.now();
-                    _mtEndTs = lastTickTime + timeLeft * 1000;
-                    timer = setInterval(_mainTick, 1000);
-                    _mtSave();
+                    if (_mtStartRun() && window.jchTimerNotif) window.jchTimerNotif.ensurePermission(_mtNotify);   // primera vez: pedir permiso de notificaciones
                 }
             });
         }
@@ -11060,7 +11178,7 @@ window.hrpFilter        = _hrpApplyFilter;
         if(elBtnConfirmCustom) elBtnConfirmCustom.addEventListener('click', () => {
             playSparkleSound(); const val = parseInt(document.getElementById('txtCustomMinutes').value);
             if(!isNaN(val) && val > 0) {
-                currentModeMins = val; timeLeft = currentModeMins * 60; updateDisplay();
+                currentModeMins = val; timeLeft = currentModeMins * 60; updateDisplay(); _mtOnTimeReset();
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active-btn')); 
                 document.getElementById('customTimeBtn').classList.add('active-btn'); document.getElementById('customTimeBtn').classList.remove('pulse-gold'); 
                 isWorkMode = true; hideCustomTimeModal();
@@ -11073,7 +11191,7 @@ window.hrpFilter        = _hrpApplyFilter;
                 playSparkleSound(); if(isRunning) document.getElementById('pauseBtn').click();
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active-btn')); this.classList.add('active-btn');
                 document.getElementById('customTimeBtn').classList.remove('pulse-gold');
-                isWorkMode = this.getAttribute('data-type') === 'work'; currentModeMins = parseInt(this.getAttribute('data-time')); timeLeft = currentModeMins * 60; updateDisplay();
+                isWorkMode = this.getAttribute('data-type') === 'work'; currentModeMins = parseInt(this.getAttribute('data-time')); timeLeft = currentModeMins * 60; updateDisplay(); _mtOnTimeReset();
                 const key = getActiveKey();
                 if(isWorkMode && key && courseStats[key]) {
                     const minsLeft = 120 - Math.floor(courseStats[key].seconds / 60);
@@ -21740,6 +21858,89 @@ function _habDeltaRemove(id) {
     } catch (e) {}
 }
 function _habElapsedNow(t) { return Math.min(t.totalSec, t.base + Math.max(0, Math.floor((Date.now() - t.startTs) / 1000))); }
+
+// ── Notificación persistente del timer de hábitos (id 'habt:<habitId>') ───────────────────
+// Estado absoluto: si corre → hora de fin; si está en pausa → segundos restantes (la cuenta viva la dibuja el service worker).
+let _habSilent = false;   // true mientras se pausa por "Detener" (para no repintar la notificación en pausa un instante)
+function _habNotifySync(habitId, mode) {
+    try {
+        const J = window.jchTimerNotif; if (!J) return;
+        const nid = 'habt:' + habitId;
+        if (mode === 'clear') { J.clear(nid); return; }
+        if (mode === 'done')  { if (document.hidden) J.done(nid); else J.clear(nid); return; }
+        const t = _habTimers[habitId]; if (!t || _habSilent) return;
+        let h = null; try { h = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]').find(function(x){ return x.id === habitId; }); } catch (e) {}
+        const run = !!t.interval;
+        const el  = run ? _habElapsedNow(t) : t.elapsed;
+        J.update({
+            id: nid, kind: 'countdown',
+            title: '⏱ ' + (h ? (h.emoji || '🌿') + ' ' + h.name : 'Hábito'), desc: '',
+            alert: { title: '✅ ¡' + (h ? h.name : 'Hábito') + ' completado!', body: 'Tu timer terminó. ¡Buen trabajo! 🎉' },
+            snap: { phase: 'timer', running: run, endTs: run ? t.startTs + Math.max(0, t.totalSec - t.base) * 1000 : 0,
+                    remaining: Math.max(0, t.totalSec - el), total: t.totalSec }
+        });
+    } catch (e) {}
+}
+function _habToday() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// Pausar / reanudar / detener tocados en la notificación con la app abierta (o en segundo plano). 'at' = instante real del toque.
+function _habRemoteAction(action, at, nid) {
+    try {
+        const habitId = String(nid).slice(5);
+        const today = _habToday();
+        let h = null; try { h = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]').find(function(x){ return x.id === habitId; }); } catch (e) {}
+        if (!h || h.habitType !== 'timer' || (h.log || []).includes(today)) { _habNotifySync(habitId, 'clear'); return; }
+        const totalSec = (h.qtyTarget || 5) * 60;
+        const t = _habTimers[habitId];
+        const now = Date.now();
+        const when = (at && at < now) ? at : now;
+        if (action === 'pause' || action === 'stop') {
+            if (t && t.interval) {
+                t.startTs += (now - when);                 // el tiempo cuenta hasta el toque, no hasta que la página despertó
+                if (action === 'stop') _habSilent = true;
+                try { window.startHabTimer(habitId, t.totalSec); } finally { _habSilent = false; }
+            }
+            if (action === 'stop') _habNotifySync(habitId, 'clear');
+            return;
+        }
+        if (action === 'resume') {
+            if (t && t.interval) return;
+            window.startHabTimer(habitId, totalSec);
+            const n = _habTimers[habitId];
+            if (n && n.interval && when < now) { n.startTs = when; _habDeltaSave(habitId, n, today); _habNotifySync(habitId); if (n.tick) n.tick(); }
+        }
+    } catch (e) {}
+}
+// Acciones tocadas con la app CERRADA: se aplican al estado guardado antes de retomar los timers
+function _habApplyPending(list) {
+    if (!list || !list.length) return;
+    const today = _habToday();
+    list.forEach(function(p) {
+        try {
+            const habitId = String(p.id).slice(5);
+            let h = null; try { h = JSON.parse(localStorage.getItem('jch_habits_v1') || '[]').find(function(x){ return x.id === habitId; }); } catch (e) {}
+            if (!h || h.habitType !== 'timer' || (h.log || []).includes(today)) return;
+            const total = (h.qtyTarget || 5) * 60;
+            const s = _habDeltaAll()[habitId];
+            const qty = JSON.parse(localStorage.getItem('jch_qty_v1') || '{}');
+            const qk = habitId + '_' + today;
+            if (s && s.day === today && s.startTs) {                       // estaba corriendo
+                const endTs = s.startTs + Math.max(0, s.totalSec - s.base) * 1000;
+                if (('timer|r' + endTs) !== p.from) return;
+                if (p.action === 'pause' || p.action === 'stop') {
+                    if (p.at >= endTs) return;                              // ya había terminado: lo resuelve la restauración
+                    qty[qk] = Math.min(s.totalSec, (s.base || 0) + Math.max(0, Math.floor((p.at - s.startTs) / 1000)));
+                    localStorage.setItem('jch_qty_v1', JSON.stringify(qty));
+                    _habDeltaRemove(habitId);
+                }
+            } else {                                                        // estaba en pausa
+                const el = qty[qk] || 0;
+                if (!(el > 0) || el >= total) return;
+                if (('timer|p' + (total - el)) !== p.from) return;
+                if (p.action === 'resume') _habDeltaSave(habitId, { totalSec: total, base: el, startTs: p.at }, today);
+            }
+        } catch (e) {}
+    });
+}
 // ¿Hay un timer corriendo para este hábito? (lo usa buildHabControl al redibujar la tarjeta)
 window._habTimerLive = function(id) {
     const t = _habTimers[id];
@@ -21786,6 +21987,7 @@ window.startHabTimer = function(habitId, totalSec, _resume) {
         if (_cdP) { const _sl = Math.max(0, totalSec - _ep); _cdP.textContent = String(Math.floor(_sl/60)).padStart(2,'0') + ':' + String(_sl%60).padStart(2,'0'); }
         const ctrl = document.getElementById('habTimerCtrl_' + habitId);
         if (ctrl) ctrl.classList.remove('running');
+        _habNotifySync(habitId);
         return;
     }
 
@@ -21838,6 +22040,7 @@ window.startHabTimer = function(habitId, totalSec, _resume) {
             clearInterval(_habTimers[habitId].interval);
             _habTimers[habitId].interval = null;
             _habDeltaRemove(habitId);
+            _habNotifySync(habitId, 'done');
             const ctrl2 = document.getElementById('habTimerCtrl_' + habitId);
             if (ctrl2) { ctrl2.classList.remove('running'); ctrl2.classList.add('done-timer'); }
             const lbl = document.getElementById('habTimerLbl_' + habitId);
@@ -22024,6 +22227,8 @@ window.startHabTimer = function(habitId, totalSec, _resume) {
     };
     _habTimers[habitId].tick = _tickFn;
     _habTimers[habitId].interval = setInterval(_tickFn, 500);
+    _habNotifySync(habitId);
+    if (!_resume && window.jchTimerNotif) window.jchTimerNotif.ensurePermission(function(){ _habNotifySync(habitId); });   // primera vez: pedir permiso
     if (_resume) _tickFn();   // retomado tras cerrar/recargar la app: ponerse al día (o completar) al instante
 };
 
@@ -22040,7 +22245,7 @@ function _habTimerColdRestore() {
         const s = m[id];
         const h = habits.find(function(x){ return x.id === id; });
         // Toma de otro día, hábito borrado o ya no es de tipo timer: descartar sin dar recompensas
-        if (!s || !h || h.habitType !== 'timer' || s.day !== today || !(s.totalSec > 0) || !s.startTs) { _habDeltaRemove(id); return; }
+        if (!s || !h || h.habitType !== 'timer' || s.day !== today || !(s.totalSec > 0) || !s.startTs) { _habDeltaRemove(id); _habNotifySync(id, 'clear'); return; }
         const wasDone = (h.log || []).includes(today);
         const endTs = s.startTs + Math.max(0, s.totalSec - s.base) * 1000;
         window.startHabTimer(id, s.totalSec, { base: s.base || 0, startTs: s.startTs });
@@ -22064,8 +22269,24 @@ function _habTimerColdRestore() {
         }
     });
 }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _habTimerColdRestore);
-else _habTimerColdRestore();
+window._habRemoteAction = _habRemoteAction;   // (también lo usan las pruebas)
+let _habBooted = false;
+function _habBoot() {
+    if (_habBooted) return; _habBooted = true;
+    const J = window.jchTimerNotif;
+    if (J && J.onActionPrefix) J.onActionPrefix('habt:', _habRemoteAction);
+    const go = function(list) { try { _habApplyPending(list); } catch (e) {} _habTimerColdRestore(); };
+    if (!J || !J.drainPendingPrefix) { go([]); return; }
+    let done = false;
+    const fin = function(list) {
+        if (done) { if (list && list.length) list.forEach(function(p){ try { _habRemoteAction(p.action, p.at, p.id); } catch (e) {} }); return; }
+        done = true; go(list || []);
+    };
+    J.drainPendingPrefix('habt:').then(fin, function(){ fin([]); });
+    setTimeout(function(){ fin([]); }, 1500);       // por si IndexedDB tarda: se restaura igual
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _habBoot);
+else _habBoot();
 
 // ── GUARDAR HÁBITO ────────────────────────────────────────────
 window.saveHabit = function() {
@@ -22515,6 +22736,18 @@ window._cronoState = _cronoState;
 var CRONO_KEY = 'jch_crono_history_v1';
 window.CRONO_KEY = CRONO_KEY;
 
+// ── Notificación persistente del cronómetro (id 'crono', cuenta hacia arriba, botón Detener) ──
+function _cronoNotify() {
+    try {
+        var J = window.jchTimerNotif; if (!J) return;
+        if (!_cronoState.running) { J.clear('crono'); return; }
+        J.update({
+            id: 'crono', kind: 'stopwatch', title: '⏱ Cronómetro', desc: _cronoState.habitName || '',
+            snap: { phase: 'crono', running: true, startTs: _cronoState.startTs, base: 0, remaining: 0, total: 0 }
+        });
+    } catch (e) {}
+}
+
 // ── Formato de tiempo ─────────────────────────────────────
 function fmtMs(ms) {
     var s = Math.floor(ms / 1000);
@@ -22603,6 +22836,8 @@ window.habCronoStart = function() {
         if (timeEl)   { timeEl.classList.add('running'); }
         _cronoState.interval = setInterval(habCronoTick, 100);
         habCronoSaveDelta();
+        _cronoNotify();
+        if (window.jchTimerNotif) window.jchTimerNotif.ensurePermission(_cronoNotify);   // primera vez: pedir permiso de notificaciones
         var _inf = document.getElementById('habCronoLapInfo');
         if (_inf) _inf.textContent = 'Toma ' + (_cronoState.laps.length + 1) + ' en curso…';
     } else {
@@ -22621,6 +22856,7 @@ window.habCronoLap = function() {
     _cronoState.elapsed = 0;
     _cronoState.startTs = 0;
     habCronoSaveDelta();
+    _cronoNotify();
 
     var btnStart = document.getElementById('habCronoBtnStart');
     var btnLap   = document.getElementById('habCronoBtnLap');
@@ -22644,6 +22880,7 @@ window.habCronoReset = function() {
     _cronoState.startTs = 0;
     _cronoState.laps    = [];
     habCronoSaveDelta();
+    _cronoNotify();
 
     var btnStart = document.getElementById('habCronoBtnStart');
     var btnLap   = document.getElementById('habCronoBtnLap');
@@ -22727,6 +22964,48 @@ function habCronoRestoreDelta() {
     habCronoRenderStats();
     habCronoRenderChart();
     habCronoRenderHistory();
+    _cronoNotify();
+}
+
+// "Detener" tocado en la notificación con la app abierta o en segundo plano: la toma dura hasta el instante del toque
+function _cronoRemoteAction(action, at) {
+    try {
+        if (action !== 'stop') return;
+        if (!_cronoState.running) { _cronoNotify(); return; }
+        var now = Date.now(), when = (at && at < now) ? at : now;
+        _cronoState.startTs += (now - when);
+        habCronoLap();
+    } catch (e) {}
+}
+window._cronoRemoteAction = _cronoRemoteAction;   // (también lo usan las pruebas)
+// "Detener" tocado con la app CERRADA: la toma se registra con la duración hasta el toque
+function _cronoApplyPending(list) {
+    if (!list || !list.length) return;
+    list.forEach(function(p) {
+        try {
+            if (p.action !== 'stop') return;
+            var raw = JSON.parse(localStorage.getItem(CRONO_DELTA_KEY) || 'null');
+            if (!raw || !raw.startTs || ('crono|r' + raw.startTs) !== p.from || !(p.at > raw.startTs)) return;
+            raw.laps = (raw.laps || []).concat([p.at - raw.startTs]);
+            raw.startTs = 0;
+            localStorage.setItem(CRONO_DELTA_KEY, JSON.stringify(raw));
+        } catch (e) {}
+    });
+}
+var _cronoBooted = false;
+function _cronoBoot() {
+    if (_cronoBooted) return; _cronoBooted = true;
+    var J = window.jchTimerNotif;
+    if (J && J.onAction) J.onAction('crono', _cronoRemoteAction);
+    var go = function(list) { try { _cronoApplyPending(list); } catch (e) {} habCronoRestoreDelta(); };
+    if (!J || !J.drainPending) { go([]); return; }
+    var done = false;
+    var fin = function(list) {
+        if (done) { if (list && list.length) list.forEach(function(p) { try { _cronoRemoteAction(p.action, p.at); } catch (e) {} }); return; }
+        done = true; go(list || []);
+    };
+    J.drainPending('crono').then(fin, function() { fin([]); });
+    setTimeout(function() { fin([]); }, 1500);       // por si IndexedDB tarda: se restaura igual
 }
 
 document.addEventListener('visibilitychange', function() {
@@ -22736,9 +23015,9 @@ document.addEventListener('visibilitychange', function() {
 window.addEventListener('beforeunload', habCronoSaveDelta);
 window.addEventListener('pagehide', habCronoSaveDelta);
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', habCronoRestoreDelta);
+    document.addEventListener('DOMContentLoaded', _cronoBoot);
 } else {
-    habCronoRestoreDelta();
+    _cronoBoot();
 }
 
 // ── Render tomas ──────────────────────────────────────────
@@ -24838,7 +25117,7 @@ window.openChest = function(id) {
 // botones Pausar / Reanudar / Detener. Si se toca un botón con la app cerrada, el SW deja la acción pendiente
 // (IndexedDB) y la página la lee al abrir (drainPending). Se puede desactivar con localStorage jch_timer_notif_off=1.
 (function () {
-    var DB = 'jch_timers_v1', handlers = {}, lastSig = {}, running = {}, pingT = null;
+    var DB = 'jch_timers_v1', handlers = {}, prefixHandlers = [], lastSig = {}, running = {}, pingT = null;
     function enabled() { try { return localStorage.getItem('jch_timer_notif_off') !== '1'; } catch (e) { return true; } }
     function granted() { return ('Notification' in window) && Notification.permission === 'granted'; }
     function toSW(msg) {
@@ -24880,7 +25159,10 @@ window.openChest = function(id) {
     }
     function cloudSync(rec) {
         var s = rec.snap || {};
-        if (s.running && s.endTs > Date.now() + 1000) {
+        if (rec.kind === 'stopwatch' && s.running) {
+            // El cronómetro no termina solo: solo "latidos" (el servidor los manda hasta 3 h; el aviso de fin que llega al final lo ignora el SW)
+            cloudSet(rec.id, { id: rec.id, fireAt: Math.max(Date.now(), s.startTs || 0) + 3 * 3600 * 1000, phase: 'sw', title: '', body: '' });
+        } else if (s.running && s.endTs > Date.now() + 1000) {
             var al = rec.alert || {};
             cloudSet(rec.id, { id: rec.id, fireAt: s.endTs, phase: s.phase || '', title: al.title || rec.title || '', body: al.body || '' });
         } else cloudSet(rec.id, null);
@@ -24910,7 +25192,7 @@ window.openChest = function(id) {
             if (!rec || !rec.id || !enabled() || !granted()) return;
             var s = rec.snap || {};
             running[rec.id] = !!s.running; syncPing();
-            var sig = [rec.id, rec.title, rec.desc, s.phase, s.running, s.running ? s.endTs : s.remaining].join('|');
+            var sig = [rec.id, rec.title, rec.desc, s.phase, s.running, s.running ? (s.endTs || s.startTs || 0) : s.remaining].join('|');
             if (lastSig[rec.id] === sig) return;
             lastSig[rec.id] = sig;
             toSW({ type: 'JCH_TIMER_NOTIFY', rec: rec });
@@ -24924,6 +25206,56 @@ window.openChest = function(id) {
             cloudSet(id, null);
         },
         onAction: function (id, fn) { handlers[id] = fn; },
+        onActionPrefix: function (prefix, fn) { prefixHandlers.push({ p: prefix, fn: fn }); },
+        // El reloj terminó: si la app está oculta, el SW avisa con sonido; luego retira la cuenta regresiva
+        done: function (id) {
+            running[id] = false; syncPing();
+            lastSig[id] = '__clear';
+            toSW({ type: 'JCH_TIMER_DONE', id: id });
+            cloudSet(id, null);
+        },
+        // Misma matemática que el SW (_snapKey/_snapApply) para aplicar acciones pendientes al estado guardado
+        snapKey: function (s) { return (s.phase || '') + '|' + (s.running ? 'r' + (s.endTs || s.startTs || 0) : 'p' + s.remaining); },
+        snapApply: function (s, action, at) {
+            s = Object.assign({}, s);
+            if (action === 'pause') {
+                if (!s.running || s.endTs <= at) return null;
+                s.remaining = Math.max(0, Math.ceil((s.endTs - at) / 1000)); s.running = false; s.endTs = 0; return s;
+            }
+            if (action === 'resume') {
+                if (s.running) return null;
+                if (!(s.remaining > 0)) s.remaining = s.total;
+                s.running = true; s.endTs = at + s.remaining * 1000; return s;
+            }
+            return null;
+        },
+        // Acciones pendientes de todos los relojes cuyo id empieza con prefix (se leen y se borran)
+        drainPendingPrefix: function (prefix) {
+            return new Promise(function (res) {
+                try {
+                    var rq = indexedDB.open(DB, 1);
+                    rq.onupgradeneeded = function () {
+                        var d = rq.result;
+                        if (!d.objectStoreNames.contains('timers'))  d.createObjectStore('timers',  { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('pending')) d.createObjectStore('pending', { keyPath: 'k', autoIncrement: true });
+                    };
+                    rq.onerror = function () { res([]); };
+                    rq.onsuccess = function () {
+                        var db = rq.result, out = [];
+                        try {
+                            var t = db.transaction('pending', 'readwrite'), st = t.objectStore('pending');
+                            var cur = st.openCursor();
+                            cur.onsuccess = function () {
+                                var c = cur.result;
+                                if (c) { if (String(c.value.id).indexOf(prefix) === 0) { out.push(c.value); c.delete(); } c.continue(); }
+                            };
+                            t.oncomplete = function () { db.close(); out.sort(function (a, b) { return a.at - b.at; }); res(out); };
+                            t.onerror = t.onabort = function () { db.close(); res([]); };
+                        } catch (e) { try { db.close(); } catch (_) {} res([]); }
+                    };
+                } catch (e) { res([]); }
+            });
+        },
         ensurePermission: function (cb) {
             try {
                 if (!enabled() || !('Notification' in window) || Notification.permission !== 'default') return;
@@ -24962,7 +25294,10 @@ window.openChest = function(id) {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('message', function (e) {
             var d = e.data;
-            if (d && d.type === 'JCH_TIMER_ACTION' && handlers[d.id]) { try { handlers[d.id](d.action, d.at); } catch (err) {} }
+            if (!d || d.type !== 'JCH_TIMER_ACTION') return;
+            var fn = handlers[d.id];
+            if (!fn) { for (var i = 0; i < prefixHandlers.length; i++) { if (String(d.id).indexOf(prefixHandlers[i].p) === 0) { fn = prefixHandlers[i].fn; break; } } }
+            if (fn) { try { fn(d.action, d.at, d.id); } catch (err) {} }
         });
     }
 })();
@@ -26705,6 +27040,23 @@ window.recalcHeroStats = recalcHeroStats;
     var TM_DELTA_KEY = 'jch_steptimer_delta_v1';
     var _tmOrphan = null;       // recompensa pendiente cuando el temporizador se restauró tras cerrar la app (el paso ya no existe en pantalla)
     var _tmWinReplay = false;   // terminó con la app en segundo plano: repetir el festejo al volver
+    var _tmOpen = false;        // hay un modal de temporizador de paso abierto
+    var _tmTitleTxt = '';       // título del paso (para la notificación persistente)
+    var TM_PAUSE_TTL = 12 * 3600 * 1000;   // una pausa guardada se retoma solo si tiene menos de 12 h
+
+    // ── Notificación persistente del temporizador de paso (id 'step') ──
+    function _tmNotifySync() {
+        try {
+            var J = window.jchTimerNotif; if (!J || !_tmOpen) return;
+            if (!_tmRunning && !(_tmSecondsLeft > 0 && _tmSecondsLeft < _tmTotalSeconds)) return;   // sin iniciar: nada que mostrar
+            J.update({
+                id: 'step', kind: 'countdown', title: '⏱ ' + (_tmTitleTxt || 'Paso'), desc: '',
+                alert: { title: '🏆 ¡Paso completado!', body: (_tmTitleTxt || 'Tu temporizador terminó') + '\nAbre la app para reclamar tu recompensa 🎁' },
+                snap: { phase: 'step', running: _tmRunning, endTs: _tmRunning ? _tmTargetEndTs : 0, remaining: _tmSecondsLeft, total: _tmTotalSeconds }
+            });
+        } catch (e) {}
+    }
+    function _tmNotifyClear() { try { if (window.jchTimerNotif) window.jchTimerNotif.clear('step'); } catch (e) {} }
 
     window.openStepTimer = function(title, desc, minutes, coins, xp, stepId) {
         var old = document.getElementById('_stepTimerOverlay');
@@ -26713,6 +27065,7 @@ window.recalcHeroStats = recalcHeroStats;
         _tmRunning = false;
         _tmOrphan = null;
         _tmStepId = stepId || ('paso_' + String(title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').substring(0,40) + '_' + minutes);
+        _tmOpen = true; _tmTitleTxt = String(title || '');
         _tmCoins = coins;
         _tmXp = xp;
         _tmTotalSeconds = Math.max(1, (parseFloat(minutes) || 5)) * 60;
@@ -26721,8 +27074,13 @@ window.recalcHeroStats = recalcHeroStats;
         var _saved = _tmLoadDelta();
         if (_saved && _saved.stepId === _tmStepId && _saved.running && _saved.targetEndTs > Date.now()) {
             _tmSecondsLeft = Math.max(0, Math.round((_saved.targetEndTs - Date.now()) / 1000));
+        } else if (_saved && _saved.stepId === _tmStepId && !_saved.running && _saved.remaining > 0 && _saved.savedAt && Date.now() - _saved.savedAt < TM_PAUSE_TTL) {
+            // Misma tarea con una pausa guardada: continuar desde el tiempo que quedaba
+            _tmSecondsLeft = Math.min(_tmTotalSeconds, Math.max(1, Math.round(_saved.remaining)));
         } else {
             _tmSecondsLeft = _tmTotalSeconds;
+            // Había una toma guardada de OTRO paso (en curso o en pausa): este modal la reemplaza → retirar su notificación
+            if (_saved && _saved.stepId !== _tmStepId) { _tmClearDelta(); _tmNotifyClear(); }
         }
 
 
@@ -26790,6 +27148,7 @@ window.recalcHeroStats = recalcHeroStats;
           '</div>';
         document.body.appendChild(overlay);
         requestAnimationFrame(function() { overlay.classList.add('visible'); });
+        if (_tmSecondsLeft < _tmTotalSeconds) { var _b0 = document.getElementById('_tmBtnStart'); if (_b0) _b0.textContent = '▶ Continuar'; }
         _updateRing();
     };
 
@@ -26815,9 +27174,14 @@ window.recalcHeroStats = recalcHeroStats;
     window._tmToggle = function() {
         var btn = document.getElementById('_tmBtnStart');
         if (_tmRunning) {
+            // Pausa exacta: tiempo real restante hasta este instante
+            _tmSecondsLeft = Math.max(0, Math.ceil((_tmTargetEndTs - Date.now()) / 1000));
+            if (_tmSecondsLeft <= 0) { _tmTick(); return; }                 // ya había llegado al final: completar
             clearInterval(_tmInterval); _tmRunning = false;
             if (btn) btn.textContent = '▶ Continuar';
+            _updateRing();
             _tmSaveDelta();
+            _tmNotifySync();
         } else {
             _tmPlaySound('start');
             _tmRunning = true;
@@ -26825,6 +27189,8 @@ window.recalcHeroStats = recalcHeroStats;
             if (btn) btn.textContent = '⏸ Pausar';
             _tmSaveDelta();
             _tmInterval = setInterval(_tmTick, 1000);
+            _tmNotifySync();
+            if (window.jchTimerNotif) window.jchTimerNotif.ensurePermission(_tmNotifySync);   // primera vez: pedir permiso de notificaciones
         }
     };
 
@@ -26835,6 +27201,7 @@ window.recalcHeroStats = recalcHeroStats;
         if (_tmSecondsLeft <= 0) {
             clearInterval(_tmInterval); _tmRunning = false;
             _tmClearDelta();
+            try { if (window.jchTimerNotif) { if (document.visibilityState === 'hidden') window.jchTimerNotif.done('step'); else window.jchTimerNotif.clear('step'); } } catch (e) {}
             _tmPlaySound('complete');
             _tmWin();
             // Si terminó con la app oculta, repetir el festejo cuando el usuario vuelva
@@ -26890,6 +27257,7 @@ window.recalcHeroStats = recalcHeroStats;
         clearInterval(_tmInterval); _tmRunning = false;
         _tmSecondsLeft = _tmTotalSeconds;
         _tmClearDelta();
+        _tmNotifyClear();
         var btn = document.getElementById('_tmBtnStart');
         if (btn) btn.textContent = '▶ Iniciar';
         _updateRing();
@@ -26897,7 +27265,18 @@ window.recalcHeroStats = recalcHeroStats;
 
     // ── Persistencia Cálculo Delta de la toma en curso ─────────
     function _tmSaveDelta() {
-        if (!_tmRunning) { localStorage.removeItem(TM_DELTA_KEY); return; }
+        if (!_tmRunning) {
+            // En pausa (con tiempo ya consumido): guardar el tiempo restante para poder reanudar desde la notificación o al reabrir la app
+            if (_tmOpen && _tmSecondsLeft > 0 && _tmSecondsLeft < _tmTotalSeconds && document.getElementById('_stepTimerOverlay')) {
+                var tEl = document.querySelector('#_stepTimerOverlay .tm-title'), dEl = document.querySelector('#_stepTimerOverlay .tm-desc');
+                localStorage.setItem(TM_DELTA_KEY, JSON.stringify({
+                    stepId: _tmStepId, title: tEl ? tEl.textContent : _tmTitleTxt, desc: dEl ? dEl.textContent : '',
+                    minutes: _tmTotalSeconds / 60, coins: _tmCoins, xp: _tmXp,
+                    targetEndTs: 0, running: false, remaining: _tmSecondsLeft, savedAt: Date.now()
+                }));
+            } else localStorage.removeItem(TM_DELTA_KEY);
+            return;
+        }
         var titleEl = document.querySelector('#_stepTimerOverlay .tm-title');
         var descEl  = document.querySelector('#_stepTimerOverlay .tm-desc');
         localStorage.setItem(TM_DELTA_KEY, JSON.stringify({
@@ -26940,9 +27319,22 @@ window.recalcHeroStats = recalcHeroStats;
     // mientras un temporizador de paso seguía corriendo
     function _tmColdRestore() {
         var saved = _tmLoadDelta();
+        if (saved && !saved.running) {
+            // En pausa cuando se cerró la app: reabrir el modal en pausa con el tiempo que quedaba
+            if (saved.remaining > 0 && saved.savedAt && Date.now() - saved.savedAt < TM_PAUSE_TTL) {
+                window.openStepTimer(saved.title, saved.desc, saved.minutes, saved.coins, saved.xp, saved.stepId);
+                _tmOrphan = _tmRelinkStep(saved.stepId) ? null : { coins: saved.coins, xp: saved.xp };
+                _tmSecondsLeft = Math.min(_tmTotalSeconds, Math.max(1, Math.round(saved.remaining)));
+                var pb = document.getElementById('_tmBtnStart');
+                if (pb) pb.textContent = '▶ Continuar';
+                _updateRing();
+                _tmNotifySync();
+            } else { _tmClearDelta(); _tmNotifyClear(); }
+            return;
+        }
         if (!saved || !saved.running || !saved.targetEndTs) return;
         if (Date.now() >= saved.targetEndTs) {
-            _tmClearDelta();
+            _tmClearDelta(); _tmNotifyClear();
             // Venció con la app cerrada: en vez de descartarlo en silencio, mostrar "Paso Completado".
             // Solo si venció hace menos de 24 h, para no mostrar un aviso viejo y confuso.
             if (Date.now() - saved.targetEndTs < 24 * 60 * 60 * 1000) {
@@ -26964,7 +27356,73 @@ window.recalcHeroStats = recalcHeroStats;
         if (btn) btn.textContent = '⏸ Pausar';
         _tmInterval = setInterval(_tmTick, 1000);
         _updateRing();
+        _tmNotifySync();
     }
+
+    // ── Acciones de la notificación (Pausar / Reanudar / Detener) ──────────────────
+    // Con la app abierta o en segundo plano: se aplican con la hora real del toque ('at').
+    function _tmRemoteAction(action, at) {
+        try {
+            if (!_tmOpen || !document.getElementById('_stepTimerOverlay')) { _tmNotifyClear(); return; }
+            var now = Date.now(), when = (at && at < now) ? at : now;
+            var btn = document.getElementById('_tmBtnStart');
+            if (action === 'stop') { window.closeStepTimer(); return; }
+            if (action === 'pause') {
+                if (!_tmRunning) return;
+                if (_tmTargetEndTs <= when) { _tmTick(); return; }          // ya había terminado antes del toque
+                _tmSecondsLeft = Math.max(1, Math.ceil((_tmTargetEndTs - when) / 1000));
+                clearInterval(_tmInterval); _tmRunning = false;
+                if (btn) btn.textContent = '▶ Continuar';
+                _updateRing(); _tmSaveDelta(); _tmNotifySync();
+                return;
+            }
+            if (action === 'resume') {
+                if (_tmRunning || !(_tmSecondsLeft > 0)) return;
+                _tmRunning = true;
+                _tmTargetEndTs = when + _tmSecondsLeft * 1000;
+                if (btn) btn.textContent = '⏸ Pausar';
+                clearInterval(_tmInterval); _tmInterval = setInterval(_tmTick, 1000);
+                _tmSaveDelta(); _tmNotifySync(); _tmTick();
+            }
+        } catch (e) {}
+    }
+    // Acciones tocadas con la app CERRADA: se aplican a la toma guardada antes de restaurarla
+    function _tmApplyPending(list) {
+        if (!list || !list.length) return;
+        list.forEach(function(p) {
+            try {
+                var s = _tmLoadDelta(); if (!s) return;
+                var key = s.running ? 'step|r' + s.targetEndTs : 'step|p' + Math.round(s.remaining);
+                if (key !== p.from) return;                                    // ya no corresponde al estado guardado
+                if (p.action === 'stop') { _tmClearDelta(); return; }
+                if (p.action === 'pause' && s.running) {
+                    if (p.at >= s.targetEndTs) return;                         // ya había terminado
+                    s.remaining = Math.max(1, Math.ceil((s.targetEndTs - p.at) / 1000));
+                    s.running = false; s.targetEndTs = 0; s.savedAt = p.at;
+                    localStorage.setItem(TM_DELTA_KEY, JSON.stringify(s));
+                } else if (p.action === 'resume' && !s.running) {
+                    s.running = true; s.targetEndTs = p.at + Math.round(s.remaining) * 1000; delete s.remaining; delete s.savedAt;
+                    localStorage.setItem(TM_DELTA_KEY, JSON.stringify(s));
+                }
+            } catch (e) {}
+        });
+    }
+    var _tmBooted = false;
+    function _tmBoot() {
+        if (_tmBooted) return; _tmBooted = true;
+        var J = window.jchTimerNotif;
+        if (J && J.onAction) J.onAction('step', _tmRemoteAction);
+        var go = function(list) { try { _tmApplyPending(list); } catch (e) {} _tmColdRestore(); };
+        if (!J || !J.drainPending) { go([]); return; }
+        var done = false;
+        var fin = function(list) {
+            if (done) { if (list && list.length) list.forEach(function(p) { try { _tmRemoteAction(p.action, p.at); } catch (e) {} }); return; }
+            done = true; go(list || []);
+        };
+        J.drainPending('step').then(fin, function() { fin([]); });
+        setTimeout(function() { fin([]); }, 1500);       // por si IndexedDB tarda: se restaura igual
+    }
+    window._tmRemoteAction = _tmRemoteAction;   // (también lo usan las pruebas)
 
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'hidden') _tmSaveDelta();
@@ -26984,9 +27442,9 @@ window.recalcHeroStats = recalcHeroStats;
     });
     window.addEventListener('beforeunload', _tmSaveDelta);
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', _tmColdRestore);
+        document.addEventListener('DOMContentLoaded', _tmBoot);
     } else {
-        _tmColdRestore();
+        _tmBoot();
     }
 
     
@@ -27053,7 +27511,9 @@ var _tmTargetCb = null; // referencia al checkbox del paso activo
 
     window.closeStepTimer = function() {
         clearInterval(_tmInterval); _tmRunning = false;
+        _tmOpen = false;
         _tmClearDelta();
+        _tmNotifyClear();
         // Sonido de cierre
         _tmPlaySound('close');
         // ── Auto-marcar el check del paso SOLO si el timer se completó ──
