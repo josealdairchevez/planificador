@@ -17,7 +17,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v41';
+const CACHE_VERSION = 'v42';
 const CACHE_NAME = 'planificador-jch-' + CACHE_VERSION;
 
 const ASSETS_PROPIOS = [
@@ -349,7 +349,26 @@ const tAll = () => _tx('timers', 'readonly', s => s.getAll());
 const _sleepToSecond = () => new Promise(r => setTimeout(r, 1000 - (Date.now() % 1000) + 5));
 async function _loadRecs() {
   if (_recs.size) return;
-  try { (await tAll() || []).forEach(r => _recs.set(r.id, r)); } catch (_) {}
+  try { (await tAll() || []).forEach(r => { if (r && !String(r.id).startsWith('__')) _recs.set(r.id, r); }); } catch (_) {}
+}
+// Diagnóstico de los latidos de la nube (la página lo lee y lo muestra en el panel de perfil):
+// cuándo llegó el último, cuántos y los intervalos entre los últimos (para ver si Android los retrasa).
+let _diagBusy = Promise.resolve();
+function _diag(kind, extra) {
+  _diagBusy = _diagBusy.then(async () => {
+    try {
+      const now = Date.now();
+      const d = (await tGet('__diag')) || { id: '__diag', since: now, ticks: 0, ends: 0, gaps: [] };
+      if (kind === 'tick') {
+        if (d.lastTickAt && now - d.lastTickAt < 600000) { d.gaps = (d.gaps || []).concat([Math.round((now - d.lastTickAt) / 1000)]).slice(-8); }
+        else d.gaps = [];
+        d.lastTickAt = now; d.ticks = (d.ticks || 0) + 1; d.lastIds = (extra || '');
+      } else if (kind === 'end') { d.lastEndAt = now; d.ends = (d.ends || 0) + 1; }
+      else if (kind === 'loopend') { d.lastLoopEndAt = now; }
+      await tPut(d);
+    } catch (_) {}
+  });
+  return _diagBusy;
 }
 const _runningRecs = () => [..._recs.values()].filter(r => r.snap && r.snap.running);
 const _isLive = (r, now) => r.kind === 'stopwatch' || r.snap.endTs > now;      // el cronómetro no termina solo
@@ -375,14 +394,17 @@ async function _tickLoop(gen) {
       const now = Date.now();
       await Promise.all(_runningRecs().filter(r => _isLive(r, now)).map(r => _showTimerNotif(r, false)));
     }
-  } finally { if (gen === _loopGen) _loopRunning = false; }
+  } finally { if (gen === _loopGen) { _loopRunning = false; _diag('loopend'); } }
 }
-function _ensureLoop() {
-  const now = Date.now();
-  const need = !_loopRunning || now - _holdAt > 15000;      // cada evento retiene al SW como mucho _LOOP_MAX (límite de 5 min de Chrome)
-  if (need) { _holdAt = now; _holdUntil = now + _LOOP_MAX; }
+// hold = cuánto retiene este evento al SW (los pings de la página: _LOOP_MAX; los latidos de la nube: _TICK_HOLD, porque
+// llegan cada ~20 s y cada uno renueva el tramo; si dejan de llegar, la cuenta se apaga sola a los ~_TICK_HOLD s)
+let _TICK_HOLD = 75000;
+function _ensureLoop(hold) {
+  const now = Date.now(), h = hold || _LOOP_MAX;
+  const need = !_loopRunning || now - _holdAt > Math.min(15000, h / 3);      // cada evento retiene al SW como mucho _LOOP_MAX (límite de 5 min de Chrome)
+  if (need) { _holdAt = now; _holdUntil = Math.max(_holdUntil, now + h); }
   if (!_loopRunning) _loopP = _tickLoop(++_loopGen);
-  return need ? Promise.race([_loopP, new Promise(r => setTimeout(r, _LOOP_MAX))]) : Promise.resolve();
+  return need ? Promise.race([_loopP, new Promise(r => setTimeout(r, h))]) : Promise.resolve();
 }
 
 // ── AVISO DE FIN (Fase 2) ────────────────────────────────────────
@@ -428,6 +450,8 @@ async function _voidNotif() {
 async function _onTimerPush(d) {
   await _loadRecs();
   const isTick = d.type === 'timer_tick';
+  if (isTick) _diag('tick', String(d.ids || d.id || ''));
+  else _diag('end');
   const ids = String(isTick ? (d.ids || d.id || 'pomo') : (d.id || 'pomo')).split(',');
   let handled = false;
   for (const id of ids) {
@@ -448,7 +472,7 @@ async function _onTimerPush(d) {
       if (same && res !== 'visible') { _endedShown.add(id + '|' + s.endTs); await _closeTimerNotif(id); }
     }
   }
-  if (isTick) await _ensureLoop();
+  if (isTick) await _ensureLoop(_TICK_HOLD);
   if (!handled) await _voidNotif();
 }
 self.addEventListener('push', e => {
