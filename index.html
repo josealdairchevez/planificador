@@ -8180,6 +8180,7 @@ window.hrpFilter        = _hrpApplyFilter;
         <label class="pf-row" id="pfRowNotif"><span>🔔 Notificación fija con botones (Pausar / Detener)</span><span class="pf-sw"><input type="checkbox" id="pfTimerNotif"><i></i></span></label>
         <label class="pf-row" id="pfRowCloud"><span>☁️ Aviso al terminar con la app cerrada</span><span class="pf-sw"><input type="checkbox" id="pfTimerCloud"><i></i></span></label>
         <div class="profile-sync-status" id="pfTimerStatus"></div>
+        <div class="profile-sync-status" id="pfTimerDiag" style="text-align:left;font-size:.64rem;line-height:1.35;margin:0 0 .5rem;"></div>
         <button class="profile-sync-btn" id="pfTimerTest" type="button">🔔 Probar notificación</button>
         <div class="pf-divider"></div>
         <button class="profile-logout-btn" onclick="handleLogout()" aria-label="Cerrar sesión de tu cuenta">
@@ -19658,6 +19659,8 @@ function registerFCMToken(){
           console.warn('[JCH] FCM: no se obtuvo token'); return;
         }
         _fcmReady=true;
+        window._jchFcmToken=token;   // los relojes lo anotan en la nube para que los latidos vayan solo a este dispositivo
+        try{ if(window.jchTimerNotif && window.jchTimerNotif.tokenReady) window.jchTimerNotif.tokenReady(); }catch(_){}
         console.log('[JCH] FCM token:',token.substring(0,20)+'...');
         var auth=firebase.auth();
         var saveToken=function(user){
@@ -25157,7 +25160,7 @@ window.openChest = function(id) {
     // ── Fase 2: hora de fin de los relojes corriendo → Firestore (users/{uid}.fcm_timers). La Cloud Function sendTimerAlerts
     // la usa para avisar al terminar y para mandar un "latido" cada minuto que reactiva la cuenta de la notificación aunque
     // la app esté cerrada. Solo funciona con sesión iniciada; se puede apagar con localStorage jch_timer_cloud_off=1.
-    var cloud = {}, cloudT = null, cloudLast = '', cloudUsed = false;
+    var cloud = {}, cloudT = null, cloudLast = '', cloudUsed = false, cloudOkAt = 0, cloudSince = 0;
     function cloudOn() { try { return localStorage.getItem('jch_timer_cloud_off') !== '1'; } catch (e) { return true; } }
     function cloudSet(id, entry) {
         if (!cloudOn()) return;
@@ -25166,7 +25169,8 @@ window.openChest = function(id) {
     }
     function cloudWrite(attempt) {
         try {
-            var arr = Object.keys(cloud).map(function (k) { return cloud[k]; });
+            var tok = window._jchFcmToken || '';
+            var arr = Object.keys(cloud).map(function (k) { var e = Object.assign({}, cloud[k]); if (tok) e.tok = tok; return e; });
             var sig = JSON.stringify(arr);
             if (sig === cloudLast || (!arr.length && !cloudUsed)) return;          // nada que cambiar (y no escribir al abrir sin relojes)
             if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
@@ -25178,15 +25182,15 @@ window.openChest = function(id) {
             if (arr.length) cloudUsed = true;
             firebase.firestore().collection('users').doc(user.uid)
                 .set({ fcm_timers: arr, fcm_timers_until: until }, { merge: true })
-                .then(function () { cloudLast = sig; })
+                .then(function () { cloudLast = sig; cloudOkAt = Date.now(); if (arr.length && !cloudSince) cloudSince = Date.now(); if (!arr.length) cloudSince = 0; })
                 .catch(function (e) { console.warn('[JCH] timers → Firestore:', e && e.message); });
         } catch (e) {}
     }
     function cloudSync(rec) {
         var s = rec.snap || {};
         if (rec.kind === 'stopwatch' && s.running) {
-            // El cronómetro no termina solo: solo "latidos" (el servidor los manda hasta 3 h; el aviso de fin que llega al final lo ignora el SW)
-            cloudSet(rec.id, { id: rec.id, fireAt: Math.max(Date.now(), s.startTs || 0) + 3 * 3600 * 1000, phase: 'sw', title: '', body: '' });
+            // El cronómetro no termina solo: solo "latidos" (el servidor los manda hasta 10 h; el aviso de fin que llega al final lo ignora el SW)
+            cloudSet(rec.id, { id: rec.id, fireAt: Math.max(Date.now(), s.startTs || 0) + 10 * 3600 * 1000, phase: 'sw', title: '', body: '' });
         } else if (s.running && s.endTs > Date.now() + 1000) {
             var al = rec.alert || {};
             cloudSet(rec.id, { id: rec.id, fireAt: s.endTs, phase: s.phase || '', title: al.title || rec.title || '', body: al.body || '' });
@@ -25281,6 +25285,34 @@ window.openChest = function(id) {
                         } catch (e) { try { db.close(); } catch (_) {} res([]); }
                     };
                 } catch (e) { res([]); }
+            });
+        },
+        // El token FCM de este dispositivo llegó (o cambió): volver a anotar los relojes en la nube con él
+        tokenReady: function () { clearTimeout(cloudT); cloudT = setTimeout(function () { cloudWrite(0); }, 800); },
+        // ── Diagnóstico: ¿están llegando los latidos de la nube al service worker? ──
+        cloudInfo: function () {
+            var user = false; try { user = !!(window.firebase && firebase.apps && firebase.apps.length && firebase.auth().currentUser); } catch (e) {}
+            return { on: cloudOn(), entries: Object.keys(cloud).length, okAt: cloudOkAt, since: cloudSince, user: user };
+        },
+        diag: function () {
+            return new Promise(function (res) {
+                try {
+                    var rq = indexedDB.open(DB, 1);
+                    rq.onupgradeneeded = function () {
+                        var d = rq.result;
+                        if (!d.objectStoreNames.contains('timers'))  d.createObjectStore('timers',  { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('pending')) d.createObjectStore('pending', { keyPath: 'k', autoIncrement: true });
+                    };
+                    rq.onerror = function () { res(null); };
+                    rq.onsuccess = function () {
+                        var db = rq.result;
+                        try {
+                            var g = db.transaction('timers', 'readonly').objectStore('timers').get('__diag');
+                            g.onsuccess = function () { db.close(); res(g.result || null); };
+                            g.onerror = function () { db.close(); res(null); };
+                        } catch (e) { try { db.close(); } catch (_) {} res(null); }
+                    };
+                } catch (e) { res(null); }
             });
         },
         // ── Fase 4: ajustes (interruptores del panel de perfil) ──
@@ -25394,9 +25426,41 @@ window.openChest = function(id) {
         st.textContent = msg; st.style.color = col;
         if (bt) bt.style.opacity = s.supported && s.enabled ? '1' : '.45';
     }
+    function ago(ms) { var s = Math.max(0, Math.round(ms / 1000)); return s < 90 ? s + ' s' : Math.round(s / 60) + ' min'; }
+    // Línea de diagnóstico: ¿la nube está registrando el reloj y están llegando sus latidos al teléfono?
+    function renderDiag() {
+        var J = window.jchTimerNotif, el = $('pfTimerDiag'), pn = $('profilePanel');
+        if (!J || !el || !pn || !pn.classList.contains('open')) return;
+        var s = J.settings(), ci = J.cloudInfo();
+        if (!s.enabled || !s.cloud) { el.textContent = ''; return; }
+        J.diag().then(function (d) {
+            var now = Date.now(), msg, col = '#9fb3c8';
+            if (!ci.entries) {
+                msg = '📡 Sin relojes corriendo.' + (d && d.lastTickAt ? ' Último latido recibido: hace ' + ago(now - d.lastTickAt) + '.' : '');
+            } else if (!ci.user) {
+                msg = '📡 Sin sesión: no hay latidos de la nube. Inicia sesión.'; col = '#fbbf24';
+            } else if (!ci.okAt) {
+                msg = '📡 Registrando tu reloj en la nube…'; col = '#fbbf24';
+            } else {
+                var recent = d && d.lastTickAt && d.lastTickAt > ci.since - 5000;      // latido recibido desde que corre el reloj
+                if (recent) {
+                    msg = '📡 Latidos OK: último hace ' + ago(now - d.lastTickAt) + ' · ' + (d.ticks || 0) + ' recibidos' +
+                          ((d.gaps && d.gaps.length) ? ' · intervalos (s): ' + d.gaps.join(' ') : '');
+                    col = (now - d.lastTickAt > 90000) ? '#fbbf24' : '#34d399';
+                    if (now - d.lastTickAt > 90000) msg += ' ⚠ Se están retrasando (¿ahorro de batería?)';
+                } else if (now - ci.since > 90000) {
+                    msg = '📡 ⚠ Reloj registrado en la nube hace ' + ago(now - ci.since) + ' pero NO han llegado latidos al teléfono. Revisa batería y notificaciones de Chrome.'; col = '#f87171';
+                } else {
+                    msg = '📡 Reloj registrado en la nube ✓ · esperando el primer latido…';
+                }
+            }
+            el.textContent = msg; el.style.color = col;
+        });
+    }
     function init() {
         var J = window.jchTimerNotif, cN = $('pfTimerNotif'), cC = $('pfTimerCloud'), bt = $('pfTimerTest'), pb = $('profileBtn');
         if (!J || !cN || !cC) return;
+        setInterval(renderDiag, 3000); if (pb) pb.addEventListener('click', function () { setTimeout(renderDiag, 120); });
         cN.addEventListener('change', function () {
             J.setEnabled(cN.checked);
             if (cN.checked) J.requestPermission(function () { render(); window.dispatchEvent(new Event('jch-timers-resync')); });
