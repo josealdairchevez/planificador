@@ -10928,10 +10928,12 @@ window.hrpFilter        = _hrpApplyFilter;
             if (elapsed <= 0) return;
             timeLeft = remaining; lastTickTime = now;
             updateDisplay(); updateRealTimeTracking(elapsed);
-            if (timeLeft <= 0) _mtFinish(); else _mtSave();
+            if (timeLeft <= 0) _mtFinish(Date.now() - _mtEndTs > 2500); else _mtSave();
         }
 
-        function _mtFinish() {
+        // late = el fin no se vio en pantalla (app oculta/cerrada o congelada): se paga directo y la celebración queda guardada para cuando se vuelva
+        function _mtFinish(late) {
+            const _endedAt = _mtEndTs || Date.now(); const _unseen = !!late || document.hidden;
             clearInterval(timer); timer = null; isRunning = false; _mtEndTs = 0; _mtNotifyEnd(); setBtnVisuals('idle');
             const key = getActiveKey(); if(isWorkMode && key && courseStats[key]) { courseStats[key].pomo++; localStorage.setItem('studyStats_v18', JSON.stringify(courseStats)); }
             if(isWorkMode) {
@@ -10940,10 +10942,12 @@ window.hrpFilter        = _hrpApplyFilter;
                 let lvlMultiplier = 1 + (mStats.level * 0.10); // +10% de bonus por cada nivel
                 let gainedXP = Math.floor(currentModeMins * 12 * lvlMultiplier); // 12 XP por min base
                 let gainedCoins = Math.floor(currentModeMins * 0.8 * lvlMultiplier); // Escasez: 0.8 Monedas por min base
-                if (document.hidden) {
+                if (_unseen) {
                     // Con la app oculta no corren las animaciones (requestAnimationFrame): se paga directo y el aviso queda pendiente
                     addGlobalReward(gainedXP, gainedCoins);
-                    _mtPendingModal = ['¡Bloque de Acción Logrado!', `Has sumado ${currentModeMins} minutos a tu meta.`];
+                    if (window.jchCelebrateLater) window.jchCelebrateLater({ id: 'main|' + _endedAt, icon: '🎯', title: '¡Bloque de Acción Logrado!',
+                        msg: `Has sumado ${currentModeMins} minutos a tu meta.`, xp: gainedXP, coins: gainedCoins, endedAt: _endedAt });
+                    else _mtPendingModal = ['¡Bloque de Acción Logrado!', `Has sumado ${currentModeMins} minutos a tu meta.`];
                 } else {
                     const timerRect = document.getElementById('timer').getBoundingClientRect();
                     let sX = timerRect.left + timerRect.width / 2; let sY = timerRect.top + timerRect.height / 2;
@@ -10960,7 +10964,11 @@ window.hrpFilter        = _hrpApplyFilter;
                     });
                 }
             } else {
-                if (document.hidden) _mtPendingModal = ['¡Descanso Finalizado!', 'Regresa a tu posición de enfoque.'];
+                if (_unseen) {
+                    if (window.jchCelebrateLater) window.jchCelebrateLater({ id: 'main|' + _endedAt, icon: '☕', title: '¡Descanso Finalizado!',
+                        msg: 'Regresa a tu posición de enfoque.', endedAt: _endedAt, soft: true });
+                    else _mtPendingModal = ['¡Descanso Finalizado!', 'Regresa a tu posición de enfoque.'];
+                }
                 else showVictoryModal('¡Descanso Finalizado!', 'Regresa a tu posición de enfoque.');
             }
             timeLeft = currentModeMins * 60; updateDisplay(); loadCourseStatsUI(); 
@@ -11052,7 +11060,7 @@ window.hrpFilter        = _hrpApplyFilter;
                     const k = getActiveKey();
                     if (elapsed > 0 && (!isWorkMode || (k && courseStats[k]))) updateRealTimeTracking(elapsed);
                     timeLeft = remaining; updateDisplay();
-                    if (remaining <= 0) { _mtFinish(); return; }
+                    if (remaining <= 0) { _mtFinish(true); return; }
                     setBtnVisuals('run');
                     timer = setInterval(_mainTick, 1000);
                     _mtSave();
@@ -25445,7 +25453,9 @@ window.openChest = function(id) {
                 var recent = d && d.lastTickAt && d.lastTickAt > ci.since - 5000;      // latido recibido desde que corre el reloj
                 if (recent) {
                     msg = '📡 Latidos OK: último hace ' + ago(now - d.lastTickAt) + ' · ' + (d.ticks || 0) + ' recibidos' +
-                          ((d.gaps && d.gaps.length) ? ' · intervalos (s): ' + d.gaps.join(' ') : '');
+                          ((d.gaps && d.gaps.length) ? ' · intervalos (s): ' + d.gaps.join(' ') : '') +
+                          (d.bursts ? ' · juntos: ' + d.bursts : '') +
+                          ((d.big && d.big.length) ? ' · huecos largos: ' + d.big.map(function (b) { var h = new Date(b.at); return b.s + ' s (hasta ' + ('0' + h.getHours()).slice(-2) + ':' + ('0' + h.getMinutes()).slice(-2) + ')'; }).join(', ') : '');
                     col = (now - d.lastTickAt > 90000) ? '#fbbf24' : '#34d399';
                     if (now - d.lastTickAt > 90000) msg += ' ⚠ Se están retrasando (¿ahorro de batería?)';
                 } else if (now - ci.since > 90000) {
@@ -25670,6 +25680,15 @@ function _pomoAwardSession(lateMs) {
     // Marcar hábito vinculado
     const habSel=document.getElementById('habPomoHabitSel');
     if(habSel&&habSel.value&&typeof habitPlus==='function') habitPlus(habSel.value,null);
+    // Si terminó sin que la app se viera (segundo plano / cerrada), el aviso se guarda y sale como tarjeta grande con confeti y sonido al volver
+    const _unseen = lateMs > 2500 || document.visibilityState !== 'visible';
+    if (_unseen && window.jchCelebrateLater) {
+        let _hn = ''; try { const hh = loadHabits().find(h => h.id === (habSel && habSel.value)); if (hh) _hn = (hh.emoji||'🌿') + ' ' + hh.name; } catch (e) {}
+        window.jchCelebrateLater({ id: 'pomo|work|' + _pomoState.endTs, icon: '🍅', title: '¡Pomodoro completado!',
+            msg: (_hn ? _hn + '\n' : '') + 'Sesiones de hoy: ' + pomo.todaySessions + '. ¡Gran trabajo, te lo ganaste!',
+            xp: 15, coins: 5, endedAt: _pomoState.endTs });
+        return;
+    }
     _pomoToast('🍅 ¡Sesión Pomodoro completada! +15 XP +5🪙' + (lateMs > 2500 ? ' · terminó ' + _pomoAgo(lateMs) : ''), 'linear-gradient(135deg,#ef4444,#dc2626)', lateMs > 2500 ? 1500 : 0);
     if(typeof playSparkleSound==='function') playSparkleSound();
 }
@@ -25698,7 +25717,9 @@ function pomoAdvance() {
                 clearInterval(_pomoInterval);
                 _pomoState.running=false;
                 _pomoState.remaining=_pomoState.total;
-                _pomoToast('🟢 Descanso terminado ' + _pomoAgo(late) + ' · pulsa ▶ Iniciar para otra sesión', 'linear-gradient(135deg,#059669,#10b981)', 1200);
+                if (window.jchCelebrateLater) window.jchCelebrateLater({ id: 'pomo|break|' + _pomoState.endTs, icon: '🟢', title: 'Descanso terminado',
+                    msg: 'Pulsa ▶ Iniciar para otra sesión de enfoque 💪', endedAt: _pomoState.endTs, soft: true });
+                else _pomoToast('🟢 Descanso terminado ' + _pomoAgo(late) + ' · pulsa ▶ Iniciar para otra sesión', 'linear-gradient(135deg,#059669,#10b981)', 1200);
                 break;
             }
         }
@@ -37826,6 +37847,167 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   CELEBRACIÓN AL VOLVER (v43)
+   Si un pomodoro/bloque terminó con la app oculta o cerrada, el aviso ya no se pierde: se guarda y, cuando la app
+   está visible, sale una tarjeta grande (no desaparece sola) con confeti, sonido y las recompensas ganadas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  var KEY = 'jch_celebrate_v1', TTL = 12 * 3600 * 1000, ac = null, armed = false, pollT = null, pollUntil = 0;
+
+  function load() { try { var a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function save(a) { try { if (a.length) localStorage.setItem(KEY, JSON.stringify(a)); else localStorage.removeItem(KEY); } catch (e) {} }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function ago(ms) { var m = Math.round(ms / 60000); return m < 1 ? 'hace un momento' : (m < 60 ? 'hace ' + m + ' min' : 'hace ' + Math.round(m / 60) + ' h'); }
+
+  /* ── Estilos (una sola vez) ── */
+  function css() {
+    if (document.getElementById('jccStyle')) return;
+    var s = document.createElement('style'); s.id = 'jccStyle';
+    s.textContent =
+      '#jchCelebrate{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;' +
+      'background:rgba(2,4,18,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .35s ease}' +
+      '#jchCelebrate.jcc-in{opacity:1}' +
+      '#jchCelebrate .jcc-card{width:min(92vw,380px);text-align:center;color:#fff;border-radius:22px;padding:26px 20px 20px;' +
+      'background:linear-gradient(160deg,rgba(15,23,42,.98),rgba(30,20,50,.98));box-shadow:0 12px 50px rgba(0,0,0,.7),0 0 0 1px rgba(251,191,36,.45),0 0 40px rgba(251,191,36,.25);' +
+      'transform:scale(.85);transition:transform .45s cubic-bezier(.175,.885,.32,1.275)}' +
+      '#jchCelebrate.jcc-in .jcc-card{transform:scale(1)}' +
+      '#jchCelebrate .jcc-ico{font-size:3.6rem;line-height:1;animation:jccBounce 1.1s ease-in-out infinite}' +
+      '#jchCelebrate .jcc-title{margin:10px 0 6px;font-size:1.35rem;font-weight:900;color:#fbbf24}' +
+      '#jchCelebrate .jcc-msg{font-size:.98rem;line-height:1.4;color:#e2e8f0;white-space:pre-line}' +
+      '#jchCelebrate .jcc-chips{display:flex;gap:10px;justify-content:center;margin:14px 0 4px;flex-wrap:wrap}' +
+      '#jchCelebrate .jcc-chip{padding:7px 14px;border-radius:999px;font-weight:900;font-size:1rem;background:rgba(251,191,36,.14);border:1px solid rgba(251,191,36,.5);color:#fde68a}' +
+      '#jchCelebrate .jcc-chip.xp{background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.55);color:#ddd6fe}' +
+      '#jchCelebrate .jcc-ago{margin-top:8px;font-size:.82rem;color:#94a3b8}' +
+      '#jchCelebrate .jcc-btn{margin-top:16px;width:100%;padding:13px;border:0;border-radius:14px;font-size:1.05rem;font-weight:900;color:#1c1917;' +
+      'background:linear-gradient(135deg,#fbbf24,#f59e0b);cursor:pointer}' +
+      '.jcc-conf{position:fixed;top:-20px;z-index:2147483001;pointer-events:none;border-radius:2px}' +
+      '@keyframes jccBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}';
+    document.head.appendChild(s);
+  }
+
+  /* ── Confeti ── */
+  function confetti() {
+    try {
+      var cols = ['#fbbf24', '#f472b6', '#60a5fa', '#34d399', '#a78bfa', '#ffffff', '#fb923c'], W = window.innerWidth, H = window.innerHeight;
+      for (var i = 0; i < 80; i++) {
+        var p = document.createElement('div'); p.className = 'jcc-conf';
+        var w = 6 + Math.random() * 6; p.style.width = w + 'px'; p.style.height = (w * (0.5 + Math.random())) + 'px';
+        p.style.background = cols[i % cols.length]; p.style.left = (Math.random() * W) + 'px';
+        document.body.appendChild(p);
+        var dx = (Math.random() - 0.5) * 160, dur = 2200 + Math.random() * 1800, rot = (Math.random() * 900 - 450);
+        var a = p.animate([{ transform: 'translate(0,0) rotate(0deg)', opacity: 1 }, { transform: 'translate(' + dx + 'px,' + (H + 40) + 'px) rotate(' + rot + 'deg)', opacity: 0.9 }],
+          { duration: dur, delay: Math.random() * 700, easing: 'cubic-bezier(.3,.6,.5,1)', fill: 'forwards' });
+        a.onfinish = (function (el) { return function () { el.remove(); }; })(p);
+        setTimeout((function (el) { return function () { el.remove(); }; })(p), 6000);
+      }
+    } catch (e) {}
+  }
+
+  /* ── Sonido: un solo AudioContext; si el navegador lo bloquea (sin toque previo), suena al primer toque ── */
+  function getAC() { try { if (!ac) { var C = window.AudioContext || window.webkitAudioContext; if (C) ac = new C(); } } catch (e) { ac = null; } return ac; }
+  function tune(c) {
+    try {
+      var notes = [[523.25, 0, .12], [659.25, .14, .12], [783.99, .28, .12], [1046.5, .42, .18], [783.99, .66, .12], [1046.5, .8, .12], [1318.51, .94, .5]];
+      notes.forEach(function (n) {
+        var o = c.createOscillator(), g = c.createGain(), t = c.currentTime + n[1];
+        o.type = 'triangle'; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.22, t + .02); g.gain.exponentialRampToValueAtTime(0.001, t + n[2] + .25);
+        o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + n[2] + .3);
+      });
+    } catch (e) {}
+  }
+  function unlockOnTouch() {
+    if (armed) return; armed = true;
+    var evs = ['pointerdown', 'touchstart', 'keydown', 'click'];
+    var h = function () {
+      evs.forEach(function (ev) { document.removeEventListener(ev, h, true); }); armed = false;
+      var c = getAC(); if (!c) return;
+      try { c.resume(); } catch (e) {}
+      setTimeout(function () { if (c.state === 'running' && document.getElementById('jchCelebrate')) tune(c); }, 120);
+    };
+    evs.forEach(function (ev) { document.addEventListener(ev, h, true); });
+  }
+  function fanfare() {
+    var c = getAC(); if (!c) return;
+    if (c.state === 'running') { tune(c); return; }
+    try { c.resume(); } catch (e) {}
+    setTimeout(function () { if (c.state === 'running') tune(c); else unlockOnTouch(); }, 250);
+  }
+
+  /* ── Tarjeta ── */
+  function show(it) {
+    css();
+    var old = document.getElementById('jchCelebrate'); if (old) old.remove();
+    var chips = '';
+    if (it.xp) chips += '<span class="jcc-chip xp">+' + esc(it.xp) + ' XP</span>';
+    if (it.coins) chips += '<span class="jcc-chip">+' + esc(it.coins) + ' 🪙</span>';
+    var o = document.createElement('div'); o.id = 'jchCelebrate'; o.setAttribute('role', 'dialog');
+    o.innerHTML = '<div class="jcc-card"><div class="jcc-ico">' + esc(it.icon || '🎉') + '</div><div class="jcc-title">' + esc(it.title || '¡Logrado!') + '</div>' +
+      '<div class="jcc-msg">' + esc(it.msg || '') + '</div>' + (chips ? '<div class="jcc-chips">' + chips + '</div>' : '') +
+      (it.endedAt ? '<div class="jcc-ago">Terminó ' + esc(ago(Date.now() - it.endedAt)) + '</div>' : '') +
+      '<button class="jcc-btn" type="button">¡Genial! 💪</button></div>';
+    document.body.appendChild(o);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { o.classList.add('jcc-in'); }); });
+    setTimeout(function () { o.classList.add('jcc-in'); }, 120);   // (por si requestAnimationFrame va atrasado)
+    var closed = false;
+    function close() {
+      if (closed) return; closed = true; o.classList.remove('jcc-in');
+      setTimeout(function () { o.remove(); setTimeout(flush, 250); }, 300);
+    }
+    o.querySelector('.jcc-btn').addEventListener('click', close);
+    o.addEventListener('click', function (e) { if (e.target === o) close(); });
+    if (!it.soft) { confetti(); fanfare(); try { if (navigator.vibrate) navigator.vibrate([180, 90, 180]); } catch (e) {} }
+    else { try { if (window.playSparkleSound) window.playSparkleSound(); } catch (e) {} }
+  }
+
+  function blocked() {
+    if (document.visibilityState !== 'visible') return true;
+    if (document.getElementById('jchCelebrate')) return true;
+    if (document.querySelector('.g1-overlay.g1-visible')) return true;   // pantalla de bienvenida del día, etc.
+    return false;
+  }
+  function poll() {
+    if (pollT || !load().length) return;
+    pollUntil = Date.now() + 5 * 60 * 1000;
+    pollT = setInterval(function () {
+      if (!load().length || Date.now() > pollUntil) { clearInterval(pollT); pollT = null; return; }
+      flush();
+    }, 1500);
+  }
+  function flush() {
+    try {
+      var list = load().filter(function (x) { return x && x.at && Date.now() - x.at < TTL; });
+      if (list.length !== load().length) save(list);
+      if (!list.length) return;
+      if (blocked()) { poll(); return; }
+      var it = list.shift(); save(list);
+      show(it);
+    } catch (e) {}
+  }
+  function later(it) {
+    try {
+      if (!it) return;
+      var list = load();
+      if (it.id && list.some(function (x) { return x && x.id === it.id; })) return;
+      it.at = it.at || Date.now(); list.push(it); save(list);
+      setTimeout(flush, 400); poll();
+    } catch (e) {}
+  }
+
+  window.jchCelebrateLater = later;
+  window.jchCelebrateFlush = flush;
+  window.jchCelebrate = function (it) { show(it || {}); };
+
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') setTimeout(flush, 500); });
+  window.addEventListener('pageshow', function () { setTimeout(flush, 800); });
+  function boot() { setTimeout(flush, 2500); }
+  if (document.readyState === 'complete') boot(); else window.addEventListener('load', boot);
+})();
 </script>
 
 </body>
