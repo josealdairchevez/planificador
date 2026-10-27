@@ -17,7 +17,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v44';
+const CACHE_VERSION = 'v51';
 const CACHE_NAME = 'planificador-jch-' + CACHE_VERSION;
 
 const ASSETS_PROPIOS = [
