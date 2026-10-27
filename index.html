@@ -8570,9 +8570,12 @@ window.hrpFilter        = _hrpApplyFilter;
             <div class="card" id="gestionCard">
                 <div class="gestion-header-row">
                     <h2 style="margin:0;">📊 Gestión de Tareas y Proyectos</h2>
-                    <div class="gestion-tabs">
-                        <button class="gestion-tab-btn active" id="gestionTabBtnKanban" onclick="switchGestionTab('kanban')">📌 Kanban</button>
-                        <button class="gestion-tab-btn" id="gestionTabBtnLista" onclick="switchGestionTab('lista')">📋 Lista</button>
+                    <div class="gx-actions">
+                        <button type="button" id="gxNewBtn" onclick="jchGestorNew()" title="Crear un proyecto o una tarea nueva"><span class="gx-plus">+</span>Nuevo</button>
+                        <div class="gestion-tabs">
+                            <button class="gestion-tab-btn active" id="gestionTabBtnKanban" onclick="switchGestionTab('kanban')">📌 Kanban</button>
+                            <button class="gestion-tab-btn" id="gestionTabBtnLista" onclick="switchGestionTab('lista')">📋 Lista</button>
+                        </div>
                     </div>
                 </div>
 
@@ -10366,7 +10369,7 @@ window.hrpFilter        = _hrpApplyFilter;
                 const calSubtasks = [];
                 document.querySelectorAll('#newProjectStepsContainer .project-task-container').forEach(container => {
                     const t = container.querySelector('.project-task-title-input');
-                    if (t && t.value.trim()) calSubtasks.push({ title: t.value.trim(), done: false });
+                    if (t && t.value.trim()) { const dEl = container.querySelector('.project-task-desc-input'); calSubtasks.push({ title: t.value.trim(), description: dEl ? dEl.value.trim() : '', done: false }); }
                 });
 
                 const calEv = {
@@ -10418,6 +10421,7 @@ window.hrpFilter        = _hrpApplyFilter;
                             customMethodsMem[methodId]._isRepeat   = cMLink[methodId]._isRepeat;
                             customMethodsMem[methodId]._date       = dateStr;
                         }
+                        if (window.jchRutinaMark) window.jchRutinaMark(methodId, calEv);
                     }
                 } catch(e) {}
                 if (typeof renderCalClock  === 'function') renderCalClock();
@@ -10425,6 +10429,7 @@ window.hrpFilter        = _hrpApplyFilter;
             }
 
             closeNewProjectModal();
+            try { const _e0 = window.calGetEventsArray && window.calGetEventsArray()[0]; if (_e0 && window.jchGestorAfterCreate) window.jchGestorAfterCreate(_e0.id); if (_e0 && _e0.subtasks && _e0.subtasks.length) setTimeout(function () { window.jchPromptSubtaskTimes && window.jchPromptSubtaskTimes(_e0.id); }, 380); } catch (e) {}
         };
 
         /* === CONFIGURACIÓN SELECTORES GLOBALES PREMIUM (ACTUALIZADOS) === */
@@ -12377,7 +12382,7 @@ window.hrpFilter        = _hrpApplyFilter;
                 const calSubtasks = [];
                 document.querySelectorAll('#newTaskStepsContainer .project-task-container').forEach(container => {
                     const t = container.querySelector('.task-subtask-title-input');
-                    if (t && t.value.trim()) calSubtasks.push({ title: t.value.trim(), done: false });
+                    if (t && t.value.trim()) { const dEl = container.querySelector('.task-subtask-desc-input'); calSubtasks.push({ title: t.value.trim(), description: dEl ? dEl.value.trim() : '', done: false }); }
                 });
 
                 const calEv = {
@@ -12429,6 +12434,7 @@ window.hrpFilter        = _hrpApplyFilter;
                             customMethodsMem[taskId]._isRepeat   = cMLink[taskId]._isRepeat;
                             customMethodsMem[taskId]._date       = dateStr;
                         }
+                        if (window.jchRutinaMark) window.jchRutinaMark(taskId, calEv);
                     }
                 } catch(e) {}
                 if (typeof renderCalClock   === 'function') renderCalClock();
@@ -12436,6 +12442,7 @@ window.hrpFilter        = _hrpApplyFilter;
             }
 
             closeNewTaskModal();
+            try { const _e0 = window.calGetEventsArray && window.calGetEventsArray()[0]; if (_e0 && window.jchGestorAfterCreate) window.jchGestorAfterCreate(_e0.id); if (_e0 && _e0.subtasks && _e0.subtasks.length) setTimeout(function () { window.jchPromptSubtaskTimes && window.jchPromptSubtaskTimes(_e0.id); }, 380); } catch (e) {}
         };
 
 
@@ -14152,7 +14159,7 @@ window.hrpFilter        = _hrpApplyFilter;
                             ${pct > 0 ? `<g mask="url(#${maskId})"><circle cx="9" cy="9" r="7" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="2 ${circumference.toFixed(1)}" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 9 9" to="360 9 9" dur="${pct === 100 ? '1s' : '1.5s'}" repeatCount="indefinite"></animateTransform></circle></g>` : ''}
                         </svg>
                     </span>
-                    <span class="kanban-sub-count">${subDone}/${subTotal}</span>
+                    <span class="kanban-sub-count">${subDone}/${subTotal}</span>${window.jchTotalChip ? window.jchTotalChip(ev, 'kanban-sub-total') : ''}
                     <span class="kanban-sub-chevron">⌄</span>
                 </span>`;
 
@@ -14166,8 +14173,9 @@ window.hrpFilter        = _hrpApplyFilter;
                 const prioIcon = prioDotMap[st.priority] || '';
                 return `<div class="kanban-sub-item" onclick="event.stopPropagation(); openSubtaskDetail('${ev.id}', ${i})">
                     <span class="kanban-sub-dot" style="background:${stColor};box-shadow:0 0 5px ${stColor};"></span>
-                    <span class="kanban-sub-name${done ? ' done' : ''}">${name}</span>
+                    <span class="kanban-sub-name${done ? ' done' : ''}">${name}${(window.jchSubtaskTimed && !window.jchSubtaskTimed(st)) ? '<span class="st-nohora-mini" title="Falta definir la hora de esta subtarea">⚠</span>' : ''}${window.jchSubtaskNowChip ? window.jchSubtaskNowChip(st, done) : ''}${(window.jchSubtaskRangeText && window.jchSubtaskRangeText(st)) ? '<small class="st-k-meta' + ((window.jchSubtaskNowState && window.jchSubtaskNowState(st, done) === 'late') ? ' late' : '') + '">' + window.jchSubtaskRangeText(st) + '</small>' : ''}</span>
                     ${prioIcon ? `<span class="kanban-sub-prio">${prioIcon}</span>` : ''}
+                    ${window.jchSubtaskTimerBtn ? window.jchSubtaskTimerBtn(ev.id, i, st, done) : ''}
                 </div>`;
             }).join('');
             subListHtml = `<div class="kanban-card-subtasks${isExpanded ? ' open' : ''}" id="kanbanSub_${ev.id}">${rows}</div>`;
@@ -14484,8 +14492,12 @@ window.hrpFilter        = _hrpApplyFilter;
     // orden (listColumnOrder) que usa la fila principal, así quedan
     // perfectamente alineados columna por columna.
     function listSubtaskCellContent(ev, st, idx, key) {
-        if (key === 'startDate') return st.startDate ? kanbanFmtDate(st.startDate) : '—';
-        if (key === 'endDate') return st.endDate ? kanbanFmtDate(st.endDate) : '—';
+        if (key === 'startDate' || key === 'endDate') {
+            const _v = st[key];
+            const _inner = window.jchSubtaskDateCell ? window.jchSubtaskDateCell(_v) : (_v ? kanbanFmtDate(_v) : '—');
+            const _late = (key === 'endDate' && window.jchSubtaskNowState && window.jchSubtaskNowState(st, listIsSubtaskDone(ev, idx, st)) === 'late');
+            return `<span class="st-cell-click${_late ? ' st-late' : ''}" title="Tocar para editar fecha y hora" onclick="event.stopPropagation(); openSubtaskDetail('${ev.id}', ${idx})">${_inner}${_late ? '<span class="st-late-tag">⏰ vencida</span>' : ''}</span>`;
+        }
         if (key === 'priority') {
             const p = PRIORITY_INFO[st.priority] || PRIORITY_INFO.normal;
             return `<span class="list-chip" style="background:${p.color}20;border:1px solid ${p.color}80;color:${p.color};"><span class="list-chip-label-text">${p.label}</span></span>`;
@@ -14528,7 +14540,7 @@ window.hrpFilter        = _hrpApplyFilter;
             <div class="list-row list-subtask-row">
                 <div class="list-cell list-cell-name list-subtask-name">
                     <input type="checkbox" ${done ? 'checked' : ''} onclick="event.stopPropagation(); listToggleSubtaskDone('${ev.id}', ${idx}, this.checked)">
-                    <span class="subtask-name-link" style="${done ? 'text-decoration:line-through;opacity:0.5;' : ''}" onclick="event.stopPropagation(); openSubtaskDetail('${ev.id}', ${idx})">${(st && (st.title || st.name)) || 'Subtarea'}</span>
+                    <span class="subtask-name-link" style="${done ? 'text-decoration:line-through;opacity:0.5;' : ''}" onclick="event.stopPropagation(); openSubtaskDetail('${ev.id}', ${idx})">${(st && (st.title || st.name)) || 'Subtarea'}</span>${window.jchSubtaskDurChip ? window.jchSubtaskDurChip(st) : ''}${window.jchSubtaskDiffChip ? window.jchSubtaskDiffChip(st) : ''}${window.jchSubtaskNowChip ? window.jchSubtaskNowChip(st, done) : ''}${window.jchSubtaskTimerBtn ? window.jchSubtaskTimerBtn(ev.id, idx, st, done) : ''}
                 </div>
                 ${listColumnOrder.map(k => `<div class="list-cell">${listSubtaskCellContent(ev, st, idx, k)}</div>`).join('')}
             </div>`;
@@ -14573,6 +14585,8 @@ window.hrpFilter        = _hrpApplyFilter;
             ev.subtasks.push({ title: name, done: false });
             if (typeof saveCalEvents === 'function') saveCalEvents();
             if (typeof playSparkleSound === 'function') playSparkleSound();
+            // v46: la subtarea nueva necesita hora -> abrir su ventana para definirla
+            if (typeof window.openSubtaskDetail === 'function') setTimeout(function () { window.openSubtaskDetail(ev.id, ev.subtasks.length - 1); }, 250);
         } else {
             window.renderListView();
         }
@@ -14589,7 +14603,7 @@ window.hrpFilter        = _hrpApplyFilter;
                 <div class="list-cell list-cell-name">
                     ${arrowHtml}
                     <span class="list-name-dot" style="background:${color};"></span>
-                    <span onclick="calEventDetail('${ev.id}')" style="cursor:pointer;">${title}</span>
+                    <span onclick="calEventDetail('${ev.id}')" style="cursor:pointer;">${title}</span>${window.jchTotalChip ? window.jchTotalChip(ev) : ''}
                 </div>
                 ${listColumnOrder.map(k => `<div class="list-cell">${listCellContent(ev, k)}</div>`).join('')}
             </div>`;
@@ -15347,9 +15361,29 @@ window.hrpFilter        = _hrpApplyFilter;
         // que la ventana de EDITAR tarea/proyecto, vía openSubtaskTimePicker.
         window.subtaskStartDateStr = (st.startDate || '').slice(0, 10) || defaultStart;
         window.subtaskEndDateStr   = (st.endDate   || '').slice(0, 10) || defaultEnd;
-        // Hora: si la subtarea ya tenía fecha+hora guardada se podría parsear,
-        // pero por ahora las subtareas solo guardaban fecha (slice 0,10), así
-        // que se usa una hora por defecto estable al abrir.
+        // v46 · Hora: se lee de lo guardado (YYYY-MM-DDTHH:MM). Si falta, se hereda
+        // del padre / de la subtarea anterior cuando tiene sentido; si no, queda
+        // "sin definir" y la ventana se bloquea hasta que se defina.
+        (function () {
+            const P = (str) => { const m = /T(\d{2}):(\d{2})/.exec(str || ''); if (!m) return null; const H = +m[1]; return { h: (H % 12) || 12, m: +m[2], ap: H >= 12 ? 'PM' : 'AM' }; };
+            const put = (w, t) => { window['subtask' + w + 'H'] = t.h; window['subtask' + w + 'M'] = t.m; window['subtask' + w + 'AmPm'] = t.ap; };
+            window._stStartTimeSet = false; window._stEndTimeSet = false;
+            put('Start', { h: 10, m: 0, ap: 'AM' }); put('End', { h: 11, m: 0, ap: 'AM' });
+            const ps = P(st.startDate), pe = P(st.endDate);
+            if (ps && st.startDate) { put('Start', ps); window._stStartTimeSet = true; }
+            if (pe && st.endDate) { put('End', pe); window._stEndTimeSet = true; }
+            if (!window._stStartTimeSet && window.subtaskStartDateStr) {
+                let t = null;
+                if (isFirst) { if ((ev.startDate || '').slice(0, 10) === window.subtaskStartDateStr) t = P(ev.startDate) || null; }
+                else { const prev = ev.subtasks[idx - 1]; if (prev && prev.endDate && prev.endDate.slice(0, 10) === window.subtaskStartDateStr) t = P(prev.endDate); }
+                if (t) { put('Start', t); window._stStartTimeSet = true; }
+            }
+            if (!window._stEndTimeSet && window.subtaskEndDateStr && isLast && (ev.endDate || '').slice(0, 10) === window.subtaskEndDateStr) {
+                const t = P(ev.endDate); if (t) { put('End', t); window._stEndTimeSet = true; }
+            }
+            window._stLocked = !(window.jchSubtaskTimed && window.jchSubtaskTimed(st));
+        })();
+        window.jchSubtaskCurrent = function () { return { ev: subtaskDetailGetEv(), idx: subtaskDetailIdx }; };
         if (typeof window.updateSubtaskTimeDisplay === 'function') window.updateSubtaskTimeDisplay();
         else {
             const sEl = document.getElementById('subtaskStartDisplay');
@@ -15397,10 +15431,17 @@ window.hrpFilter        = _hrpApplyFilter;
 
         document.getElementById('subtaskDetailBackdrop').classList.add('show-comment');
         document.getElementById('subtaskDetailModal').classList.add('show-comment');
+        if (window.jchSubtaskOpenFx) window.jchSubtaskOpenFx();
         window.updateSubtaskDetailIconCounts();
     };
 
-    window.closeSubtaskDetail = function() {
+    window.closeSubtaskDetail = function(force) {
+        // v46: una subtarea sin hora definida NO deja cerrar la ventana
+        if (force !== true && window._stLocked && subtaskDetailEvId !== null) {
+            if (window.jchSubtaskWarn) window.jchSubtaskWarn(window.jchValidateSubtaskForm(), true);
+            return;
+        }
+        window._stLocked = false; window._stWarned = false;
         document.getElementById('subtaskDetailBackdrop').classList.remove('show-comment');
         document.getElementById('subtaskDetailModal').classList.remove('show-comment');
         subtaskDetailEvId = null; subtaskDetailIdx = null;
@@ -15522,13 +15563,18 @@ window.hrpFilter        = _hrpApplyFilter;
         const st = ev && ev.subtasks && ev.subtasks[subtaskDetailIdx];
         if (!ev || !st) return;
 
+        // v46: inicio y fin (fecha + hora) son obligatorios
+        const _v = window.jchValidateSubtaskForm ? window.jchValidateSubtaskForm() : { ok: true };
+        if (!_v.ok) { window.jchSubtaskWarn(_v); return; }
+
         const newTitle = document.getElementById('subtaskDetailTitle').value.trim();
         if (newTitle) st.title = newTitle;
         st.description = document.getElementById('subtaskDetailDesc').value.trim();
-        st.startDate = window.subtaskStartDateStr || '';
-        st.endDate = window.subtaskEndDateStr || '';
+        st.startDate = _v.startFull || window.subtaskStartDateStr || '';
+        st.endDate = _v.endFull || window.subtaskEndDateStr || '';
         st.priority = window.subtaskPriorityVal || 'normal';
         st.taskType = window.subtaskTypeVal || '';
+        if (window.jchSubtaskDiffSave) window.jchSubtaskDiffSave(st);
         st.labels = window._subtaskCurrentLabels ? [...window._subtaskCurrentLabels] : [];
         const subtaskLabelColors = {};
         document.querySelectorAll('#subtaskLabelsContainer > div[data-label]').forEach(chip => {
@@ -15556,8 +15602,9 @@ window.hrpFilter        = _hrpApplyFilter;
         // (y de paso el de sus hermanas y el de la tarea/proyecto padre,
         // ya que scheduleEventReminders reconstruye todo el evento completo).
         if (typeof window.scheduleEventReminders === 'function') window.scheduleEventReminders(ev);
-        window.closeSubtaskDetail();
+        window.closeSubtaskDetail(true);
         if (typeof playSparkleSound === 'function') playSparkleSound();
+        if (window.jchAfterSubtaskSaved) window.jchAfterSubtaskSaved(ev.id);
     };
 
     window.switchGestionTab = function(tab) {
@@ -15988,6 +16035,8 @@ window.hrpFilter        = _hrpApplyFilter;
         localStorage.setItem('jch_calendar_v1', data);
         if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
         if (typeof window.renderListView === 'function') window.renderListView();
+        // v47: mantener Rutinas Adaptativas al día con proyectos/tareas y sus subtareas
+        if (typeof window.jchSyncRutinas === 'function') { try { window.jchSyncRutinas(); } catch(e) {} }
         try { sessionStorage.setItem('jch_calendar_backup', data); } catch(e) {}
         try {
             var req = indexedDB.open('jch_db', 1);
@@ -16878,9 +16927,11 @@ window.hrpFilter        = _hrpApplyFilter;
             injectCalEventToRutinas(ev);
         }
 
+        const _stWasNew = !calEditingId, _stEvId = ev.id, _stHas = !!(ev.subtasks && ev.subtasks.length);
         closeCalEventModal();
         renderCalClock();
         renderCalEvents();
+        if (_stWasNew && _stHas) setTimeout(function () { window.jchPromptSubtaskTimes && window.jchPromptSubtaskTimes(_stEvId); }, 380);
     };
 
     function injectCalEventToRutinas(ev) {
@@ -16924,6 +16975,8 @@ window.hrpFilter        = _hrpApplyFilter;
         if (cMethods[mId]) return;
         cMethods[mId] = { name: displayName, tasks: tasksHtml, _calEventId: ev.id, _date: todayForInject, _isRepeat: isRepeat, _totalSubs: totalSubs, _doneSubs: doneSubs };
         localStorage.setItem('jch_custom_methods', JSON.stringify(cMethods));
+        if (window.jchRutinaMark) window.jchRutinaMark(mId, ev);
+        if (typeof cMethods[mId] === 'object') { try { const _c2 = JSON.parse(localStorage.getItem('jch_custom_methods')) || {}; if (_c2[mId]) cMethods[mId] = _c2[mId]; } catch (e) {} }
 
         if (typeof methodData !== 'undefined') {
             methodData[mId] = cMethods[mId];
@@ -18183,6 +18236,7 @@ function renderCalTimePicker() {
             <span class="attach-modal-title">📌 Detalle de subtarea</span>
             <button class="attach-close-btn" onclick="closeSubtaskDetail()">✕</button>
         </div>
+        <div id="stTimeBanner"><span class="st-ban-ico">⏰</span><span class="st-ban-txt"></span></div>
         <input type="text" id="subtaskDetailTitle" class="subtask-detail-input" placeholder="Nombre de la subtarea">
         <textarea id="subtaskDetailDesc" class="subtask-detail-textarea" placeholder="Descripción (opcional)"></textarea>
 
@@ -18203,6 +18257,14 @@ function renderCalTimePicker() {
                 <div class="cal-form-row-value" id="subtaskEndDisplay">Sin definir</div>
             </div>
         </div>
+        <div id="stDurChip"></div>
+        <div id="stDiffBox">
+            <div class="st-d-head"><span>🎯 Dificultad y recompensa</span><span class="st-d-tag" id="stDiffTag">🤖 sugerida</span></div>
+            <div class="st-d-opts" id="stDiffOpts"></div>
+            <div class="st-d-why" id="stDiffWhy"></div>
+            <div class="st-d-reward" id="stDiffReward"></div>
+        </div>
+        <button type="button" class="st-timer-btn" id="stTimerBtn" onclick="jchSubtaskTimerFromWindow()" disabled>⏱ Iniciar temporizador</button>
 
         <!-- Recordatorio propio de la sub-tarea (Fase 3) -->
         <div class="cal-form-row" style="cursor:default;flex-direction:column;align-items:flex-start;margin-bottom:14px;">
@@ -18295,6 +18357,7 @@ function renderCalTimePicker() {
         </div>
 
         <button class="subtask-detail-save-btn" onclick="saveSubtaskDetail()">💾 Guardar subtarea</button>
+        <button type="button" class="subtask-detail-delete-btn" onclick="jchSubtaskDeleteAsk()">🗑 Eliminar esta subtarea</button>
     </div>
 
 <div id="calRepeatModal">
@@ -18492,7 +18555,14 @@ function renderCalTimePicker() {
         const lbl = document.getElementById('calTpLabel');
         if (lbl) lbl.textContent = which === 'start' ? 'HORA DE INICIO' : 'HORA DE FIN';
         const dateInput = document.getElementById('calTpDate');
-        if (dateInput) dateInput.value = which === 'start' ? window.subtaskStartDateStr : window.subtaskEndDateStr;
+        if (dateInput) {
+            // v46: si esa fecha aún no existe, proponer la otra / la del padre / hoy (así elegir la hora basta)
+            const _t = new Date(); const _today = _t.getFullYear()+'-'+String(_t.getMonth()+1).padStart(2,'0')+'-'+String(_t.getDate()).padStart(2,'0');
+            let _par = ''; try { const _c = window.jchSubtaskCurrent && window.jchSubtaskCurrent(); _par = (_c && _c.ev && _c.ev.startDate || '').slice(0,10); } catch (e) {}
+            const _mine = which === 'start' ? window.subtaskStartDateStr : window.subtaskEndDateStr;
+            const _other = which === 'start' ? window.subtaskEndDateStr : window.subtaskStartDateStr;
+            dateInput.value = _mine || _other || _par || _today;
+        }
         if (window.renderCalTimePicker) window.renderCalTimePicker();
         document.getElementById('calTimePickerBackdrop').classList.add('show-cal');
         document.getElementById('calTimePickerModal').classList.add('show-cal');
@@ -18530,8 +18600,8 @@ function renderCalTimePicker() {
 
             } else if (ctx === 'subtask') {
                 const tp = window._jchTpGet();
-                if (which === 'start') { window.subtaskStartH = tp.h; window.subtaskStartM = tp.m; window.subtaskStartAmPm = ampm; }
-                else                   { window.subtaskEndH   = tp.h; window.subtaskEndM   = tp.m; window.subtaskEndAmPm   = ampm; }
+                if (which === 'start') { window.subtaskStartH = tp.h; window.subtaskStartM = tp.m; window.subtaskStartAmPm = ampm; window._stStartTimeSet = true; }
+                else                   { window.subtaskEndH   = tp.h; window.subtaskEndM   = tp.m; window.subtaskEndAmPm   = ampm; window._stEndTimeSet = true; }
                 const dp = document.getElementById('calTpDate');
                 // INICIO/FIN independientes: cambiar INICIO también actualiza FIN
                 // (igual al comportamiento ya validado en EDITAR tarea/proyecto);
@@ -18572,8 +18642,9 @@ function renderCalTimePicker() {
         const e  = document.getElementById('subtaskEndDisplay');
         const sd = window.subtaskStartDateStr ? fmtDate(new Date(window.subtaskStartDateStr + 'T12:00:00')) : '';
         const ed = window.subtaskEndDateStr   ? fmtDate(new Date(window.subtaskEndDateStr   + 'T12:00:00')) : '';
-        if (s) s.textContent = sd ? `${sd}, ${fmtH(window.subtaskStartH, window.subtaskStartM, window.subtaskStartAmPm)}` : 'Sin definir';
-        if (e) e.textContent = ed ? `${ed}, ${fmtH(window.subtaskEndH,   window.subtaskEndM,   window.subtaskEndAmPm)}` : 'Sin definir';
+        if (s) s.textContent = sd ? (window._stStartTimeSet ? `${sd}, ${fmtH(window.subtaskStartH, window.subtaskStartM, window.subtaskStartAmPm)}` : `${sd} · ⚠ Falta la hora`) : 'Sin definir';
+        if (e) e.textContent = ed ? (window._stEndTimeSet ? `${ed}, ${fmtH(window.subtaskEndH,   window.subtaskEndM,   window.subtaskEndAmPm)}` : `${ed} · ⚠ Falta la hora`) : 'Sin definir';
+        if (window.jchSubtaskRefreshFx) window.jchSubtaskRefreshFx();
     }
     window.updateSubtaskTimeDisplay = updateSubtaskTimeDisplay;
 
@@ -22137,6 +22208,14 @@ window.startHabTimer = function(habitId, totalSec, _resume) {
                 // XP sistema global
                 if (typeof addGlobalReward === 'function') addGlobalReward(hh.xp||10, 1);
                 if (typeof playSparkleSound === 'function') playSparkleSound();
+                // v45: si terminó sin verse (app oculta/cerrada), la celebración queda guardada y sale como tarjeta con confeti y sonido al volver
+                try {
+                    const _ht = _habTimers[habitId], _endT = _ht.startTs + Math.max(0, totalSec - (_ht.base || 0)) * 1000;
+                    if ((Date.now() - _endT > 2500 || document.visibilityState !== 'visible') && window.jchCelebrateLater) {
+                        window.jchCelebrateLater({ id: 'habt|' + habitId + '|' + _endT, icon: hh.emoji || '⏱️', title: '¡Hábito completado!',
+                            msg: (hh.name || 'Hábito') + '\n¡Cumpliste tu tiempo!', xp: (hh.xp || 10), coins: (hh.diff==='hard'?3:hh.diff==='medium'?2:1), endedAt: _endT });
+                    }
+                } catch (e) {}
 
                 // ── FIX COMPLETO: actualizar tarjeta al instante ──────────────
                 const card2 = document.getElementById('habCard-' + habitId);
@@ -22285,7 +22364,7 @@ function _habTimerColdRestore() {
         const endTs = s.startTs + Math.max(0, s.totalSec - s.base) * 1000;
         window.startHabTimer(id, s.totalSec, { base: s.base || 0, startTs: s.startTs });
         // Si venció con la app cerrada, avisar
-        if (!wasDone && !(_habTimers[id] && _habTimers[id].interval)) {
+        if (!wasDone && !window.jchCelebrateLater && !(_habTimers[id] && _habTimers[id].interval)) {   // (con la tarjeta de celebración v45 ya no hace falta este aviso breve)
             try {
                 const ago = Math.max(0, Math.round((Date.now() - endTs) / 60000));
                 const msg = '⏱️ ¡' + (h.name || 'Hábito') + ' completado! Terminó ' + (ago < 1 ? 'hace un momento' : 'hace ' + ago + ' min') + ' · con la app cerrada';
@@ -27644,7 +27723,7 @@ window.recalcHeroStats = recalcHeroStats;
                 _tmWinReplay = false;
                 var w = document.getElementById('_tmWin');
                 if (w && w.classList.contains('visible')) {
-                    _tmWin();
+                    _tmWin(); _tmPlaySound('complete');
                     _tmShowLateNote(_tmTargetEndTs, 'en segundo plano');
                 }
             }
@@ -27745,6 +27824,15 @@ var _tmTargetCb = null; // referencia al checkbox del paso activo
     function _tmPlaySound(type) {
         try {
             var ctx = new (window.AudioContext || window.webkitAudioContext)();
+            // v45: tras reabrir la app el navegador bloquea el audio hasta el primer toque: la melodía ya queda programada y suena en cuanto se toque
+            if (type === 'complete' && ctx.state === 'suspended') {
+                try { ctx.resume(); } catch (e) {}
+                (function (c) {
+                    var evs = ['pointerdown', 'touchstart', 'keydown', 'click'];
+                    var h = function () { evs.forEach(function (ev) { document.removeEventListener(ev, h, true); }); try { c.resume(); } catch (e) {} };
+                    evs.forEach(function (ev) { document.addEventListener(ev, h, true); });
+                })(ctx);
+            }
             if (type === 'start') {
                 // Click motivador: dos notas ascendentes rápidas
                 [[440,0,0.08],[660,0.08,0.12]].forEach(function(n) {
@@ -38007,6 +38095,909 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('pageshow', function () { setTimeout(flush, 800); });
   function boot() { setTimeout(flush, 2500); }
   if (document.readyState === 'complete') boot(); else window.addEventListener('load', boot);
+})();
+</script>
+
+<style>
+/* ═══ v46 · Hora obligatoria en subtareas: aviso rojo, vibración, bloqueo, eliminar con deshacer ═══ */
+#stTimeBanner{display:none;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border-radius:14px;font-size:.78rem;font-weight:800;line-height:1.35;color:#ffd5dc;
+  background:linear-gradient(135deg,rgba(255,59,92,.22),rgba(177,0,255,.14));border:1px solid rgba(255,59,92,.65);box-shadow:0 0 22px rgba(255,59,92,.28),inset 0 0 18px rgba(255,59,92,.10)}
+#stTimeBanner.show{display:flex;animation:stBannerIn .45s cubic-bezier(.2,.9,.25,1.2)}
+#stTimeBanner .st-ban-ico{font-size:1.35rem;filter:drop-shadow(0 0 8px rgba(255,59,92,.9));animation:stLockPulse 1.6s ease-in-out infinite}
+#subtaskDetailModal .cal-form-row.st-missing{border-color:rgba(255,59,92,.75)!important;background:linear-gradient(135deg,rgba(255,59,92,.14),rgba(255,59,92,.04))!important;box-shadow:0 0 0 1px rgba(255,59,92,.55),0 0 16px rgba(255,59,92,.35),inset 0 0 12px rgba(255,59,92,.12)!important}
+#subtaskDetailModal .cal-form-row.st-missing .cal-form-row-value{color:#ff7d92!important;font-weight:900}
+#subtaskDetailModal .cal-form-row.st-missing .cal-form-row-icon{color:#ff5470!important}
+#subtaskDetailModal .cal-form-row.st-warn{animation:stShake .55s cubic-bezier(.36,.07,.19,.97) both,stGlow 1.1s ease-in-out 2}
+#subtaskDetailModal.st-locked .attach-close-btn{opacity:.35;filter:grayscale(.6)}
+#stDurChip{display:none;align-items:center;gap:8px;margin:-4px 0 14px;padding:8px 12px;border-radius:12px;font-size:.8rem;font-weight:900;color:#a7f3d0;
+  background:linear-gradient(135deg,rgba(16,185,129,.16),rgba(0,210,255,.10));border:1px solid rgba(16,185,129,.5);box-shadow:0 0 14px rgba(16,185,129,.2)}
+#stDurChip.show{display:flex;animation:stBannerIn .4s ease}
+.subtask-detail-delete-btn{width:100%;margin-top:10px;padding:11px;border-radius:14px;font-size:.85rem;font-weight:900;letter-spacing:.3px;cursor:pointer;color:#ff8da1;
+  background:rgba(255,59,92,.06);border:1px solid rgba(255,59,92,.45);transition:all .2s ease}
+.subtask-detail-delete-btn:hover,.subtask-detail-delete-btn:active{background:rgba(255,59,92,.16);box-shadow:0 0 16px rgba(255,59,92,.35);color:#ffc2cc}
+#stConfirmBack{position:fixed;inset:0;z-index:8760;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,3,12,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#stConfirmBack.show{display:flex;animation:stFade .25s ease}
+#stConfirmCard{width:min(92vw,340px);padding:22px 18px 16px;border-radius:20px;text-align:center;color:#e2e8f0;
+  background:linear-gradient(160deg,rgba(18,10,28,.99),rgba(6,6,20,.99));border:1px solid rgba(255,59,92,.5);box-shadow:0 0 40px rgba(255,59,92,.25),0 24px 60px -18px rgba(0,0,0,.9);animation:stPop .35s cubic-bezier(.2,.9,.25,1.25)}
+#stConfirmCard .st-c-ico{font-size:2.4rem;filter:drop-shadow(0 0 10px rgba(255,59,92,.8))}
+#stConfirmCard .st-c-title{margin:8px 0 6px;font-size:1.05rem;font-weight:900;color:#fff}
+#stConfirmCard .st-c-name{font-size:.85rem;color:#ffb3c0;font-weight:800;word-break:break-word}
+#stConfirmCard .st-c-sub{margin-top:6px;font-size:.74rem;color:#94a3b8}
+#stConfirmCard .st-c-btns{display:flex;gap:10px;margin-top:16px}
+#stConfirmCard button{flex:1;padding:12px;border-radius:13px;font-size:.88rem;font-weight:900;cursor:pointer;border:1px solid transparent}
+#stConfirmCard .st-c-no{background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.4);color:#cbd5e1}
+#stConfirmCard .st-c-yes{background:linear-gradient(135deg,#ff3b5c,#c026d3);color:#fff;box-shadow:0 0 18px rgba(255,59,92,.45)}
+#stUndoToast{position:fixed;left:50%;bottom:26px;z-index:2147483200;transform:translate(-50%,30px);opacity:0;visibility:hidden;display:flex;align-items:center;gap:12px;
+  padding:12px 14px 12px 16px;border-radius:16px;color:#e2e8f0;font-size:.82rem;font-weight:800;overflow:hidden;max-width:92vw;white-space:nowrap;
+  background:linear-gradient(135deg,rgba(15,23,42,.98),rgba(30,16,46,.98));border:1px solid rgba(0,210,255,.4);box-shadow:0 10px 40px rgba(0,0,0,.7),0 0 22px rgba(0,210,255,.25);
+  transition:transform .35s cubic-bezier(.2,.9,.25,1.15),opacity .3s ease,visibility .3s}
+#stUndoToast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
+#stUndoToast button{padding:7px 14px;border-radius:11px;font-weight:900;font-size:.8rem;cursor:pointer;color:#06222b;background:linear-gradient(135deg,#22e3ff,#10b981);border:0}
+#stUndoToast .st-u-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,#22e3ff,#10b981);transform-origin:left;animation:stBar 6s linear forwards}
+.st-nohora{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:9px;font-size:.66rem;font-weight:900;color:#ff8da1;background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.55);box-shadow:0 0 8px rgba(255,59,92,.25);white-space:nowrap}
+.st-hora{display:block;font-size:.62rem;font-weight:800;color:#7dd3fc;line-height:1.15;white-space:nowrap}
+.st-nohora-mini{margin-left:6px;font-size:.78rem;color:#ff6b81;filter:drop-shadow(0 0 5px rgba(255,59,92,.8));animation:stLockPulse 1.8s ease-in-out infinite}
+@keyframes stShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+@keyframes stGlow{0%,100%{box-shadow:0 0 0 1px rgba(255,59,92,.55),0 0 16px rgba(255,59,92,.35)}50%{box-shadow:0 0 0 2px rgba(255,59,92,.95),0 0 34px rgba(255,59,92,.8)}}
+@keyframes stBannerIn{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes stLockPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes stFade{from{opacity:0}to{opacity:1}}
+@keyframes stPop{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:none}}
+@keyframes stBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+</style>
+<script>
+/* ═══ v46 · Hora obligatoria en subtareas ═══ */
+(function () {
+  'use strict';
+  var MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function $(id) { return document.getElementById(id); }
+  function t24(h, m, ap) { var H = (+h) % 12; if (ap === 'PM') H += 12; return ('0' + H).slice(-2) + ':' + ('0' + (+m)).slice(-2); }
+  function hasT(s) { return /T\d{2}:\d{2}/.test(s || ''); }
+  function ms(s) { var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]).getTime() : NaN; }
+  function t12(s) { var m = /T(\d{2}):(\d{2})/.exec(s || ''); if (!m) return ''; var H = +m[1]; return ((H % 12) || 12) + ':' + m[2] + ' ' + (H >= 12 ? 'PM' : 'AM'); }
+  function dmy(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? (+m[3]) + ' ' + MES[+m[2] - 1] : ''; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function vib(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function durText(min) { if (min < 60) return min + ' min'; var h = Math.floor(min / 60), r = min % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); }
+
+  // ¿La subtarea GUARDADA tiene inicio y fin con fecha y hora (y fin > inicio)?
+  window.jchSubtaskMinutes = function (st) {
+    if (!st || !hasT(st.startDate) || !hasT(st.endDate)) return 0;
+    var a = ms(st.startDate), b = ms(st.endDate); if (isNaN(a) || isNaN(b) || b <= a) return 0;
+    return Math.round((b - a) / 60000);
+  };
+  window.jchSubtaskTimed = function (st) { return window.jchSubtaskMinutes(st) > 0; };
+
+  // Celda de fecha (INICIO/FIN) de una subtarea en la Lista: fecha + hora, o ⚠ si falta la hora
+  window.jchSubtaskDateCell = function (val) {
+    if (!val) return '<span class="st-nohora" title="Falta definir la fecha y la hora">⚠ sin hora</span>';
+    if (!hasT(val)) return '<span class="st-nohora" title="Falta definir la hora">⚠ ' + esc(dmy(val)) + '</span>';
+    return esc(dmy(val)) + '<span class="st-hora">' + esc(t12(val)) + '</span>';
+  };
+
+  // Estado actual del formulario de la ventana de subtarea
+  window.jchValidateSubtaskForm = function () {
+    var sd = window.subtaskStartDateStr, ed = window.subtaskEndDateStr;
+    var missStart = !(sd && window._stStartTimeSet), missEnd = !(ed && window._stEndTimeSet);
+    var sf = '', ef = '', bad = false;
+    if (!missStart) sf = sd + 'T' + t24(window.subtaskStartH, window.subtaskStartM, window.subtaskStartAmPm);
+    if (!missEnd) ef = ed + 'T' + t24(window.subtaskEndH, window.subtaskEndM, window.subtaskEndAmPm);
+    if (!missStart && !missEnd && !(ms(ef) > ms(sf))) bad = true;
+    return { ok: !missStart && !missEnd && !bad, missStart: missStart, missEnd: missEnd, badOrder: bad, startFull: sf, endFull: ef, minutes: (!missStart && !missEnd && !bad) ? Math.round((ms(ef) - ms(sf)) / 60000) : 0 };
+  };
+
+  function banner(text, show) {
+    var b = $('stTimeBanner'); if (!b) return;
+    if (text) { var t = b.querySelector('.st-ban-txt'); if (t) t.innerHTML = text; }
+    b.classList.toggle('show', !!show);
+  }
+  // Refresca filas rojas, cartel y chip de duración según el formulario (la llama updateSubtaskTimeDisplay)
+  window.jchSubtaskRefreshFx = function () {
+    var v = window.jchValidateSubtaskForm();
+    var sr = $('subtaskStartRow'), er = $('subtaskEndRow'), chip = $('stDurChip'), md = $('subtaskDetailModal');
+    var flag = !!(window._stLocked || window._stWarned);
+    if (sr) sr.classList.toggle('st-missing', flag && (v.missStart));
+    if (er) er.classList.toggle('st-missing', flag && (v.missEnd || v.badOrder));
+    if (md) md.classList.toggle('st-locked', !!window._stLocked);
+    if (chip) {
+      if (v.ok) { chip.classList.add('show'); chip.innerHTML = '⏱ Duración: <b>' + durText(v.minutes) + '</b>'; }
+      else chip.classList.remove('show');
+    }
+    if (v.ok) banner('', false);
+    else if (window._stLocked || window._stWarned) banner(null, true);
+    if (window.jchSubtaskDiffRefresh) window.jchSubtaskDiffRefresh();
+  };
+  function warnText(v, closing) {
+    if (v.badOrder) return '<b>El fin debe ser posterior al inicio.</b> Corrige la hora de FIN.';
+    var what = (v.missStart && v.missEnd) ? 'el INICIO y el FIN' : (v.missStart ? 'el INICIO' : 'el FIN');
+    return (closing ? '<b>No puedes cerrar todavía.</b> ' : '<b>Falta la hora.</b> ') + 'Define ' + what + ' de esta subtarea (fecha y hora), o elimínala.';
+  }
+  // Aviso: filas en rojo que vibran + cartel + vibración del teléfono
+  window.jchSubtaskWarn = function (v, closing) {
+    v = v || window.jchValidateSubtaskForm();
+    window._stWarned = true;
+    banner(warnText(v, closing), true);
+    var rows = [];
+    if (v.missStart) rows.push($('subtaskStartRow'));
+    if (v.missEnd || v.badOrder) rows.push($('subtaskEndRow'));
+    window.jchSubtaskRefreshFx();
+    rows.forEach(function (r) { if (!r) return; r.classList.remove('st-warn'); void r.offsetWidth; r.classList.add('st-warn'); });
+    if (rows[0] && rows[0].scrollIntoView) { try { rows[0].scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
+    vib([90, 60, 90, 60, 180]);
+    setTimeout(function () { rows.forEach(function (r) { if (r) r.classList.remove('st-warn'); }); }, 1300);
+  };
+  // Al abrir la ventana: limpiar avisos; si la subtarea guardada no tiene hora, quedar bloqueada y en rojo
+  window.jchSubtaskOpenFx = function () {
+    window._stWarned = false;
+    if (window.jchSubtaskDiffInit) window.jchSubtaskDiffInit();
+    var sr = $('subtaskStartRow'), er = $('subtaskEndRow');
+    [sr, er].forEach(function (r) { if (r) r.classList.remove('st-warn', 'st-missing'); });
+    var v = window.jchValidateSubtaskForm();
+    if (window._stLocked) {
+      banner('<b>🔒 Esta subtarea necesita hora.</b> Define el INICIO y el FIN (fecha y hora) para poder guardarla y cerrar esta ventana.', true);
+      vib([70, 50, 70]);
+    } else banner('', false);
+    window.jchSubtaskRefreshFx();
+  };
+
+  // ── Eliminar subtarea (con confirmación y "Deshacer") ──
+  var undoT = null, undoData = null;
+  function ensureConfirm() {
+    if ($('stConfirmBack')) return;
+    var d = document.createElement('div'); d.id = 'stConfirmBack';
+    d.innerHTML = '<div id="stConfirmCard"><div class="st-c-ico">🗑️</div><div class="st-c-title">¿Eliminar esta subtarea?</div><div class="st-c-name" id="stConfirmName"></div>' +
+      '<div class="st-c-sub">Se quitará por completo. Tendrás unos segundos para deshacerlo.</div>' +
+      '<div class="st-c-btns"><button type="button" class="st-c-no" id="stConfirmNo">Cancelar</button><button type="button" class="st-c-yes" id="stConfirmYes">Sí, eliminar</button></div></div>';
+    document.body.appendChild(d);
+    d.addEventListener('click', function (e) { if (e.target === d) d.classList.remove('show'); });
+    $('stConfirmNo').addEventListener('click', function () { d.classList.remove('show'); });
+    $('stConfirmYes').addEventListener('click', function () { d.classList.remove('show'); doDelete(); });
+  }
+  window.jchSubtaskDeleteAsk = function () {
+    var cur = window.jchSubtaskCurrent && window.jchSubtaskCurrent();
+    if (!cur || !cur.ev || !cur.ev.subtasks || !cur.ev.subtasks[cur.idx]) return;
+    ensureConfirm();
+    var st = cur.ev.subtasks[cur.idx];
+    $('stConfirmName').textContent = '“' + (st.title || st.name || 'Subtarea') + '”';
+    $('stConfirmBack').classList.add('show'); vib(40);
+  };
+  function refreshViews() {
+    try { if (window.renderListView) window.renderListView(); } catch (e) {}
+    try { if (window.renderKanbanBoard) window.renderKanbanBoard(); } catch (e) {}
+    try { if (typeof renderCalEvents === 'function') renderCalEvents(); } catch (e) {}
+  }
+  function doDelete() {
+    var cur = window.jchSubtaskCurrent && window.jchSubtaskCurrent();
+    if (!cur || !cur.ev || !cur.ev.subtasks || !cur.ev.subtasks[cur.idx]) return;
+    var ev = cur.ev, idx = cur.idx, removed = ev.subtasks.splice(idx, 1)[0];
+    try { if (typeof saveCalEvents === 'function') saveCalEvents(); } catch (e) {}
+    try { if (window.scheduleEventReminders) window.scheduleEventReminders(ev); } catch (e) {}
+    window._stSeqEvId = null;
+    window.closeSubtaskDetail(true);
+    refreshViews();
+    undoData = { evId: ev.id, idx: idx, st: removed };
+    showUndo('Subtarea eliminada');
+  }
+  function showUndo(msg) {
+    var t = $('stUndoToast');
+    if (!t) {
+      t = document.createElement('div'); t.id = 'stUndoToast';
+      t.innerHTML = '<span id="stUndoMsg"></span><button type="button" id="stUndoBtn">↩ Deshacer</button><div class="st-u-bar" id="stUndoBar"></div>';
+      document.body.appendChild(t);
+      $('stUndoBtn').addEventListener('click', undo);
+    }
+    $('stUndoMsg').textContent = '🗑️ ' + msg;
+    var bar = $('stUndoBar'); bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = '';
+    t.classList.add('show'); clearTimeout(undoT);
+    undoT = setTimeout(function () { t.classList.remove('show'); undoData = null; }, 6000);
+  }
+  function undo() {
+    var u = undoData; if (!u) return;
+    var evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
+    var ev = evs.find(function (e) { return String(e.id) === String(u.evId); });
+    if (ev) {
+      if (!ev.subtasks) ev.subtasks = [];
+      ev.subtasks.splice(Math.min(u.idx, ev.subtasks.length), 0, u.st);
+      try { if (typeof saveCalEvents === 'function') saveCalEvents(); } catch (e) {}
+      try { if (window.scheduleEventReminders) window.scheduleEventReminders(ev); } catch (e) {}
+      refreshViews(); vib(30);
+      try { if (typeof playSparkleSound === 'function') playSparkleSound(); } catch (e) {}
+    }
+    undoData = null; clearTimeout(undoT); var t = $('stUndoToast'); if (t) t.classList.remove('show');
+  }
+
+  // ── Completar horas pendientes: tras crear un proyecto/tarea (o añadir una subtarea), abrir la primera sin hora ──
+  function firstMissing(ev) {
+    if (!ev || !ev.subtasks) return -1;
+    for (var i = 0; i < ev.subtasks.length; i++) if (!window.jchSubtaskTimed(ev.subtasks[i])) return i;
+    return -1;
+  }
+  window.jchPromptSubtaskTimes = function (evId) {
+    try {
+      var evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [];
+      var ev = evs.find(function (e) { return String(e.id) === String(evId); });
+      var i = firstMissing(ev);
+      if (i < 0) { window._stSeqEvId = null; return; }
+      window._stSeqEvId = evId;
+      if (typeof window.openSubtaskDetail === 'function') window.openSubtaskDetail(evId, i);
+    } catch (e) {}
+  };
+  // Tras guardar una subtarea dentro de una secuencia, abrir la siguiente que falte
+  window.jchAfterSubtaskSaved = function (evId) {
+    try { if (window._stSeqEvId && String(window._stSeqEvId) === String(evId)) setTimeout(function () { window.jchPromptSubtaskTimes(evId); }, 450); } catch (e) {}
+  };
+})();
+</script>
+
+<style>
+#jchSyncPill{position:fixed;left:50%;top:14px;z-index:2147483100;transform:translate(-50%,-40px);opacity:0;visibility:hidden;pointer-events:none;display:flex;align-items:center;gap:8px;
+  padding:8px 14px;border-radius:999px;font-size:.74rem;font-weight:900;color:#d9fbff;white-space:nowrap;
+  background:linear-gradient(135deg,rgba(6,24,44,.97),rgba(20,12,44,.97));border:1px solid rgba(0,210,255,.55);box-shadow:0 8px 28px rgba(0,0,0,.6),0 0 18px rgba(0,210,255,.35);
+  transition:transform .35s cubic-bezier(.2,.9,.25,1.15),opacity .3s ease,visibility .3s}
+#jchSyncPill.show{transform:translate(-50%,0);opacity:1;visibility:visible}
+#jchSyncPill .sp-ico{display:inline-block;animation:jchSpin 1s linear 1}
+@keyframes jchSpin{to{transform:rotate(360deg)}}
+</style>
+<script>
+/* ═══ v47 · Puente Proyectos/Tareas (calEvents) ⇄ Rutinas Adaptativas ═══
+   Mantiene al día las entradas "Mis Proyectos Personalizados" / "Mis Tareas Cotidianas"
+   cuando cambian las subtareas (Gestor Kanban/Lista, calendario, ventana de subtarea)
+   y retira las que ya no tienen proyecto/tarea. */
+(function () {
+  'use strict';
+  var KEYS = ['teorico', 'practico', '5050'];
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function lsGet() { try { return JSON.parse(localStorage.getItem('jch_custom_methods')) || {}; } catch (e) { return {}; } }
+  function lsSet(o) { try { localStorage.setItem('jch_custom_methods', JSON.stringify(o)); } catch (e) {} }
+  function minsOf(st) { return window.jchSubtaskMinutes ? window.jchSubtaskMinutes(st) : 0; }
+  function subHtml(ev, st, i, done) {
+    var tarea = ev.type === 'tarea', c = tarea ? 15 : 25, x = tarea ? 150 : 250, badge = String(c), dif = '';
+    // v49: con hora definida, la recompensa sale de los minutos reales (tope 180) y la dificultad
+    var rw = (window.jchSubtaskReward && st && st.startDate) ? window.jchSubtaskReward(st) : null;
+    if (rw) {
+      c = rw.coins; x = rw.xp; badge = String(rw.realMins);
+      var L = window.JCH_DIFF_LEVELS[rw.level];
+      dif = '<span class="diff-badge" style="display:inline-block;margin-left:6px;font-size:.62rem;font-weight:900;color:' + L.c + ';text-shadow:0 0 6px ' + L.c + '66">' + L.s.slice(0, rw.level) + ' ' + L.n + '</span>';
+    }
+    var d = st.description ? '<br><span style="font-size:0.9em;opacity:0.85;">' + esc(st.description) + '</span>' : '';
+    return '<label class="check-item"><input type="checkbox" class="rutina-cb" data-coins="' + c + '" data-xp="' + x + '" data-st-min="' + minsOf(st) + '"' + (done ? ' checked' : '') +
+      '><span class="check-text"><span class="time-badge">[' + badge + ' min]</span><span class="coin-badge">💰 +' + c + '</span><span class="xp-badge">⚡ +' + x + ' XP</span>' + dif +
+      '<span style="display:block;margin-top:6px;"><b>' + (i + 1) + '. ' + esc(st.title || st.name || 'Subtarea') + '</b>' + d + '</span></span></label>';
+  }
+  function sigOf(ev) {
+    return JSON.stringify([ev.title || '', ev.type, (ev.subtasks || []).map(function (s) { return [s.title || s.name || '', s.description || '', s.done ? 1 : 0, minsOf(s), (window.jchSubtaskDifficulty && minsOf(s)) ? window.jchSubtaskDifficulty(s).level : 0]; })]);
+  }
+  function titles(ev) { return (ev.subtasks || []).map(function (s) { return s.title || s.name || ''; }); }
+  function doneArr(id) { try { return JSON.parse(localStorage.getItem('jch_subdone_' + id)) || []; } catch (e) { return []; } }
+  function pill(msg) {
+    var p = document.getElementById('jchSyncPill');
+    if (!p) { p = document.createElement('div'); p.id = 'jchSyncPill'; document.body.appendChild(p); }
+    p.innerHTML = '<span class="sp-ico">🔄</span>' + msg;
+    p.classList.add('show'); clearTimeout(p._t); p._t = setTimeout(function () { p.classList.remove('show'); }, 2200);
+  }
+  function dropEverywhere(id) {
+    try { if (typeof methodData !== 'undefined') delete methodData[id]; } catch (e) {}
+    try { if (typeof customMethodsMem !== 'undefined') delete customMethodsMem[id]; } catch (e) {}
+    try { if (typeof methodGroupsList !== 'undefined') methodGroupsList.forEach(function (g) { g.methods = g.methods.filter(function (m) { return m !== id; }); }); } catch (e) {}
+    try { if (typeof methodVisibility !== 'undefined') KEYS.forEach(function (k) { if (methodVisibility[k]) methodVisibility[k] = methodVisibility[k].filter(function (m) { return m !== id; }); }); } catch (e) {}
+    try { if (typeof selectedMethods !== 'undefined') { var n = selectedMethods.filter(function (m) { return m !== id; }); if (n.length !== selectedMethods.length) { selectedMethods = n; if (typeof renderTags === 'function') renderTags(); if (typeof renderChecklist === 'function') renderChecklist(); } } } catch (e) {}
+    try { localStorage.removeItem('jch_subdone_' + id); } catch (e) {}
+  }
+
+  window.jchSyncRutinas = function (opts) {
+    opts = opts || {};
+    var evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : null;
+    if (!evs) return 0;
+    var cm = lsGet(), byEv = {}, dirty = false, visible = 0, removed = 0;
+    Object.keys(cm).forEach(function (id) { var e = cm[id]; if (e && e._calEventId) (byEv[e._calEventId] = byEv[e._calEventId] || []).push(id); });
+
+    evs.forEach(function (ev) {
+      if (!ev || (ev.type !== 'proyecto' && ev.type !== 'tarea') || !byEv[ev.id]) return;
+      var sig = sigOf(ev), tt = titles(ev);
+      byEv[ev.id].forEach(function (id) {
+        var ent = cm[id];
+        if (!ent._sig) { ent._sig = sig; ent._titles = tt; dirty = true; return; }   // entradas antiguas: solo se anota su estado
+        if (ent._sig === sig) return;
+        var repeat = !!ent._isRepeat, done = [], subs = ev.subtasks || [];
+        if (repeat) {
+          var old = doneArr(id), ot = ent._titles || [];
+          done = subs.map(function (s, i) { var k = ot.indexOf(s.title || s.name || ''); return k >= 0 ? !!old[k] : false; });
+          try { localStorage.setItem('jch_subdone_' + id, JSON.stringify(done)); } catch (e) {}
+        } else done = subs.map(function (s) { return !!s.done; });
+        var html = '';
+        if (subs.length) subs.forEach(function (s, i) { html += subHtml(ev, s, i, done[i]); });
+        else html = subHtml(ev, { title: ev.title }, -1, false).replace('<b>0. ', '<b>');
+        var icon = ev.type === 'tarea' ? '🔥 ' : '📁 ', suffix = '';
+        if (repeat && ent._date) { var p = ent._date.split('-'); suffix = ' · ' + p[2] + '/' + p[1]; }
+        ent.name = icon + (ev.title || 'Sin nombre') + suffix;
+        ent.tasks = html; ent._totalSubs = subs.length; ent._doneSubs = done.filter(Boolean).length;
+        ent._sig = sig; ent._titles = tt; dirty = true; visible++;
+        try { if (typeof methodData !== 'undefined') methodData[id] = ent; } catch (e) {}
+        try { if (typeof customMethodsMem !== 'undefined') customMethodsMem[id] = ent; } catch (e) {}
+      });
+    });
+
+    // proyectos/tareas borrados: sacarlos del desplegable
+    if (opts.prune !== false && evs.length) {
+      Object.keys(byEv).forEach(function (evId) {
+        if (evs.some(function (e) { return e && e.id === evId; })) return;
+        byEv[evId].forEach(function (id) { delete cm[id]; dropEverywhere(id); removed++; dirty = true; });
+      });
+    }
+    if (dirty) lsSet(cm);
+    if (visible || removed) {
+      try { if (typeof renderCustomMethods === 'function') renderCustomMethods(); } catch (e) {}
+      if (!opts.silent) pill(removed && !visible ? 'Rutinas Adaptativas · limpiada' : 'Rutinas Adaptativas · sincronizada ✓');
+    }
+    return visible + removed;
+  };
+  // Anota el "estado de referencia" de una entrada recién creada/enlazada (para detectar cambios después)
+  window.jchRutinaMark = function (id, ev) {
+    try {
+      var cm = lsGet(); if (!cm[id] || !ev) return;
+      cm[id]._sig = sigOf(ev); cm[id]._titles = titles(ev); lsSet(cm);
+      try { if (typeof methodData !== 'undefined' && methodData[id]) { methodData[id]._sig = cm[id]._sig; methodData[id]._titles = cm[id]._titles; } } catch (e) {}
+      try { if (typeof customMethodsMem !== 'undefined' && customMethodsMem[id]) { customMethodsMem[id]._sig = cm[id]._sig; customMethodsMem[id]._titles = cm[id]._titles; } } catch (e) {}
+    } catch (e) {}
+  };
+  // Al abrir la app: solo anotar el estado de las entradas antiguas (sin borrar nada)
+  setTimeout(function () { try { window.jchSyncRutinas({ prune: false, silent: true }); } catch (e) {} }, 2500);
+})();
+</script>
+
+<style>
+/* ═══ v48 · Subtareas completas en Lista y Kanban ═══ */
+.st-dur{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:1px 7px;border-radius:9px;font-size:.62rem;font-weight:900;color:#a7f3d0;white-space:nowrap;
+  background:linear-gradient(135deg,rgba(16,185,129,.16),rgba(0,210,255,.10));border:1px solid rgba(16,185,129,.45)}
+.st-total{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:1px 8px;border-radius:9px;font-size:.62rem;font-weight:900;color:#7dd3fc;white-space:nowrap;
+  background:rgba(0,210,255,.10);border:1px solid rgba(0,210,255,.4)}
+.st-total .st-miss{color:#ff8da1}
+.st-now{display:inline-flex;align-items:center;gap:4px;margin-left:6px;font-size:.6rem;font-weight:900;color:#86efac;white-space:nowrap}
+.st-now i{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:stNowPulse 1.4s ease-in-out infinite}
+@keyframes stNowPulse{0%,100%{transform:scale(.8);opacity:.7}50%{transform:scale(1.35);opacity:1}}
+.st-cell-click{cursor:pointer;display:inline-block;border-radius:8px;padding:1px 3px;transition:background .15s}
+.st-cell-click:hover{background:rgba(0,210,255,.12)}
+.st-late{color:#ff8da1!important;text-shadow:0 0 8px rgba(255,59,92,.45)}
+.st-late .st-hora{color:#ff8da1}
+.st-late-tag{display:block;font-size:.56rem;font-weight:900;color:#ff6b81;letter-spacing:.3px}
+#kanbanBoard .st-k-meta{display:block;font-size:.58rem;font-weight:800;color:#7dd3fc;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+#kanbanBoard .st-k-meta.late{color:#ff8da1}
+#kanbanBoard .kanban-sub-total{margin-left:4px;font-size:.58rem;font-weight:900;color:#7dd3fc;white-space:nowrap}
+</style>
+<script>
+(function () {
+  'use strict';
+  function ms(s) { var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]).getTime() : NaN; }
+  function t12(s) { var m = /T(\d{2}):(\d{2})/.exec(s || ''); if (!m) return ''; var H = +m[1]; return ((H % 12) || 12) + ':' + m[2] + (H >= 12 ? ' PM' : ' AM'); }
+  window.jchFmtDur = function (min) { min = Math.round(min); if (min < 60) return min + ' min'; var h = Math.floor(min / 60), r = min % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); };
+  // estado temporal de una subtarea: 'now' (en curso ahora), 'late' (ya pasó y no está hecha) o ''
+  window.jchSubtaskNowState = function (st, done) {
+    if (done || !window.jchSubtaskTimed || !window.jchSubtaskTimed(st)) return '';
+    var n = Date.now(), a = ms(st.startDate), b = ms(st.endDate);
+    if (n >= a && n < b) return 'now';
+    if (n >= b) return 'late';
+    return '';
+  };
+  window.jchSubtaskDurChip = function (st) {
+    var m = window.jchSubtaskMinutes ? window.jchSubtaskMinutes(st) : 0;
+    return m ? '<span class="st-dur" title="Duración de la subtarea">⏱ ' + window.jchFmtDur(m) + '</span>' : '';
+  };
+  window.jchSubtaskNowChip = function (st, done) {
+    return window.jchSubtaskNowState(st, done) === 'now' ? '<span class="st-now" title="Esta subtarea es ahora"><i></i>ahora</span>' : '';
+  };
+  window.jchSubtaskRangeText = function (st) {
+    if (!window.jchSubtaskTimed || !window.jchSubtaskTimed(st)) return '';
+    var sd = (st.startDate || '').slice(0, 10), ed = (st.endDate || '').slice(0, 10);
+    var r = t12(st.startDate) + ' – ' + t12(st.endDate);
+    if (sd !== ed) { var p = function (d) { var x = d.split('-'); return (+x[2]) + '/' + (+x[1]); }; r = p(sd) + ' ' + t12(st.startDate) + ' → ' + p(ed) + ' ' + t12(st.endDate); }
+    return r + ' · ' + window.jchFmtDur(window.jchSubtaskMinutes(st));
+  };
+  // chip del padre: tiempo total planificado + subtareas sin hora
+  window.jchTotalChip = function (ev, cls) {
+    var subs = (ev && ev.subtasks) || [], tot = 0, miss = 0;
+    subs.forEach(function (s) { var m = window.jchSubtaskMinutes ? window.jchSubtaskMinutes(s) : 0; if (m) tot += m; else miss++; });
+    if (!subs.length || (!tot && !miss)) return '';
+    var t = tot ? '⏱ ' + window.jchFmtDur(tot) : '';
+    var w = miss ? '<span class="st-miss" title="Subtareas sin hora definida">⚠ ' + miss + ' sin hora</span>' : '';
+    return '<span class="' + (cls || 'st-total') + '" title="Tiempo total planificado en las subtareas">' + t + (t && w ? ' · ' : '') + w + '</span>';
+  };
+  // Cada minuto: si alguna subtarea pasó a "ahora" o "vencida", refrescar Lista y Kanban (sin tocar si estás escribiendo)
+  var lastSig = null;
+  function stateSig() {
+    var evs = (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : [], out = [];
+    evs.forEach(function (ev) { if (!ev || (ev.type !== 'proyecto' && ev.type !== 'tarea')) return; (ev.subtasks || []).forEach(function (st, i) { var d = !!st.done || st.kanbanStatus === 'completado'; var x = window.jchSubtaskNowState(st, d); if (x) out.push(ev.id + i + x); }); });
+    return out.join('|');
+  }
+  setInterval(function () {
+    try {
+      if (document.hidden) return;
+      var sig = stateSig(); if (lastSig === null) { lastSig = sig; return; }
+      if (sig === lastSig) return;
+      var a = document.activeElement; if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.closest && a.closest('#listViewBody,#kanbanBoard')) return;
+      lastSig = sig;
+      if (typeof window.renderKanbanBoard === 'function') window.renderKanbanBoard();
+      if (typeof window.renderListView === 'function') window.renderListView();
+    } catch (e) {}
+  }, 60000);
+})();
+</script>
+
+<style>
+/* ═══ v49 · Dificultad estimada + recompensas por minutos ═══ */
+#stDiffBox{margin:0 0 14px;padding:12px;border-radius:16px;background:linear-gradient(160deg,rgba(10,16,36,.9),rgba(22,10,40,.85));border:1px solid rgba(168,85,247,.35);box-shadow:0 0 18px rgba(168,85,247,.12)}
+#stDiffBox .st-d-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;font-size:.72rem;font-weight:900;letter-spacing:.4px;color:#cbd5e1}
+#stDiffBox .st-d-tag{font-size:.6rem;font-weight:900;padding:2px 8px;border-radius:9px;color:#c4b5fd;background:rgba(168,85,247,.14);border:1px solid rgba(168,85,247,.45);white-space:nowrap}
+#stDiffBox .st-d-tag.manual{color:#fde68a;background:rgba(250,204,21,.12);border-color:rgba(250,204,21,.5)}
+#stDiffBox .st-d-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+#stDiffBox .st-d-btn{position:relative;padding:9px 2px 8px;border-radius:13px;cursor:pointer;text-align:center;font-weight:900;color:#94a3b8;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.25);transition:transform .18s cubic-bezier(.2,.9,.25,1.3),box-shadow .2s,background .2s,color .2s,border-color .2s}
+#stDiffBox .st-d-btn .st-d-stars{display:block;font-size:.78rem;letter-spacing:1px;line-height:1.1}
+#stDiffBox .st-d-btn .st-d-name{display:block;margin-top:3px;font-size:.6rem}
+#stDiffBox .st-d-btn:active{transform:scale(.94)}
+#stDiffBox .st-d-btn.on{transform:translateY(-2px) scale(1.04);color:#fff;background:linear-gradient(160deg,color-mix(in srgb,var(--dc) 38%,transparent),color-mix(in srgb,var(--dc) 12%,transparent));border-color:var(--dc);box-shadow:0 0 16px color-mix(in srgb,var(--dc) 65%,transparent),inset 0 0 12px color-mix(in srgb,var(--dc) 22%,transparent)}
+#stDiffBox .st-d-btn.on .st-d-stars{color:var(--dc);text-shadow:0 0 8px var(--dc)}
+#stDiffBox .st-d-dim{opacity:.25}
+#stDiffBox .st-d-btn.on .st-d-fill{color:var(--dc);text-shadow:0 0 8px var(--dc)}
+#stDiffBox .st-d-fill{color:#94a3b8}
+#stDiffBox .st-d-btn.sug::after{content:'🤖';position:absolute;top:-7px;right:-3px;font-size:.7rem;filter:drop-shadow(0 0 4px rgba(168,85,247,.9))}
+#stDiffBox .st-d-why{margin-top:8px;font-size:.62rem;color:#94a3b8;line-height:1.35;min-height:1em}
+#stDiffBox .st-d-reward{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:9px 10px;border-radius:12px;font-size:.82rem;font-weight:900;color:#fde68a;
+  background:linear-gradient(135deg,rgba(250,204,21,.10),rgba(0,210,255,.08));border:1px solid rgba(250,204,21,.4)}
+#stDiffBox .st-d-reward b{font-size:.95rem;color:#fff}
+#stDiffBox .st-d-reward .st-d-x{font-size:.62rem;color:#94a3b8;font-weight:800}
+#stDiffBox .st-d-reward.bump{animation:stRwBump .45s ease}
+@keyframes stRwBump{40%{transform:scale(1.05);box-shadow:0 0 22px rgba(250,204,21,.55)}}
+.st-diffchip{display:inline-block;margin-left:6px;font-size:.62rem;font-weight:900;letter-spacing:.5px;white-space:nowrap}
+</style>
+<script>
+(function () {
+  'use strict';
+  /* ── Constantes fáciles de cambiar ── */
+  window.JCH_REWARD_CAP_MIN = 180;             // minutos máximos que cuentan para la recompensa (la subtarea puede durar más)
+  window.JCH_COIN_PER_MIN = 1;                  // monedas por minuto (base)
+  window.JCH_XP_PER_MIN = 10;                   // XP por minuto (base)
+  var LEVELS = [
+    null,
+    { n: 'Fácil',       m: 0.8, c: '#22c55e', s: '★★★★' },
+    { n: 'Media',       m: 1.0, c: '#00d2ff', s: '★★★★' },
+    { n: 'Difícil',     m: 1.3, c: '#fb923c', s: '★★★★' },
+    { n: 'Muy difícil', m: 1.6, c: '#e879f9', s: '★★★★' }
+  ];
+  window.JCH_DIFF_LEVELS = LEVELS;
+
+  function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ\s]/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function has(t, list) { var out = []; list.forEach(function (w) { if (new RegExp('(^|\\s)' + w + '(s|es)?(\\s|$)').test(t)) out.push(w); }); return out; }
+  var HARD = ['fisica cuantica', 'mecanica cuantica', 'cuantica', 'termodinamica', 'calculo', 'integral', 'derivada', 'ecuaciones diferenciales', 'algebra lineal', 'estadistica', 'probabilidad', 'demostracion', 'demostrar', 'teorema', 'tesis', 'investigacion', 'algoritmo', 'programacion', 'programar', 'machine learning', 'redes neuronales', 'circuito', 'electromagnetismo', 'fluidos', 'quimica organica', 'bioquimica', 'farmacologia', 'optimizacion', 'simulacion', 'modelado', 'transformada', 'matriz', 'matrices', 'relatividad', 'mecanica', 'dinamica', 'estructuras', 'econometria', 'topologia'];
+  var MED = ['estudiar', 'practicar', 'resolver', 'redactar', 'escribir', 'ensayo', 'informe', 'preparar', 'disenar', 'analizar', 'laboratorio', 'resumir', 'ejercicio', 'problema', 'programar', 'memorizar', 'aprender', 'construir', 'desarrollar'];
+  var EASY = ['leer', 'ver', 'mirar', 'revisar', 'ordenar', 'organizar', 'copiar', 'descargar', 'imprimir', 'enviar', 'llamar', 'buscar', 'anotar', 'subrayar', 'guardar', 'comprar', 'limpiar', 'escuchar', 'repasar'];
+  var EXAM = ['examen', 'parcial', 'final', 'simulacro', 'evaluacion', 'exposicion', 'sustentacion', 'prueba', 'practica calificada'];
+  var BULK = ['libro', 'tomo', 'completo', 'todo', 'entero', 'capitulos'];
+  var UP = ['avanzado', 'profundo', 'complejo', 'dificil'];
+  var DOWN = ['basico', 'introduccion', 'intro', 'rapido', 'breve', 'simple', 'facil', 'ligero', 'resumen'];
+  var RATES = [ // unidades por hora con esfuerzo medio
+    ['paginas?|pags?|hojas?', 30, 'páginas'], ['capitulos?|caps?', 1.5, 'capítulos'], ['diapositivas?|slides?|laminas?', 40, 'diapositivas'],
+    ['videos?|clases?', 2, 'videos'], ['ejercicios?', 12, 'ejercicios'], ['problemas?', 6, 'problemas'], ['preguntas?', 20, 'preguntas'], ['temas?|unidades?', 1.5, 'temas']
+  ];
+  var TYPE_ADJ = { 'lectura': -0.3, 'diapositivas': -0.2, 'practica': 0.2, 'ensayo': 0.4, 'articulo': 0.4, 'informe': 0.4, 'examen': 0.7, 'exposicion': 0.7 };
+
+  function learnGet() { try { return JSON.parse(localStorage.getItem('jch_diff_learn_v1')) || { words: {}, titles: {} }; } catch (e) { return { words: {}, titles: {} }; } }
+  function learnSet(o) { try { localStorage.setItem('jch_diff_learn_v1', JSON.stringify(o)); } catch (e) {} }
+  function words(t) { return t.split(' ').filter(function (w) { return w.length >= 4 && !/^\d+$/.test(w); }); }
+
+  // Estimación local por reglas (sin internet, sin IA externa). st: {title, description, taskType, priority}, mins: duración real
+  window.jchEstimateDifficulty = function (st, mins, noLearn) {
+    var title = norm((st && (st.title || st.name)) || ''), desc = norm((st && st.description) || ''), t = (title + ' ' + desc).trim();
+    var score = 1.2, why = [];
+    var hard = has(t, HARD), med = has(t, MED), easy = has(t, EASY), ex = has(t, EXAM), bulk = has(t, BULK), up = has(t, UP), down = has(t, DOWN);
+    if (hard.length) { score += 1.3 + (hard.length > 1 ? 0.3 : 0); why.push('tema exigente (' + hard[0] + ')'); }
+    if (ex.length) { score += 0.8; why.push('evaluación (' + ex[0] + ')'); }
+    if (easy.length && !med.length) { score -= 0.7; why.push('acción ligera (' + easy[0] + ')'); }
+    else if (med.length) { score += 0.3; why.push('trabajo activo (' + med[0] + ')'); }
+    if (bulk.length) { score += 0.5; why.push('mucho material (' + bulk[0] + ')'); if (hard.length) score += 0.6; }
+    if (up.length) { score += 0.7; why.push('nivel alto'); }
+    if (down.length) { score -= 0.4; why.push('nivel básico/rápido'); }
+    // cantidad vs minutos
+    if (mins > 0) {
+      for (var i = 0; i < RATES.length; i++) {
+        var m = new RegExp('(\\d+(?:[.,]\\d+)?)\\s*(?:' + RATES[i][0] + ')(?:\\s|$)').exec(t);
+        if (m) {
+          var qty = parseFloat(m[1].replace(',', '.')), rate = qty / (mins / 60), ratio = rate / RATES[i][1];
+          if (ratio >= 4) { score += 2.0; why.push(qty + ' ' + RATES[i][2] + ' en ' + mins + ' min es casi imposible'); }
+          else if (ratio >= 2) { score += 1.0; why.push(qty + ' ' + RATES[i][2] + ' en ' + mins + ' min es muy apretado'); }
+          else if (ratio >= 1.3) { score += 0.5; why.push(qty + ' ' + RATES[i][2] + ' en ' + mins + ' min es exigente'); }
+          else if (ratio <= 0.6) { score -= 0.4; why.push(qty + ' ' + RATES[i][2] + ' en ' + mins + ' min es holgado'); }
+          break;
+        }
+      }
+      if (mins <= 10) score -= 0.3; else if (mins >= 180) score += 0.6; else if (mins >= 120) score += 0.4;
+    }
+    var tt = norm(st && st.taskType); if (tt) { Object.keys(TYPE_ADJ).forEach(function (k) { if (tt.indexOf(k) >= 0) { score += TYPE_ADJ[k]; } }); }
+    if (desc.length > 120) score += 0.2;
+    var pr = st && st.priority; if (pr === 'urgente') score += 0.4; else if (pr === 'alta') score += 0.2; else if (pr === 'baja') score -= 0.2;
+    if (!noLearn) {
+      var L = learnGet(), ex2 = L.titles[title];
+      if (title && ex2) return { level: ex2, score: score, why: ['lo corregiste antes para un texto igual'], learned: true };
+      var ws = words(title), sum = 0, n = 0;
+      ws.forEach(function (w) { var r = L.words[w]; if (r && r.n) { sum += r.s / r.n; n++; } });
+      if (n) { var bias = Math.max(-1, Math.min(1, sum / n)); score += bias; if (Math.abs(bias) >= 0.25) why.push('ajustado por tus correcciones'); }
+    }
+    var lvl = score < 0.8 ? 1 : score < 1.9 ? 2 : score < 2.9 ? 3 : 4;
+    return { level: lvl, score: score, why: why };
+  };
+  window.jchLearnDifficulty = function (title, est, chosen) {
+    var tn = norm(title); if (!tn || !est || !chosen) return;
+    var L = learnGet(); L.titles[tn] = chosen;
+    var d = chosen - est;
+    if (d !== 0) words(tn).forEach(function (w) { var r = L.words[w] || { s: 0, n: 0 }; r.s += d; r.n += 1; L.words[w] = r; });
+    var ks = Object.keys(L.titles); if (ks.length > 400) delete L.titles[ks[0]];
+    learnSet(L);
+  };
+  // Nivel efectivo de una subtarea guardada (manual si el usuario lo fijó; si no, estimado)
+  window.jchSubtaskDifficulty = function (st) {
+    var mins = window.jchSubtaskMinutes ? window.jchSubtaskMinutes(st) : 0;
+    if (st && st.diffManual && st.difficulty >= 1 && st.difficulty <= 4) return { level: st.difficulty, manual: true, why: ['fijada por ti'] };
+    var e = window.jchEstimateDifficulty(st, mins); e.manual = false; return e;
+  };
+  // Recompensa de una subtarea: 1 moneda y 10 XP por minuto (tope en JCH_REWARD_CAP_MIN) × multiplicador de dificultad
+  window.jchSubtaskReward = function (st, levelOverride, minsOverride) {
+    var real = (minsOverride != null) ? minsOverride : (window.jchSubtaskMinutes ? window.jchSubtaskMinutes(st) : 0);
+    if (!real) return null;
+    var lvl = levelOverride || window.jchSubtaskDifficulty(st).level, mult = LEVELS[lvl].m, cm = Math.min(real, window.JCH_REWARD_CAP_MIN);
+    return { realMins: real, mins: cm, capped: real > cm, level: lvl, mult: mult, coins: Math.max(1, Math.round(cm * window.JCH_COIN_PER_MIN * mult)), xp: Math.max(1, Math.round(cm * window.JCH_XP_PER_MIN * mult)) };
+  };
+  window.jchSubtaskDiffChip = function (st) {
+    if (!window.jchSubtaskTimed || !window.jchSubtaskTimed(st)) return '';
+    var l = window.jchSubtaskDifficulty(st).level, L = LEVELS[l];
+    return '<span class="st-diffchip" style="color:' + L.c + ';text-shadow:0 0 6px ' + L.c + '66" title="Dificultad: ' + L.n + '">' + L.s.slice(0, l) + '</span>';
+  };
+
+  /* ── Bloque de la ventana de subtarea ── */
+  window._stDiffManual = 0; window._stDiffAuto = 1;
+  function $(id) { return document.getElementById(id); }
+  function formSt() {
+    var cur = window.jchSubtaskCurrent && window.jchSubtaskCurrent(), base = (cur && cur.ev && cur.ev.subtasks && cur.ev.subtasks[cur.idx]) || {};
+    var ti = $('subtaskDetailTitle'), de = $('subtaskDetailDesc');
+    return { title: ti ? ti.value : base.title, description: de ? de.value : base.description, taskType: window.subtaskTypeVal || '', priority: window.subtaskPriorityVal || 'normal' };
+  }
+  function buildBox() {
+    var b = $('stDiffOpts'); if (!b || b.children.length) return;
+    for (var i = 1; i <= 4; i++) {
+      var L = LEVELS[i], d = document.createElement('div');
+      d.className = 'st-d-btn'; d.setAttribute('data-l', i); d.style.setProperty('--dc', L.c);
+      d.innerHTML = '<span class="st-d-stars"><span class="st-d-fill">' + L.s.slice(0, i) + '</span><span class="st-d-dim">' + L.s.slice(i) + '</span></span><span class="st-d-name">' + L.n + '</span>';
+      d.addEventListener('click', (function (lv) { return function () { window.jchSubtaskPickDiff(lv); }; })(i));
+      b.appendChild(d);
+    }
+  }
+  window.jchSubtaskPickDiff = function (lv) {
+    window._stDiffManual = (window._stDiffManual === lv) ? 0 : lv;   // tocar otra vez la elegida = volver a automático
+    try { if (navigator.vibrate) navigator.vibrate(18); } catch (e) {}
+    window.jchSubtaskDiffRefresh(true);
+  };
+  var lastRw = '';
+  window.jchSubtaskDiffRefresh = function (bump) {
+    var box = $('stDiffBox'); if (!box) return;
+    buildBox();
+    var v = window.jchValidateSubtaskForm ? window.jchValidateSubtaskForm() : { ok: false, minutes: 0 };
+    var est = window.jchEstimateDifficulty(formSt(), v.ok ? v.minutes : 0);
+    window._stDiffAuto = est.level;
+    var eff = window._stDiffManual || est.level;
+    [].forEach.call($('stDiffOpts').children, function (el) {
+      var l = +el.getAttribute('data-l'); el.classList.toggle('on', l === eff); el.classList.toggle('sug', l === est.level && !!window._stDiffManual && window._stDiffManual !== est.level);
+    });
+    var tag = $('stDiffTag'); tag.textContent = window._stDiffManual ? '✋ elegida por ti' : '🤖 sugerida'; tag.classList.toggle('manual', !!window._stDiffManual);
+    $('stDiffWhy').textContent = window._stDiffManual
+      ? (window._stDiffManual !== est.level ? 'La app sugería «' + LEVELS[est.level].n + '». Aprenderá de tu elección al guardar. Toca de nuevo tu elección para volver a automático.' : 'Coincide con lo que la app sugería.')
+      : (est.why.length ? 'Por: ' + est.why.slice(0, 3).join(' · ') + '. Toca otra para corregir.' : 'Sin pistas claras en el texto: se asume Media. Toca otra para corregir.');
+    var rw = $('stDiffReward');
+    if (v.ok) {
+      var r = window.jchSubtaskReward(null, eff, v.minutes);
+      var html = '💰 <b>+' + r.coins + '</b> &nbsp; ⚡ <b>+' + r.xp + '</b> XP <span class="st-d-x">· ' + r.mins + ' min × ' + r.mult + (r.capped ? ' · tope ' + window.JCH_REWARD_CAP_MIN + ' min' : '') + '</span>';
+      if (html !== lastRw) { rw.innerHTML = html; lastRw = html; if (bump !== undefined) { rw.classList.remove('bump'); void rw.offsetWidth; rw.classList.add('bump'); } }
+    } else { rw.innerHTML = '<span class="st-d-x">Define inicio y fin para ver la recompensa</span>'; lastRw = ''; }
+    if (window.jchSubtaskTimerBtnRefresh) window.jchSubtaskTimerBtnRefresh();
+  };
+  window.jchSubtaskDiffInit = function () {
+    var cur = window.jchSubtaskCurrent && window.jchSubtaskCurrent(), st = cur && cur.ev && cur.ev.subtasks && cur.ev.subtasks[cur.idx];
+    window._stDiffManual = (st && st.diffManual && st.difficulty >= 1 && st.difficulty <= 4) ? st.difficulty : 0;
+    lastRw = '';
+    ['subtaskDetailTitle', 'subtaskDetailDesc'].forEach(function (id) {
+      var el = $(id); if (el && !el._stDiffBound) { el._stDiffBound = true; el.addEventListener('input', function () { window.jchSubtaskDiffRefresh(); }); }
+    });
+    window.jchSubtaskDiffRefresh();
+  };
+  // Al guardar: fijar o liberar la dificultad y aprender de la corrección
+  window.jchSubtaskDiffSave = function (st) {
+    if (window._stDiffManual) {
+      st.difficulty = window._stDiffManual; st.diffManual = true;
+      if (window._stDiffManual !== window._stDiffAuto) window.jchLearnDifficulty(st.title || st.name, window._stDiffAuto, window._stDiffManual);
+    } else { delete st.difficulty; delete st.diffManual; }
+  };
+})();
+</script>
+
+<style>
+/* ═══ v50 · Temporizador de subtarea ═══ */
+.st-timer-btn{width:100%;margin:0 0 14px;padding:13px;border-radius:16px;font-size:.92rem;font-weight:900;letter-spacing:.4px;cursor:pointer;color:#042f2e;border:0;
+  background:linear-gradient(135deg,#22e3ff,#10b981 60%,#a3e635);box-shadow:0 0 22px rgba(16,185,129,.45),0 8px 22px -8px rgba(0,210,255,.6);
+  transition:transform .15s ease,box-shadow .2s;animation:stTbPulse 2.6s ease-in-out infinite}
+.st-timer-btn:active{transform:scale(.97)}
+.st-timer-btn[disabled]{animation:none;opacity:.45;filter:grayscale(.6);cursor:not-allowed;box-shadow:none}
+.st-timer-btn small{display:block;font-size:.62rem;font-weight:800;opacity:.75;margin-top:2px}
+@keyframes stTbPulse{0%,100%{box-shadow:0 0 18px rgba(16,185,129,.4),0 8px 22px -8px rgba(0,210,255,.55)}50%{box-shadow:0 0 34px rgba(16,185,129,.8),0 8px 26px -6px rgba(0,210,255,.85)}}
+.st-mini-timer{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-left:6px;border-radius:50%;font-size:.72rem;cursor:pointer;flex-shrink:0;padding:0;
+  color:#a7f3d0;background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.55);box-shadow:0 0 8px rgba(16,185,129,.3);transition:transform .15s,box-shadow .2s}
+.st-mini-timer:hover,.st-mini-timer:active{transform:scale(1.15);box-shadow:0 0 14px rgba(16,185,129,.7)}
+#kanbanBoard .st-mini-timer{width:20px;height:20px;font-size:.62rem;margin-left:4px}
+</style>
+<script>
+(function () {
+  'use strict';
+  function evsArr() { return (typeof window.calGetEventsArray === 'function') ? window.calGetEventsArray() : []; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toast(msg, bg) {
+    try {
+      var t = document.getElementById('habStreakToast');
+      if (t) { t.textContent = msg; t.style.background = bg || 'linear-gradient(135deg,#f59e0b,#fbbf24)'; t.classList.add('show'); setTimeout(function () { t.classList.remove('show'); }, 3600); }
+    } catch (e) {}
+  }
+  function vib(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function uid(st) { if (!st._uid) st._uid = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); return st._uid; }
+  function find(stepId) {
+    var m = /^sub~([^~]+)~([^~]+)$/.exec(stepId || ''); if (!m) return null;
+    var ev = evsArr().find(function (e) { return e && String(e.id) === m[1]; });
+    var st = ev && (ev.subtasks || []).find(function (s) { return s._uid === m[2]; });
+    return { ev: ev || null, st: st || null, evId: m[1], uid: m[2] };
+  }
+  function isDone(st) { return !!st.done || st.kanbanStatus === 'completado'; }
+
+  // Botón ⏱ para filas de Lista / Kanban (solo si tiene hora y no está hecha)
+  window.jchSubtaskTimerBtn = function (evId, idx, st, done) {
+    if (done || !window.jchSubtaskTimed || !window.jchSubtaskTimed(st)) return '';
+    return '<button type="button" class="st-mini-timer" title="Iniciar temporizador de esta subtarea" onclick="event.stopPropagation();jchSubtaskTimerStart(\'' + String(evId).replace(/'/g, '') + '\',' + idx + ')">⏱</button>';
+  };
+
+  // Arranca el temporizador de pasos con los datos de la subtarea
+  window.jchSubtaskTimerStart = function (evId, idx) {
+    var ev = evsArr().find(function (e) { return e && String(e.id) === String(evId); });
+    var st = ev && ev.subtasks && ev.subtasks[idx];
+    if (!ev || !st) return false;
+    if (isDone(st)) { toast('✅ Esta subtarea ya está completada', 'linear-gradient(135deg,#10b981,#06b6d4)'); return false; }
+    var rw = window.jchSubtaskReward ? window.jchSubtaskReward(st) : null;
+    if (!rw) { vib([80, 50, 80]); if (typeof window.openSubtaskDetail === 'function') window.openSubtaskDetail(evId, idx); return false; }
+    if (typeof window.openStepTimer !== 'function') return false;
+    var id = 'sub~' + ev.id + '~' + uid(st);
+    try { if (typeof saveCalEvents === 'function') saveCalEvents(); } catch (e) {}
+    var desc = '📁 ' + (ev.title || '') + (st.description ? ' · ' + st.description : '');
+    window.openStepTimer(esc(st.title || st.name || 'Subtarea'), esc(desc.slice(0, 120)), rw.realMins, rw.coins, rw.xp, id);
+    return true;
+  };
+  // Desde la ventana de la subtarea: guarda lo que haya escrito y arranca el temporizador
+  window.jchSubtaskTimerFromWindow = function () {
+    var v = window.jchValidateSubtaskForm ? window.jchValidateSubtaskForm() : { ok: true };
+    if (!v.ok) { if (window.jchSubtaskWarn) window.jchSubtaskWarn(v); return; }
+    var cur = window.jchSubtaskCurrent && window.jchSubtaskCurrent(); if (!cur || !cur.ev) return;
+    var evId = cur.ev.id, idx = cur.idx;
+    window._stSeqEvId = null;
+    if (typeof window.saveSubtaskDetail === 'function') window.saveSubtaskDetail();
+    setTimeout(function () { window.jchSubtaskTimerStart(evId, idx); }, 250);
+  };
+  window.jchSubtaskTimerBtnRefresh = function () {
+    var b = document.getElementById('stTimerBtn'); if (!b) return;
+    var v = window.jchValidateSubtaskForm ? window.jchValidateSubtaskForm() : { ok: false };
+    b.disabled = !v.ok;
+    b.innerHTML = v.ok ? '⏱ Iniciar temporizador<small>' + window.jchFmtDur(v.minutes) + ' · guarda y empieza a contar</small>' : '⏱ Iniciar temporizador<small>Define inicio y fin para usarlo</small>';
+  };
+
+  // La subtarea pasa a "en curso" cuando se pulsa ▶
+  var _origTog = window._tmToggle;
+  if (typeof _origTog === 'function') window._tmToggle = function () {
+    var r = _origTog.apply(this, arguments);
+    try {
+      var b = document.getElementById('_tmBtnStart');
+      var f = find(window._stkStepId);
+      if (b && /Pausar/.test(b.textContent) && f && f.st && !isDone(f.st) && f.st.kanbanStatus !== 'en_curso') { f.st.kanbanStatus = 'en_curso'; if (typeof saveCalEvents === 'function') saveCalEvents(); }
+    } catch (e) {}
+    return r;
+  };
+  // recordar qué paso está abierto (también cuando se reabre tras cerrar la app)
+  var _origOpen = window.openStepTimer;
+  if (typeof _origOpen === 'function') window.openStepTimer = function (t, d, m, c, x, stepId) {
+    window._stkStepId = stepId || null;
+    return _origOpen.apply(this, arguments);
+  };
+  // Al cerrar tras completarse: marcar la subtarea hecha y entregar la recompensa (una sola vez)
+  var _origClose = window.closeStepTimer;
+  if (typeof _origClose === 'function') window.closeStepTimer = function () {
+    var sid = window._stkStepId;
+    var done = !!document.querySelector('#_stepTimerOverlay #_tmWin.visible');
+    var coins = 0, xp = 0;
+    if (sid && /^sub~/.test(sid) && done) {
+      var el = document.querySelectorAll('#_stepTimerOverlay .tm-win-reward-val');
+      coins = parseInt((el[0] && el[0].textContent.match(/\d+/) || [0])[0]) || 0;
+      xp = parseInt((el[1] && el[1].textContent.match(/\d+/) || [0])[0]) || 0;
+    }
+    var c0 = mastery();
+    var r = _origClose.apply(this, arguments);
+    try {
+      if (sid && /^sub~/.test(sid)) {
+        window._stkStepId = null;
+        // si el temporizador se restauró tras cerrar la app, el propio temporizador ya entregó la recompensa: no duplicarla
+        var granted = done && coins > 0 && (mastery().coins - c0.coins) >= coins;
+        if (done) window.jchSubtaskTimerComplete(sid, coins, xp, granted);
+      }
+    } catch (e) { }
+    return r;
+  };
+  function mastery() { try { var m = JSON.parse(localStorage.getItem('studyMasteryStats_v3')) || {}; return { xp: m.currentXP || 0, coins: m.totalCoins || 0 }; } catch (e) { return { xp: 0, coins: 0 }; } }
+  window.jchSubtaskTimerComplete = function (stepId, coins, xp, alreadyGranted) {
+    var f = find(stepId);
+    if (f && f.st && isDone(f.st)) return;                 // ya cobrada
+    if (f && f.st) {
+      f.st.done = true; f.st.kanbanStatus = 'completado'; f.st.completedAt = Date.now();
+      try { if (typeof saveCalEvents === 'function') saveCalEvents(); } catch (e) {}
+    }
+    if (!alreadyGranted) {
+      try { if (typeof window.addGlobalReward === 'function') window.addGlobalReward(xp, coins); } catch (e) {}
+      toast('🏆 ¡Subtarea completada! +' + coins + '🪙  +' + xp + '⚡');
+    }
+    try { if (typeof playSparkleSound === 'function') playSparkleSound(); } catch (e) {}
+    vib([60, 40, 120]);
+    var all = f && f.ev && f.ev.subtasks && f.ev.subtasks.length && f.ev.subtasks.every(isDone);
+    if (all) setTimeout(function () { toast('🎉 ¡Terminaste todas las subtareas de «' + (f.ev.title || 'tu proyecto') + '»!', 'linear-gradient(135deg,#a855f7,#06b6d4)'); }, 3800);
+  };
+})();
+</script>
+
+<style>
+/* ═══ v51 · Botón "Nuevo" del Gestor (proyecto / tarea) ═══ */
+@property --gxA{syntax:'<angle>';inherits:false;initial-value:0deg}
+.gx-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#gxNewBtn{position:relative;display:inline-flex;align-items:center;gap:8px;padding:9px 18px 9px 12px;border-radius:999px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:900;font-size:.82rem;letter-spacing:.4px;color:#fff;
+  border:2px solid transparent;background:linear-gradient(#06101f,#0b1030) padding-box,conic-gradient(from var(--gxA),#00d2ff,#a855f7,#f97316,#10b981,#00d2ff) border-box;
+  box-shadow:0 0 18px rgba(0,210,255,.35),0 0 30px rgba(168,85,247,.25);animation:gxSpin 4s linear infinite,gxBreath 2.8s ease-in-out infinite;transition:transform .2s cubic-bezier(.2,.9,.25,1.3)}
+#gxNewBtn:hover{transform:translateY(-2px) scale(1.04)}
+#gxNewBtn:active{transform:scale(.95)}
+#gxNewBtn .gx-plus{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:1.05rem;line-height:1;color:#031018;font-weight:900;
+  background:linear-gradient(135deg,#22e3ff,#a3e635);box-shadow:0 0 12px rgba(34,227,255,.7);transition:transform .35s cubic-bezier(.2,.9,.25,1.4)}
+#gxNewBtn:hover .gx-plus{transform:rotate(180deg)}
+@keyframes gxSpin{to{--gxA:360deg}}
+@keyframes gxBreath{0%,100%{box-shadow:0 0 14px rgba(0,210,255,.3),0 0 26px rgba(168,85,247,.2)}50%{box-shadow:0 0 26px rgba(0,210,255,.6),0 0 44px rgba(168,85,247,.45)}}
+#gxSheetBack{position:fixed;inset:0;z-index:8600;display:none;background:rgba(2,3,12,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+#gxSheetBack.show{display:block;animation:stFade .25s ease}
+#gxSheet{position:fixed;left:50%;bottom:0;z-index:8601;width:min(100vw,520px);transform:translate(-50%,105%);padding:10px 18px calc(22px + env(safe-area-inset-bottom));border-radius:26px 26px 0 0;color:#e2e8f0;
+  background:linear-gradient(170deg,rgba(14,20,48,.99),rgba(20,8,38,.99));border:1px solid rgba(0,210,255,.35);border-bottom:0;box-shadow:0 -20px 60px rgba(0,0,0,.7),0 0 40px rgba(124,58,237,.25);
+  transition:transform .42s cubic-bezier(.2,.9,.25,1.05)}
+#gxSheet.show{transform:translate(-50%,0)}
+#gxSheet .gx-grab{width:44px;height:5px;border-radius:5px;margin:2px auto 12px;background:rgba(148,163,184,.4)}
+#gxSheet .gx-title{font-size:1.15rem;font-weight:900;text-align:center;background:linear-gradient(90deg,#22e3ff,#c084fc,#fb923c);-webkit-background-clip:text;background-clip:text;color:transparent}
+#gxSheet .gx-sub{margin:4px 0 14px;text-align:center;font-size:.7rem;color:#94a3b8;line-height:1.35}
+#gxSheet .gx-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gx-card{position:relative;overflow:hidden;text-align:left;padding:16px 12px 14px;border-radius:20px;cursor:pointer;color:#fff;border:1.5px solid var(--gc);font-family:'Nunito',sans-serif;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--gc) 26%,#080d20),color-mix(in srgb,var(--gc) 6%,#080d20));box-shadow:0 0 22px color-mix(in srgb,var(--gc) 35%,transparent),inset 0 0 22px color-mix(in srgb,var(--gc) 10%,transparent);
+  opacity:0;transform:translateY(24px) scale(.94);transition:transform .2s cubic-bezier(.2,.9,.25,1.3),box-shadow .2s}
+#gxSheet.show .gx-card{animation:gxCardIn .55s cubic-bezier(.2,.9,.25,1.15) forwards}
+#gxSheet.show .gx-card.task{animation-delay:.09s}
+.gx-card:active{transform:scale(.95)!important}
+.gx-card .gx-ico{display:block;font-size:2.3rem;line-height:1;filter:drop-shadow(0 0 12px var(--gc));animation:gxFloat 3s ease-in-out infinite}
+.gx-card.task .gx-ico{animation-delay:-1.4s}
+.gx-card b{display:block;margin-top:8px;font-size:1.02rem;font-weight:900}
+.gx-card small{display:block;margin-top:4px;font-size:.62rem;font-weight:700;color:#cbd5e1;opacity:.85;line-height:1.35}
+.gx-card::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-120%);animation:gxShine 3.6s ease-in-out infinite}
+.gx-card.task::after{animation-delay:1.2s}
+.gx-card.proj{--gc:#10b981}.gx-card.task{--gc:#f97316}
+#gxSheet .gx-seg-label{margin:16px 0 7px;font-size:.66rem;font-weight:900;letter-spacing:.8px;color:#94a3b8;text-transform:uppercase}
+#gxSheet .gx-seg{display:flex;gap:6px;padding:4px;border-radius:14px;background:rgba(0,0,0,.35);border:1px solid rgba(148,163,184,.2)}
+#gxSheet .gx-seg button{flex:1;padding:9px 6px;border-radius:11px;border:0;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:900;font-size:.74rem;color:#94a3b8;background:transparent;transition:all .22s ease}
+#gxSheet .gx-seg button.on{color:#031018;background:linear-gradient(120deg,#22e3ff,#a3e635);box-shadow:0 4px 16px -4px rgba(34,227,255,.7)}
+#gxSheet .gx-hint{margin-top:12px;padding:9px 11px;border-radius:12px;font-size:.64rem;color:#a5b4fc;line-height:1.4;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3)}
+#gxSheet .gx-cancel{width:100%;margin-top:12px;padding:11px;border-radius:14px;border:1px solid rgba(148,163,184,.3);background:rgba(148,163,184,.08);color:#cbd5e1;font-weight:900;font-size:.82rem;cursor:pointer;font-family:'Nunito',sans-serif}
+.gx-ripple{position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.45);transform:scale(0);animation:gxRip .6s ease-out forwards}
+.gx-flash{position:relative;z-index:2;animation:gxFlash 2.6s ease-out 1}
+@keyframes gxFlash{0%{box-shadow:0 0 0 0 rgba(34,227,255,0);transform:scale(1)}12%{box-shadow:0 0 0 3px #22e3ff,0 0 38px 6px rgba(34,227,255,.85);transform:scale(1.03)}35%{box-shadow:0 0 0 2px #a3e635,0 0 26px 3px rgba(163,230,53,.65);transform:scale(1.01)}100%{box-shadow:0 0 0 0 rgba(34,227,255,0);transform:scale(1)}}
+@keyframes gxCardIn{to{opacity:1;transform:none}}
+@keyframes gxFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
+@keyframes gxShine{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+@keyframes gxRip{to{transform:scale(4);opacity:0}}
+</style>
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function vib(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function sfx(n) { try { if (typeof window[n] === 'function') window[n](); } catch (e) {} }
+  var pend = null;     // pend = { kind, at } mientras se crea algo desde el Gestor
+
+  function build() {
+    if ($('gxSheet')) return;
+    var b = document.createElement('div'); b.id = 'gxSheetBack';
+    var s = document.createElement('div'); s.id = 'gxSheet'; s.setAttribute('role', 'dialog'); s.setAttribute('aria-label', 'Crear nuevo');
+    s.innerHTML = '<div class="gx-grab"></div><div class="gx-title">✨ Crear nuevo</div>' +
+      '<div class="gx-sub">Se guarda en el calendario, el Kanban, la Lista y Rutinas Adaptativas.</div>' +
+      '<div class="gx-cards">' +
+        '<button type="button" class="gx-card proj" data-k="proj"><span class="gx-ico">📋</span><b>Proyecto</b><small>Varios pasos grandes.<br>Sale en «Mis Proyectos».</small></button>' +
+        '<button type="button" class="gx-card task" data-k="task"><span class="gx-ico">🔥</span><b>Tarea</b><small>Algo concreto, con pasos opcionales.<br>Sale en «Mis Tareas Cotidianas».</small></button>' +
+      '</div>' +
+      '<div class="gx-hint">💡 Luego te pediremos la hora de cada subtarea: con ella se calcula la duración, la recompensa y el temporizador ⏱.</div>' +
+      '<button type="button" class="gx-cancel" id="gxCancel">Cancelar</button>';
+    document.body.appendChild(b); document.body.appendChild(s);
+    b.addEventListener('click', close);
+    $('gxCancel').addEventListener('click', close);
+    [].forEach.call(s.querySelectorAll('.gx-card'), function (c) {
+      c.addEventListener('click', function (e) {
+        var r = c.getBoundingClientRect(), d = Math.max(r.width, r.height), p = document.createElement('span');
+        p.className = 'gx-ripple'; p.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + (e.clientX - r.left - d / 2) + 'px;top:' + (e.clientY - r.top - d / 2) + 'px';
+        c.appendChild(p); vib([20, 30, 40]); sfx('playSparkleSound');
+        var k = c.getAttribute('data-k');
+        setTimeout(function () { choose(k); }, 190);
+      });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('gxSheet').classList.contains('show')) close(); });
+  }
+  function open() {
+    build();
+    $('gxSheetBack').classList.add('show');
+    void $('gxSheet').offsetWidth; $('gxSheet').classList.add('show'); vib(18); sfx('playMenuSound');
+  }
+  function close() {
+    var s = $('gxSheet'); if (!s) return;
+    s.classList.remove('show'); setTimeout(function () { $('gxSheetBack').classList.remove('show'); }, 300);
+  }
+  function choose(kind) {
+    close();
+    pend = { kind: kind, at: Date.now() };
+    setTimeout(function () {
+      try {
+        if (kind === 'proj' && typeof window.openNewProjectModal === 'function') window.openNewProjectModal();
+        else if (kind === 'task' && typeof window.openNewTaskModal === 'function') window.openNewTaskModal();
+      } catch (e) { pend = null; }
+    }, 230);
+  }
+  window.jchGestorNew = open;
+
+  // si se cierra el formulario sin guardar, olvidar la creación pendiente
+  ['closeNewProjectModal', 'closeNewTaskModal'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function () {
+      var r = o.apply(this, arguments);
+      setTimeout(function () { if (pend && Date.now() - pend.at > 600) pend = null; }, 900);
+      return r;
+    };
+  });
+
+  function toast(msg) {
+    var p = $('jchSyncPill');
+    if (!p) { p = document.createElement('div'); p.id = 'jchSyncPill'; document.body.appendChild(p); }
+    p.innerHTML = '<span class="sp-ico">✨</span>' + msg; p.classList.add('show'); clearTimeout(p._t); p._t = setTimeout(function () { p.classList.remove('show'); }, 3600);
+  }
+  function busy() {
+    var m = $('subtaskDetailModal'), a = $('newProjectModal'), b = $('newTaskModal'), c = $('calTimePickerModal'), d = $('stConfirmBack');
+    return (m && m.classList.contains('show-comment')) || (a && a.classList.contains('show-modal')) || (b && b.classList.contains('show-modal')) || (c && c.classList.contains('show-cal')) || (d && d.classList.contains('show'));
+  }
+  // Lo llaman saveNewProject / saveNewTask justo después de crear (con el id del evento nuevo)
+  window.jchGestorAfterCreate = function (evId) {
+    try {
+      var mine = pend && (Date.now() - pend.at) < 15 * 60 * 1000 ? pend : null; pend = null;
+      if (!mine) return;
+      var evs = window.calGetEventsArray ? window.calGetEventsArray() : [], ev = evs.find(function (e) { return e && e.id === evId; });
+      if (!ev) return;
+      try { if (typeof listExpandedItems !== 'undefined') listExpandedItems.add(evId); } catch (e) {}
+      try { if (typeof kanbanGetExpandedSet === 'function') kanbanGetExpandedSet().add(evId); } catch (e) {}
+      try { if (window.renderListView) window.renderListView(); if (window.renderKanbanBoard) window.renderKanbanBoard(); } catch (e) {}
+      // esperar a que terminen las ventanas de horas de las subtareas y entonces mostrar el resultado
+      var tries = 0, iv = setInterval(function () {
+        tries++;
+        if (busy() && tries < 150) return;
+        clearInterval(iv);
+        var card = $('gestionCard'); if (card && card.scrollIntoView) { try { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }
+        setTimeout(function () {
+          var els = document.querySelectorAll('.kanban-card[data-id="' + evId + '"],.list-row[data-id="' + evId + '"]');
+          [].forEach.call(els, function (el) { el.classList.remove('gx-flash'); void el.offsetWidth; el.classList.add('gx-flash'); setTimeout(function () { el.classList.remove('gx-flash'); }, 2800); });
+          toast((mine.kind === 'proj' ? 'Proyecto' : 'Tarea') + ' creado y sincronizado con Rutinas Adaptativas');
+          vib([40, 40, 80]); sfx('playSparkleSound');
+        }, 450);
+      }, 400);
+    } catch (e) {}
+  };
 })();
 </script>
 
